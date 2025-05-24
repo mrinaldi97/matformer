@@ -1,0 +1,102 @@
+"""
+Implementation of the Entropy Model
+"""
+import argparse
+import torch
+import torch.nn.functional as F
+import pytorch_lightning as pl
+from torch.utils.data import DataLoader
+from matformer.tokenizers import ByteLevelTokenizer
+from matformer.metrics import BitsPerByte  
+from matformer.training_functions import MatformerDataModule
+from matformer.model_config import ModelConfig  
+from matformer.models import EntropyModel
+def main():
+    config_big_model_1024_window = ModelConfig(
+        name='Entropy Model',
+        hidden_dim=768,
+        ffn_factor=1.0,
+        n_layers=14,
+        n_heads=12,
+        vocab_size=261,
+        pad_id=260,
+        bos_id=0,
+        eos_id=1,
+        tie_word_embeddings=False,
+        rms_norm_eps=1e-6,
+        attention_type=['causal','sliding'],
+        sliding_window_size=512,
+        sliding_layers=[0,1,2,3,4,6,7,9,10,11],
+        sliding_type='partial',
+        max_seqlen=1024,
+        block_size_for_attention=128,
+        compile_flexattn=False,
+        bias=False
+    ) 
+    config_small_model_2048_window = ModelConfig(
+        name='Entropy Model',
+        hidden_dim=768,
+        ffn_factor=1.0,
+        n_layers=10,
+        n_heads=12,
+        vocab_size=261,
+        pad_id=260,
+        bos_id=0,
+        eos_id=1,
+        tie_word_embeddings=False,
+        rms_norm_eps=1e-6,
+        attention_type=['causal','sliding'],
+        sliding_window_size=1024,
+        sliding_layers=[0,1,2,3,8,9],
+        sliding_type='partial',
+        max_seqlen=2048,
+        block_size_for_attention=128,
+        compile_flexattn=False,
+        bias=False
+    ) 
+    config=config_small_model_2048_window    
+    parser = argparse.ArgumentParser(description='Train byte-level entropy model')
+    parser.add_argument('--data_root', type=str, required=True, help='Path to dataset root')
+    parser.add_argument('--dump_dir', type=str, default='./checkpoints', help='Checkpoint directory')
+    parser.add_argument('--batch_size', type=int, default=64)
+    parser.add_argument('--max_steps', type=int, default=None)
+    parser.add_argument('--gpus', type=int, default=1)
+    args = parser.parse_args()
+    train_config = {
+        "lr": 4e-4,
+        "warmup_steps": 300,
+        "max_steps": args.max_steps
+    }
+    pl.seed_everything(27)
+
+    tokenizer = ByteLevelTokenizer(config)
+    data_module = MatformerDataModule(
+        data_root=args.data_root,
+        batch_size=args.batch_size,
+        num_workers=2,
+        config=config,
+        tokenizer=tokenizer
+    )
+
+    model = EntropyModel(config=config, train_config=train_config)
+    checkpoint_callback = pl.callbacks.ModelCheckpoint(
+        dirpath=args.dump_dir, 
+        filename='liberliber_2048',  
+        save_top_k=1,  
+        save_last=True  
+    )
+    trainer = pl.Trainer(
+        default_root_dir=args.dump_dir,
+        precision='16-mixed',
+        log_every_n_steps=100,
+        accumulate_grad_batches=1,
+        accelerator='gpu',
+        max_epochs=1,
+        callbacks=[checkpoint_callback]  
+    )
+    torch.set_float32_matmul_precision("high")
+    model = torch.compile(model)
+    print("Model compiled.")
+    trainer.fit(model, data_module)
+if __name__ == '__main__':
+    main()
