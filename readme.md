@@ -1,5 +1,5 @@
 # Matformer: a unified any-to-any autoregressive and diffusion model
-<h3><a href="matformer.pdf"> Read in PDF (better)</a></h3>
+<h3><a href="matformer.pdf"> Read in PDF </a></h3>
 
 ### *This is not the readme of the “matformer” library. That is still missing (but, read “note\_ \_codice.md”), this is a draft presentation of a new architecture that should be built using the matformer library.*
 
