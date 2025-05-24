@@ -61,3 +61,5 @@ Poi, qualora ci fosse interesse nel lavorare sull’architettura
 sperimentale, bisogna ancora fare la parte di Diffusion Transformer
 (facile) e capire come definire il router, la multi-loss e il batch
 multimodale (più delicato).
+
+In generale, la semplicità del codice è ispirata a <a href="https://github.com/Emericen/tiny-qwen">TinyQwen</a>, un piccolo progetto che permette di far girare Qwen in poche righe di Pytorch.
