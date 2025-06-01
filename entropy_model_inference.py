@@ -15,7 +15,7 @@ parser.add_argument('--top_k', type=int, default=0)
 parser.add_argument('--top_p', type=float, default=0.9)
 args = parser.parse_args()
 checkpoint_path = args.model 
-model,config = EntropyModel.load_from_checkpoint(checkpoint_path)
+model,config = EntropyModel.load_from_checkpoint(checkpoint_path, inference_fix=True)
 print(f"Model loaded. Config = {config}")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)

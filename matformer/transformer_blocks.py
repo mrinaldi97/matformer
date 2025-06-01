@@ -313,7 +313,7 @@ class BLTTransfomer(nn.Module):
        else:
            self.entropy_smoothing=smoothing        
        self.textencoder=TextEncoder(configs, device=device)
-       self.textdecoder=TextDecoder(configs,device=self.device)
+       self.textdecoder=TextDecoder(configs,device=device)
        self.latenttransformer=NakedTransformer(configs['global_transformer'])
 
    def forward(self,text,smoothing=None):

@@ -19,9 +19,10 @@ class BLTLightningModule(pl.LightningModule):
         self.train_config = train_config
         self.tokenizer_config = tokenizer_config
         self.save_hyperparameters(ignore=['blt_model'])
+        self.defaultSmoothing=smoothing
 
-    def forward(self, text_tokens, smoothing=None):
-        return self.blt_model(text_tokens, smoothing=smoothing)
+    def forward(self, text_tokens):
+        return self.blt_model(text_tokens)
 
     def _common_step(self, batch, batch_idx):
         input_ids = batch['input_ids'] if isinstance(batch, dict) else batch
@@ -84,11 +85,11 @@ def main():
 
     tokenizer = ByteLevelTokenizer(config=entropy_cfg_obj)
     
-    common_params = {'vocab_size': entropy_cfg_obj.vocab_size, 'pad_id': entropy_cfg_obj.pad_id, 'max_seqlen': entropy_cfg_obj.max_seqlen}
+    common_params = {'vocab_size': entropy_cfg_obj.vocab_size, 'pad_id': entropy_cfg_obj.pad_id, 'bos_id': entropy_cfg_obj.bos_id, 'eos_id':entropy_cfg_obj.eos_id, 'max_seqlen': entropy_cfg_obj.max_seqlen}
 
-    text_encoder_config = ModelConfig(name='BLT Text Encoder', hidden_dim=768, ffn_factor=1.0, n_layers=6, n_heads=16, tie_word_embeddings=False, rms_norm_eps=1e-6, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_type='full', block_size_for_attention=128, compile_flexattn=False, bias=False, **common_params)
-    text_decoder_config = ModelConfig(name='BLT Text Decoder', hidden_dim=768, ffn_factor=1.0, n_layers=6, n_heads=16, tie_word_embeddings=False, rms_norm_eps=1e-6, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_type='full', block_size_for_attention=128, compile_flexattn=False, bias=False, **common_params)
-    global_model_config = ModelConfig(name='BLT Global Model', hidden_dim=768, ffn_factor=1.0, n_layers=12, n_heads=16, tie_word_embeddings=False, rms_norm_eps=1e-6, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_type='full', block_size_for_attention=128, compile_flexattn=False, bias=False, **common_params)
+    text_encoder_config = ModelConfig(name='BLT Text Encoder', hidden_dim=768, ffn_factor=1.0, n_layers=4, n_heads=16, tie_word_embeddings=False, rms_norm_eps=1e-6, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_type='full', sliding_layers=None, block_size_for_attention=128, compile_flexattn=False, bias=False, **common_params)
+    text_decoder_config = ModelConfig(name='BLT Text Decoder', hidden_dim=768, ffn_factor=1.0, n_layers=4, n_heads=16, tie_word_embeddings=False, rms_norm_eps=1e-6, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_type='full', sliding_layers=None, block_size_for_attention=128, compile_flexattn=False, bias=False, **common_params)
+    global_model_config = ModelConfig(name='BLT Global Model', hidden_dim=768, ffn_factor=1.0, n_layers=8, n_heads=16, tie_word_embeddings=False, rms_norm_eps=1e-6, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_type='full', sliding_layers=None, block_size_for_attention=128, compile_flexattn=False, bias=False, **common_params)
 
     data_module = MatformerDataModule(data_root=args.data_root, batch_size=args.batch_size, num_workers=args.num_workers, config=entropy_cfg_obj, tokenizer=tokenizer)
     
