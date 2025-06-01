@@ -70,7 +70,7 @@ def main():
     args = parser.parse_args()
 
     train_hyperparams = {"lr": args.learning_rate, "warmup_steps": args.warmup_steps, "max_steps": args.max_steps if args.max_steps > 0 else None}
-    pl.seed_everything(42)
+    pl.seed_everything(27)
     device = torch.device("cuda" if torch.cuda.is_available() and args.gpus > 0 else "cpu")
 
     try:

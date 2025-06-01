@@ -216,102 +216,111 @@ class TransformerWithLMHead(nn.Module):
 #The BLT-Specific classes should be removed from here and moved in another file
 class TextEncoder(nn.Module):
 
-    def __init__(self, configs_dict, entropymodel, smoothing=None, device='cuda'):
-        super().__init__()
-        self.device = device
-        self.text_config = configs_dict['text_encoder']
-        self.entropy_config = configs_dict['entropy_model']
-        self.entropymodel = entropymodel
-        # The query (patches) in principle can be of different dimension, but in this implementation we will use the same hidden_dim        
-        qkvdim = self.text_config.hidden_dim
-                
-        self.byte_embeddings = nn.Embedding(self.entropy_config.vocab_size, qkvdim)
-        self.pooling = LpPooling()   
-        self.bytes_layers = nn.ModuleList([NakedTransformer(self.text_config, device) for _ in range(self.text_config.n_layers)])
-        # Same things for the cross-attention number of heads. In this implementation, it will be the same as bytes' self attention number of heads, but it could be changed        
-        self.patches_layers = nn.ModuleList([MultiHeadAttention(q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=self.text_config.n_heads) for _ in range(self.text_config.n_layers)])
-        self.norm = RMSNorm(normalized_shape=qkvdim, eps=self.text_config.rms_norm_eps, elementwise_affine=True)
-        self.smoothing = smoothing
-        self.mask_builder = MaskBuilder(self.text_config)
+   def __init__(self, configs_dict, device='cuda'): 
+       super().__init__()
+       self.device = device
+       self.text_config = configs_dict['text_encoder']
+       self.entropy_config = configs_dict['entropy_model']
+       # The query (patches) in principle can be of different dimension, but in this implementation we will use the same hidden_dim        
+       qkvdim = self.text_config.hidden_dim
+               
+       self.byte_embeddings = nn.Embedding(self.entropy_config.vocab_size, qkvdim)
+       self.pooling = LpPooling()   
+       self.bytes_layers = nn.ModuleList([NakedTransformer(self.text_config, device) for _ in range(self.text_config.n_layers)])
+       # Same things for the cross-attention number of heads. In this implementation, it will be the same as bytes' self attention number of heads, but it could be changed        
+       self.patches_layers = nn.ModuleList([MultiHeadAttention(q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=self.text_config.n_heads) for _ in range(self.text_config.n_layers)])
+       self.norm = RMSNorm(normalized_shape=qkvdim, eps=self.text_config.rms_norm_eps, elementwise_affine=True)
+       self.mask_builder = MaskBuilder(self.text_config)
 
-    def create_patches(self, h, bytegroups):
-        B, _, D = h.shape
-        P = bytegroups.max().item()
-        patches = h.new_zeros(B, P, D)
-        for group in range(1, P + 1):
-            mask = (bytegroups == group)
-            patches[:, group-1] = self.pooling(h[:, mask], dim=1)
-        return patches
+   def create_patches(self, h, bytegroups):
+       B, _, D = h.shape
+       P = bytegroups.max().item()
+       patches = h.new_zeros(B, P, D)
+       for group in range(1, P + 1):
+           mask = (bytegroups == group)
+           patches[:, group-1] = self.pooling(h[:, mask], dim=1)
+       return patches
 
-    def forward(self, bytes_seq, patches=None, bytegroups=None, smoothing=None):   
-        if smoothing is None:  #If smoothing is not set in the forward, get it from the __init__
-            smoothing = self.smoothing
-        h = self.byte_embeddings(bytes_seq)  # 1) Embed bytes
-        B, bytes_seqlen, _ = h.shape
-        if bytegroups is None:
-            _, _, bytegroups = self.entropymodel.monotonicity_breakpoints(prompt=bytes_seq, smoothing=smoothing)  # We call the entropy model to get the monotonicity breakdown points for patches creation
-        # 2) either use given patches, or build them
-        if patches is None:
-            patches = self.create_patches(h, bytegroups)
+   def forward(self, bytes_seq, patches=None, bytegroups=None):  
+       h = self.byte_embeddings(bytes_seq)  # 1) Embed bytes
+       B, bytes_seqlen, _ = h.shape
+       # 2) either use given patches, or build them
+       if patches is None:
+           patches = self.create_patches(h, bytegroups)
 
-        # 3) The blockmask is computed during the forward pass. Each patch's query can attend only to the bytes forming that patch. For this reason, we will use document_id masking scheme.        
-        block_mask = self.mask_builder.build_mask_tensor(q_len=bytes_seqlen, kv_len=bytes_seqlen, attention_types=['causal','document'], device=self.device, document_mask=bytegroups)
-        # 4) stack of local transformer + cross-attn
-        
-        for byte_layer, cross_attn in zip(self.bytes_layers, self.patches_layers):
-            h = byte_layer(h)
-            patches = cross_attn(query_input=patches, key_input=h, value_input=h, block_mask=block_mask)
-        # 5) final norms            
-        return self.norm(h), self.norm(patches)
+       # 3) The blockmask is computed during the forward pass. Each patch's query can attend only to the bytes forming that patch. For this reason, we will use document_id masking scheme.        
+       block_mask = self.mask_builder.build_mask_tensor(q_len=bytes_seqlen, kv_len=bytes_seqlen, attention_types=['document'], device=self.device, document_mask=bytegroups)
+       # 4) stack of local transformer + cross-attn
+       
+       for byte_layer, cross_attn in zip(self.bytes_layers, self.patches_layers):
+           h = byte_layer(h)
+           patches = cross_attn(query_input=patches, key_input=h, value_input=h, block_mask=block_mask)
+       # 5) final norms            
+       return self.norm(h), self.norm(patches)
 
 class TextDecoder(nn.Module):
-    def __init__(self, configs_dict, device='cuda'):
-        super().__init__()
-        self.device = device
-        self.text_config = configs_dict['text_decoder']
-        qkvdim = self.text_config.hidden_dim
-        self.xattn = nn.ModuleList([MultiHeadAttention(q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=self.text_config.n_heads) for _ in range(self.text_config.n_layers)])
-        self.block = nn.ModuleList([NakedTransformer(self.text_config, device) for _ in range(self.text_config.n_layers)])
-        self.norm = RMSNorm(qkvdim, eps=self.text_config.rms_norm_eps)
-        self.output = nn.Linear(qkvdim, self.text_config.vocab_size, bias=False)
+   def __init__(self, configs_dict, device='cuda'):
+       super().__init__()
+       self.device = device
+       self.text_config = configs_dict['text_decoder']
+       qkvdim = self.text_config.hidden_dim
+       self.xattn = nn.ModuleList([MultiHeadAttention(q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=self.text_config.n_heads) for _ in range(self.text_config.n_layers)])
+       self.block = nn.ModuleList([NakedTransformer(self.text_config, device) for _ in range(self.text_config.n_layers)])
+       self.norm = RMSNorm(qkvdim, eps=self.text_config.rms_norm_eps)
+       self.output = nn.Linear(qkvdim, self.text_config.vocab_size, bias=False)
+       self.mask_builder = MaskBuilder(self.text_config)
 
-    def forward(self, h, patches):
-        for xattn, block in zip(self.xattn, self.block):
-            h = h + xattn(query_input=h, key_input=patches, value_input=patches)
-            h = block(h)
-        return self.output(self.norm(h))
+   def forward(self, h, patches, bytegroups=None):  
+       if bytegroups is not None:
+           B, bytes_seqlen, _ = h.shape
+           cross_mask = self.mask_builder.build_mask_tensor(
+               q_len=bytes_seqlen, 
+               kv_len=patches.shape[1], 
+               attention_types=['document'], 
+               device=self.device, 
+               document_mask=bytegroups,
+               batch_size=B
+           )
+       else:
+           cross_mask = None
+           
+       for xattn, block in zip(self.xattn, self.block):
+           h = h + xattn(query_input=h, key_input=patches, value_input=patches, block_mask=cross_mask)
+           h = block(h)
+       return self.output(self.norm(h))
 
 
 class BLTTransfomer(nn.Module):
-    """
-    This is an implementation of a BLT Transformer but with some modification from the Meta paper.
-    
-    """
-    def __init__(self,entropy_config,text_encoder_config,global_config,text_decoder_config,entropymodel, smoothing=None, device='cuda'):
-        super().__init__()
-        #Creating a dictionary with the config for each model
-        configs=dict()
-        configs['entropy_model']=entropy_config
-        configs['text_encoder']=text_encoder_config
-        configs['text_decoder']=text_decoder_config
-        configs['global_transformer']=global_config
-        self.configs=configs
-        self.device=device
-        if smoothing is None:
-            self.entropy_smoothing=None
-        elif smoothing == -1:   
-            self.entropy_smoothing=nn.Parameter(0.5)
-        else:
-            self.entropy_smoothing=smoothing        
-        self.textencoder=TextEncoder(configs, entropymodel, smoothing=self.entropy_smoothing, device=device)
-        self.textdecoder=TextDecoder(configs,device=self.device)
-        self.latenttransformer=NakedTransformer(configs['global_transformer'])
+   """
+   This is an implementation of a BLT Transformer but with some modification from the Meta paper.
+   
+   """
+   def __init__(self,entropy_config,text_encoder_config,global_config,text_decoder_config,entropymodel, smoothing=None, device='cuda'):
+       super().__init__()
+       #Creating a dictionary with the config for each model
+       configs=dict()
+       configs['entropy_model']=entropy_config
+       configs['text_encoder']=text_encoder_config
+       configs['text_decoder']=text_decoder_config
+       configs['global_transformer']=global_config
+       self.configs=configs
+       self.device=device
+       self.entropymodel = entropymodel
+       if smoothing is None:
+           self.entropy_smoothing=None
+       elif smoothing == -1:   
+           self.entropy_smoothing=nn.Parameter(0.5)
+       else:
+           self.entropy_smoothing=smoothing        
+       self.textencoder=TextEncoder(configs, device=device)
+       self.textdecoder=TextDecoder(configs,device=self.device)
+       self.latenttransformer=NakedTransformer(configs['global_transformer'])
 
-    def forward(self,text,smoothing=None):
-        if smoothing is None:
-            smoothing=self.entropy_smoothing
-        h,p=self.textencoder(text,smoothing=smoothing)
-        p=self.latenttransformer(p)
-        output=self.textdecoder(h,p)
-        return output
-       
+   def forward(self,text,smoothing=None):
+       if smoothing is None:
+           smoothing=self.entropy_smoothing
+       _, _, bytegroups = self.entropymodel.monotonicity_breakpoints(prompt=text, smoothing=smoothing)
+       h,p=self.textencoder(text, bytegroups=bytegroups)
+       p=self.latenttransformer(p)
+       output=self.textdecoder(h,p, bytegroups=bytegroups)
+       return output
