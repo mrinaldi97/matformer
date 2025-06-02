@@ -18,9 +18,9 @@ class LpPooling(torch.nn.Module):
         self.p = torch.nn.Parameter(torch.tensor(float(p)))
         self.keepdim = keepdim
 
-    def forward(self, x):
+    def forward(self, x, dim):
         p_clamped = torch.clamp(self.p, min=1e-6)
-        return torch.pow(torch.mean(torch.pow(torch.abs(x), p_clamped), dim=self.dim, keepdim=self.keepdim), 1 / p_clamped)
+        return torch.pow(torch.mean(torch.pow(torch.abs(x), p_clamped), dim=dim, keepdim=self.keepdim), 1 / p_clamped)
 
 
 

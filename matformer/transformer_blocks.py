@@ -148,8 +148,8 @@ class NakedTransformer(nn.Module):
         """     
         assert self.config.sliding_type in ['full','disabled','partial'], "Invalid sliding type config."
         device=x.device
-        #if True: #Check why resize doesn't work, important for inference
-        if document_mask is not None or cloze_mask is not None or q_len>self.config.max_seqlen or inference_fix==True:
+        if True: #Check why resize doesn't work, important for inference
+        #if document_mask is not None or cloze_mask is not None or q_len>self.config.max_seqlen or inference_fix==True:
             # In these cases I have to regenerate the masks
             if self.config.sliding_type != 'disabled':
                 sliding_mask=self.mask_builder.build_mask_tensor(q_len, kv_len, attention_types=self.config.attention_type, is_sliding=True,device=device)
@@ -236,9 +236,10 @@ class TextEncoder(nn.Module):
        B, _, D = h.shape
        P = bytegroups.max().item()
        patches = h.new_zeros(B, P, D)
-       for group in range(1, P + 1):
-           mask = (bytegroups == group)
-           patches[:, group-1] = self.pooling(h[:, mask], dim=1)
+       for b in range(B):
+            for group in range(1, P + 1):
+                mask = (bytegroups[b] == group)
+                patches[b, group-1] = self.pooling(h[b, mask], dim=0)
        return patches
 
    def forward(self, bytes_seq, patches=None, bytegroups=None):  
@@ -249,12 +250,12 @@ class TextEncoder(nn.Module):
            patches = self.create_patches(h, bytegroups)
 
        # 3) The blockmask is computed during the forward pass. Each patch's query can attend only to the bytes forming that patch. For this reason, we will use document_id masking scheme.        
-       block_mask = self.mask_builder.build_mask_tensor(q_len=bytes_seqlen, kv_len=bytes_seqlen, attention_types=['document'], device=self.device, document_mask=bytegroups)
+       patches_block_mask = self.mask_builder.build_mask_tensor(q_len=patches.shape[1], kv_len=bytes_seqlen, attention_types=['document'], device=self.device, document_mask=bytegroups)
        # 4) stack of local transformer + cross-attn
        
        for byte_layer, cross_attn in zip(self.bytes_layers, self.patches_layers):
            h = byte_layer(h)
-           patches = cross_attn(query_input=patches, key_input=h, value_input=h, block_mask=block_mask)
+           patches = cross_attn(query_input=patches, key_input=h, value_input=h, block_mask=patches_block_mask)
        # 5) final norms            
        return self.norm(h), self.norm(patches)
 
@@ -314,13 +315,14 @@ class BLTTransfomer(nn.Module):
            self.entropy_smoothing=smoothing        
        self.textencoder=TextEncoder(configs, device=device)
        self.textdecoder=TextDecoder(configs,device=device)
-       self.latenttransformer=NakedTransformer(configs['global_transformer'])
+       self.latenttransformer=NakedTransformer(configs['global_transformer'], device=device)
 
-   def forward(self,text,smoothing=None):
+   def forward(self,text_tokens,text,smoothing=None):
        if smoothing is None:
            smoothing=self.entropy_smoothing
        _, _, bytegroups = self.entropymodel.monotonicity_breakpoints(prompt=text, smoothing=smoothing)
-       h,p=self.textencoder(text, bytegroups=bytegroups)
+       bytegroups=bytegroups.to(self.device)
+       h,p=self.textencoder(text_tokens, bytegroups=bytegroups)
        p=self.latenttransformer(p)
        output=self.textdecoder(h,p, bytegroups=bytegroups)
        return output

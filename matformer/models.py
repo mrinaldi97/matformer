@@ -130,7 +130,7 @@ class EntropyModel(pl.LightningModule):
         if isinstance(prompts, str):
             prompts = [prompts]
 
-        prompt_ids = self.tokenizer.batch_encode(prompts, padding=False, truncation=False)  # [B, seq_len]
+        prompt_ids = self.tokenizer.batch_encode(prompts, padding=True, truncation=True)  # [B, seq_len]
         prompt_ids = prompt_ids.to(self.device)
 
         with torch.no_grad():
@@ -274,6 +274,6 @@ class EntropyModel(pl.LightningModule):
                 
             else:
                 raise ValueError("Config not found in checkpoint and not provided. Please provide a config.")    
-        model = EntropyModel(config, map_location, inference_fix=inference_fix, train_config=None)  
+        model = EntropyModel(config, device=map_location, inference_fix=inference_fix, train_config=None)  
         model.load_state_dict(checkpoint['state_dict'])
         return model,config
