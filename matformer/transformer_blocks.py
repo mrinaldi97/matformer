@@ -37,11 +37,11 @@ class TransformerBlock(nn.Module):
         The block_mask for the attention can be passed either at the init or during the forward
     """
     
-    def __init__(self, config: ModelConfig, block_mask=None):
+    def __init__(self, config: ModelConfig, block_mask=None, attn_impl='flex'):
         super().__init__()
         self.input_layernorm = RMSNorm(normalized_shape=config.hidden_dim,eps=config.rms_norm_eps,elementwise_affine=True)
         qkvdim=int(config.hidden_dim)
-        self.self_attn = MultiHeadAttention(bias=config.bias, q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=config.n_heads, block_mask=block_mask)      
+        self.self_attn = MultiHeadAttention(bias=config.bias, q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=config.n_heads, block_mask=block_mask, attn_impl=attn_impl)      
         self.post_attention_layernorm = RMSNorm(normalized_shape=config.hidden_dim,eps=config.rms_norm_eps,elementwise_affine=True)
         self.mlp = PackedSwiGLUFFN(config)
     def forward(self, x, block_mask=None):
@@ -53,7 +53,8 @@ class TransformerBlock(nn.Module):
 
 
 class MaskBuilder:
-    def __init__(self, config):
+    def __init__(self, config, attn_impl='flex'):
+        self.attn_impl=attn_impl
         self.config = config
 
     def _get_masks(self, attention_types, L, S, B, device, **kwargs):
@@ -96,10 +97,10 @@ class MaskBuilder:
         
         return and_result | or_result
 
-    def build_mask_tensor(self, attention_types, query, kv=None, batch_size=None, num_heads=None, is_sliding=False, document_mask=None, cloze_mask=None, nested=False, implementation='flex', **kwargs):
+    def build_mask_tensor(self, attention_types, query, kv=None, batch_size=None, num_heads=None, is_sliding=False, document_mask=None, cloze_mask=None, nested=False, **kwargs):
         kv = kv or query        
         B, L, S = query.shape[0], query.shape[-2], kv.shape[-2]
-        if implementation == 'sdpa':
+        if self.attn_impl == 'sdpa':
             if kwargs.get('nested'):
                 print("WARNING: Attention mask not supported in SDPA with nested tensors.")
                 return None
@@ -113,7 +114,7 @@ class MaskBuilder:
                 final_mask = final_mask | reduce(torch.logical_or, or_masks)
             
             return final_mask
-        elif implementation == 'flex':
+        elif self.attn_impl == 'flex':
             mask_fn = lambda b, h, q, k: self._mask_fn(b, h, q, k, attention_types, **kwargs)
             if kwargs.get('nested'):
                 return create_nested_block_mask(mask_mod=mask_fn,q_nt=query,kv_nt=kv,B=batch_size, H=num_heads, device=query.device)
@@ -136,15 +137,15 @@ class NakedTransformer(nn.Module):
         1) High VRAM consumption with Flex Attention and in particular if nested tensors are used;
         2) A decision should be made about where to compute block masks
     """
-    def __init__(self, config: ModelConfig, device):
+    def __init__(self, config: ModelConfig, device, attn_impl='sdpa'):
         super().__init__()
         self.device=device
         self.config = config
-        self.mask_builder = MaskBuilder(config)
+        self.mask_builder = MaskBuilder(config, attn_impl=attn_impl)
         self.norm = RMSNorm(normalized_shape=config.hidden_dim, eps=config.rms_norm_eps, elementwise_affine=True)
         self.layers = nn.ModuleList()
         for _ in range(config.n_layers):
-            self.layers.append(TransformerBlock(config=config)) 
+            self.layers.append(TransformerBlock(config=config, attn_impl=attn_impl)) 
         self.block_mask=None
         self.sliding_mask=None
         self.config.max_seqlen=self.config.max_seqlen -1 # Da ricordarsi perchè e dove serviva, trovare in caso soluzione più pulita

@@ -7,14 +7,14 @@ import torch.nn.functional as F
 from torch.nn.attention.flex_attention import flex_attention, create_block_mask
 from typing import Optional, List
 from matformer.model_config import ModelConfig
-from torch.nn.functional import scaled_dot_product_attention 
+from torch.nn.functional import scaled_dot_product_attention
 import gc
 def printmem(text):
     device = torch.device('cuda:0')
     free, total = torch.cuda.mem_get_info(device)
     mem_used_MB = (total - free) / 1024 ** 2
     print(f"Memory at {text}: {mem_used_MB}")
-    
+
 """
 Matformer implementation of self-attention
 We need to support:
@@ -37,10 +37,14 @@ class MultiHeadAttention(nn.Module):
                 nheads: int,
                 bias: bool,
                 #dropout: float=0.0, //Not supported by FlexAttention yet
-                block_mask=None
+                block_mask=None,
+                attn_impl='flex',
+                alibi=True
                 ):
         super().__init__()
         self.nheads=nheads
+        self.attn_impl=attn_impl
+        self.alibi=alibi
         assert tot_dim % self.nheads == 0, "Embedding dim is not divisible by nheads"
         self.tot_dim=tot_dim
         """
@@ -57,7 +61,7 @@ class MultiHeadAttention(nn.Module):
         self.bias=bias
         self.qkv_samedim = q_dim==k_dim and q_dim==v_dim
         self.residual_dim=q_dim #Residual dim is used also as output dim
-        
+
         if self.qkv_samedim:
             # If query, key and values have the same dimension, pack for better efficiency
             self.packed_proj=nn.Linear(self.residual_dim,3*tot_dim,bias=bias)
@@ -66,7 +70,7 @@ class MultiHeadAttention(nn.Module):
             self.q_proj=nn.Linear(q_dim,tot_dim,bias=bias)
             self.k_proj=nn.Linear(k_dim,tot_dim,bias=bias)
             self.v_proj=nn.Linear(v_dim,tot_dim,bias=bias)
-            
+
         self.out_proj=nn.Linear(tot_dim,self.residual_dim,bias=bias)
         self.head_dim=tot_dim//self.nheads
         """
@@ -80,14 +84,14 @@ class MultiHeadAttention(nn.Module):
             alibi_bias = torch.tensor(alibi_bias).to('cuda')
             self.alibi_bias = torch.exp2(alibi_bias).to('cuda')
             return alibi_bias.to('cuda')
-            
+
         self.alibi_bias = generate_alibi_bias(self.nheads)
         """
     def dummy_get_query(self,x): # Temporary, debug function
         result=self.packed_proj(x)
-        query,_,_=torch.chunk(result,3,dim=-1)  
-        return query    
-        
+        query,_,_=torch.chunk(result,3,dim=-1)
+        return query
+
     def forward(
                 self,
                 query_input,
@@ -112,7 +116,7 @@ class MultiHeadAttention(nn.Module):
             * Causal-attention mode => for tasks like chat generation, decoder-only style
             * Bidirectional-attention mode => like BERT
             * Mixed attention mode => Like causal attention, but in some cases, for example
-                for images generation and comprehension, the attention is allowed 
+                for images generation and comprehension, the attention is allowed
                 to see al text behind (causal) but the entire image patch (bidirectional)
 
         Moreover, it supports:
@@ -147,7 +151,7 @@ class MultiHeadAttention(nn.Module):
                 query=F.linear(query_input,q_weight,q_bias)
                 key=F.linear(key_input,k_weight,k_bias)
                 value=F.linear(value_input,v_weight,v_bias)
-        
+
         else:
             # We are in cross-attention, different embedding dimensions
             query=self.q_proj(query_input)
@@ -158,9 +162,9 @@ class MultiHeadAttention(nn.Module):
         query=query.unflatten(-1,[self.nheads, self.head_dim]).transpose(1,2)
         key=key.unflatten(-1,[self.nheads, self.head_dim]).transpose(1,2)
         value=value.unflatten(-1,[self.nheads, self.head_dim]).transpose(1,2)
-        
+
         def generate_alibi_bias(H):
-                #WARNING: THIS IS INEFFICIENT AND SHOULD BE FIXED, 
+                #WARNING: THIS IS INEFFICIENT AND SHOULD BE FIXED,
                 # Alibi Bias
                 # From https://github.com/pytorch-labs/attention-gym/examples/flex_attn.ipynb
                 alibi_bias = []
@@ -169,7 +173,7 @@ class MultiHeadAttention(nn.Module):
                 alibi_bias = torch.tensor(alibi_bias).to(query.device)
                 alibi_bias = torch.exp2(alibi_bias).to(query.device)
                 return alibi_bias.to(query.device)
-                
+
         self.alibi_bias = generate_alibi_bias(self.nheads)
         def _alibi_score_mod(score, b, h, q_idx, kv_idx):
             return (score + self.alibi_bias[h] * (kv_idx - q_idx)).to(query.device)
@@ -181,21 +185,29 @@ class MultiHeadAttention(nn.Module):
             * Sliding window support
         """
 
-
-        attn_impl='flex'
-        if attn_impl=='flex':
-            attn_output = flex_attention(query, key, value, score_mod=_alibi_score_mod,block_mask=block_mask)
-        elif attn_impl=='sdpa':
+        if self.attn_impl=='flex':
+            if self.alibi:
+                attn_output = flex_attention(query, key, value, score_mod=_alibi_score_mod,block_mask=block_mask)
+            else:
+                attn_output = flex_attention(query, key, value, block_mask=block_mask)
+                
+        elif self.attn_impl=='sdpa':
             if query.is_nested:
                 print("WARNING: Nested tensors doesn't support attn_mask in sdpa! DON'T TRUST THIS EXECUTION")
                 attn_output=scaled_dot_product_attention(query,key,value)
             else:
-                attn_output=scaled_dot_product_attention(query, key, value, attn_mask=block_mask, is_causal=False)
+                if self.alibi:
+                    L, S = query.shape[-2], key.shape[-2]
+                    pos_bias = self.alibi_bias.view(-1, 1, 1) * (torch.arange(S, device=query.device) - torch.arange(L, device=query.device).view(-1, 1))
+                    attn_mask = torch.where(block_mask.unsqueeze(0), pos_bias, float('-inf'))
+                    attn_output = scaled_dot_product_attention(query, key, value, attn_mask=attn_mask, is_causal=False)
+                else:
+                    attn_output=scaled_dot_product_attention(query, key, value, attn_mask=block_mask, is_causal=False)
         else:
             attn_output=None
         attn_output=attn_output.transpose(1,2).flatten(-2)
         return self.out_proj(attn_output)
-     
+
 class PackedSwiGLUFFN(nn.Module):
     #Adapted from https://docs.pytorch.org/tutorials/intermediate/transformer_building_blocks.html
     def __init__(
@@ -207,12 +219,12 @@ class PackedSwiGLUFFN(nn.Module):
         hidden_dim = int(config.hidden_dim * config.ffn_factor)  # Direct scaling
         self.w13 = nn.Linear(dim, 2 * hidden_dim, bias=False)
         self.w2 = nn.Linear(hidden_dim, dim, bias=False)
-        
+
     def forward(self, x):
         x1, x3 = torch.chunk(self.w13(x), 2, dim=-1)
         return self.w2(F.silu(x1) * x3)
 
-"""     
+"""
 class RMSNorm(nn.Module):
     #From https://github.com/Emericen/tiny-qwen
     def __init__(self, config: ModelConfig):
