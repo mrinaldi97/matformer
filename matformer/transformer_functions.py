@@ -1,17 +1,21 @@
 """
-File 
-transformer_functions.py
+File transformer_functions.py
 """
-
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch.nn.attention.flex_attention import flex_attention, create_block_mask
 from typing import Optional, List
 from matformer.model_config import ModelConfig
-#flex_attention = torch.compile(flex_attention,dynamic=True)
+from torch.nn.functional import scaled_dot_product_attention
+import gc
+def printmem(text):
+    device = torch.device('cuda:0')
+    free, total = torch.cuda.mem_get_info(device)
+    mem_used_MB = (total - free) / 1024 ** 2
+    print(f"Memory at {text}: {mem_used_MB}")
+    
 """
-
 Matformer implementation of self-attention
 We need to support:
     * Attention score modification:
@@ -21,8 +25,8 @@ We need to support:
         * Sliding window attention
         * Custom (ex. attention on all the previous text, image also after)
     * Cross attention
-
 """
+
 class MultiHeadAttention(nn.Module):
     def __init__(
                 self,
@@ -65,14 +69,32 @@ class MultiHeadAttention(nn.Module):
             
         self.out_proj=nn.Linear(tot_dim,self.residual_dim,bias=bias)
         self.head_dim=tot_dim//self.nheads
-
+        """
+        It would be much better to generate the alibi bias here. However, it was creating problems so it's temporarily in the forward.
+        def generate_alibi_bias(nheads):
+            # Alibi Bias
+            # From https://github.com/pytorch-labs/attention-gym/examples/flex_attn.ipynb
+            alibi_bias = []
+            for h in range(nheads):
+                alibi_bias.append(-((h + 1) * 8.0 / nheads))
+            alibi_bias = torch.tensor(alibi_bias).to('cuda')
+            self.alibi_bias = torch.exp2(alibi_bias).to('cuda')
+            return alibi_bias.to('cuda')
+            
+        self.alibi_bias = generate_alibi_bias(self.nheads)
+        """
+    def dummy_get_query(self,x): # Temporary, debug function
+        result=self.packed_proj(x)
+        query,_,_=torch.chunk(result,3,dim=-1)  
+        return query    
+        
     def forward(
                 self,
-                query_input: torch.Tensor,
-                key_input: torch.Tensor,
-                value_input: torch.Tensor,
+                query_input,
+                key_input,
+                value_input,
                 block_mask = None
-            ) -> torch.Tensor:
+            ):
         """
         Input Tensors:
         query_input: (Batch, Seqlen, Qdim)
@@ -100,7 +122,9 @@ class MultiHeadAttention(nn.Module):
             * Cross-Attention
 
         """
-        if self.set_mask==1:
+        #printmem("Beginning of attention")
+        #TODO: INVESTIGATE WHY .detach().requires_grad_() is required with nested tensors! With normal padded tensors, it works also without
+        if self.set_mask==1: # Check if the block mask is set in the __init__()
             block_mask=self.block_mask
         qlen=query_input.shape[1]
         klen=key_input.shape[1]
@@ -123,6 +147,7 @@ class MultiHeadAttention(nn.Module):
                 query=F.linear(query_input,q_weight,q_bias)
                 key=F.linear(key_input,k_weight,k_bias)
                 value=F.linear(value_input,v_weight,v_bias)
+        
         else:
             # We are in cross-attention, different embedding dimensions
             query=self.q_proj(query_input)
@@ -134,21 +159,17 @@ class MultiHeadAttention(nn.Module):
         key=key.unflatten(-1,[self.nheads, self.head_dim]).transpose(1,2)
         value=value.unflatten(-1,[self.nheads, self.head_dim]).transpose(1,2)
         
-        
-        ### FLEX ATTENTION ###
-
-        
         def generate_alibi_bias(H):
-            #WARNING: THIS IS INEFFICIENT AND SHOULD BE FIXED, 
-            # Alibi Bias
-            # From https://github.com/pytorch-labs/attention-gym/examples/flex_attn.ipynb
-            alibi_bias = []
-            for h in range(H):
-                alibi_bias.append(-((h + 1) * 8.0 / H))
-            alibi_bias = torch.tensor(alibi_bias).to(query.device)
-            alibi_bias = torch.exp2(alibi_bias).to(query.device)
-            return alibi_bias.to(query.device)
-            
+                #WARNING: THIS IS INEFFICIENT AND SHOULD BE FIXED, 
+                # Alibi Bias
+                # From https://github.com/pytorch-labs/attention-gym/examples/flex_attn.ipynb
+                alibi_bias = []
+                for h in range(H):
+                    alibi_bias.append(-((h + 1) * 8.0 / H))
+                alibi_bias = torch.tensor(alibi_bias).to(query.device)
+                alibi_bias = torch.exp2(alibi_bias).to(query.device)
+                return alibi_bias.to(query.device)
+                
         self.alibi_bias = generate_alibi_bias(self.nheads)
         def _alibi_score_mod(score, b, h, q_idx, kv_idx):
             return (score + self.alibi_bias[h] * (kv_idx - q_idx)).to(query.device)
@@ -159,7 +180,19 @@ class MultiHeadAttention(nn.Module):
                                     up to the next non-multimedia token
             * Sliding window support
         """
-        attn_output = flex_attention(query, key, value, score_mod=_alibi_score_mod,block_mask=block_mask)
+
+
+        attn_impl='sdpa'
+        if attn_impl=='flex':
+            attn_output = flex_attention(query, key, value, score_mod=_alibi_score_mod,block_mask=block_mask)
+        elif attn_impl=='sdpa':
+            if query.is_nested:
+                print("WARNING: Nested tensors doesn't support attn_mask in sdpa! DON'T TRUST THIS EXECUTION")
+                attn_output=scaled_dot_product_attention(query,key,value)
+            else:
+                attn_output=scaled_dot_product_attention(query, key, value, attn_mask=block_mask, is_causal=False)
+        else:
+            attn_output=None
         attn_output=attn_output.transpose(1,2).flatten(-2)
         return self.out_proj(attn_output)
      

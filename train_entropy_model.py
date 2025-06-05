@@ -18,10 +18,10 @@ def main():
         ffn_factor=1.0,
         n_layers=14,
         n_heads=12,
-        vocab_size=261,
-        pad_id=260,
-        bos_id=0,
-        eos_id=1,
+        vocab_size=259,
+        bos_id = 256,
+        eos_id = 257,
+        pad_id = 258,      
         tie_word_embeddings=False,
         rms_norm_eps=1e-6,
         attention_type=['causal','sliding'],
@@ -39,10 +39,10 @@ def main():
         ffn_factor=1.0,
         n_layers=10,
         n_heads=12,
-        vocab_size=261,
-        pad_id=260,
-        bos_id=0,
-        eos_id=1,
+        vocab_size=259,
+        bos_id = 256,
+        eos_id = 257,
+        pad_id = 258,      
         tie_word_embeddings=False,
         rms_norm_eps=1e-6,
         attention_type=['causal','sliding'],
@@ -54,7 +54,7 @@ def main():
         compile_flexattn=False,
         bias=False
     ) 
-    config=config_small_model_2048_window    
+    config=config_big_model_1024_window    
     parser = argparse.ArgumentParser(description='Train byte-level entropy model')
     parser.add_argument('--data_root', type=str, required=True, help='Path to dataset root')
     parser.add_argument('--dump_dir', type=str, default='./checkpoints', help='Checkpoint directory')
@@ -67,6 +67,11 @@ def main():
         "warmup_steps": 300,
         "max_steps": args.max_steps
     }
+    """train_config = {
+        "lr": 1e-5,
+        "warmup_steps": 300,
+        "max_steps": args.max_steps
+    }  """  
     pl.seed_everything(27)
 
     tokenizer = ByteLevelTokenizer(config)
@@ -78,7 +83,7 @@ def main():
         tokenizer=tokenizer
     )
 
-    model = EntropyModel(config=config, train_config=train_config)
+    model = EntropyModel(config=config, train_config=train_config, device='cuda')
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         dirpath=args.dump_dir, 
         filename='liberliber_2048',  
@@ -95,8 +100,8 @@ def main():
         callbacks=[checkpoint_callback]  
     )
     torch.set_float32_matmul_precision("high")
-    model = torch.compile(model)
-    print("Model compiled.")
+    #model = torch.compile(model)
+    #print("Model compiled.")
     trainer.fit(model, data_module)
 if __name__ == '__main__':
     main()

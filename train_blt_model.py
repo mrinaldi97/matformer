@@ -1,7 +1,7 @@
 """
 Non so se funziona, codice di appoggio non ancora testato
 """
-
+import time
 import argparse
 import torch
 import torch.nn.functional as F
@@ -23,11 +23,13 @@ class BLTLightningModule(pl.LightningModule):
     def forward(self, text_tokens, text):
         return self.blt_model(text_tokens=text_tokens, text=text)
     def _common_step(self, batch, batch_idx):
+   
         input_ids = batch['input_ids'] if isinstance(batch, dict) else batch
         raw_text=batch['text']
         targets = input_ids[:, 1:].contiguous().view(-1)
         inputs = input_ids[:, :-1].contiguous()
         logits = self(text_tokens=inputs,text=raw_text)
+        #print(f"Targets: {targets} Logits: {logits}")
         loss = F.cross_entropy(logits.view(-1, logits.size(-1)), targets, ignore_index=self.tokenizer_config.pad_id)
         return loss
 
@@ -58,7 +60,7 @@ def main():
     parser.add_argument('--entropy_model_checkpoint', type=str, required=True)
     parser.add_argument('--dump_dir', type=str, default='./blt_checkpoints_compact')
     parser.add_argument('--batch_size', type=int, default=16)
-    parser.add_argument('--max_steps', type=int, default=100000)
+    parser.add_argument('--max_steps', type=int, default=None)
     parser.add_argument('--max_epochs', type=int, default=None)
     parser.add_argument('--gpus', type=int, default=1)
     parser.add_argument('--learning_rate', type=float, default=1e-4)
@@ -88,17 +90,16 @@ def main():
 
     text_encoder_config = ModelConfig(name='BLT Text Encoder', hidden_dim=768, ffn_factor=1.0, n_layers=4, n_heads=16, tie_word_embeddings=False, rms_norm_eps=1e-6, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_type='full', sliding_layers=[], block_size_for_attention=128, compile_flexattn=False, bias=False, **common_params)
     text_decoder_config = ModelConfig(name='BLT Text Decoder', hidden_dim=768, ffn_factor=1.0, n_layers=4, n_heads=16, tie_word_embeddings=False, rms_norm_eps=1e-6, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_type='full', sliding_layers=[], block_size_for_attention=128, compile_flexattn=False, bias=False, **common_params)
-    global_model_config = ModelConfig(name='BLT Global Model', hidden_dim=768, ffn_factor=1.0, n_layers=8, n_heads=16, tie_word_embeddings=False, rms_norm_eps=1e-6, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_type='full', sliding_layers=[], block_size_for_attention=128, compile_flexattn=False, bias=False, **common_params)
+    global_model_config = ModelConfig(name='BLT Global Model', hidden_dim=768, ffn_factor=1.0, n_layers=16, n_heads=16, tie_word_embeddings=False, rms_norm_eps=1e-6, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_type='full', sliding_layers=[], block_size_for_attention=128, compile_flexattn=False, bias=False, **common_params)
 
     data_module = MatformerDataModule(data_root=args.data_root, batch_size=args.batch_size, num_workers=args.num_workers, config=entropy_cfg_obj, tokenizer=tokenizer)
     
     blt_model_instance = BLTTransfomer(entropy_config=entropy_cfg_obj, text_encoder_config=text_encoder_config, global_config=global_model_config, text_decoder_config=text_decoder_config, entropymodel=loaded_entropy_model, smoothing=args.smoothing, device=str(device))
     
     lightning_blt_model = BLTLightningModule(blt_model=blt_model_instance, train_config=train_hyperparams, tokenizer_config=entropy_cfg_obj)
-
-    callbacks = [pl.callbacks.ModelCheckpoint(dirpath=args.dump_dir, filename='blt_compact-{epoch:02d}-{val_loss:.2f}', save_top_k=2, save_last=True, monitor='val_loss'), pl.callbacks.LearningRateMonitor(logging_interval='step')]
+    #callbacks = [pl.callbacks.ModelCheckpoint(dirpath=args.dump_dir, filename='blt_compact', save_top_k=2, save_last=False), pl.callbacks.LearningRateMonitor(logging_interval='step')]
     
-    trainer_params = {"default_root_dir": args.dump_dir, "precision": args.precision, "log_every_n_steps": 100, "accumulate_grad_batches": 1, "accelerator": "gpu" if args.gpus > 0 else "cpu", "callbacks": callbacks}
+    trainer_params = {"default_root_dir": args.dump_dir, "precision": args.precision, "log_every_n_steps": 100, "accumulate_grad_batches": 1, "accelerator": "gpu" if args.gpus > 0 else "cpu"}
     if args.gpus > 0: trainer_params["devices"] = args.gpus
     if args.gpus > 1: trainer_params["strategy"] = "ddp" 
     if args.max_steps and args.max_steps > 0: trainer_params["max_steps"] = args.max_steps
@@ -106,9 +107,13 @@ def main():
     else: trainer_params["max_epochs"] = 1
     trainer = pl.Trainer(**trainer_params)
 
-    if args.compile_model: lightning_blt_model = torch.compile(lightning_blt_model)
+    #if args.compile_model: 
+    #    print("Compilo modello")
+    #    lightning_blt_model = torch.compile(lightning_blt_model)
+    #   print("Modello compilato")
     torch.set_float32_matmul_precision("high")
     trainer.fit(lightning_blt_model, datamodule=data_module)
+    trainer.save_checkpoint(args.dump_dir)
 
 if __name__ == '__main__':
     main() 

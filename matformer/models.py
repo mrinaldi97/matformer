@@ -10,16 +10,16 @@ from matformer.training_functions import MatformerDataModule
 from matformer.model_config import ModelConfig  
 from matformer.transformer_blocks import TransformerWithLMHead
 class EntropyModel(pl.LightningModule):
-    def __init__(self, config, device, train_config=None,inference_fix=False):
+    def __init__(self, config, device, train_config=None,inference_fix=False,nested=False):
         super().__init__()
-        self.save_hyperparameters()  # for logging
+        self.save_hyperparameters()  
         self.inference_fix=inference_fix
-        # Use self.model directly without moving to device in __init__
         self.model = TransformerWithLMHead(config,device)
         self.tokenizer=ByteLevelTokenizer(config)
         self.pad_id = config.pad_id
         self.bos_id=config.bos_id
         self.eos_id=config.eos_id
+        self.nested=nested
         if train_config is not None:
             self.total_steps = train_config['max_steps']
             self.warmup_steps = train_config['warmup_steps']
@@ -27,81 +27,44 @@ class EntropyModel(pl.LightningModule):
             #self.clip_grad = train_config['clip_grad']
 
     def forward(self, _input):
-
         return self.model(_input.to(self.device),inference_fix=self.inference_fix)
-
-    def training_step(self, batch, batch_idx):
-        batch = batch.to(self.device)
         
-        inputs = batch[:, :-1]  
-        targets = batch[:, 1:] 
-        
-        # [batch_size, seq_len, vocab_size]
-        logits = self(inputs)
-        
-        # Reshape logits to [batch_size*seq_len, vocab_size]
-        batch_size, seq_len, vocab_size = logits.shape
-        logits_flat = logits.reshape(-1, vocab_size)
-        
-        # Reshape targets to [batch_size*seq_len]
-        targets_flat = targets.reshape(-1)
-        
-        # Create mask for non-padding positions
-        mask = targets_flat != self.pad_id
-        
-        # Calculate loss
-        try:
-            if mask.any():  
-                loss = F.cross_entropy(
-                    logits_flat[mask],  # Only use logits at valid positions
-                    targets_flat[mask]  # Only use targets at valid positions
-                )
-            else:
-                loss = F.cross_entropy(logits_flat, targets_flat)
-        except RuntimeError as e:
-            print(f"Device of logits: {logits_flat.device}")
-            print(f"Device of targets: {targets_flat.device}")
-            print(f"Device of mask: {mask.device}")
-            raise e
-        
-        self.log('train/loss', loss, prog_bar=True)
-        return loss
-    def test_step(self, batch, batch_idx):
-        """
-        Test step for evaluating the model on test data
-        """
-        batch = batch.to(self.device)
-        
-        inputs = batch[:, :-1]
-        targets = batch[:, 1:]
-        
-        logits = self(inputs)
-        
-        # Calculate loss
-        batch_size, seq_len, vocab_size = logits.shape
-        logits_flat = logits.reshape(-1, vocab_size)
-        targets_flat = targets.reshape(-1)
-        
-        # Create mask for non-padding positions
-        mask = targets_flat != self.pad_id
-        
-        if mask.any():
-            loss = F.cross_entropy(
-                logits_flat[mask],
-                targets_flat[mask]
-            )
-        else:
+    def training_step(self, batch, batch_idx): 
+        if self.nested:
+            inputs,targets,sequence=self.tokenizer.batch_encode(batch['text'],nested=True)
+            logits = self(inputs)           
+            logits_flat=torch.cat(logits.unbind())
+            targets_flat=torch.cat(targets.unbind()).to(logits_flat.device)
             loss = F.cross_entropy(logits_flat, targets_flat)
-        
-        # Calculate bits per byte metric
-        bpb_metric = BitsPerByte()
-        bpb = bpb_metric(logits_flat[mask], targets_flat[mask]) if mask.any() else None
-        
-        self.log('test/loss', loss)
-        if bpb is not None:
-            self.log('test/bits_per_byte', bpb)
-        
-        return {'loss': loss, 'bits_per_byte': bpb}
+            self.log('train/loss', loss, prog_bar=True)
+            return loss
+        else:
+            batch = batch['input_ids'].to(self.device)
+            inputs = batch[:, :-1]  
+            targets = batch[:, 1:]
+            logits = self(inputs)
+            batch_size, seq_len, vocab_size = logits.shape
+            logits_flat = logits.reshape(-1, vocab_size)
+            targets_flat = targets.reshape(-1)
+            mask = targets_flat != self.pad_id
+
+            
+            try:
+                if mask.any():  
+                    loss = F.cross_entropy(
+                        logits_flat[mask],  
+                        targets_flat[mask]  
+                    )
+                else:
+                    loss = F.cross_entropy(logits_flat, targets_flat)
+            except RuntimeError as e:
+                print(f"Device of logits: {logits_flat.device}")
+                print(f"Device of targets: {targets_flat.device}")
+                print(f"Device of mask: {mask.device}")
+                raise e
+            self.log('train/loss', loss, prog_bar=True)
+            return loss
+
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
         
@@ -144,6 +107,8 @@ class EntropyModel(pl.LightningModule):
         return entropy[:, 1:] 
         
     def monotonicity_breakpoints(self, prompt=None, entropy=None, smoothing=None):
+		# Da cambiare: il taglio delle patch provenienti dal text encoder potrebbe effettuarsi qui, sfruttando i nested tensor
+		# Al momento l'implementazione che prevede il ciclo sui batch nel text encoder funziona ma è esageratamente inefficiente a livello di tempi di calcolo
         if smoothing is None:
             smoothing = 0
             print("WARNING: You are running the entropy model without a smoothing set.")
@@ -169,15 +134,21 @@ class EntropyModel(pl.LightningModule):
             start_point = 0
             for i in range(seq_len):
                 if ent[i] > prev_entr + smoothing:
-                    cutting_points.append((start_point, i))
+                    cutting_points.append((start_point, i+1))
                     cutting_mask[i] = 1
-                    start_point = i
+                    start_point = i+1
                 prev_entr = ent[i]
             group_mask = torch.cumsum(cutting_mask, dim=0)
             cutting_masks[b] = cutting_mask
             group_masks[b] = group_mask
             cutting_points_all.append(cutting_points)
-
+        #print("------------- ENTROPY DEBUG ------------------")
+        #print("----CUTTING MASK:")
+        #print(cutting_masks)
+        #print("----- GROUP MASKs")
+        #print(group_masks)
+        #print("CUTTING POINTS")
+        #print(cutting_points_all)
         return cutting_points_all, cutting_masks, group_masks
 
     def cut_text(self,text,cutting_points=None,smoothing=None):
