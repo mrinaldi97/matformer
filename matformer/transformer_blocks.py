@@ -96,14 +96,14 @@ class MaskBuilder:
         
         return and_result | or_result
 
-    def build_mask_tensor(self, attention_types, query, kv=None, batch_size=None, num_heads=None, is_sliding=False, document_mask=None, cloze_mask=None, nested=False, implementation='sdpa', **kwargs):
+    def build_mask_tensor(self, attention_types, query, kv=None, batch_size=None, num_heads=None, is_sliding=False, document_mask=None, cloze_mask=None, nested=False, implementation='flex', **kwargs):
         kv = kv or query        
+        B, L, S = query.shape[0], query.shape[-2], kv.shape[-2]
         if implementation == 'sdpa':
             if kwargs.get('nested'):
                 print("WARNING: Attention mask not supported in SDPA with nested tensors.")
                 return None
             
-            B, L, S = query.shape[0], query.shape[-2], kv.shape[-2]
             and_masks, or_masks = self._get_masks(attention_types, L, S, B, query.device, **kwargs)
             
             final_mask = torch.ones(B, L, S, dtype=torch.bool, device=query.device)
@@ -118,7 +118,7 @@ class MaskBuilder:
             if kwargs.get('nested'):
                 return create_nested_block_mask(mask_mod=mask_fn,q_nt=query,kv_nt=kv,B=batch_size, H=num_heads, device=query.device)
             else:
-                return create_block_mask(mask_mod=mask_fn, Q_LEN=len(query), KV_LEN=len(kv), B=batch_size, H=num_heads, device=query.device)
+                return create_block_mask(mask_mod=mask_fn, Q_LEN=L, KV_LEN=L, B=batch_size, H=num_heads, device=query.device)
         else:
             print("Unsupported attention implementation!")
             return None

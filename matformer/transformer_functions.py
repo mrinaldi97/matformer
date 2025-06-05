@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch.nn.attention.flex_attention import flex_attention, create_block_mask
 from typing import Optional, List
 from matformer.model_config import ModelConfig
-from torch.nn.functional import scaled_dot_product_attention
+from torch.nn.functional import scaled_dot_product_attention 
 import gc
 def printmem(text):
     device = torch.device('cuda:0')
@@ -182,7 +182,7 @@ class MultiHeadAttention(nn.Module):
         """
 
 
-        attn_impl='sdpa'
+        attn_impl='flex'
         if attn_impl=='flex':
             attn_output = flex_attention(query, key, value, score_mod=_alibi_score_mod,block_mask=block_mask)
         elif attn_impl=='sdpa':

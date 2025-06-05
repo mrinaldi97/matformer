@@ -22,7 +22,7 @@ class EntropyModel(pl.LightningModule):
         self.nested=nested
         if train_config is not None:
             self.total_steps = train_config['max_steps']
-            self.warmup_steps = train_config['warmup_steps']
+            #self.warmup_steps = train_config['warmup_steps']
             self.lr = train_config['lr']
             #self.clip_grad = train_config['clip_grad']
 
@@ -67,22 +67,7 @@ class EntropyModel(pl.LightningModule):
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
-        
-        if self.total_steps is None:
-            return optimizer
-        
-        scheduler = {
-            'scheduler': torch.optim.lr_scheduler.OneCycleLR(
-                optimizer,
-                max_lr=self.lr,
-                total_steps=self.total_steps,
-                pct_start=self.warmup_steps / self.total_steps,
-                anneal_strategy='linear',
-                final_div_factor=1e2,
-            ),
-            'interval': 'step'
-        }
-        return [optimizer], [scheduler]
+        return optimizer
     
 
     def compute_entropy(self, prompts):

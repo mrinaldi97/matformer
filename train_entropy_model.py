@@ -11,6 +11,12 @@ from matformer.metrics import BitsPerByte
 from matformer.training_functions import MatformerDataModule
 from matformer.model_config import ModelConfig  
 from matformer.models import EntropyModel
+import signal
+import sys
+
+
+
+
 def main():
     config_big_model_1024_window = ModelConfig(
         name='Entropy Model',
@@ -54,17 +60,16 @@ def main():
         compile_flexattn=False,
         bias=False
     ) 
-    config=config_big_model_1024_window    
+    config=config_big_model_1024_window
     parser = argparse.ArgumentParser(description='Train byte-level entropy model')
     parser.add_argument('--data_root', type=str, required=True, help='Path to dataset root')
     parser.add_argument('--dump_dir', type=str, default='./checkpoints', help='Checkpoint directory')
     parser.add_argument('--batch_size', type=int, default=64)
-    parser.add_argument('--max_steps', type=int, default=None)
+    parser.add_argument('--max_steps', type=int, default=-1)
     parser.add_argument('--gpus', type=int, default=1)
     args = parser.parse_args()
     train_config = {
         "lr": 4e-4,
-        "warmup_steps": 300,
         "max_steps": args.max_steps
     }
     """train_config = {
@@ -86,12 +91,13 @@ def main():
     model = EntropyModel(config=config, train_config=train_config, device='cuda')
     checkpoint_callback = pl.callbacks.ModelCheckpoint(
         dirpath=args.dump_dir, 
-        filename='liberliber_2048',  
+        filename='liberliber_1024',  
         save_top_k=1,  
         save_last=True  
     )
     trainer = pl.Trainer(
         default_root_dir=args.dump_dir,
+        max_steps=args.max_steps,
         precision='16-mixed',
         log_every_n_steps=100,
         accumulate_grad_batches=1,
@@ -102,6 +108,11 @@ def main():
     torch.set_float32_matmul_precision("high")
     #model = torch.compile(model)
     #print("Model compiled.")
+    def save_ctrlc(sig, frame):
+        print('\nCTRL+C Pressed, saving intermediate checkpoint')
+        trainer.should_stop = True  
+    signal.signal(signal.SIGINT, save_ctrlc)
     trainer.fit(model, data_module)
+    
 if __name__ == '__main__':
     main()
