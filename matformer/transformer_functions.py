@@ -9,6 +9,11 @@ from typing import Optional, List
 from matformer.model_config import ModelConfig
 from torch.nn.functional import scaled_dot_product_attention
 import gc
+try:
+    from flash_attn import flash_attn_qkvpacked_func, flash_attn_func
+    _is_flash_attn_available=True
+except:
+    _is_flash_attn_available=False
 def printmem(text):
     device = torch.device('cuda:0')
     free, total = torch.cuda.mem_get_info(device)
@@ -203,11 +208,31 @@ class MultiHeadAttention(nn.Module):
                     attn_output = scaled_dot_product_attention(query, key, value, attn_mask=attn_mask, is_causal=False)
                 else:
                     attn_output=scaled_dot_product_attention(query, key, value, attn_mask=block_mask, is_causal=False)
+        elif self.attn_impl='flash2' and _is_flash_attn_available:
+                """
+                Funzione sperimentale
+                1) Mettere anche la versione packed, facile ma farlo in modo pulito
+                    qkv: (batch_size, seqlen, 3, nheads, headdim)
+                    flash_attn_qkvpacked_func(qkv, dropout_p=0.0, softmax_scale=None, causal=False,
+                                  window_size=(-1, -1), alibi_slopes=None, deterministic=False):
+                2) Evitare la doppia trasposizione 2,1 ma allo stesso tempo evitare di impiastricciare il codice sopra con un if
+                
+                3) Capire cosa supporta... ok alibi (ma diversamente da come fatto fin'ora), ok causal, ok sliding window.
+                   Non gli si può però passare una attention mask personalizzata
+                    flash_attn_func(q, k, v, dropout_p=0.0, softmax_scale=None, causal=False,
+                        window_size=(-1, -1), alibi_slopes=None, deterministic=False):
+                """             
+                query=query.transpose(1,2)
+                key=key.transpose(1,2)
+                value=value.transpose(1,2)
+                attn_output=flash_attn_func(query,key,value,causal=True):
         else:
-            attn_output=None
+            print("Implementazione non supportata. Disponibilità Flash attention: ", _is_flash_attn_available)
+            
+        
         attn_output=attn_output.transpose(1,2).flatten(-2)
         return self.out_proj(attn_output)
-
+      
 class PackedSwiGLUFFN(nn.Module):
     #Adapted from https://docs.pytorch.org/tutorials/intermediate/transformer_building_blocks.html
     def __init__(
