@@ -11,6 +11,7 @@ from torch.nn.functional import scaled_dot_product_attention
 import gc
 try:
     from flash_attn import flash_attn_qkvpacked_func, flash_attn_func
+    from flash_attn.modules.mha import get_alibi_slopes
     _is_flash_attn_available=True
 except:
     _is_flash_attn_available=False
@@ -50,6 +51,8 @@ class MultiHeadAttention(nn.Module):
         self.nheads=nheads
         self.attn_impl=attn_impl
         self.alibi=alibi
+        if _is_flash_attn_available:
+              self.alibi_slopes = torch.tensor(get_alibi_slopes(nheads), device='cuda', dtype=torch.float32) #Precomputing alibi slopes
         assert tot_dim % self.nheads == 0, "Embedding dim is not divisible by nheads"
         self.tot_dim=tot_dim
         """
@@ -208,7 +211,7 @@ class MultiHeadAttention(nn.Module):
                     attn_output = scaled_dot_product_attention(query, key, value, attn_mask=attn_mask, is_causal=False)
                 else:
                     attn_output=scaled_dot_product_attention(query, key, value, attn_mask=block_mask, is_causal=False)
-        elif self.attn_impl='flash2' and _is_flash_attn_available:
+        elif self.attn_impl=='flash' and _is_flash_attn_available:
                 """
                 Funzione sperimentale
                 1) Mettere anche la versione packed, facile ma farlo in modo pulito
@@ -221,11 +224,11 @@ class MultiHeadAttention(nn.Module):
                    Non gli si può però passare una attention mask personalizzata
                     flash_attn_func(q, k, v, dropout_p=0.0, softmax_scale=None, causal=False,
                         window_size=(-1, -1), alibi_slopes=None, deterministic=False):
-                """             
+                """           
                 query=query.transpose(1,2)
                 key=key.transpose(1,2)
                 value=value.transpose(1,2)
-                attn_output=flash_attn_func(query,key,value,causal=True):
+                attn_output=flash_attn_func(query,key,value,alibi_slopes=self.alibi_slopes,causal=True).transpose(1,2)
         else:
             print("Implementazione non supportata. Disponibilità Flash attention: ", _is_flash_attn_available)
             

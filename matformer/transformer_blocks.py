@@ -121,7 +121,7 @@ class MaskBuilder:
             else:
                 return create_block_mask(mask_mod=mask_fn, Q_LEN=L, KV_LEN=L, B=batch_size, H=num_heads, device=query.device)
         else:
-            print("Unsupported attention implementation!")
+            print("Create block mask: Unsupported attention implementation!")
             return None
 
 
@@ -137,7 +137,7 @@ class NakedTransformer(nn.Module):
         1) High VRAM consumption with Flex Attention and in particular if nested tensors are used;
         2) A decision should be made about where to compute block masks
     """
-    def __init__(self, config: ModelConfig, device, attn_impl='sdpa'):
+    def __init__(self, config: ModelConfig, device, attn_impl='flash'):
         super().__init__()
         self.device=device
         self.config = config
