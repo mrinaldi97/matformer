@@ -7,6 +7,8 @@ import torch.nn.functional as F
 from torch.nn.attention.flex_attention import flex_attention, create_block_mask
 from typing import Optional, List
 from matformer.model_config import ModelConfig
+from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
+
 from torch.nn.functional import scaled_dot_product_attention
 import gc
 try:
@@ -138,13 +140,20 @@ class MultiHeadAttention(nn.Module):
         #TODO: INVESTIGATE WHY .detach().requires_grad_() is required with nested tensors! With normal padded tensors, it works also without
         if self.set_mask==1: # Check if the block mask is set in the __init__()
             block_mask=self.block_mask
-        qlen=query_input.shape[1]
-        klen=key_input.shape[1]
+            
+        # Extracting the tensors from the TensorDC dataclass:
+        
+        query_tensor=query_input.tensor
+        key_tensor=key_input.tensor
+        value_tensor=value_input.tensor
+        
+        qlen=query_tensor.shape[1]
+        klen=key_tensor.shape[1]
         if self.qkv_samedim:
-            if query_input is key_input and key_input is value_input:
+            if query_tensor is key_tensor and key_tensor is value_tensor:
                 # We are in self-attention mode
                 # Use of packed projections for efficiency
-                result=self.packed_proj(query_input)
+                result=self.packed_proj(query_tensor)
                 query,key,value=torch.chunk(result,3,dim=-1)
             else:
                 # We are in cross-attention mode, but same embedding dimensions
@@ -156,15 +165,15 @@ class MultiHeadAttention(nn.Module):
                             self.packed_proj.bias,3,dim=0)
                 else:
                     q_bias,k_bias,v_bias=None,None,None
-                query=F.linear(query_input,q_weight,q_bias)
-                key=F.linear(key_input,k_weight,k_bias)
-                value=F.linear(value_input,v_weight,v_bias)
+                query=F.linear(query_tensor,q_weight,q_bias)
+                key=F.linear(key_tensor,k_weight,k_bias)
+                value=F.linear(value_tensor,v_weight,v_bias)
 
         else:
             # We are in cross-attention, different embedding dimensions
-            query=self.q_proj(query_input)
-            key=self.k_proj(key_input)
-            value=self.v_proj(value_input)
+            query=self.q_proj(query_tensor)
+            key=self.k_proj(key_tensor)
+            value=self.v_proj(value_tensor)
         # Splitting for each head
         # (Batch, seqlen, tot_dim) => (Batch, seqlen, nhead, head_dim) => (Batch, nhead, seqlen, head_dim)
         query=query.unflatten(-1,[self.nheads, self.head_dim]).transpose(1,2)
@@ -248,9 +257,11 @@ class PackedSwiGLUFFN(nn.Module):
         self.w13 = nn.Linear(dim, 2 * hidden_dim, bias=False)
         self.w2 = nn.Linear(hidden_dim, dim, bias=False)
 
-    def forward(self, x):
+    def forward(self, _input):
+        x=_input.tensor
         x1, x3 = torch.chunk(self.w13(x), 2, dim=-1)
-        return self.w2(F.silu(x1) * x3)
+        _input.tensor=self.w2(F.silu(x1) * x3)
+        return _input
 
 """
 class RMSNorm(nn.Module):

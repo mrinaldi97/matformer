@@ -4,6 +4,7 @@ File: matformer/transformer_blocks.py
 import torch
 import torch.nn as nn
 from matformer.transformer_functions import MultiHeadAttention, PackedSwiGLUFFN
+from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor, ModuleWrapper
 from torch.nn import RMSNorm
 from matformer.model_config import ModelConfig  
 from matformer.utils import LpPooling
@@ -18,6 +19,7 @@ from torch.nn.attention.flex_attention import (
     noop_mask
 )
 import gc
+
 #import time
 def printmem(text):
     # Una funzioncina rozza per controllare l'uso della memoria, da togliere una volta che il codice è completo
@@ -39,14 +41,14 @@ class TransformerBlock(nn.Module):
     
     def __init__(self, config: ModelConfig, block_mask=None, attn_impl='flex'):
         super().__init__()
-        self.input_layernorm = RMSNorm(normalized_shape=config.hidden_dim,eps=config.rms_norm_eps,elementwise_affine=True)
+        self.input_layernorm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_dim,eps=config.rms_norm_eps,elementwise_affine=True))
         qkvdim=int(config.hidden_dim)
         self.self_attn = MultiHeadAttention(bias=config.bias, q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=config.n_heads, block_mask=block_mask, attn_impl=attn_impl)      
-        self.post_attention_layernorm = RMSNorm(normalized_shape=config.hidden_dim,eps=config.rms_norm_eps,elementwise_affine=True)
+        self.post_attention_layernorm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_dim,eps=config.rms_norm_eps,elementwise_affine=True))
         self.mlp = PackedSwiGLUFFN(config)
     def forward(self, x, block_mask=None):
-        qkv_input=self.input_layernorm(x)
-        x = x + self.self_attn(query_input=qkv_input, key_input=qkv_input, value_input=qkv_input, block_mask=block_mask)
+        x = self.input_layernorm(x)
+        x = x + self.self_attn(query_input=x, key_input=x, value_input=x, block_mask=block_mask)
         x = x + self.mlp(self.post_attention_layernorm(x))
         return x
 
@@ -98,7 +100,12 @@ class MaskBuilder:
         return and_result | or_result
 
     def build_mask_tensor(self, attention_types, query, kv=None, batch_size=None, num_heads=None, is_sliding=False, document_mask=None, cloze_mask=None, nested=False, **kwargs):
-        kv = kv or query        
+        if kv is None:
+            kv=query.tensor
+        else:
+            kv=kv.tensor    
+        query=query.tensor
+        
         B, L, S = query.shape[0], query.shape[-2], kv.shape[-2]
         if self.attn_impl == 'sdpa':
             if kwargs.get('nested'):
@@ -137,12 +144,12 @@ class NakedTransformer(nn.Module):
         1) High VRAM consumption with Flex Attention and in particular if nested tensors are used;
         2) A decision should be made about where to compute block masks
     """
-    def __init__(self, config: ModelConfig, device, attn_impl='flash'):
+    def __init__(self, config: ModelConfig, device, attn_impl='sdpa'):
         super().__init__()
         self.device=device
         self.config = config
         self.mask_builder = MaskBuilder(config, attn_impl=attn_impl)
-        self.norm = RMSNorm(normalized_shape=config.hidden_dim, eps=config.rms_norm_eps, elementwise_affine=True)
+        self.norm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_dim, eps=config.rms_norm_eps, elementwise_affine=True))
         self.layers = nn.ModuleList()
         for _ in range(config.n_layers):
             self.layers.append(TransformerBlock(config=config, attn_impl=attn_impl)) 
@@ -164,11 +171,10 @@ class NakedTransformer(nn.Module):
         """
     def forward(self, x, y_cross=None, document_mask=None, cloze_mask=None, inference_fix=False):
         #Some part of the functions behaves different if x is a nested tensor, so first of all let's figure it out.
-        if x.is_nested:
+        if x.tensor.is_nested:
             nested=True
         else:
             nested=False
-        
         batch_size, q_len, _ = x.shape
         kv_len = y_cross.shape[1] if y_cross is not None else q_len  # If we are not in cross-attention settings, we take x for both query and kv
         """
@@ -216,12 +222,16 @@ class NakedTransformer(nn.Module):
 class TransformerWithEmbeddingHead(nn.Module):
     """
     Adding an embedding layer at the beginning
+    The code is now modified to accept dataclasses instead of tensors. These dataclasses can support
+    1) Normal tensors
+    2) Padded tensors
+    3) Unpadded tensors
     """
     def __init__(self,config: ModelConfig,device):
         super().__init__()
-        self.embed_tokens = nn.Embedding(num_embeddings=config.vocab_size,embedding_dim=config.hidden_dim,padding_idx=config.pad_id)
+        self.embed_tokens = ModuleWrapper(nn.Embedding(num_embeddings=config.vocab_size,embedding_dim=config.hidden_dim,padding_idx=config.pad_id))
         self.transformer = NakedTransformer(config,device)
-    def forward(self,x, **kwargs):
+    def forward(self,x, **kwargs): 
         embeddings=self.embed_tokens(x)
         return self.transformer(embeddings,**kwargs)
     
@@ -231,14 +241,19 @@ class TransformerWithLMHead(nn.Module):
     """
     def __init__(self,config: ModelConfig,device):
         super().__init__()      
-        self.lm_head = nn.Linear(config.hidden_dim, config.vocab_size)      
+        self.lm_head = ModuleWrapper(nn.Linear(config.hidden_dim, config.vocab_size))
         self.transformer = TransformerWithEmbeddingHead(config,device)
 
         if config.tie_word_embeddings:
             self.lm_head.weight = self.transformer.embed_tokens.weight
 
-    def forward(self,x, **kwargs):
-        return self.lm_head(self.transformer(x, **kwargs))  
+    def forward(self,x,**kwargs):
+        # Giusto per vedere se tutto funziona a dovere
+        x=NormalTensor(tensor=x)
+        x=self.transformer(x,**kwargs)
+        x= self.lm_head(x)
+        return x.tensor
+        #return self.lm_head(self.transformer(x, **kwargs))  
     
   
   

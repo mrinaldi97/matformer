@@ -108,10 +108,10 @@ def main():
     torch.set_float32_matmul_precision("high")
     #model = torch.compile(model)
     #print("Model compiled.")
-    def save_ctrlc(sig, frame):
-        print('\nCTRL+C Pressed, saving intermediate checkpoint')
-        trainer.should_stop = True  
-    signal.signal(signal.SIGINT, save_ctrlc)
+#    def save_ctrlc(sig, frame):
+#        print('\nCTRL+C Pressed, saving intermediate checkpoint')
+#        trainer.should_stop = True  
+#    signal.signal(signal.SIGINT, save_ctrlc)
     trainer.fit(model, data_module)
     
 if __name__ == '__main__':
