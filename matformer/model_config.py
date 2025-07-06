@@ -28,4 +28,11 @@ class ModelConfig:
     # projection bias
     bias:                   bool                # should Linear projections include bias? 
     # 
-    name:                   str = ""            # model's name
+    name:                   str             # model's name
+    #
+    training_objective:     str                # 'autoregressive' or 'masked'
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    def __getitem__(self, key):
+        return getattr(self, key)

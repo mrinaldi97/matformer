@@ -8,11 +8,12 @@ from torch.nn.attention.flex_attention import flex_attention, create_block_mask
 from typing import Optional, List
 from matformer.model_config import ModelConfig
 from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
+from dataclasses import replace
 
 from torch.nn.functional import scaled_dot_product_attention
 import gc
 try:
-    from flash_attn import flash_attn_qkvpacked_func, flash_attn_func
+    from flash_attn import flash_attn_qkvpacked_func, flash_attn_func, flash_attn_varlen_func
     from flash_attn.modules.mha import get_alibi_slopes
     _is_flash_attn_available=True
 except:
@@ -146,11 +147,20 @@ class MultiHeadAttention(nn.Module):
         query_tensor=query_input.tensor
         key_tensor=key_input.tensor
         value_tensor=value_input.tensor
-        
+
+        if self.attn_impl=='flex' or self.attn_impl=='sdpa':
+            if isinstance(query_input,UnpaddedTensor):
+                query_padded=query_input.pad()
+                key_padded=key_input.pad()
+                value_padded=value_input.pad()
+                query_tensor=query_padded.tensor
+                key_tensor=key_padded.tensor
+                value_tensor=value_padded.tensor 
         qlen=query_tensor.shape[1]
         klen=key_tensor.shape[1]
         if self.qkv_samedim:
             if query_tensor is key_tensor and key_tensor is value_tensor:
+                self_attn=True
                 # We are in self-attention mode
                 # Use of packed projections for efficiency
                 result=self.packed_proj(query_tensor)
@@ -202,7 +212,9 @@ class MultiHeadAttention(nn.Module):
             * Sliding window support
         """
 
+
         if self.attn_impl=='flex':
+                
             if self.alibi:
                 attn_output = flex_attention(query, key, value, score_mod=_alibi_score_mod,block_mask=block_mask)
             else:
@@ -216,7 +228,10 @@ class MultiHeadAttention(nn.Module):
                 if self.alibi:
                     L, S = query.shape[-2], key.shape[-2]
                     pos_bias = self.alibi_bias.view(-1, 1, 1) * (torch.arange(S, device=query.device) - torch.arange(L, device=query.device).view(-1, 1))
-                    attn_mask = torch.where(block_mask.unsqueeze(0), pos_bias, float('-inf'))
+                    if block_mask is not None:
+                        attn_mask = torch.where(block_mask.unsqueeze(0), pos_bias, float('-inf'))
+                    else:
+                        attn_mask=pos_bias
                     attn_output = scaled_dot_product_attention(query, key, value, attn_mask=attn_mask, is_causal=False)
                 else:
                     attn_output=scaled_dot_product_attention(query, key, value, attn_mask=block_mask, is_causal=False)
@@ -237,13 +252,22 @@ class MultiHeadAttention(nn.Module):
                 query=query.transpose(1,2)
                 key=key.transpose(1,2)
                 value=value.transpose(1,2)
-                attn_output=flash_attn_func(query,key,value,alibi_slopes=self.alibi_slopes,causal=True).transpose(1,2)
+                if isinstance(query_input,UnpaddedTensor):
+                    attn_output=flash_attn_varlen_func(query,key,value,
+                        cu_seqlens_q=query_input.cu_seqlens.to('cuda'), cu_seqlens_k=key_input.cu_seqlens.to('cuda'),
+                        max_seqlen_q=query_input.max_seq_len, max_seqlen_k=key_input.max_seq_len,alibi_slopes=self.alibi_slopes,causal=True).transpose(1,2)
+                else:
+                    attn_output=flash_attn_func(query,key,value,alibi_slopes=self.alibi_slopes,causal=True).transpose(1,2)
         else:
             print("Implementazione non supportata. Disponibilità Flash attention: ", _is_flash_attn_available)
             
         
         attn_output=attn_output.transpose(1,2).flatten(-2)
-        return self.out_proj(attn_output)
+        
+        if isinstance(query_input,UnpaddedTensor) and self.attn_impl != 'flash':
+            return replace(query_padded,tensor=self.out_proj(attn_output)).unpad()
+        else:
+            return self.out_proj(attn_output)
       
 class PackedSwiGLUFFN(nn.Module):
     #Adapted from https://docs.pytorch.org/tutorials/intermediate/transformer_building_blocks.html

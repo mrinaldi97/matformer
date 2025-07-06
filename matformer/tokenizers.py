@@ -3,47 +3,109 @@ File: matformer/tokenizers.py
 """
 import torch
 from typing import List
-from matformer.model_config import ModelConfig  
+from matformer.model_config import ModelConfig
+from matformer.tensors_dataclasses import PaddedTensor, UnpaddedTensor
+from matformer.masked_models import maskerator
+
+class MatformerTokenizer:
+    """
+    This is an abstract tokenizer that will wrap other tokenizers (such as a ByteLevelTokenizer or an huggingface-compatible tokenizer)
+    to adapt it to the logic of the Matformer architecture. In particular, it will take care of the delicate batch encoding, working with
+    all the possibilities compatible with Matformers: PaddedTensors, UnpaddedTensors and Pytorch's Nested Tensors.
+    """
+    def __init__(self, config, tokenizer, varlen_strategy):
+        self.config = config
+        if tokenizer == 'bytes':
+            self.tokenizer = ByteLevelTokenizer(config)
+        else:
+            self.tokenizer = tokenizer
+
+        self.seq_len = config.max_seqlen
+        self.pad_id = config.pad_id
+        self.varlen_strategy = varlen_strategy
+        """
+        Note about self.config.varlen_strategy: this is very important!
+        It decides the type of tensor coming from the tokenizer:
+            => 'padding': PaddedTensor with tensor of seqlen padded with 0 and a padding mask
+            => 'unpadding': UnpaddedTensor
+            => 'nested': NormalTensor with a nested tensor inside
+
+        The parameter self.config['training_objective'] can be 'masked' for a bert-like model, or 'autoregressive' for a gpt-like model.
+        In case of masked, the tokenizer expects self.config.masked.substitution_rate (ex 0.2 to say that 20% of tokens are substituted),
+        self.config.masked.masking_percentage (how may tokens to substitute with [MASK], ex. 0.8 for 80%), then self.config.masked.random_percentage
+        and self.config.masked.same_percentage for the other possible masking strategies amounts.
+        """
+
+    def encode(self, text: str, truncation=True, masking=False):
+        input_ids = self.tokenizer(text)['input_ids']
+        cloze_mask = None
+
+        if masking:
+            input_ids, cloze_mask = maskerator(input_ids, 0,0.3)
+
+        if truncation:
+            input_ids = input_ids[:self.seq_len]
+            if cloze_mask:
+                cloze_mask = cloze_mask[:self.seq_len]
+
+        return input_ids, cloze_mask
+
+    def decode(self, ids: List[int]) -> str:
+        return self.tokenizer.decode(ids)
+
+    def batch_decode(self, batch_ids: List[List[int]]) -> List[str]:
+        return [self.decode(ids) for ids in batch_ids]
+
+    def batch_encode(self, batch: List[str]):
+        masking = self.config.training_objective == 'masked'
+        encoded_results = [self.encode(s, truncation=True, masking=masking) for s in batch]
+        all_input_ids, all_cloze_masks = zip(*encoded_results)
+
+        if self.varlen_strategy == 'nested':
+            sequence = torch.nested.nested_tensor(list(all_input_ids), layout=torch.jagged)
+            if masking:
+                inputs = sequence
+                targets = torch.nested.nested_tensor(list(all_cloze_masks), layout=torch.jagged)
+            else:
+                inputs = torch.nested.nested_tensor([s[:-1] for s in all_input_ids], layout=torch.jagged)
+                targets = torch.nested.nested_tensor([s[1:] for s in all_input_ids], layout=torch.jagged)
+            return inputs, targets, sequence
+
+        padded_ids = [ids + [self.pad_id] * (self.seq_len - len(ids)) for ids in all_input_ids]
+        tensors = torch.tensor(padded_ids, dtype=torch.long)
+        padding_masks = (tensors == self.pad_id)
+        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks)
+
+        if masking:
+            padded_cloze = [mask + [self.pad_id] * (self.seq_len - len(mask)) for mask in all_cloze_masks]
+            cloze_tensors = torch.tensor(padded_cloze, dtype=torch.long)
+            inputs = sequence
+            targets = PaddedTensor(tensor=cloze_tensors, padding_mask=padding_masks)
+        else:
+            inputs = PaddedTensor(tensor=tensors[:-1], padding_mask=padding_masks[:-1])
+            targets = PaddedTensor(tensor=tensors[1:], padding_mask=padding_masks[1:])  
+
+
+        if self.varlen_strategy == 'unpadding':
+            return inputs.unpad(), targets.unpad(), sequence.unpad()
+        return inputs, targets, sequence
+
+    def __call__(self, batch: List[str]):
+        return self.batch_encode(batch)
+
 
 class ByteLevelTokenizer:
     def __init__(self, config):
-        self.seq_len = config.max_seqlen
         self.bos_id = config.bos_id
         self.eos_id = config.eos_id
-        self.offset = 0
         self.pad_id = config.pad_id
-        
-    def encode(self, text, padding=False, truncation=False):
-        """Convert a single text string to token ids"""
+        self.offset = 0
+
+    def __call__(self, text: str) -> dict:
         byte_ids = [self.bos_id] + [b + self.offset for b in text.encode('utf-8', errors='ignore')] + [self.eos_id]
-        if truncation:
-            byte_ids = byte_ids[:self.seq_len]
-        if padding:
-            byte_ids = byte_ids + [self.pad_id] * (self.seq_len - len(byte_ids))
-        return torch.tensor(byte_ids, dtype=torch.long)
-    def single_decode(self,_id):
-        """Decode a single id to its byte"""
-        return chr(_id-self.offset)
-    def decode(self, ids):
-        """Convert token ids back to text, removing special tokens"""
-        bytes_data = bytearray([max(0, id - self.offset) for id in ids])
+        return {'input_ids': byte_ids}
+
+    def decode(self, ids: List[int]) -> str:
+        special_tokens = {self.bos_id, self.eos_id, self.pad_id}
+        bytes_data = bytearray([max(0, i - self.offset) for i in ids if i not in special_tokens])
         return bytes_data.decode('utf-8', errors='ignore')
-    
-    def batch_encode(self, batch, padding=False, truncation=False, nested=False):
-        """Convert a batch of text strings to token ids"""
-        if nested:
-            encoded=[self.encode(s,padding,truncation) for s in batch]
-            inputs=torch.nested.nested_tensor([s[:-1] for s in encoded], layout=torch.jagged)
-            targets=torch.nested.nested_tensor([s[1:] for s in encoded], layout=torch.jagged)
-            sequence=torch.nested.nested_tensor([s for s in encoded], layout=torch.jagged)
-            return inputs,targets,sequence
-        else:
-            return torch.stack([self.encode(s, padding, truncation) for s in batch])
-    
-    def batch_decode(self, batch_ids):
-        """Convert a batch of token ids back to text"""
-        return [self.decode(ids) for ids in batch_ids]
-    
-    def __call__(self, batch):
-        """Make the tokenizer callable for use as collate_fn"""
-        return self.batch_encode(batch)

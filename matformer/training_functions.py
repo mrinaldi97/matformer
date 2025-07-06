@@ -18,7 +18,7 @@ class MatformerDataModule(pl.LightningDataModule):
     def _collate_fn(self, batch):
         texts = [item['text'] for item in batch]
         tokenized=dict()
-        tokenized['input_ids'] = self.tokenizer.batch_encode(texts, padding=True, truncation=True)
+        tokenized['input_ids'] = self.tokenizer.batch_encode(texts)
         tokenized['text'] = texts #I add back the raw text, this is currently required in the BLT model
         return tokenized
 

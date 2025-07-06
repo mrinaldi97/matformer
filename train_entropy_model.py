@@ -6,7 +6,7 @@ import torch
 import torch.nn.functional as F
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from matformer.tokenizers import ByteLevelTokenizer
+from matformer.tokenizers import MatformerTokenizer
 from matformer.metrics import BitsPerByte  
 from matformer.training_functions import MatformerDataModule
 from matformer.model_config import ModelConfig  
@@ -37,7 +37,8 @@ def main():
         max_seqlen=1024,
         block_size_for_attention=128,
         compile_flexattn=False,
-        bias=False
+        bias=False,
+        training_objective='autoregressive'
     ) 
     config_small_model_2048_window = ModelConfig(
         name='Entropy Model',
@@ -58,16 +59,20 @@ def main():
         max_seqlen=2048,
         block_size_for_attention=128,
         compile_flexattn=False,
-        bias=False
+        bias=False,
+        training_objective='autoregressive'        
     ) 
     config=config_big_model_1024_window
     parser = argparse.ArgumentParser(description='Train byte-level entropy model')
     parser.add_argument('--data_root', type=str, required=True, help='Path to dataset root')
+    parser.add_argument('--varlen_strategy', type=str, required=True, choices=['padding','unpadding','nested'])    
+    parser.add_argument('--attn_impl', type=str, required=True, choices=['sdpa','flash','flex'])        
     parser.add_argument('--dump_dir', type=str, default='./checkpoints', help='Checkpoint directory')
     parser.add_argument('--batch_size', type=int, default=64)
     parser.add_argument('--max_steps', type=int, default=-1)
     parser.add_argument('--gpus', type=int, default=1)
     args = parser.parse_args()
+    config['attn_impl']=args.attn_impl
     train_config = {
         "lr": 4e-4,
         "max_steps": args.max_steps
@@ -79,7 +84,7 @@ def main():
     }  """  
     pl.seed_everything(27)
 
-    tokenizer = ByteLevelTokenizer(config)
+    tokenizer = MatformerTokenizer(config,tokenizer='bytes',varlen_strategy=args.varlen_strategy)
     data_module = MatformerDataModule(
         data_root=args.data_root,
         batch_size=args.batch_size,

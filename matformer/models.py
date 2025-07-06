@@ -9,11 +9,15 @@ from matformer.metrics import BitsPerByte
 from matformer.training_functions import MatformerDataModule
 from matformer.model_config import ModelConfig  
 from matformer.transformer_blocks import TransformerWithLMHead
+from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor
+from dataclasses import replace
+
 class EntropyModel(pl.LightningModule):
-    def __init__(self, config, device, train_config=None,inference_fix=False,nested=False):
+    def __init__(self, config, device, train_config=None,inference_fix=False,nested=False,attn_impl='flash'):
         super().__init__()
         self.save_hyperparameters()  
         self.inference_fix=inference_fix
+        config['attn_imlp']=attn_impl
         self.model = TransformerWithLMHead(config,device)
         self.tokenizer=ByteLevelTokenizer(config)
         self.pad_id = config.pad_id
@@ -31,39 +35,33 @@ class EntropyModel(pl.LightningModule):
         
     def training_step(self, batch, batch_idx): 
         if self.nested:
-            inputs,targets,sequence=self.tokenizer.batch_encode(batch['text'],nested=True)
+            inputs, targets, sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
             logits = self(inputs)           
-            logits_flat=torch.cat(logits.unbind())
-            targets_flat=torch.cat(targets.unbind()).to(logits_flat.device)
+            logits_flat = torch.cat(logits.unbind())
+            targets_flat = torch.cat(targets.unbind()).to(logits_flat.device)
             loss = F.cross_entropy(logits_flat, targets_flat)
-            self.log('train/loss', loss, prog_bar=True)
-            return loss
         else:
-            batch = batch['input_ids'].to(self.device)
-            inputs = batch[:, :-1]  
-            targets = batch[:, 1:]
+            inputs, targets, sequence = batch['input_ids']
+            print(inputs.shape)
+            print(targets.shape)
+            print(sequence.shape)
             logits = self(inputs)
-            batch_size, seq_len, vocab_size = logits.shape
-            logits_flat = logits.reshape(-1, vocab_size)
-            targets_flat = targets.reshape(-1)
-            mask = targets_flat != self.pad_id
-
             
-            try:
+            if logits.isPadded:
+                batch_size, seq_len, vocab_size = logits.shape
+                logits_flat = logits.tensor.reshape(-1, vocab_size)
+                targets_flat = targets.tensor.reshape(-1)
+                mask = targets_flat != self.pad_id
+                
                 if mask.any():  
-                    loss = F.cross_entropy(
-                        logits_flat[mask],  
-                        targets_flat[mask]  
-                    )
+                    loss = F.cross_entropy(logits_flat[mask], targets_flat[mask])
                 else:
                     loss = F.cross_entropy(logits_flat, targets_flat)
-            except RuntimeError as e:
-                print(f"Device of logits: {logits_flat.device}")
-                print(f"Device of targets: {targets_flat.device}")
-                print(f"Device of mask: {mask.device}")
-                raise e
-            self.log('train/loss', loss, prog_bar=True)
-            return loss
+            else:
+                loss = F.cross_entropy(logits.tensor, targets.tensor)
+        
+        self.log('train/loss', loss, prog_bar=True)
+        return loss
 
     def configure_optimizers(self):
         optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
@@ -92,8 +90,8 @@ class EntropyModel(pl.LightningModule):
         return entropy[:, 1:] 
         
     def monotonicity_breakpoints(self, prompt=None, entropy=None, smoothing=None):
-		# Da cambiare: il taglio delle patch provenienti dal text encoder potrebbe effettuarsi qui, sfruttando i nested tensor
-		# Al momento l'implementazione che prevede il ciclo sui batch nel text encoder funziona ma è esageratamente inefficiente a livello di tempi di calcolo
+        # Da cambiare: il taglio delle patch provenienti dal text encoder potrebbe effettuarsi qui, sfruttando i nested tensor
+        # Al momento l'implementazione che prevede il ciclo sui batch nel text encoder funziona ma è esageratamente inefficiente a livello di tempi di calcolo
         if smoothing is None:
             smoothing = 0
             print("WARNING: You are running the entropy model without a smoothing set.")

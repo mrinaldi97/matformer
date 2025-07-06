@@ -28,10 +28,16 @@ class TensorDC:
     @property
     def shape(self) -> Tuple[int, ...]: return self.tensor.shape
     @property
+    def nested(self) -> bool: return self.tensor.nested   
+    @property
     def dtype(self) -> torch.dtype: return self.tensor.dtype
     @property
     def device(self) -> torch.device: return self.tensor.device
-    
+    def to(self,*args, **kwargs):
+        self.tensor=self.tensor.to(*args, **kwargs)
+        return self
+        
+        
     def __add__(self, addendum) -> "TensorDC":
         # The additions only add tensors, no masks. Fine for residual connections.
         if isinstance(addendum, TensorDC):
