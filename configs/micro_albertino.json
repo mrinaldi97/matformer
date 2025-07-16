@@ -1,10 +1,10 @@
 {
-  "model_class": "TransformerWithLMHead",
+  "model_class": "EntropyModel",
   "model_config": {
     "name": "Micro-Albertino",
     "hidden_dim": 512,
     "ffn_factor": 1.0,
-    "n_layers": 8,
+    "n_layers": 10,
     "n_heads": 8,
     "vocab_size": 32768,
     "bos_id": 1,
@@ -14,7 +14,7 @@
     "rms_norm_eps": 1e-6,
     "attention_type": ["sliding"],
     "sliding_window_size": 512,
-    "sliding_layers": [0,2,4,6],
+    "sliding_layers": [0,2,4,6,8],
     "sliding_type": "partial",
     "max_seqlen": 1024,
     "block_size_for_attention": 128,
@@ -26,8 +26,8 @@
     "attn_impl": "flash"
   },
   "training": {
-    "lr": 3e-4,
-    "max_steps": 10000,
+    "lr": 1e-4,
+    "max_steps": 100000,
     "accumulate_grad_batches": 1,
     "seed": 27,
     "checkpoint_name": "micro_albertino"
@@ -38,11 +38,11 @@
     "varlen_strategy": "unpadding"
   },
   "data": {
-    "data_root": "./datasets/liberliber_1024_token",
-    "batch_size": 128,
+    "data_root": "../matformer_norepo/liberliber_1024_tokens",
+    "batch_size": 36,
     "num_workers": 4
   },
   "save_dir": "./checkpoints",
   "wandb_project": "matformer",
-  "wandb_run_name": "micro-albertino"
+  "wandb_run_name": "micro-albertino-liberliber-1024-tokens"
 }

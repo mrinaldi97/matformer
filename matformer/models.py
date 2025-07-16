@@ -46,12 +46,12 @@ class EntropyModel(pl.LightningModule):
         input_sequence=sequence
         if masked:
             if self.nested:
-                masked_sequences, cloze_masks = zip(*[maskerator(seq, MASK_TOKEN=0, substitution_rate=0.2) 
+                masked_sequences, cloze_masks = zip(*[maskerator(seq, MASK_TOKEN=0, substitution_rate=0.25) 
                                                       for seq in sequence.unbind()])
                 sequence = torch.stack(masked_sequences)
                 cloze_mask = torch.stack(cloze_masks)
             else:
-                masked_list, cloze_list = maskerator(sequence.tensor, MASK_TOKEN=0, substitution_rate=0.2)
+                masked_list, cloze_list = maskerator(sequence.tensor, MASK_TOKEN=0, substitution_rate=0.25)
                 masked_sequence=deepcopy(sequence)
                 masked_sequence = replace(masked_sequence,tensor=masked_list)
                 cloze_mask = cloze_list

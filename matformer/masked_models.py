@@ -4,7 +4,7 @@ matformer/masked_models.py
 import random
 import torch
 
-def maskerator(input_ids, MASK_TOKEN=-100, substitution_rate=0.3):
+def maskerator(input_ids, MASK_TOKEN=0, substitution_rate=0.3):
     if isinstance(input_ids, torch.Tensor) and input_ids.dim() > 1:
         # Input is batched
         batch_outputs = []

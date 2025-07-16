@@ -1,18 +1,18 @@
 {
   "model_class": "EntropyModel",
   "model_config": {
-    "name": "EntropySmall",
+    "name": "Micro-GPT",
     "hidden_dim": 512,
     "ffn_factor": 1.0,
     "n_layers": 10,
     "n_heads": 8,
-    "vocab_size": 260,
-    "bos_id": 256,
-    "eos_id": 257,
-    "pad_id": 258,
+    "vocab_size": 32768,
+    "bos_id": 1,
+    "eos_id": 2,
+    "pad_id": 0,
     "tie_word_embeddings": false,
     "rms_norm_eps": 1e-6,
-    "attention_type": ["causal", "sliding"],
+    "attention_type": ["causal","sliding"],
     "sliding_window_size": 512,
     "sliding_layers": [0,2,4,6,8],
     "sliding_type": "partial",
@@ -22,7 +22,7 @@
     "bias": false,
     "training_objective": "autoregressive",
     "alibi": true,
-    "is_causal": true,
+    "is_causal": false,
     "attn_impl": "flash"
   },
   "training": {
@@ -30,18 +30,19 @@
     "max_steps": 100000,
     "accumulate_grad_batches": 1,
     "seed": 27,
-    "checkpoint_name": "entropy_small"
+    "checkpoint_name": "micro_gpt"
   },
   "tokenizer": {
-    "type": "bytes",
+    "type": "huggingface",
+    "pretrained_name": "sapienzanlp/Minerva-350M-base-v1.0",
     "varlen_strategy": "unpadding"
   },
   "data": {
-    "data_root": "../matformer_norepo/liberliber_1024",
-    "batch_size": 64,
+    "data_root": "../matformer_norepo/liberliber_1024_tokens",
+    "batch_size": 36,
     "num_workers": 4
   },
   "save_dir": "./checkpoints",
   "wandb_project": "matformer",
-  "wandb_run_name": "entropy-small-liberliber-1024-bytes"
+  "wandb_run_name": "micro-gpt-liberliber-1024-tokens"
 }
