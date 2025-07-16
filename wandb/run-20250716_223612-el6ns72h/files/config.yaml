@@ -1,0 +1,153 @@
+_wandb:
+    value:
+        cli_version: 0.21.0
+        e:
+            uxrsrawrmux1dtysi9e6uvbg6c5am2m8:
+                args:
+                    - --config
+                    - configs/entropy_small.json
+                codePath: train_model.py
+                codePathLocal: train_model.py
+                cpu_count: 4
+                cpu_count_logical: 4
+                cudaVersion: "12.8"
+                disk:
+                    /:
+                        total: "85927718912"
+                        used: "71835799552"
+                email: matteo.rinaldi@unito.it
+                executable: /home/matteo/torchcuda/bin/python3
+                git:
+                    commit: a3d330bc077edc908bef62e55659292946a3f074
+                    remote: https://github.com/mrinaldi97/matformer.git
+                gpu: NVIDIA GeForce RTX 3090
+                gpu_count: 1
+                gpu_nvidia:
+                    - architecture: Ampere
+                      cudaCores: 10496
+                      memoryTotal: "25769803776"
+                      name: NVIDIA GeForce RTX 3090
+                      uuid: GPU-1ddd9057-194f-41f1-c134-fd33d69ce1b8
+                host: matteo-desktop
+                memory:
+                    total: "6212096000"
+                os: Linux-6.8.0-60-generic-x86_64-with-glibc2.39
+                program: /home/matteo/Ricerca/matformer/train_model.py
+                python: CPython 3.12.3
+                root: .
+                startedAt: "2025-07-16T20:36:12.810168Z"
+                writerId: uxrsrawrmux1dtysi9e6uvbg6c5am2m8
+        m:
+            - "1": trainer/global_step
+              "6":
+                - 3
+              "7": []
+            - "2": '*'
+              "5": 1
+              "6":
+                - 1
+              "7": []
+        python_version: 3.12.3
+        t:
+            "1":
+                - 1
+                - 9
+                - 11
+                - 41
+                - 49
+                - 103
+            "2":
+                - 1
+                - 9
+                - 11
+                - 41
+                - 49
+                - 103
+            "3":
+                - 7
+                - 13
+                - 16
+                - 66
+            "4": 3.12.3
+            "5": 0.21.0
+            "6": 4.52.3
+            "12": 0.21.0
+            "13": linux-x86_64
+attn_impl:
+    value: flash
+config:
+    value: ModelConfig(hidden_dim=768, ffn_factor=1.0, n_layers=14, n_heads=12, vocab_size=260, pad_id=258, bos_id=256, eos_id=257, tie_word_embeddings=False, rms_norm_eps=1e-06, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_layers=[0, 1, 2, 3, 4, 6, 7, 9, 10, 11], sliding_type='partial', max_seqlen=1024, block_size_for_attention=128, compile_flexattn=False, bias=False, name='EntropySmall', training_objective='masked', is_causal=True, alibi=True, attn_impl='flash')
+data:
+    value:
+        batch_size: 64
+        data_root: ../matformer_norepo/liberliber1024
+        num_workers: 4
+device:
+    value: cuda
+inference_fix:
+    value: false
+model_class:
+    value: EntropyModel
+model_config:
+    value:
+        alibi: true
+        attention_type:
+            - causal
+            - sliding
+        attn_impl: flash
+        bias: false
+        block_size_for_attention: 128
+        bos_id: 256
+        compile_flexattn: false
+        eos_id: 257
+        ffn_factor: 1
+        hidden_dim: 768
+        is_causal: true
+        max_seqlen: 1024
+        n_heads: 12
+        n_layers: 14
+        name: EntropySmall
+        pad_id: 258
+        rms_norm_eps: 1e-06
+        sliding_layers:
+            - 0
+            - 1
+            - 2
+            - 3
+            - 4
+            - 6
+            - 7
+            - 9
+            - 10
+            - 11
+        sliding_type: partial
+        sliding_window_size: 512
+        tie_word_embeddings: false
+        training_objective: masked
+        vocab_size: 260
+nested:
+    value: false
+save_dir:
+    value: ../matformer_norepo/checkpoints
+tokenizer:
+    value:
+        type: bytes
+        varlen_strategy: unpadding
+train_config:
+    value:
+        accumulate_grad_batches: 1
+        checkpoint_name: micro_albertino
+        lr: 0.0003
+        max_steps: 10000
+        seed: 27
+training:
+    value:
+        accumulate_grad_batches: 1
+        checkpoint_name: micro_albertino
+        lr: 0.0003
+        max_steps: 10000
+        seed: 27
+wandb_project:
+    value: matformer
+wandb_run_name:
+    value: micro-albertino

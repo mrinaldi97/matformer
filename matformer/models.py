@@ -21,7 +21,7 @@ class EntropyModel(pl.LightningModule):
         self.save_hyperparameters()  
         self.inference_fix=inference_fix
         config['attn_imlp']=attn_impl
-        self.model = TransformerWithLMHead(config,device)
+        self.model = TransformerWithLMHead(config)
         self.tokenizer=ByteLevelTokenizer(config)
         self.pad_id = config.pad_id
         self.bos_id=config.bos_id
@@ -38,6 +38,7 @@ class EntropyModel(pl.LightningModule):
         
     def training_step(self, batch, batch_idx):
         if self.nested:
+            #Not implemented yet! Wrong code below (won't work with tok.zers different than Bytes)
             sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
         else:
             sequence = batch['input_ids']

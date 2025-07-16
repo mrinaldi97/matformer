@@ -64,14 +64,14 @@ class MaskBuilder:
             return None
 
 class Patcher(nn.Module):
-	"""
-		This module receives a tensor as input and call a patching function.
-		According to the result of the patching function, it outputs the patched 
-		version of the tensor.
-	"""
-	
+    """
+        This module receives a tensor as input and call a patching function.
+        According to the result of the patching function, it outputs the patched 
+        version of the tensor.
+    """
+    
 
-	
+    
 class LpPooling(torch.nn.Module):
     def __init__(self, dim=0, p=2, keepdim=False):
         super().__init__()

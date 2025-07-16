@@ -63,9 +63,9 @@ class NakedTransformer(nn.Module):
         self.config = config
         #If attention is not flash, it's a good idea to cache the block mask:
         if config.attention_type != 'flash':
-			self.mask_builder = MaskBuilder(config)
-			self.block_mask=None
-			self.sliding_mask=None			
+            self.mask_builder = MaskBuilder(config)
+            self.block_mask=None
+            self.sliding_mask=None          
         self.norm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_dim, eps=config.rms_norm_eps, elementwise_affine=True))
         self.layers = nn.ModuleList()
         for _ in range(config.n_layers):
@@ -85,7 +85,7 @@ class NakedTransformer(nn.Module):
                 self.block_mask=self.mask_builder.build_mask_tensor(self.config.max_seqlen, self.config.max_seqlen, attention_types=['sliding'], is_sliding=True,device=self.device)    
         """
     def forward(self, x, y_cross=None, document_mask=None, cloze_mask=None, inference_fix=False):
-		
+        
         q_len=x.original_seq_len if isinstance(x,UnpaddedTensor) else x.shape[1]
         kv_len = y_cross.shape[1] if y_cross is not None else q_len  # If we are not in cross-attention settings, we take x for both query and kv
         """

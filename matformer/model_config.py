@@ -34,6 +34,7 @@ class ModelConfig:
     #
     is_causal: str
     alibi: str
+    attn_impl: str # 'flash', 'flex', 'sdpa'
     def __setitem__(self, key, value):
         setattr(self, key, value)
 

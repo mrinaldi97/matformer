@@ -1,0 +1,32 @@
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+Traceback (most recent call last):
+  File "/home/matteo/Ricerca/matformer/train_model.py", line 108, in <module>
+    main()
+  File "/home/matteo/Ricerca/matformer/train_model.py", line 105, in main
+    trainer.fit(model, data)
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 561, in fit
+    call._call_and_handle_interrupt(
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py", line 48, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 599, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 988, in _run
+    self.strategy.setup(self)
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/strategies/strategy.py", line 159, in setup
+    self.setup_optimizers(trainer)
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/strategies/strategy.py", line 139, in setup_optimizers
+    self.optimizers, self.lr_scheduler_configs = _init_optimizers_and_lr_schedulers(self.lightning_module)
+                                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/core/optimizer.py", line 180, in _init_optimizers_and_lr_schedulers
+    optim_conf = call._call_lightning_module_hook(model.trainer, "configure_optimizers", pl_module=model)
+                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py", line 176, in _call_lightning_module_hook
+    output = fn(*args, **kwargs)
+             ^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/Ricerca/matformer/matformer/models.py", line 103, in configure_optimizers
+    optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
+                                                        ^^^^^^^
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/torch/nn/modules/module.py", line 1940, in __getattr__
+    raise AttributeError(
+AttributeError: 'EntropyModel' object has no attribute 'lr'

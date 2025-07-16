@@ -1,0 +1,33 @@
+Traceback (most recent call last):
+  File "/home/matteo/Ricerca/matformer/train_model.py", line 108, in <module>
+    main()
+  File "/home/matteo/Ricerca/matformer/train_model.py", line 105, in main
+    trainer.fit(model, data)
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 561, in fit
+    call._call_and_handle_interrupt(
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py", line 48, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 599, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/trainer.py", line 974, in _run
+    call._call_setup_hook(self)  # allow user to set up LightningModule in accelerator environment
+    ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py", line 107, in _call_setup_hook
+    _call_lightning_datamodule_hook(trainer, "setup", stage=fn)
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/pytorch_lightning/trainer/call.py", line 198, in _call_lightning_datamodule_hook
+    return fn(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/Ricerca/matformer/matformer/training_functions.py", line 16, in setup
+    self.dataset = AtlasDataset(self.data_root)
+                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/torchcuda/lib/python3.12/site-packages/torch_atlas_ds/atlas.py", line 279, in __init__
+    self.metadata = AtlasDatasetMetadata(**json.loads((self.root / 'meta.json').read_text()))
+                                                      ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1029, in read_text
+    with self.open(mode='r', encoding=encoding, errors=errors) as f:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/pathlib.py", line 1015, in open
+    return io.open(self, mode, buffering, encoding, errors, newline)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+FileNotFoundError: [Errno 2] No such file or directory: '../matformer_norepo/liberliber_1024/meta.json'

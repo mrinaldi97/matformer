@@ -43,7 +43,7 @@ class MultiHeadAttention(nn.Module):
                 block_mask=None,
                 attn_impl='flash',
                 alibi=True,
-                causal=True,
+                is_causal=True,
                 device='cuda'
                 ):
         super().__init__()
@@ -51,7 +51,7 @@ class MultiHeadAttention(nn.Module):
         self.device=device
         self.attn_impl=attn_impl
         self.alibi=alibi
-        self.is_causal=causal
+        self.is_causal=is_causal
         if attn_impl=='flash' and _is_flash_attn_available and alibi:
               self.alibi_slopes = torch.tensor(get_alibi_slopes(nheads), device=self.device, dtype=torch.float32) #Precomputing alibi slopes
         assert tot_dim % self.nheads == 0, "Embedding dim is not divisible by nheads"
@@ -94,7 +94,10 @@ class MultiHeadAttention(nn.Module):
         return x.unflatten(-1, [self.nheads, self.head_dim]).transpose(1, 2)
 
     def _maybe_pad(self, x): return x.pad() if isinstance(x, UnpaddedTensor) else x
-    def _maybe_unpad(self, x, orig): return replace(orig, tensor=x).unpad() if isinstance(orig, UnpaddedTensor) else x
+    def _maybe_unpad(self, x, orig):
+        if isinstance(orig, UnpaddedTensor) and not isinstance(x, UnpaddedTensor):
+            return replace(orig, tensor=x)
+        return x
 
     def _flash_forward(self, q, k, v, query_input, key_input):
         q, k, v = map(lambda x: x.transpose(1, 2), (q, k, v))  # B, S, H, Hd

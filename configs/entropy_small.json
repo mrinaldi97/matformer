@@ -1,5 +1,5 @@
 {
-  "model_class": "TransformerWithLMHead",
+  "model_class": "EntropyModel",
   "model_config": {
     "name": "EntropySmall",
     "hidden_dim": 768,
@@ -22,7 +22,7 @@
     "bias": false,
     "training_objective": "masked",
     "alibi": true,
-    "is_causal": false,
+    "is_causal": true,
     "attn_impl": "flash"
   },
   "training": {
@@ -37,11 +37,11 @@
     "varlen_strategy": "unpadding"
   },
   "data": {
-    "data_root": "./datasets/liberliber_1024",
-    "batch_size": 64,
+    "data_root": "../matformer_norepo/liberliber1024",
+    "batch_size": 48,
     "num_workers": 4
   },
-  "save_dir": "./checkpoints",
+  "save_dir": "../matformer_norepo/checkpoints",
   "wandb_project": "matformer",
   "wandb_run_name": "micro-albertino"
 }
