@@ -31,6 +31,9 @@ class ModelConfig:
     name:                   str             # model's name
     #
     training_objective:     str                # 'autoregressive' or 'masked'
+    #
+    is_causal: str
+    alibi: str
     def __setitem__(self, key, value):
         setattr(self, key, value)
 

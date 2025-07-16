@@ -35,7 +35,9 @@ def main():
         block_size_for_attention=128,
         compile_flexattn=False,
         bias=False,
-        training_objective='masked'
+        training_objective='masked'.
+        alibi=True,
+        is_causal=False
     ) 
     config=config_big_model_1024_window
     parser = argparse.ArgumentParser(description='Train byte-level entropy model')

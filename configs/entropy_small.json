@@ -1,0 +1,47 @@
+{
+  "model_class": "TransformerWithLMHead",
+  "model_config": {
+    "name": "EntropySmall",
+    "hidden_dim": 768,
+    "ffn_factor": 1.0,
+    "n_layers": 14,
+    "n_heads": 12,
+    "vocab_size": 260,
+    "bos_id": 256,
+    "eos_id": 257,
+    "pad_id": 258,
+    "tie_word_embeddings": false,
+    "rms_norm_eps": 1e-6,
+    "attention_type": ["causal", "sliding"],
+    "sliding_window_size": 512,
+    "sliding_layers": [0,1,2,3,4,6,7,9,10,11],
+    "sliding_type": "partial",
+    "max_seqlen": 1024,
+    "block_size_for_attention": 128,
+    "compile_flexattn": false,
+    "bias": false,
+    "training_objective": "masked",
+    "alibi": true,
+    "is_causal": false,
+    "attn_impl": "flash"
+  },
+  "training": {
+    "lr": 3e-4,
+    "max_steps": 10000,
+    "accumulate_grad_batches": 1,
+    "seed": 27,
+    "checkpoint_name": "micro_albertino"
+  },
+  "tokenizer": {
+    "type": "bytes",
+    "varlen_strategy": "unpadding"
+  },
+  "data": {
+    "data_root": "./datasets/liberliber_1024",
+    "batch_size": 64,
+    "num_workers": 4
+  },
+  "save_dir": "./checkpoints",
+  "wandb_project": "matformer",
+  "wandb_run_name": "micro-albertino"
+}

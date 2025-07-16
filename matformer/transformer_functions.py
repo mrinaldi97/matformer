@@ -11,18 +11,12 @@ from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, 
 from dataclasses import replace
 
 from torch.nn.functional import scaled_dot_product_attention
-import gc
 try:
     from flash_attn import flash_attn_qkvpacked_func, flash_attn_func, flash_attn_varlen_func
     from flash_attn.modules.mha import get_alibi_slopes
     _is_flash_attn_available=True
 except:
     _is_flash_attn_available=False
-def printmem(text):
-    device = torch.device('cuda:0')
-    free, total = torch.cuda.mem_get_info(device)
-    mem_used_MB = (total - free) / 1024 ** 2
-    print(f"Memory at {text}: {mem_used_MB}")
 
 """
 Matformer implementation of self-attention
@@ -47,15 +41,19 @@ class MultiHeadAttention(nn.Module):
                 bias: bool,
                 #dropout: float=0.0, //Not supported by FlexAttention yet
                 block_mask=None,
-                attn_impl='flex',
-                alibi=True
+                attn_impl='flash',
+                alibi=True,
+                causal=True,
+                device='cuda'
                 ):
         super().__init__()
         self.nheads=nheads
+        self.device=device
         self.attn_impl=attn_impl
         self.alibi=alibi
-        if _is_flash_attn_available:
-              self.alibi_slopes = torch.tensor(get_alibi_slopes(nheads), device='cuda', dtype=torch.float32) #Precomputing alibi slopes
+        self.is_causal=causal
+        if attn_impl=='flash' and _is_flash_attn_available and alibi:
+              self.alibi_slopes = torch.tensor(get_alibi_slopes(nheads), device=self.device, dtype=torch.float32) #Precomputing alibi slopes
         assert tot_dim % self.nheads == 0, "Embedding dim is not divisible by nheads"
         self.tot_dim=tot_dim
         """
@@ -63,53 +61,90 @@ class MultiHeadAttention(nn.Module):
         causal or sliding window, or directly passed during the forward, in cases such as document
         mask. In any case, this part of the implementation requires a review for efficiency
         """
-        if block_mask is not None:
-            self.set_mask=1
-            self.block_mask=block_mask
-        else:
-            self.set_mask=0
+        self.set_mask = int(block_mask is not None)
+        self.block_mask = block_mask
         #self.dropout=dropout
         self.bias=bias
         self.qkv_samedim = q_dim==k_dim and q_dim==v_dim
         self.residual_dim=q_dim #Residual dim is used also as output dim
+        self.head_dim=tot_dim//self.nheads
 
         if self.qkv_samedim:
-            # If query, key and values have the same dimension, pack for better efficiency
             self.packed_proj=nn.Linear(self.residual_dim,3*tot_dim,bias=bias)
         else:
-            # Three distinct projections
             self.q_proj=nn.Linear(q_dim,tot_dim,bias=bias)
             self.k_proj=nn.Linear(k_dim,tot_dim,bias=bias)
             self.v_proj=nn.Linear(v_dim,tot_dim,bias=bias)
 
         self.out_proj=nn.Linear(tot_dim,self.residual_dim,bias=bias)
-        self.head_dim=tot_dim//self.nheads
-        """
-        It would be much better to generate the alibi bias here. However, it was creating problems so it's temporarily in the forward.
-        def generate_alibi_bias(nheads):
-            # Alibi Bias
-            # From https://github.com/pytorch-labs/attention-gym/examples/flex_attn.ipynb
-            alibi_bias = []
-            for h in range(nheads):
-                alibi_bias.append(-((h + 1) * 8.0 / nheads))
-            alibi_bias = torch.tensor(alibi_bias).to('cuda')
-            self.alibi_bias = torch.exp2(alibi_bias).to('cuda')
-            return alibi_bias.to('cuda')
 
-        self.alibi_bias = generate_alibi_bias(self.nheads)
-        """
-    def dummy_get_query(self,x): # Temporary, debug function
-        result=self.packed_proj(x)
-        query,_,_=torch.chunk(result,3,dim=-1)
-        return query
+    def _project(self, q, k, v):
+        if self.qkv_samedim:
+            if q is k and k is v:
+                result = self.packed_proj(q)
+                return torch.chunk(result, 3, dim=-1)
+            else:
+                w = torch.chunk(self.packed_proj.weight, 3, dim=0)
+                b = torch.chunk(self.packed_proj.bias, 3, dim=0) if self.bias else (None, None, None)
+                return (F.linear(q, w[0], b[0]), F.linear(k, w[1], b[1]), F.linear(v, w[2], b[2]))
+        else:
+            return self.q_proj(q), self.k_proj(k), self.v_proj(v)
 
-    def forward(
-                self,
-                query_input,
-                key_input,
-                value_input,
-                block_mask = None
-            ):
+    def _reshape_heads(self, x): # (B, S, D) -> (B, H, S, Hd)
+        return x.unflatten(-1, [self.nheads, self.head_dim]).transpose(1, 2)
+
+    def _maybe_pad(self, x): return x.pad() if isinstance(x, UnpaddedTensor) else x
+    def _maybe_unpad(self, x, orig): return replace(orig, tensor=x).unpad() if isinstance(orig, UnpaddedTensor) else x
+
+    def _flash_forward(self, q, k, v, query_input, key_input):
+        q, k, v = map(lambda x: x.transpose(1, 2), (q, k, v))  # B, S, H, Hd
+        if isinstance(query_input, UnpaddedTensor):
+            return flash_attn_varlen_func(
+                q, k, v,
+                cu_seqlens_q=query_input.cu_seqlens.to(self.device),
+                cu_seqlens_k=key_input.cu_seqlens.to(self.device),
+                max_seqlen_q=query_input.max_seq_len,
+                max_seqlen_k=key_input.max_seq_len,
+                alibi_slopes=self.alibi_slopes,
+                causal=self.is_causal
+            ).transpose(1, 2)
+        else:
+            return flash_attn_func(q, k, v, alibi_slopes=self.alibi_slopes, causal=self.is_causal).transpose(1, 2)
+
+    def _flex_forward(self, q, k, v, block_mask):
+        if self.alibi:
+            def generate_alibi_bias(H):
+                #WARNING: THIS IS INEFFICIENT AND SHOULD BE FIXED,
+                # Alibi Bias
+                # From https://github.com/pytorch-labs/attention-gym/examples/flex_attn.ipynb
+                alibi_bias = []
+                for h in range(H):
+                    alibi_bias.append(-((h + 1) * 8.0 / H))
+                alibi_bias = torch.tensor(alibi_bias).to(q.device)
+                alibi_bias = torch.exp2(alibi_bias).to(q.device)
+                return alibi_bias.to(q.device)
+
+            self.alibi_bias = generate_alibi_bias(self.nheads)
+
+            def _alibi_score_mod(score, b, h, q_idx, kv_idx):
+                return (score + self.alibi_bias[h] * (kv_idx - q_idx)).to(q.device)
+
+            return flex_attention(q, k, v, score_mod=_alibi_score_mod, block_mask=block_mask)
+        else:
+            return flex_attention(q, k, v, block_mask=block_mask)
+
+    def _sdpa_forward(self, q, k, v, block_mask):
+        if self.alibi:
+            L, S = q.shape[-2], k.shape[-2]
+            pos_bias = self.alibi_bias.view(-1, 1, 1) * (
+                torch.arange(S, device=q.device) - torch.arange(L, device=q.device).view(-1, 1)
+            )
+            attn_mask = torch.where(block_mask.unsqueeze(0), pos_bias, float('-inf')) if block_mask is not None else pos_bias
+            return scaled_dot_product_attention(q, k, v, attn_mask=attn_mask, is_causal=False)
+        else:
+            return scaled_dot_product_attention(q, k, v, attn_mask=block_mask, is_causal=self.is_causal)
+
+    def forward(self, query_input, key_input, value_input, block_mask = None):
         """
         Input Tensors:
         query_input: (Batch, Seqlen, Qdim)
@@ -137,138 +172,39 @@ class MultiHeadAttention(nn.Module):
             * Cross-Attention
 
         """
-        #printmem("Beginning of attention")
-        #TODO: INVESTIGATE WHY .detach().requires_grad_() is required with nested tensors! With normal padded tensors, it works also without
-        if self.set_mask==1: # Check if the block mask is set in the __init__()
-            block_mask=self.block_mask
-            
-        # Extracting the tensors from the TensorDC dataclass:
-        
+        # Common parts
         query_tensor=query_input.tensor
         key_tensor=key_input.tensor
         value_tensor=value_input.tensor
 
-        if self.attn_impl=='flex' or self.attn_impl=='sdpa':
-            if isinstance(query_input,UnpaddedTensor):
-                query_padded=query_input.pad()
-                key_padded=key_input.pad()
-                value_padded=value_input.pad()
-                query_tensor=query_padded.tensor
-                key_tensor=key_padded.tensor
-                value_tensor=value_padded.tensor 
-        qlen=query_tensor.shape[1]
-        klen=key_tensor.shape[1]
-        if self.qkv_samedim:
-            if query_tensor is key_tensor and key_tensor is value_tensor:
-                self_attn=True
-                # We are in self-attention mode
-                # Use of packed projections for efficiency
-                result=self.packed_proj(query_tensor)
-                query,key,value=torch.chunk(result,3,dim=-1)
-            else:
-                # We are in cross-attention mode, but same embedding dimensions
-                # Extracting the weights from packed projections
-                q_weight,k_weight,v_weight = torch.chunk(
-                        self.packed_proj.weight,3,dim=0)
-                if self.bias:
-                    q_bias,k_bias,v_bias = torch.chunk(
-                            self.packed_proj.bias,3,dim=0)
-                else:
-                    q_bias,k_bias,v_bias=None,None,None
-                query=F.linear(query_tensor,q_weight,q_bias)
-                key=F.linear(key_tensor,k_weight,k_bias)
-                value=F.linear(value_tensor,v_weight,v_bias)
+        query, key, value = self._project(query_tensor, key_tensor, value_tensor)
+        query, key, value = map(self._reshape_heads, (query, key, value)) # B, H, S, Hd
+
+        if self.attn_impl=='flash':
+            attn_output = self._flash_forward(query, key, value, query_input, key_input)
 
         else:
-            # We are in cross-attention, different embedding dimensions
-            query=self.q_proj(query_tensor)
-            key=self.k_proj(key_tensor)
-            value=self.v_proj(value_tensor)
-        # Splitting for each head
-        # (Batch, seqlen, tot_dim) => (Batch, seqlen, nhead, head_dim) => (Batch, nhead, seqlen, head_dim)
-        query=query.unflatten(-1,[self.nheads, self.head_dim]).transpose(1,2)
-        key=key.unflatten(-1,[self.nheads, self.head_dim]).transpose(1,2)
-        value=value.unflatten(-1,[self.nheads, self.head_dim]).transpose(1,2)
+            if self.set_mask == 1:
+                block_mask = self.block_mask
 
-        def generate_alibi_bias(H):
-                #WARNING: THIS IS INEFFICIENT AND SHOULD BE FIXED,
-                # Alibi Bias
-                # From https://github.com/pytorch-labs/attention-gym/examples/flex_attn.ipynb
-                alibi_bias = []
-                for h in range(H):
-                    alibi_bias.append(-((h + 1) * 8.0 / H))
-                alibi_bias = torch.tensor(alibi_bias).to(query.device)
-                alibi_bias = torch.exp2(alibi_bias).to(query.device)
-                return alibi_bias.to(query.device)
+            if isinstance(query_input, UnpaddedTensor):
+                query_input = self._maybe_pad(query_input)
+                key_input = self._maybe_pad(key_input)
+                value_input = self._maybe_pad(value_input)
+                query_tensor, key_tensor, value_tensor = query_input.tensor, key_input.tensor, value_input.tensor
+                query, key, value = self._project(query_tensor, key_tensor, value_tensor)
+                query, key, value = map(self._reshape_heads, (query, key, value))
 
-        self.alibi_bias = generate_alibi_bias(self.nheads)
-        def _alibi_score_mod(score, b, h, q_idx, kv_idx):
-            return (score + self.alibi_bias[h] * (kv_idx - q_idx)).to(query.device)
-        """
-            * If attn_type == bidirectional, no mask
-            * If attn_type == causal, causal mask
-            * If attn_type == hybrid <= Causal attention, but allowed to see the next multimedia tokens
-                                    up to the next non-multimedia token
-            * Sliding window support
-        """
+            if self.attn_impl == 'flex':
+                attn_output = self._flex_forward(query, key, value, block_mask)
+            else:  # SDPA
+                attn_output = self._sdpa_forward(query, key, value, block_mask)
 
+            attn_output = attn_output.transpose(1, 2)  # back to (B, S, H, Hd)
 
-        if self.attn_impl=='flex':
-                
-            if self.alibi:
-                attn_output = flex_attention(query, key, value, score_mod=_alibi_score_mod,block_mask=block_mask)
-            else:
-                attn_output = flex_attention(query, key, value, block_mask=block_mask)
-                
-        elif self.attn_impl=='sdpa':
-            if query.is_nested:
-                print("WARNING: Nested tensors doesn't support attn_mask in sdpa! DON'T TRUST THIS EXECUTION")
-                attn_output=scaled_dot_product_attention(query,key,value)
-            else:
-                if self.alibi:
-                    L, S = query.shape[-2], key.shape[-2]
-                    pos_bias = self.alibi_bias.view(-1, 1, 1) * (torch.arange(S, device=query.device) - torch.arange(L, device=query.device).view(-1, 1))
-                    if block_mask is not None:
-                        attn_mask = torch.where(block_mask.unsqueeze(0), pos_bias, float('-inf'))
-                    else:
-                        attn_mask=pos_bias
-                    attn_output = scaled_dot_product_attention(query, key, value, attn_mask=attn_mask, is_causal=False)
-                else:
-                    attn_output=scaled_dot_product_attention(query, key, value, attn_mask=block_mask, is_causal=False)
-        elif self.attn_impl=='flash' and _is_flash_attn_available:
-                """
-                Funzione sperimentale
-                1) Mettere anche la versione packed, facile ma farlo in modo pulito
-                    qkv: (batch_size, seqlen, 3, nheads, headdim)
-                    flash_attn_qkvpacked_func(qkv, dropout_p=0.0, softmax_scale=None, causal=False,
-                                  window_size=(-1, -1), alibi_slopes=None, deterministic=False):
-                2) Evitare la doppia trasposizione 2,1 ma allo stesso tempo evitare di impiastricciare il codice sopra con un if
-                
-                3) Capire cosa supporta... ok alibi (ma diversamente da come fatto fin'ora), ok causal, ok sliding window.
-                   Non gli si può però passare una attention mask personalizzata
-                    flash_attn_func(q, k, v, dropout_p=0.0, softmax_scale=None, causal=False,
-                        window_size=(-1, -1), alibi_slopes=None, deterministic=False):
-                """           
-                query=query.transpose(1,2)
-                key=key.transpose(1,2)
-                value=value.transpose(1,2)
-                causal=True
-                if isinstance(query_input,UnpaddedTensor):
-                    attn_output=flash_attn_varlen_func(query,key,value,
-                        cu_seqlens_q=query_input.cu_seqlens.to('cuda'), cu_seqlens_k=key_input.cu_seqlens.to('cuda'),
-                        max_seqlen_q=query_input.max_seq_len, max_seqlen_k=key_input.max_seq_len,alibi_slopes=self.alibi_slopes,causal=causal).transpose(1,2)
-                else:
-                    attn_output=flash_attn_func(query,key,value,alibi_slopes=self.alibi_slopes,causal=causal).transpose(1,2)
-        else:
-            print("Implementazione non supportata. Disponibilità Flash attention: ", _is_flash_attn_available)
-            
-        
-        attn_output=attn_output.transpose(1,2).flatten(-2)
-        
-        if isinstance(query_input,UnpaddedTensor) and self.attn_impl != 'flash':
-            return replace(query_padded,tensor=self.out_proj(attn_output)).unpad()
-        else:
-            return self.out_proj(attn_output)
+        attn_output = attn_output.flatten(-2)
+        return self._maybe_unpad(self.out_proj(attn_output), query_input)
+
       
 class PackedSwiGLUFFN(nn.Module):
     #Adapted from https://docs.pytorch.org/tutorials/intermediate/transformer_building_blocks.html
