@@ -13,24 +13,21 @@ from matformer.model_config import ModelConfig
 from matformer.models import EntropyModel
 import signal
 import sys
-
-
-
-
+from transformers import AutoTokenizer
 def main():
     config_big_model_1024_window = ModelConfig(
-        name='Entropy Model',
+        name='BERT Model',
         hidden_dim=768,
         ffn_factor=1.0,
         n_layers=14,
         n_heads=12,
-        vocab_size=260,
-        bos_id = 256,
-        eos_id = 257,
-        pad_id = 258,      
+        vocab_size=32768,
+        bos_id = 1,
+        eos_id = 2,
+        pad_id = 0,      
         tie_word_embeddings=False,
         rms_norm_eps=1e-6,
-        attention_type=['sliding'],
+        attention_type=['causal','sliding'],
         sliding_window_size=512,
         sliding_layers=[0,1,2,3,4,6,7,9,10,11],
         sliding_type='partial',
@@ -38,29 +35,7 @@ def main():
         block_size_for_attention=128,
         compile_flexattn=False,
         bias=False,
-        training_objective='autoregressive'
-    ) 
-    config_small_model_2048_window = ModelConfig(
-        name='Entropy Model',
-        hidden_dim=768,
-        ffn_factor=1.0,
-        n_layers=10,
-        n_heads=12,
-        vocab_size=260,
-        bos_id = 256,
-        eos_id = 257,
-        pad_id = 258,      
-        tie_word_embeddings=False,
-        rms_norm_eps=1e-6,
-        attention_type=['causal','sliding'],
-        sliding_window_size=1024,
-        sliding_layers=[0,1,2,3,8,9],
-        sliding_type='partial',
-        max_seqlen=2048,
-        block_size_for_attention=128,
-        compile_flexattn=False,
-        bias=False,
-        training_objective='autoregressive'        
+        training_objective='masked'
     ) 
     config=config_big_model_1024_window
     parser = argparse.ArgumentParser(description='Train byte-level entropy model')
@@ -74,7 +49,7 @@ def main():
     args = parser.parse_args()
     config['attn_impl']=args.attn_impl
     train_config = {
-        "lr": 4e-4,
+        "lr": 3e-4,
         "max_steps": args.max_steps
     }
     """train_config = {
@@ -83,8 +58,9 @@ def main():
         "max_steps": args.max_steps
     }  """  
     pl.seed_everything(27)
+    tok=AutoTokenizer.from_pretrained("sapienzanlp/Minerva-350M-base-v1.0")
 
-    tokenizer = MatformerTokenizer(config,tokenizer='bytes',varlen_strategy=args.varlen_strategy)
+    tokenizer = MatformerTokenizer(config,tokenizer=tok,varlen_strategy=args.varlen_strategy)
     data_module = MatformerDataModule(
         data_root=args.data_root,
         batch_size=args.batch_size,

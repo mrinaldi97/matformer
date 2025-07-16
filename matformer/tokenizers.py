@@ -5,7 +5,7 @@ import torch
 from typing import List
 from matformer.model_config import ModelConfig
 from matformer.tensors_dataclasses import PaddedTensor, UnpaddedTensor
-from matformer.masked_models import maskerator
+from dataclasses import dataclass, replace
 
 class MatformerTokenizer:
     """
@@ -36,19 +36,11 @@ class MatformerTokenizer:
         and self.config.masked.same_percentage for the other possible masking strategies amounts.
         """
 
-    def encode(self, text: str, truncation=True, masking=False):
+    def encode(self, text: str, truncation=True):
         input_ids = self.tokenizer(text)['input_ids']
-        cloze_mask = None
-
-        if masking:
-            input_ids, cloze_mask = maskerator(input_ids, 0,0.3)
-
         if truncation:
             input_ids = input_ids[:self.seq_len]
-            if cloze_mask:
-                cloze_mask = cloze_mask[:self.seq_len]
-
-        return input_ids, cloze_mask
+        return input_ids
 
     def decode(self, ids: List[int]) -> str:
         return self.tokenizer.decode(ids)
@@ -57,41 +49,26 @@ class MatformerTokenizer:
         return [self.decode(ids) for ids in batch_ids]
 
     def batch_encode(self, batch: List[str]):
-        masking = self.config.training_objective == 'masked'
-        encoded_results = [self.encode(s, truncation=True, masking=masking) for s in batch]
-        all_input_ids, all_cloze_masks = zip(*encoded_results)
+        
+        all_input_ids = []
+
+        for s in batch:
+            input_ids = self.encode(s, truncation=True)
+            all_input_ids.append(input_ids)
 
         if self.varlen_strategy == 'nested':
-            sequence = torch.nested.nested_tensor(list(all_input_ids), layout=torch.jagged)
-            if masking:
-                inputs = sequence
-                targets = torch.nested.nested_tensor(list(all_cloze_masks), layout=torch.jagged)
-            else:
-                inputs = torch.nested.nested_tensor([s[:-1] for s in all_input_ids], layout=torch.jagged)
-                targets = torch.nested.nested_tensor([s[1:] for s in all_input_ids], layout=torch.jagged)
+            sequence = torch.nested.nested_tensor(all_input_ids, layout=torch.jagged)
+            inputs = torch.nested.nested_tensor([ids[:-1] for ids in all_input_ids], layout=torch.jagged)
+            targets = torch.nested.nested_tensor([ids[1:] for ids in all_input_ids], layout=torch.jagged)
             return inputs, targets, sequence
 
         padded_ids = [ids + [self.pad_id] * (self.seq_len - len(ids)) for ids in all_input_ids]
         tensors = torch.tensor(padded_ids, dtype=torch.long)
         padding_masks = (tensors == self.pad_id)
         sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks)
-
-        if masking:
-            padded_cloze = [mask + [self.pad_id] * (self.seq_len - len(mask)) for mask in all_cloze_masks]
-            cloze_tensors = torch.tensor(padded_cloze, dtype=torch.long)
-            inputs = sequence
-            targets = PaddedTensor(tensor=cloze_tensors, padding_mask=padding_masks)
-        else:
-            inputs = PaddedTensor(tensor=tensors[:-1], padding_mask=padding_masks[:-1])
-            targets = PaddedTensor(tensor=tensors[1:], padding_mask=padding_masks[1:])  
-
-
         if self.varlen_strategy == 'unpadding':
-            return inputs.unpad(), targets.unpad(), sequence.unpad()
-        return inputs, targets, sequence
-
-    def __call__(self, batch: List[str]):
-        return self.batch_encode(batch)
+                sequence = sequence.unpad()
+        return sequence
 
 
 class ByteLevelTokenizer:

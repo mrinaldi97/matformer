@@ -10,7 +10,10 @@ from matformer.training_functions import MatformerDataModule
 from matformer.model_config import ModelConfig  
 from matformer.transformer_blocks import TransformerWithLMHead
 from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor
+from matformer.masked_models import maskerator
+
 from dataclasses import replace
+from copy import deepcopy
 
 class EntropyModel(pl.LightningModule):
     def __init__(self, config, device, train_config=None,inference_fix=False,nested=False,attn_impl='flash'):
@@ -33,39 +36,72 @@ class EntropyModel(pl.LightningModule):
     def forward(self, _input):
         return self.model(_input.to(self.device),inference_fix=self.inference_fix)
         
-    def training_step(self, batch, batch_idx): 
+    def training_step(self, batch, batch_idx):
         if self.nested:
-            inputs, targets, sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
-            logits = self(inputs)           
-            logits_flat = torch.cat(logits.unbind())
-            targets_flat = torch.cat(targets.unbind()).to(logits_flat.device)
-            loss = F.cross_entropy(logits_flat, targets_flat)
+            sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
         else:
-            inputs, targets, sequence = batch['input_ids']
-            print(inputs.shape)
-            print(targets.shape)
-            print(sequence.shape)
-            logits = self(inputs)
-            
-            if logits.isPadded:
-                batch_size, seq_len, vocab_size = logits.shape
-                logits_flat = logits.tensor.reshape(-1, vocab_size)
-                targets_flat = targets.tensor.reshape(-1)
-                mask = targets_flat != self.pad_id
-                
-                if mask.any():  
-                    loss = F.cross_entropy(logits_flat[mask], targets_flat[mask])
-                else:
-                    loss = F.cross_entropy(logits_flat, targets_flat)
+            sequence = batch['input_ids']
+        masked=False
+        input_sequence=sequence
+        if masked:
+            if self.nested:
+                masked_sequences, cloze_masks = zip(*[maskerator(seq, MASK_TOKEN=0, substitution_rate=0.2) 
+                                                      for seq in sequence.unbind()])
+                sequence = torch.stack(masked_sequences)
+                cloze_mask = torch.stack(cloze_masks)
             else:
-                loss = F.cross_entropy(logits.tensor, targets.tensor)
+                masked_list, cloze_list = maskerator(sequence.tensor, MASK_TOKEN=0, substitution_rate=0.2)
+                masked_sequence=deepcopy(sequence)
+                masked_sequence = replace(masked_sequence,tensor=masked_list)
+                cloze_mask = cloze_list
+                input_sequence=masked_sequence
         
+        logits = self(deepcopy(input_sequence))
+        
+        if self.nested:
+            logits_flat = torch.cat(logits.unbind())
+            targets_flat = torch.cat(sequence.unbind()).to(logits_flat.device)
+            base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
+            cloze_mask_flat = torch.cat(cloze_mask.unbind()).to(logits_flat.device) if masked else None
+        elif logits.isPadded:
+            _,_, vocab_size = logits.shape
+            logits_flat = logits.tensor.reshape(-1, vocab_size)
+            targets_flat = sequence.tensor.reshape(-1)
+            base_mask = (targets_flat != self.pad_id)
+            cloze_mask_flat = cloze_mask.reshape(-1) if masked else None
+        else:
+            logits_flat = logits.tensor
+            targets_flat = sequence.tensor
+            base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
+            cloze_mask_flat = cloze_mask if masked else None
+        
+        if masked:
+            mask = cloze_mask_flat & base_mask
+            loss = F.cross_entropy(logits_flat[mask], targets_flat[mask])
+            
+            """
+            import json
+            with open("debug_masked.jsonl","a") as f:
+                data={
+                "input_logits":input_sequence.tensor.tolist(),
+                "targets":targets_flat.tolist(),
+                "mask":mask.tolist()
+                }
+                f.write(f"{data}\n")
+            """
+        else:
+            mask = base_mask[1:]
+            loss = F.cross_entropy(logits_flat[:-1][mask], targets_flat[1:][mask])
+        """with torch.no_grad():
+            preds = logits_flat[mask].argmax(-1)
+            acc = (preds == targets_flat[mask]).float().mean()
+        self.log('train/mask_acc', acc, prog_bar=True)    
+        """    
         self.log('train/loss', loss, prog_bar=True)
         return loss
-
     def configure_optimizers(self):
-        optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
-        return optimizer
+            optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
+            return optimizer
     
 
     def compute_entropy(self, prompts):

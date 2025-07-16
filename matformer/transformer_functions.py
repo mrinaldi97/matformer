@@ -252,12 +252,13 @@ class MultiHeadAttention(nn.Module):
                 query=query.transpose(1,2)
                 key=key.transpose(1,2)
                 value=value.transpose(1,2)
+                causal=True
                 if isinstance(query_input,UnpaddedTensor):
                     attn_output=flash_attn_varlen_func(query,key,value,
                         cu_seqlens_q=query_input.cu_seqlens.to('cuda'), cu_seqlens_k=key_input.cu_seqlens.to('cuda'),
-                        max_seqlen_q=query_input.max_seq_len, max_seqlen_k=key_input.max_seq_len,alibi_slopes=self.alibi_slopes,causal=True).transpose(1,2)
+                        max_seqlen_q=query_input.max_seq_len, max_seqlen_k=key_input.max_seq_len,alibi_slopes=self.alibi_slopes,causal=causal).transpose(1,2)
                 else:
-                    attn_output=flash_attn_func(query,key,value,alibi_slopes=self.alibi_slopes,causal=True).transpose(1,2)
+                    attn_output=flash_attn_func(query,key,value,alibi_slopes=self.alibi_slopes,causal=causal).transpose(1,2)
         else:
             print("Implementazione non supportata. Disponibilità Flash attention: ", _is_flash_attn_available)
             
