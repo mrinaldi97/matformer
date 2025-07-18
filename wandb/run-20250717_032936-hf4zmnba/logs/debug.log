@@ -1,0 +1,96 @@
+2025-07-17 03:29:36,938 INFO    MainThread:34184 [wandb_setup.py:_flush():68] Current SDK version is 0.19.10
+2025-07-17 03:29:36,938 INFO    MainThread:34184 [wandb_setup.py:_flush():68] Configure stats pid to 34184
+2025-07-17 03:29:36,938 INFO    MainThread:34184 [wandb_setup.py:_flush():68] Loading settings from /home/matteo/.config/wandb/settings
+2025-07-17 03:29:36,939 INFO    MainThread:34184 [wandb_setup.py:_flush():68] Loading settings from /home/matteo/Ricerca/miei_progetti/matformer/wandb/settings
+2025-07-17 03:29:36,939 INFO    MainThread:34184 [wandb_setup.py:_flush():68] Loading settings from environment variables
+2025-07-17 03:29:36,939 INFO    MainThread:34184 [wandb_init.py:setup_run_log_directory():724] Logging user logs to ./wandb/run-20250717_032936-hf4zmnba/logs/debug.log
+2025-07-17 03:29:36,939 INFO    MainThread:34184 [wandb_init.py:setup_run_log_directory():725] Logging internal logs to ./wandb/run-20250717_032936-hf4zmnba/logs/debug-internal.log
+2025-07-17 03:29:36,940 INFO    MainThread:34184 [wandb_init.py:init():852] calling init triggers
+2025-07-17 03:29:36,940 INFO    MainThread:34184 [wandb_init.py:init():857] wandb.init called with sweep_config: {}
+config: {'model_class': 'EntropyModel', 'model_config': {'name': 'EntropySmall', 'hidden_dim': 512, 'ffn_factor': 1.0, 'n_layers': 10, 'n_heads': 8, 'vocab_size': 260, 'bos_id': 256, 'eos_id': 257, 'pad_id': 258, 'tie_word_embeddings': False, 'rms_norm_eps': 1e-06, 'attention_type': ['causal', 'sliding'], 'sliding_window_size': 512, 'sliding_layers': [0, 2, 4, 6, 8], 'sliding_type': 'partial', 'max_seqlen': 1024, 'block_size_for_attention': 128, 'compile_flexattn': False, 'bias': False, 'training_objective': 'autoregressive', 'alibi': True, 'is_causal': True, 'attn_impl': 'flash'}, 'training': {'lr': 0.0001, 'max_steps': 100000, 'accumulate_grad_batches': 1, 'seed': 27, 'checkpoint_name': 'entropy_small'}, 'tokenizer': {'type': 'bytes', 'varlen_strategy': 'unpadding'}, 'data': {'data_root': '../matformer_norepo/liberliber_1024', 'batch_size': 64, 'num_workers': 4}, 'save_dir': './checkpoints', 'wandb_project': 'matformer', 'wandb_run_name': 'entropy-small-liberliber-1024-bytes', '_wandb': {}}
+2025-07-17 03:29:36,940 INFO    MainThread:34184 [wandb_init.py:init():893] starting backend
+2025-07-17 03:29:36,940 INFO    MainThread:34184 [wandb_init.py:init():897] sending inform_init request
+2025-07-17 03:29:36,949 INFO    MainThread:34184 [backend.py:_multiprocessing_setup():101] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2025-07-17 03:29:36,949 INFO    MainThread:34184 [wandb_init.py:init():907] backend started and connected
+2025-07-17 03:29:36,954 INFO    MainThread:34184 [wandb_init.py:init():1002] updated telemetry
+2025-07-17 03:29:36,964 INFO    MainThread:34184 [wandb_init.py:init():1026] communicating run to backend with 90.0 second timeout
+2025-07-17 03:29:37,977 INFO    MainThread:34184 [wandb_init.py:init():1101] starting run threads in backend
+2025-07-17 03:29:38,759 INFO    MainThread:34184 [wandb_run.py:_console_start():2566] atexit reg
+2025-07-17 03:29:38,759 INFO    MainThread:34184 [wandb_run.py:_redirect():2414] redirect: wrap_raw
+2025-07-17 03:29:38,760 INFO    MainThread:34184 [wandb_run.py:_redirect():2483] Wrapping output streams.
+2025-07-17 03:29:38,760 INFO    MainThread:34184 [wandb_run.py:_redirect():2506] Redirects installed.
+2025-07-17 03:29:38,763 INFO    MainThread:34184 [wandb_init.py:init():1147] run started, returning control to user process
+2025-07-17 03:29:49,371 INFO    MainThread:34184 [wandb_run.py:_config_callback():1429] config_cb None None {'config': "ModelConfig(hidden_dim=512, ffn_factor=1.0, n_layers=10, n_heads=8, vocab_size=260, pad_id=258, bos_id=256, eos_id=257, tie_word_embeddings=False, rms_norm_eps=1e-06, attention_type=['causal', 'sliding'], sliding_window_size=512, sliding_layers=[0, 2, 4, 6, 8], sliding_type='partial', max_seqlen=1024, block_size_for_attention=128, compile_flexattn=False, bias=False, name='EntropySmall', training_objective='autoregressive', is_causal=True, alibi=True, attn_impl='flash')", 'device': 'cuda', 'train_config': {'lr': 0.0001, 'max_steps': 100000, 'accumulate_grad_batches': 1, 'seed': 27, 'checkpoint_name': 'entropy_small'}, 'inference_fix': False, 'nested': False, 'attn_impl': 'flash'}
+2025-07-17 03:34:18,766 INFO    MsgRouterThr:34184 [mailbox.py:close():129] [no run ID] Closing mailbox, abandoning 1 handles.
+2025-07-17 03:34:20,261 ERROR   MainThread:34184 [redirect.py:_on_write():664] [no run ID] error in stdout callback
+Traceback (most recent call last):
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/lib/redirect.py", line 662, in _on_write
+    cb(written_data)
+    ~~^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/wandb_run.py", line 2487, in <lambda>
+    lambda data: self._console_raw_callback("stdout", data),
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/wandb_run.py", line 406, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/wandb_run.py", line 464, in wrapper_fn
+    return func(self, *args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/wandb_run.py", line 1632, in _console_raw_callback
+    self._backend.interface.publish_output_raw(name, data)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/interface/interface.py", line 763, in publish_output_raw
+    self._publish_output_raw(o)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/interface/interface_shared.py", line 38, in _publish_output_raw
+    self._publish(rec)
+    ~~~~~~~~~~~~~^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/interface/interface_sock.py", line 39, in _publish
+    self._sock_client.send_record_publish(record)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/lib/sock_client.py", line 174, in send_record_publish
+    self.send_server_request(server_req)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/lib/sock_client.py", line 154, in send_server_request
+    self._send_message(msg)
+    ~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/lib/sock_client.py", line 151, in _send_message
+    self._sendall_with_error_handle(header + data)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/lib/sock_client.py", line 130, in _sendall_with_error_handle
+    sent = self._sock.send(data)
+BrokenPipeError: [Errno 32] Broken pipe
+2025-07-17 03:34:20,271 ERROR   MainThread:34184 [redirect.py:_on_write():664] [no run ID] error in stdout callback
+Traceback (most recent call last):
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/lib/redirect.py", line 662, in _on_write
+    cb(written_data)
+    ~~^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/wandb_run.py", line 2487, in <lambda>
+    lambda data: self._console_raw_callback("stdout", data),
+                 ~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/wandb_run.py", line 406, in wrapper
+    return func(self, *args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/wandb_run.py", line 464, in wrapper_fn
+    return func(self, *args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/wandb_run.py", line 1632, in _console_raw_callback
+    self._backend.interface.publish_output_raw(name, data)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/interface/interface.py", line 763, in publish_output_raw
+    self._publish_output_raw(o)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/interface/interface_shared.py", line 38, in _publish_output_raw
+    self._publish(rec)
+    ~~~~~~~~~~~~~^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/interface/interface_sock.py", line 39, in _publish
+    self._sock_client.send_record_publish(record)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/lib/sock_client.py", line 174, in send_record_publish
+    self.send_server_request(server_req)
+    ~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/lib/sock_client.py", line 154, in send_server_request
+    self._send_message(msg)
+    ~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/lib/sock_client.py", line 151, in _send_message
+    self._sendall_with_error_handle(header + data)
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/wandb/sdk/lib/sock_client.py", line 130, in _sendall_with_error_handle
+    sent = self._sock.send(data)
+BrokenPipeError: [Errno 32] Broken pipe

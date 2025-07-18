@@ -1,0 +1,103 @@
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type                  | Params | Mode
+--------------------------------------------------------
+0 | model | TransformerWithLMHead | 51.9 M | train
+--------------------------------------------------------
+51.9 M    Trainable params
+0         Non-trainable params
+51.9 M    Total params
+207.792   Total estimated model params size (MB)
+120       Modules in train mode
+0         Modules in eval mode
+Epoch 0:   0%|                                                            | 0/12145 [00:00<?, ?it/s]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7faa04082490>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Traceback (most recent call last):
+  File "/home/matteo/Ricerca/miei_progetti/matformer/train_model.py", line 108, in <module>
+    main()
+    ~~~~^^
+  File "/home/matteo/Ricerca/miei_progetti/matformer/train_model.py", line 105, in main
+    trainer.fit(model, data)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/trainer.py", line 561, in fit
+    call._call_and_handle_interrupt(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, self._fit_impl, model, train_dataloaders, val_dataloaders, datamodule, ckpt_path
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/call.py", line 48, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/trainer.py", line 599, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/trainer.py", line 1012, in _run
+    results = self._run_stage()
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/trainer.py", line 1056, in _run_stage
+    self.fit_loop.run()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/fit_loop.py", line 216, in run
+    self.advance()
+    ~~~~~~~~~~~~^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/fit_loop.py", line 455, in advance
+    self.epoch_loop.run(self._data_fetcher)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 150, in run
+    self.advance(data_fetcher)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 320, in advance
+    batch_output = self.automatic_optimization.run(trainer.optimizers[0], batch_idx, kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 192, in run
+    self._optimizer_step(batch_idx, closure)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 270, in _optimizer_step
+    call._call_lightning_module_hook(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        trainer,
+        ^^^^^^^^
+    ...<4 lines>...
+        train_step_and_backward_closure,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/call.py", line 176, in _call_lightning_module_hook
+    output = fn(*args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/core/module.py", line 1302, in optimizer_step
+    optimizer.step(closure=optimizer_closure)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/core/optimizer.py", line 154, in step
+    step_output = self._strategy.optimizer_step(self._optimizer, closure, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/strategies/strategy.py", line 239, in optimizer_step
+    return self.precision_plugin.optimizer_step(optimizer, model=model, closure=closure, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/plugins/precision/amp.py", line 79, in optimizer_step
+    closure_result = closure()
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 146, in __call__
+    self._result = self.closure(*args, **kwargs)
+                   ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 131, in closure
+    step_output = self._step_fn()
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 319, in _training_step
+    training_step_output = call._call_strategy_hook(trainer, "training_step", *kwargs.values())
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/call.py", line 328, in _call_strategy_hook
+    output = fn(*args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/strategies/strategy.py", line 391, in training_step
+    return self.lightning_module.training_step(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/matteo/Ricerca/miei_progetti/matformer/matformer/models.py", line 100, in training_step
+    train_debug_print(_input=logits_flat[:-1][mask], output=targets_flat[1:][mask], model_cfg=self.config, tokenizer=self.tokenizer, varlen_strategy='unpadding')
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/Ricerca/miei_progetti/matformer/matformer/debug_methods.py", line 19, in train_debug_print
+    i.write(tokenizer.decode(_input)+'\n')
+            ~~~~~~~~~~~~~~~~^^^^^^^^
+  File "/home/matteo/Ricerca/miei_progetti/matformer/matformer/tokenizers.py", line 46, in decode
+    return self.tokenizer.decode(ids)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/matteo/Ricerca/miei_progetti/matformer/matformer/tokenizers.py", line 87, in decode
+    bytes_data = bytearray([max(0, i - self.offset) for i in ids if i not in special_tokens])
+                            ~~~^^^^^^^^^^^^^^^^^^^^
+RuntimeError: Boolean value of Tensor with more than one value is ambiguous

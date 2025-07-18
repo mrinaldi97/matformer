@@ -1,0 +1,115 @@
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type                  | Params | Mode
+--------------------------------------------------------
+0 | model | TransformerWithLMHead | 51.9 M | train
+--------------------------------------------------------
+51.9 M    Trainable params
+0         Non-trainable params
+51.9 M    Total params
+207.792   Total estimated model params size (MB)
+120       Modules in train mode
+0         Modules in eval mode
+Epoch 0:   0%|                                                           | 0/437234 [00:00<?, ?it/s]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7f75c153ea50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+Primo elemento lista input: [0.9256597757339478, -0.3319522440433502, -0.7520415782928467, -2.243065118789673, -0.06614208221435547, -0.454071044921875, -0.8053849935531616, -0.09891586005687714, 0.16053685545921326, -0.38948091864585876, 1.3041518926620483, 0.3929755389690399, -0.1837930530309677, -0.08821987360715866, 0.769110381603241, 0.8857436776161194, -1.8922299146652222, 0.2674165666103363, 1.2103259563446045, -1.2326849699020386, -0.685614824295044, 0.31948450207710266, -1.138700008392334, 1.0612913370132446, -0.3849257230758667, 0.6935893297195435, 0.3938016891479492, 1.009355902671814, -1.026649832725525, 0.807951807975769, -0.41763949394226074, -0.6678634285926819, 0.33875253796577454, -0.5612443089485168, -0.5946668982505798, -0.623816728591919, -0.20534946024417877, -1.3862974643707275, 0.0446619838476181, -2.136878728866577, -0.3057083189487457, 0.3123933672904968, 0.7615689039230347, -0.39682191610336304, 0.8308311700820923, -0.24233104288578033, -1.6950792074203491, 1.8453834056854248, -0.17358624935150146, 0.6551327705383301, 0.5310198664665222, 0.3860619366168976, 0.2902926504611969, 1.7286025285720825, 0.3382074534893036, 0.5062301158905029, 0.025125419721007347, -0.4974587559700012, -0.3404531180858612, 0.6755319833755493, 0.6912775039672852, 0.9005085825920105, 0.01789018139243126, 0.4945182502269745, 1.0283229351043701, 2.0344293117523193, -1.3121386766433716, -0.27457699179649353, -1.9401146173477173, 1.122706413269043, -0.3370749056339264, -0.7996052503585815, -0.9357872009277344, 0.2495732456445694, -0.7433841228485107, -0.351758748292923, -0.7443850040435791, -1.7197571992874146, -0.25347036123275757, 1.0471059083938599, 0.22511839866638184, -2.487413167953491, -0.37191393971443176, 1.2107523679733276, -0.8841816782951355, -1.5932528972625732, -0.311793714761734, -0.4056568443775177, -1.6840766668319702, 0.6061624884605408, 0.12354554235935211, -0.5753013491630554, -0.5486429333686829, -0.15428049862384796, -0.45312193036079407, -1.57572603225708, -1.1086654663085938, 0.890738308429718, 0.017522484064102173, 0.6002404689788818, 1.1238425970077515, -0.5368027091026306, -0.11141087114810944, -0.334801584482193, -1.2181856632232666, -0.7093929648399353, -0.27809062600135803, 0.3353726267814636, 0.7521214485168457, -1.1024458408355713, -1.516852855682373, 1.2135474681854248, -1.0673911571502686, -1.6663424968719482, 0.14468815922737122, -0.03377644345164299, 0.4753877818584442, -0.27584052085876465, 2.1445043087005615, -0.8860573768615723, 1.1591763496398926, -1.538281798362732, 0.3216782212257385, 0.14446783065795898, 0.32998067140579224, -1.602228045463562, 0.6230127811431885, 0.35934895277023315, 0.09580906480550766, -0.2730809152126312, -0.8407015204429626, 1.5376672744750977, -0.4131165146827698, 0.026703521609306335, -1.224616527557373, 0.21613751351833344, -1.513225793838501, 0.5751191973686218, 0.2031286060810089, -1.034324288368225, -0.7997419238090515, 3.531712293624878, 1.413237452507019, -0.604448139667511, -0.05230134353041649, 1.0697693824768066, -1.377439260482788, 0.9366228580474854, 0.24514757096767426, -0.011471344158053398, 0.266374409198761, -0.7510772347450256, -2.1048243045806885, 1.9100795984268188, 0.5784642100334167, -0.2971544861793518, 0.09384104609489441, 0.7104095220565796, -0.060766659677028656, -0.9098480939865112, 0.30994513630867004, 1.1285061836242676, -0.03831751272082329, -0.17059312760829926, 2.1778674125671387, -0.4846387505531311, 0.19696861505508423, 1.3041863441467285, 0.5495370626449585, -0.7389260530471802, -1.2951914072036743, -1.0225752592086792, -0.9220017790794373, -0.7744345664978027, -0.11290451884269714, 1.4417906999588013, -0.10114037990570068, -0.14759661257266998, -0.048400234431028366, 1.6619536876678467, 1.0162572860717773, 0.9763349890708923, 1.1795659065246582, 1.35614013671875, -1.1988515853881836, 0.8635669350624084, 1.3134733438491821, 0.12316256761550903, -1.6107845306396484, 0.8030648827552795, 0.0628616139292717, 1.0013301372528076, -1.0089515447616577, -0.6386182904243469, 0.14474605023860931, 0.4173877537250519, 1.407577395439148, -0.
+
+Decodifico l'input...
+Traceback (most recent call last):
+  File "/home/matteo/Ricerca/miei_progetti/matformer/train_model.py", line 108, in <module>
+    main()
+    ~~~~^^
+  File "/home/matteo/Ricerca/miei_progetti/matformer/train_model.py", line 105, in main
+    trainer.fit(model, data)
+    ~~~~~~~~~~~^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/trainer.py", line 561, in fit
+    call._call_and_handle_interrupt(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        self, self._fit_impl, model, train_dataloaders, val_dataloaders, datamodule, ckpt_path
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/call.py", line 48, in _call_and_handle_interrupt
+    return trainer_fn(*args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/trainer.py", line 599, in _fit_impl
+    self._run(model, ckpt_path=ckpt_path)
+    ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/trainer.py", line 1012, in _run
+    results = self._run_stage()
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/trainer.py", line 1056, in _run_stage
+    self.fit_loop.run()
+    ~~~~~~~~~~~~~~~~~^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/fit_loop.py", line 216, in run
+    self.advance()
+    ~~~~~~~~~~~~^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/fit_loop.py", line 455, in advance
+    self.epoch_loop.run(self._data_fetcher)
+    ~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 150, in run
+    self.advance(data_fetcher)
+    ~~~~~~~~~~~~^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/training_epoch_loop.py", line 320, in advance
+    batch_output = self.automatic_optimization.run(trainer.optimizers[0], batch_idx, kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 192, in run
+    self._optimizer_step(batch_idx, closure)
+    ~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 270, in _optimizer_step
+    call._call_lightning_module_hook(
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^
+        trainer,
+        ^^^^^^^^
+    ...<4 lines>...
+        train_step_and_backward_closure,
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/call.py", line 176, in _call_lightning_module_hook
+    output = fn(*args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/core/module.py", line 1302, in optimizer_step
+    optimizer.step(closure=optimizer_closure)
+    ~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/core/optimizer.py", line 154, in step
+    step_output = self._strategy.optimizer_step(self._optimizer, closure, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/strategies/strategy.py", line 239, in optimizer_step
+    return self.precision_plugin.optimizer_step(optimizer, model=model, closure=closure, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/plugins/precision/amp.py", line 79, in optimizer_step
+    closure_result = closure()
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 146, in __call__
+    self._result = self.closure(*args, **kwargs)
+                   ~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/torch/utils/_contextlib.py", line 116, in decorate_context
+    return func(*args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 131, in closure
+    step_output = self._step_fn()
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/loops/optimization/automatic.py", line 319, in _training_step
+    training_step_output = call._call_strategy_hook(trainer, "training_step", *kwargs.values())
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/trainer/call.py", line 328, in _call_strategy_hook
+    output = fn(*args, **kwargs)
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/pytorch_lightning/strategies/strategy.py", line 391, in training_step
+    return self.lightning_module.training_step(*args, **kwargs)
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^
+  File "/home/matteo/Ricerca/miei_progetti/matformer/matformer/models.py", line 99, in training_step
+    train_debug_print(_input=model_input.tensor, output=targets_flat[1:][mask], model_cfg=self.config, tokenizer=self.tokenizer, varlen_strategy='unpadding')
+    ~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/matteo/Ricerca/miei_progetti/matformer/matformer/debug_methods.py", line 21, in train_debug_print
+    _input=tokenizer.decode(_input)
+  File "/home/matteo/Ricerca/miei_progetti/matformer/matformer/tokenizers.py", line 46, in decode
+    return self.tokenizer.decode(ids)
+           ~~~~~~~~~~~~~~~~~~~~~^^^^^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/transformers/tokenization_utils_base.py", line 3954, in decode
+    return self._decode(
+           ~~~~~~~~~~~~^
+        token_ids=token_ids,
+        ^^^^^^^^^^^^^^^^^^^^
+    ...<2 lines>...
+        **kwargs,
+        ^^^^^^^^^
+    )
+    ^
+  File "/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/transformers/tokenization_utils_fast.py", line 668, in _decode
+    text = self._tokenizer.decode(token_ids, skip_special_tokens=skip_special_tokens)
+TypeError: argument 'ids': 'list' object cannot be interpreted as an integer

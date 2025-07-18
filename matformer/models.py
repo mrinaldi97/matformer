@@ -11,27 +11,22 @@ from matformer.model_config import ModelConfig
 from matformer.transformer_blocks import TransformerWithLMHead
 from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor
 from matformer.masked_models import maskerator
+from matformer.debug_methods import train_debug_print
 
 from dataclasses import replace
 from copy import deepcopy
 
 class EntropyModel(pl.LightningModule):
-    def __init__(self, config, device, train_config=None,inference_fix=False,nested=False,attn_impl='flash'):
+    def __init__(self, config, tokenizer, device, train_config=None,inference_fix=False,nested=False):
         super().__init__()
+        self.config=config    
+        self.train_config=train_config  
+        self.nested=nested # Poco elegante, temporaneo ma in genere rivedere l'implementazione Nested, per ora WIP
         self.save_hyperparameters()  
-        self.inference_fix=inference_fix
-        config['attn_imlp']=attn_impl
-        self.model = TransformerWithLMHead(config)
-        self.tokenizer=ByteLevelTokenizer(config)
-        self.pad_id = config.pad_id
-        self.bos_id=config.bos_id
-        self.eos_id=config.eos_id
-        self.nested=nested
-        if train_config is not None:
-            self.total_steps = train_config['max_steps']
-            #self.warmup_steps = train_config['warmup_steps']
-            self.lr = train_config['lr']
-            #self.clip_grad = train_config['clip_grad']
+        self.inference_fix=inference_fix #Temporaneo
+        self.model = TransformerWithLMHead(config) 
+        self.tokenizer=tokenizer
+
 
     def forward(self, _input):
         return self.model(_input.to(self.device),inference_fix=self.inference_fix)
@@ -41,9 +36,13 @@ class EntropyModel(pl.LightningModule):
             #Not implemented yet! Wrong code below (won't work with tok.zers different than Bytes)
             sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
         else:
-            sequence = batch['input_ids']
-        masked=False
+            sequence = batch['input_ids'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
+
+        masked=True if self.config['training_objective']=='masked' else False
+
+            
         input_sequence=sequence
+        
         if masked:
             if self.nested:
                 masked_sequences, cloze_masks = zip(*[maskerator(seq, MASK_TOKEN=0, substitution_rate=0.25) 
@@ -56,9 +55,11 @@ class EntropyModel(pl.LightningModule):
                 masked_sequence = replace(masked_sequence,tensor=masked_list)
                 cloze_mask = cloze_list
                 input_sequence=masked_sequence
-        
-        logits = self(deepcopy(input_sequence))
-        
+                
+        ### Input al modello ###
+        model_input=deepcopy(input_sequence)
+        logits = self(deepcopy(model_input))
+
         if self.nested:
             logits_flat = torch.cat(logits.unbind())
             targets_flat = torch.cat(sequence.unbind()).to(logits_flat.device)
@@ -68,7 +69,7 @@ class EntropyModel(pl.LightningModule):
             _,_, vocab_size = logits.shape
             logits_flat = logits.tensor.reshape(-1, vocab_size)
             targets_flat = sequence.tensor.reshape(-1)
-            base_mask = (targets_flat != self.pad_id)
+            base_mask = (targets_flat != self.config.pad_id)
             cloze_mask_flat = cloze_mask.reshape(-1) if masked else None
         else:
             logits_flat = logits.tensor
@@ -78,30 +79,20 @@ class EntropyModel(pl.LightningModule):
         
         if masked:
             mask = cloze_mask_flat & base_mask
+            #train_debug_print(_input=model_input.tensor, output=targets_flat[mask], model_cfg=self.config, tokenizer=self.tokenizer, varlen_strategy='unpadding')            
             loss = F.cross_entropy(logits_flat[mask], targets_flat[mask])
-            
-            """
-            import json
-            with open("debug_masked.jsonl","a") as f:
-                data={
-                "input_logits":input_sequence.tensor.tolist(),
-                "targets":targets_flat.tolist(),
-                "mask":mask.tolist()
-                }
-                f.write(f"{data}\n")
-            """
+
         else:
             mask = base_mask[1:]
+            #train_debug_print(_input=model_input.tensor, output=targets_flat[1:][mask], model_cfg=self.config, tokenizer=self.tokenizer, varlen_strategy='unpadding')            
             loss = F.cross_entropy(logits_flat[:-1][mask], targets_flat[1:][mask])
-        """with torch.no_grad():
-            preds = logits_flat[mask].argmax(-1)
-            acc = (preds == targets_flat[mask]).float().mean()
-        self.log('train/mask_acc', acc, prog_bar=True)    
-        """    
+
         self.log('train/loss', loss, prog_bar=True)
         return loss
+        
+        
     def configure_optimizers(self):
-            optimizer = torch.optim.AdamW(self.parameters(), lr=self.lr)
+            optimizer = torch.optim.AdamW(self.parameters(), lr=self.train_config.lr)
             return optimizer
     
 
@@ -197,7 +188,7 @@ class EntropyModel(pl.LightningModule):
         self.eval()  
         
         if prompt is None:
-            current_ids = torch.tensor([[self.model.config.bos_id]], device=self.device)
+            current_ids = torch.tensor([[self.config.bos_id]], device=self.device)
         else:
             # Tokenize the prompt if it's provided as bytes
             assert isinstance(prompt, str), "Prompt expected as string"
@@ -248,7 +239,7 @@ class EntropyModel(pl.LightningModule):
             current_ids = torch.cat([current_ids, next_token], dim=1)
             
             # Stop if we generated an EOS token
-            if next_token.item() == self.eos_id:
+            if next_token.item() == self.config.eos_id:
                 break
         
         return current_ids

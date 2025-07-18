@@ -74,7 +74,7 @@ def main():
     )
 
     ModelClass = get_model_class(cfg['model_class'])
-    model = ModelClass(config=model_cfg, train_config=train_cfg, device='cuda')
+    model = ModelClass(config=model_cfg, tokenizer=tokenizer, train_config=train_cfg, device='cuda')
 
     wandb_logger = WandbLogger(
         name=cfg.get('wandb_run_name', 'training-run'),

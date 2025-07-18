@@ -1,0 +1,729 @@
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type                  | Params | Mode
+--------------------------------------------------------
+0 | model | TransformerWithLMHead | 51.9 M | train
+--------------------------------------------------------
+51.9 M    Trainable params
+0         Non-trainable params
+51.9 M    Total params
+207.792   Total estimated model params size (MB)
+120       Modules in train mode
+0         Modules in eval mode
+Epoch 0:   0%|                                                           | 0/437234 [00:00<?, ?it/s]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> dell'Oglio, gli imperiali passassino Adda e andassino ad assaltarlo, faceva instanza che lo esercito ecclesiastico, che già era a Piacenza, passato il Po sotto Cremona, si andasse a unire con quello de' viniziani, per accostarsi poi a Adda e aspettare in su le rive di quel fiume e in alloggiamento forte la venuta de' svizzeri. La quale, oltre alla natura loro, aveva riscontrato in molte difficoltà, essendo stata data imprudentemente al castellano di Mus e al vescovo di Lodi la cura del condurli: perché la vanità del vescovo di Lodi era poco efficace a questo maneggio, e il castellano era intento principalmente a fraudare una parte de' danari mandatigli per pagarne i svizzeri; né avevano, l'uno o l'altro di loro, tanta autorità appresso a quella nazione che fusse bastante a farne levare, massime con sí piccola quantità di danari, numero sí grande, cosí presto come sarebbe stato di bisogno; e questa anche si corrompeva per la emulazione nata tra loro, intenti piú ad ambizione e a gli interessi particolari che ad altro. Aggiunsono anche qualche difficoltà gli agenti che erano per il re di Francia nelle leghe di Elvezia, perché non avevano notizia quale fusse sopra questa cosa la mente del re né se era contraria o conforme alla sua intenzione; perché, non per inavvertenza ma studiosamente, per quegli consigli che spesso parendo molto prudenti riescono troppo acuti, si era pretermesso di dare notizia al re di questa espedizione. Perché Alberto Pio, oratore regio appresso al pontefice, aveva dimostrato essere pericolo che se il re intendesse, innanzi alla conclusione della lega, l'ordine dato di soldare i svizzeri non andasse piú tardo a conchiuderla, parendogli già a ogni modo che senza lui fusse cominciata dal pontefice e da' viniziani la guerra con Cesare. Cosí ritardandosi la venuta de' svizzeri si ritardava il piú principale e il piú potente de' fondamenti disegnati per soccorrere il castello di Milano, non ostante che il vescovo e il castellano della venuta loro prestissima dessino quotidianamente certa e presentissima speranza.
+Ma i capitani cesarei, poi che veddeno prepararsi scopertamente la guerra, per non avere in uno tempo medesimo a combattere con gli inimici di dentro e di fuora, [deliberorono] di assicurarsi del popolo di Milano; il quale diventando ogni dí piú insolente non solo negava loro tutte le provisioni dimandavano, ma eziandio se alcuno de' soldati spagnuoli fusse trovato per la città separato dagli altri era ammazzato da i milanesi. Captata adunque occasione dai disordini che si facevano per la terra, dimandorno che alcuni capitani del popolo si uscissino di Milano; donde nata sollevazione furono alcuni spagnuoli che andavano per Milano ammazzati da certi popolari: e però Antonio de Leva e il marchese, fatto tacitamente accostare le genti a Milano, protestato non essere piú obligati agli accordi fatti a' dí passati, il dí decimosettimo di giugno fatto ammazzare in loro presenza, per dare principio al tumulto, uno della plebe che non aveva fatto loro reverenza, e dopo lui tre altri, e usciti degli alloggiamenti con una squadra di fanti tedeschi, detteno cagione al popolo di dare all'armi. Il quale, se bene nel principio sforzò la corte vecchia e il campanile del vescovado dove era guardia di fanti italiani, combattendo alla fine senza ordine, come fanno i popoli imperiti, piú con le grida che con l'armi, ed essendo offesi molto dagli scoppiettieri, posti ne' luoghi eminenti che prima avevano occupati, ne erano feriti e ammazzati molti di loro: in modo che, crescendo continuamente i disordini e il terrore, e avendo i fanti tedeschi cominciato a mettere fuoco nelle case vicine, e già approssimandosi alla città le fanterie spagnuole chiamate da capitani, il popolo, temendo degli estremi mali, convenne che i suoi capitani e molti altri de' popolari, i quali vi consentirono, si partissino di Milano, e che la moltitudine deponesse l'armi sottomettendosi alla obbedienza de' capitani. I quali accelerorono di fare cessare con queste condizioni il tumulto innanzi che i fanti spagnuoli entrassino dentro, dubitando che, se entravano mentre che l'una e l'altra parte era in
+
+ Decodifico l'output...
+dell'Oglio, gli imperiali passassino Adda e andassino ad assaltarlo, faceva instanza che lo esercito ecclesiastico, che già era a Piacenza, passato il Po sotto Cremona, si andasse a unire con quello de' viniziani, per accostarsi poi a Adda e aspettare in su le rive di quel fiume e in alloggiamento forte la venuta de' svizzeri. La quale, oltre alla natura loro, aveva riscontrato in molte difficoltà, essendo stata data imprudentemente al castellano di Mus e al vescovo di Lodi la cura del condurli: perché la vanità del vescovo di Lodi era poco efficace a questo maneggio, e il castellano era intento principalmente a fraudare una parte de' danari mandatigli per pagarne i svizzeri; né avevano, l'uno o l'altro di loro, tanta autorità appresso a quella nazione che fusse bastante a farne levare, massime con sí piccola quantità di danari, numero sí grande, cosí presto come sarebbe stato di bisogno; e questa anche si corrompeva per la emulazione nata tra loro, intenti piú ad ambizione e a gli interessi particolari che ad altro. Aggiunsono anche qualche difficoltà gli agenti che erano per il re di Francia nelle leghe di Elvezia, perché non avevano notizia quale fusse sopra questa cosa la mente del re né se era contraria o conforme alla sua intenzione; perché, non per inavvertenza ma studiosamente, per quegli consigli che spesso parendo molto prudenti riescono troppo acuti, si era pretermesso di dare notizia al re di questa espedizione. Perché Alberto Pio, oratore regio appresso al pontefice, aveva dimostrato essere pericolo che se il re intendesse, innanzi alla conclusione della lega, l'ordine dato di soldare i svizzeri non andasse piú tardo a conchiuderla, parendogli già a ogni modo che senza lui fusse cominciata dal pontefice e da' viniziani la guerra con Cesare. Cosí ritardandosi la venuta de' svizzeri si ritardava il piú principale e il piú potente de' fondamenti disegnati per soccorrere il castello di Milano, non ostante che il vescovo e il castellano della venuta loro prestissima dessino quotidianamente certa e presentissima speranza.
+Ma i capitani cesarei, poi che veddeno prepararsi scopertamente la guerra, per non avere in uno tempo medesimo a combattere con gli inimici di dentro e di fuora, [deliberorono] di assicurarsi del popolo di Milano; il quale diventando ogni dí piú insolente non solo negava loro tutte le provisioni dimandavano, ma eziandio se alcuno de' soldati spagnuoli fusse trovato per la città separato dagli altri era ammazzato da i milanesi. Captata adunque occasione dai disordini che si facevano per la terra, dimandorno che alcuni capitani del popolo si uscissino di Milano; donde nata sollevazione furono alcuni spagnuoli che andavano per Milano ammazzati da certi popolari: e però Antonio de Leva e il marchese, fatto tacitamente accostare le genti a Milano, protestato non essere piú obligati agli accordi fatti a' dí passati, il dí decimosettimo di giugno fatto ammazzare in loro presenza, per dare principio al tumulto, uno della plebe che non aveva fatto loro reverenza, e dopo lui tre altri, e usciti degli alloggiamenti con una squadra di fanti tedeschi, detteno cagione al popolo di dare all'armi. Il quale, se bene nel principio sforzò la corte vecchia e il campanile del vescovado dove era guardia di fanti italiani, combattendo alla fine senza ordine, come fanno i popoli imperiti, piú con le grida che con l'armi, ed essendo offesi molto dagli scoppiettieri, posti ne' luoghi eminenti che prima avevano occupati, ne erano feriti e ammazzati molti di loro: in modo che, crescendo continuamente i disordini e il terrore, e avendo i fanti tedeschi cominciato a mettere fuoco nelle case vicine, e già approssimandosi alla città le fanterie spagnuole chiamate da capitani, il popolo, temendo degli estremi mali, convenne che i suoi capitani e molti altri de' popolari, i quali vi consentirono, si partissino di Milano, e che la moltitudine deponesse l'armi sottomettendosi alla obbedienza de' capitani. I quali accelerorono di fare cessare con queste condizioni il tumulto innanzi che i fanti spagnuoli entrassino dentro, dubitando che, se entravano mentre che l'una e l'altra parte era in
+Epoch 0:   0%|                 | 1/437234 [00:01<146:04:19,  0.83it/s, v_num=i5n1, train/loss=10.60]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1023
+
+Decodifico l'input...
+<s> Uffici d'informazione» furono pubblicate nel 1890; così vennero fatti, insieme con la «Relazione» dell'avv. Felice Cardon, i preparativi più opportuni perchè i nostri delegati potessero degnamente presentarsi al IV Congresso Internazionale Geografico in Parigi nel 1889; così fin dal 1888, di accordo col Ministero della Pubblica Istruzione e con l'Istituto Storico, furono poste le basi dell'opera della Colombiana, di cui il Governo assunse il patrocinio.
+La Reale Commissione Colombiana fu istituita con Regio Decreto 17 maggio 1888; e quindi la magnifica opera composta di 14 grossi volumi in formato grande, ove è trattata sui documenti e con acume critico, tutta la parte presa dagli Italiani alla scoperta del Nuovo Mondo, non ha soltanto il carattere di iniziativa privata, ma quello di un'impresa alla quale ha partecipato tutta la nazione.
+Vi collaborarono effettivamente Cesare De Lollis, per quanto riguarda i manoscritti di Colombo, L. Tommaso Belgrano e M. Staglieno per i documenti di famiglia, C. Desimoni, A. Salvagnini, A. Neri, M. Rossi e G. Berchet, per ciò che si riferisce al Codice diplomatico, alle medaglie, alle fonti storiche italiane. Enrico d'Albertis, Timoteo Bertelli e Vittore Bellio trattarono con particolare competenza la parte nautica e cartografica; Gustavo Uzielli illustrò da par suo la grande figura di Paolo Dal Pozzo Toscanelli, di cui G. Celoria mise in rilievo l'originalità come astronomo. Di Pietro Martire si occupò Giuseppe Pennesi, del Vespucci e del Verrazzano Luigi Hugues, del Pancaldo il Peragallo, del Pigafetta A. da Mosto, di Giovanni Caboto Vincenzo Bellemo, di G. Benzone M. Allegri. Da ultimo G. Fumagalli e Amat di San Filippo si occuparono della parte bibliografica.
+IV.
+Ma i tempi parevano di nuovo volgersi propizi alle grandi iniziative politico-africane. Al primo possesso coloniale dell'Italia, che fu Assab nel 1882, già fin dal 1869 acquistata privatamente dall'esploratore Giuseppe Sapeto per conto del Rubattino, era seguita qualche anno dopo l'occupazione di Massaua, e nell'89 il possesso si era esteso nell'interno alle regioni oltre Asmara, al paese dei Bogos e a Cheren, non senza qualche punta nella direzione di Cássala; mentre d'altra parte il protettarato italiano si era dichiarato sulla costa della Somalia dalla foce del Giuba al Golfo di Aden, con una «sfera d'influenza» verso l'interno, in regioni tuttavia sconosciute. Onde la necessità di esplorare questi paesi dove soltanto il francese Revoil e l'inglese James avevano fatto qualche importante ricognizione.
+Ho accennato più sopra alla fondazione, in Milano, fin dal 1879, della «Società di Esplorazione commerciale in Africa» dovuta agli amici del Camperio; nel 1881 si costituiva il «Club Africano di Napoli» in occasione del ricevimento di Gustavo Bianchi, reduce dal Goggiam e dalla ottenuta liberazione del Cecchi; e nel 1882 questo sodalizio si trasformava in «Società Africana d'Italia» la quale ben presto, per iniziativa di un giovane studente, Attilio Mori, trasferitosi allora da Napoli a Firenze, dava luogo, nell'aprile 1884, alla «Sezione Fiorentina della Società Africana d'Italia» e, poco dopo l'occupazione di Massaua, incominciava la pubblicazione di un Bollettino, la cui raccolta in 10 volumi diretta dal prof. Stefanelli, dal 1885 al 1895, è uno dei migliori repertori di notizie sul movimento africano dell'Italia nel decennio accennato.
+Era questa la disposizione degli animi in Italia quando venne eletto, nel gennaio 1891, presidente della Società Geografica il march. Giacomo Doria, viaggiatore e naturalista insigne, gran mecenate e promotore di viaggi scientifici, fondatore del Museo Civico di Storia naturale in Genova, al quale egli donò tutte le sue collezioni e la ricca biblioteca. Giovinetto aveva preso parte alla Missione in Persia, nel 1862, col De Filippi e col Lessona, nel 1865 fu con Odoardo Beccari in Borneo. E il Museo da lui fondato servì di preparazione e di punto di partenza, alle nostre spedizioni scientifiche più importanti,
+
+ Decodifico l'output...
+Uffici d'informazione» furono pubblicate nel 1890; così vennero fatti, insieme con la «Relazione» dell'avv. Felice Cardon, i preparativi più opportuni perchè i nostri delegati potessero degnamente presentarsi al IV Congresso Internazionale Geografico in Parigi nel 1889; così fin dal 1888, di accordo col Ministero della Pubblica Istruzione e con l'Istituto Storico, furono poste le basi dell'opera della Colombiana, di cui il Governo assunse il patrocinio.
+La Reale Commissione Colombiana fu istituita con Regio Decreto 17 maggio 1888; e quindi la magnifica opera composta di 14 grossi volumi in formato grande, ove è trattata sui documenti e con acume critico, tutta la parte presa dagli Italiani alla scoperta del Nuovo Mondo, non ha soltanto il carattere di iniziativa privata, ma quello di un'impresa alla quale ha partecipato tutta la nazione.
+Vi collaborarono effettivamente Cesare De Lollis, per quanto riguarda i manoscritti di Colombo, L. Tommaso Belgrano e M. Staglieno per i documenti di famiglia, C. Desimoni, A. Salvagnini, A. Neri, M. Rossi e G. Berchet, per ciò che si riferisce al Codice diplomatico, alle medaglie, alle fonti storiche italiane. Enrico d'Albertis, Timoteo Bertelli e Vittore Bellio trattarono con particolare competenza la parte nautica e cartografica; Gustavo Uzielli illustrò da par suo la grande figura di Paolo Dal Pozzo Toscanelli, di cui G. Celoria mise in rilievo l'originalità come astronomo. Di Pietro Martire si occupò Giuseppe Pennesi, del Vespucci e del Verrazzano Luigi Hugues, del Pancaldo il Peragallo, del Pigafetta A. da Mosto, di Giovanni Caboto Vincenzo Bellemo, di G. Benzone M. Allegri. Da ultimo G. Fumagalli e Amat di San Filippo si occuparono della parte bibliografica.
+IV.
+Ma i tempi parevano di nuovo volgersi propizi alle grandi iniziative politico-africane. Al primo possesso coloniale dell'Italia, che fu Assab nel 1882, già fin dal 1869 acquistata privatamente dall'esploratore Giuseppe Sapeto per conto del Rubattino, era seguita qualche anno dopo l'occupazione di Massaua, e nell'89 il possesso si era esteso nell'interno alle regioni oltre Asmara, al paese dei Bogos e a Cheren, non senza qualche punta nella direzione di Cássala; mentre d'altra parte il protettarato italiano si era dichiarato sulla costa della Somalia dalla foce del Giuba al Golfo di Aden, con una «sfera d'influenza» verso l'interno, in regioni tuttavia sconosciute. Onde la necessità di esplorare questi paesi dove soltanto il francese Revoil e l'inglese James avevano fatto qualche importante ricognizione.
+Ho accennato più sopra alla fondazione, in Milano, fin dal 1879, della «Società di Esplorazione commerciale in Africa» dovuta agli amici del Camperio; nel 1881 si costituiva il «Club Africano di Napoli» in occasione del ricevimento di Gustavo Bianchi, reduce dal Goggiam e dalla ottenuta liberazione del Cecchi; e nel 1882 questo sodalizio si trasformava in «Società Africana d'Italia» la quale ben presto, per iniziativa di un giovane studente, Attilio Mori, trasferitosi allora da Napoli a Firenze, dava luogo, nell'aprile 1884, alla «Sezione Fiorentina della Società Africana d'Italia» e, poco dopo l'occupazione di Massaua, incominciava la pubblicazione di un Bollettino, la cui raccolta in 10 volumi diretta dal prof. Stefanelli, dal 1885 al 1895, è uno dei migliori repertori di notizie sul movimento africano dell'Italia nel decennio accennato.
+Era questa la disposizione degli animi in Italia quando venne eletto, nel gennaio 1891, presidente della Società Geografica il march. Giacomo Doria, viaggiatore e naturalista insigne, gran mecenate e promotore di viaggi scientifici, fondatore del Museo Civico di Storia naturale in Genova, al quale egli donò tutte le sue collezioni e la ricca biblioteca. Giovinetto aveva preso parte alla Missione in Persia, nel 1862, col De Filippi e col Lessona, nel 1865 fu con Odoardo Beccari in Borneo. E il Museo da lui fondato servì di preparazione e di punto di partenza, alle nostre spedizioni scientifiche più importanti,
+Epoch 0:   0%|                  | 2/437234 [00:01<78:35:29,  1.55it/s, v_num=i5n1, train/loss=10.50]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> ,
+Puoi disdegnoso al semplice che crede
+Ed al vecchio pievan ridere in viso.
+XXXII
+Quando dopo la pioggia un porporino
+Arco d’oro e di luce il grembo fende
+Della liquida nube, e dal marino
+Flutto alle vette del Summan si stende,
+Esilarato il cor del contadino
+Da que’ lieti colori augurio prende:
+Dal giallo il grano, dal vermiglio il vino,
+Il fien dal verde in molta copia attende.
+Egro mortal, dalla solcata fronte,
+Dall’arsa man, dal vitto incerto e parco,
+In quel che va dalla marina al monte,
+Fra terra e cielo, interminabil arco,
+Perché non vedi sollevarsi un ponte
+Che ti promette a miglior mondo il varco?
+XXXIII
+Non perché del color, che sul mattino
+Cobra i cieli, quando è l’alba ascosa,
+Colori la tua foglia, o fior di lino,
+Più del mughetto io t’amo e della rosa;
+Non perché del color, che il suol marino
+Pinge nell’ora, che da’ venti ha posa
+Né più dell’acque a fior esce il delfino,
+Tingi la breve tua foglia vezzosa,
+O mio campestre fiorellino io t’amo!
+T’amo, perché la tua cerulea tinta
+Del caro sguardo m’è dolce richiamo
+D’una sorella, che nel cor dipinta
+Porto da molte lune e piango e bramo
+Che m’abbia seco, come viva, estinta.
+XXXIV
+Se un racimolo io veggo, che il villano
+Obbïò sovra un tralcio; o rubiconda
+Mela pendente dall’estrema fronda,
+Obblïata non già, ma che la mano
+Del fanciullo spiccar provossi invano;
+Penso del tempo alla volubil onda,
+Che d’anno in anno e d’una in altra sponda
+Il fior si porta dell’ingegno umano;
+Tal che degl’inni, che l’età lontane
+Tacite udîr meravigliando, appena
+Qualche reliquia per più duol rimane;
+Come il pomo e racimolo, che scerno
+Lasciati al ramo, accrescono la pena
+Che l’autunno sia scorso e giunto il verno.
+XXXV
+Amai garzone del natio torrente
+Il sassoso fragor. Nell’Alpi errando,
+Se d’aereo macigno onda cadente
+Rapida a’ piedi mi venia spumando,
+E come scinta Mènade furente
+Usa sull’Ebro a vibrar tirso e brando,
+Fra le rupi avvolgea la sua corrente,
+Con muta voluttà stetti mirando.
+E de’ venti il romor, che di foresta
+In foresta passava allor mi piacque,
+Ché non di fuor soltanto era tempesta.
+Or che l’età quella baldanza ha dóma,
+Amo, Astichello, le tue placid’acque,
+E l’aura che a’ rosai scioglie la chioma.
+XXXVI
+Tacito, immoto, con la canna immota,
+Il vecchio pescator pende sul fiume,
+Ove, agitando le minute spume,
+Salir da’ verdi fondi argentea trota
+E folleggiar con tortüosa rota,
+La coda dibattendo, ha per costume:
+Ei, che stremato ha già degli occhi il lume,
+Il guizzo attende che la man gli scota.
+Nel fiume del passato ad ora ad ora
+Getto anch’io l’amo; e tacito sedendo
+Tra vecchi libri dalla prima aurora
+Al tardo vespro la mia preda attendo;
+Ma l’onda passa; e della mia dimora
+Altro che d’alga guiderdon non prendo.
+XXXVII
+Come sillaba a sillaba nel verso
+Va succedendo in tuono or alto or grave,
+Il concento così dell’universo
+Sotto la man di Lui, che n’ha la chiave,
+Ne’ secoli risuona uno e diverso;
+Ma l’incauto mortal d’una soave
+Nota al suon preso e tutto in quella immerso,
+O che d’un volto femminil sian schiave
+L’eg
+
+ Decodifico l'output...
+,
+Puoi disdegnoso al semplice che crede
+Ed al vecchio pievan ridere in viso.
+XXXII
+Quando dopo la pioggia un porporino
+Arco d’oro e di luce il grembo fende
+Della liquida nube, e dal marino
+Flutto alle vette del Summan si stende,
+Esilarato il cor del contadino
+Da que’ lieti colori augurio prende:
+Dal giallo il grano, dal vermiglio il vino,
+Il fien dal verde in molta copia attende.
+Egro mortal, dalla solcata fronte,
+Dall’arsa man, dal vitto incerto e parco,
+In quel che va dalla marina al monte,
+Fra terra e cielo, interminabil arco,
+Perché non vedi sollevarsi un ponte
+Che ti promette a miglior mondo il varco?
+XXXIII
+Non perché del color, che sul mattino
+Cobra i cieli, quando è l’alba ascosa,
+Colori la tua foglia, o fior di lino,
+Più del mughetto io t’amo e della rosa;
+Non perché del color, che il suol marino
+Pinge nell’ora, che da’ venti ha posa
+Né più dell’acque a fior esce il delfino,
+Tingi la breve tua foglia vezzosa,
+O mio campestre fiorellino io t’amo!
+T’amo, perché la tua cerulea tinta
+Del caro sguardo m’è dolce richiamo
+D’una sorella, che nel cor dipinta
+Porto da molte lune e piango e bramo
+Che m’abbia seco, come viva, estinta.
+XXXIV
+Se un racimolo io veggo, che il villano
+Obbïò sovra un tralcio; o rubiconda
+Mela pendente dall’estrema fronda,
+Obblïata non già, ma che la mano
+Del fanciullo spiccar provossi invano;
+Penso del tempo alla volubil onda,
+Che d’anno in anno e d’una in altra sponda
+Il fior si porta dell’ingegno umano;
+Tal che degl’inni, che l’età lontane
+Tacite udîr meravigliando, appena
+Qualche reliquia per più duol rimane;
+Come il pomo e racimolo, che scerno
+Lasciati al ramo, accrescono la pena
+Che l’autunno sia scorso e giunto il verno.
+XXXV
+Amai garzone del natio torrente
+Il sassoso fragor. Nell’Alpi errando,
+Se d’aereo macigno onda cadente
+Rapida a’ piedi mi venia spumando,
+E come scinta Mènade furente
+Usa sull’Ebro a vibrar tirso e brando,
+Fra le rupi avvolgea la sua corrente,
+Con muta voluttà stetti mirando.
+E de’ venti il romor, che di foresta
+In foresta passava allor mi piacque,
+Ché non di fuor soltanto era tempesta.
+Or che l’età quella baldanza ha dóma,
+Amo, Astichello, le tue placid’acque,
+E l’aura che a’ rosai scioglie la chioma.
+XXXVI
+Tacito, immoto, con la canna immota,
+Il vecchio pescator pende sul fiume,
+Ove, agitando le minute spume,
+Salir da’ verdi fondi argentea trota
+E folleggiar con tortüosa rota,
+La coda dibattendo, ha per costume:
+Ei, che stremato ha già degli occhi il lume,
+Il guizzo attende che la man gli scota.
+Nel fiume del passato ad ora ad ora
+Getto anch’io l’amo; e tacito sedendo
+Tra vecchi libri dalla prima aurora
+Al tardo vespro la mia preda attendo;
+Ma l’onda passa; e della mia dimora
+Altro che d’alga guiderdon non prendo.
+XXXVII
+Come sillaba a sillaba nel verso
+Va succedendo in tuono or alto or grave,
+Il concento così dell’universo
+Sotto la man di Lui, che n’ha la chiave,
+Ne’ secoli risuona uno e diverso;
+Ma l’incauto mortal d’una soave
+Nota al suon preso e tutto in quella immerso,
+O che d’un volto femminil sian schiave
+L’eg
+Epoch 0:   0%|                  | 3/437234 [00:01<55:36:32,  2.18it/s, v_num=i5n1, train/loss=10.60]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> ggia e io pure. Tutte le mie amiche hanno l'innamorato, io che sono più bella di loro, anche lo ho.
+- Non parlare così, - disse, piano, suor Giovanna della Croce, il cui volto pieno di rughe si andava covrendo di rossore.
+- Io dico quello che penso, zi monaca. Sia maledetta la bugia! Sono ragazza e non debbo nascondere che amoreggio. Sono le donne maritate che lo debbono nascondere! - replicò sfrontatamente la fanciulla.
+- Zitto, Clementina, zitto! - e la povera monaca, scandalizzata, fece atto di turarsi le orecchie.
+- Le donne maritate anche fanno all'amore, se lo volete sapere, zi monaca. Ed è una vergogna, perchè si potrebbero stare al loro posto! La portinaia qui abbasso, ha per amante una guardia di pubblica sicurezza, che ogni sera viene a trovarla nel casotto; e Concetta gli fa trovare il caffè e il bicchiere di vino. È maritata o no, Concetta? Qua sopra, al secondo piano, l'avvocato de Gasperis ha una donna maritata che viene a trovarlo, due o tre volte la settimana, di notte, e se ne va la mattina. Io l'ho vista salire e scendere, e voi pure, eh! zi monaca, l'avete vista?...
+- Gesù, Gesù, che scorno, una ragazza, parlare così! - esclamò la monaca che soffriva enormemente di quei discorsi.
+- Eh, le ragazze capiscono tutto adesso! - gridò Clementina che era entrata in uno stato d'isterismo. - Le ragazze non sono più stupide come una volta, a tempi vostri, zi monaca! Foste stupida voi ad andare nelle sepolte vive, per mio papà che vi aveva tradito, per mammà che vi aveva rubato il fidanzato! Mammà ha fatto altro che questo, dopo....
+Ma si fermò. La vecchia monaca si era levata in piedi, tremante, con le mani tese, chiedendo, imponendo silenzio alla creatura sfacciata, che gridava le brutali verità della vita. Clementina s'interruppe, balbettò:
+- Scusate, zi monaca.... ho i nervi, oggi....
+Fece per uscire, ma tornò indietro, e cavò una lettera, larga, dalla tasca.
+- Mi sono scordata di darvi questa lettera che il postino ha portata.
+E se ne andò subito, lasciando suor Giovanna della Croce in mezzo alla stanza. con quella larga lettera fra le mani. Un tremito mortale scuoteva le fibre della monaca; mentalmente, ella si raccomandava a Dio, perchè vincesse la sua confusione e il suo dolore. La ragazza aveva taciuto, era partita: un altro minuto ancora e la vecchia suora avrebbe pianto di umiliazione, di pudore offeso, di vergogna, innanzi a sua nipote. Così, non potette aprire subito quella lettera, tenendola nelle mani, distrattamente, quasi non vedendola, quasi essendosene dimenticata: si andò a gittare sulla sedia, nel vano del secondo balcone, quello che dava sul Vico Primo Consiglio, dirimpetto alla casa muta e cieca. Teneva curva la testa, curve le spalle: si sentiva piegata sotto un peso atroce, che lentamente la schiacciava. Restò così, qualche tempo. Poi, si rammentò la lettera. Guardò il francobollo timbrato; veniva da Roma; portava questo indirizzo: Signora Luisa Bevilacqua, già monaca nell'Ordine delle Sepolte Vive. L'aprì, la lesse. La lesse di nuovo, più piano, parola per parola. Il suo viso era diventato plumbeo e il capo era caduto sul petto.
+Quando, un'ora dopo, Grazia Bevilacqua entrò nella stanza di sua sorella monaca, la trovò a quel posto solito, di fronte alla casa oscura e silenziosa. Suor Giovanna della Croce teneva il tombolo del merletto sulle ginocchia, ma non lavorava: le mani lunghe e magre erano abbandonate sul cuscino, coperto di tela verde. La monaca pareva assorta, niente altro.
+La sorella, meno vecchia di lei di cinque o sei anni, non le rassomigliava. Era bionda e i suoi capelli erano tinti malamente, tanto che assumevano, qua e là, ombre verdastre: il viso era bianco e gonfio di un cattivo grasso: una costante espressione di malcontento torceva quella bocca, che era stata molto bella. Come sua
+
+ Decodifico l'output...
+ggia e io pure. Tutte le mie amiche hanno l'innamorato, io che sono più bella di loro, anche lo ho.
+- Non parlare così, - disse, piano, suor Giovanna della Croce, il cui volto pieno di rughe si andava covrendo di rossore.
+- Io dico quello che penso, zi monaca. Sia maledetta la bugia! Sono ragazza e non debbo nascondere che amoreggio. Sono le donne maritate che lo debbono nascondere! - replicò sfrontatamente la fanciulla.
+- Zitto, Clementina, zitto! - e la povera monaca, scandalizzata, fece atto di turarsi le orecchie.
+- Le donne maritate anche fanno all'amore, se lo volete sapere, zi monaca. Ed è una vergogna, perchè si potrebbero stare al loro posto! La portinaia qui abbasso, ha per amante una guardia di pubblica sicurezza, che ogni sera viene a trovarla nel casotto; e Concetta gli fa trovare il caffè e il bicchiere di vino. È maritata o no, Concetta? Qua sopra, al secondo piano, l'avvocato de Gasperis ha una donna maritata che viene a trovarlo, due o tre volte la settimana, di notte, e se ne va la mattina. Io l'ho vista salire e scendere, e voi pure, eh! zi monaca, l'avete vista?...
+- Gesù, Gesù, che scorno, una ragazza, parlare così! - esclamò la monaca che soffriva enormemente di quei discorsi.
+- Eh, le ragazze capiscono tutto adesso! - gridò Clementina che era entrata in uno stato d'isterismo. - Le ragazze non sono più stupide come una volta, a tempi vostri, zi monaca! Foste stupida voi ad andare nelle sepolte vive, per mio papà che vi aveva tradito, per mammà che vi aveva rubato il fidanzato! Mammà ha fatto altro che questo, dopo....
+Ma si fermò. La vecchia monaca si era levata in piedi, tremante, con le mani tese, chiedendo, imponendo silenzio alla creatura sfacciata, che gridava le brutali verità della vita. Clementina s'interruppe, balbettò:
+- Scusate, zi monaca.... ho i nervi, oggi....
+Fece per uscire, ma tornò indietro, e cavò una lettera, larga, dalla tasca.
+- Mi sono scordata di darvi questa lettera che il postino ha portata.
+E se ne andò subito, lasciando suor Giovanna della Croce in mezzo alla stanza. con quella larga lettera fra le mani. Un tremito mortale scuoteva le fibre della monaca; mentalmente, ella si raccomandava a Dio, perchè vincesse la sua confusione e il suo dolore. La ragazza aveva taciuto, era partita: un altro minuto ancora e la vecchia suora avrebbe pianto di umiliazione, di pudore offeso, di vergogna, innanzi a sua nipote. Così, non potette aprire subito quella lettera, tenendola nelle mani, distrattamente, quasi non vedendola, quasi essendosene dimenticata: si andò a gittare sulla sedia, nel vano del secondo balcone, quello che dava sul Vico Primo Consiglio, dirimpetto alla casa muta e cieca. Teneva curva la testa, curve le spalle: si sentiva piegata sotto un peso atroce, che lentamente la schiacciava. Restò così, qualche tempo. Poi, si rammentò la lettera. Guardò il francobollo timbrato; veniva da Roma; portava questo indirizzo: Signora Luisa Bevilacqua, già monaca nell'Ordine delle Sepolte Vive. L'aprì, la lesse. La lesse di nuovo, più piano, parola per parola. Il suo viso era diventato plumbeo e il capo era caduto sul petto.
+Quando, un'ora dopo, Grazia Bevilacqua entrò nella stanza di sua sorella monaca, la trovò a quel posto solito, di fronte alla casa oscura e silenziosa. Suor Giovanna della Croce teneva il tombolo del merletto sulle ginocchia, ma non lavorava: le mani lunghe e magre erano abbandonate sul cuscino, coperto di tela verde. La monaca pareva assorta, niente altro.
+La sorella, meno vecchia di lei di cinque o sei anni, non le rassomigliava. Era bionda e i suoi capelli erano tinti malamente, tanto che assumevano, qua e là, ombre verdastre: il viso era bianco e gonfio di un cattivo grasso: una costante espressione di malcontento torceva quella bocca, che era stata molto bella. Come sua
+Epoch 0:   0%|                  | 4/437234 [00:01<44:09:04,  2.75it/s, v_num=i5n1, train/loss=10.50]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> memoria. Tuttavia si fa fare de' gran litterati i ritratti e si mettono attorno alla accademia; onde fa un bellissimo vedere e mette un grand'animo alle persone di seguitar la virtú, vedendo sí fatti uomini rari correre per i secoli eterni con sí onorata fama.
+Fiorentini. Debbe esser un bel luogo e bene dotato, alla spesa che vi si fa.
+Peregrini. Abbiamo pittori nell'academia che fanno questi presenti, abbiamo gentiluomini che donano tapezzerie, e scultori che sculpiscano, maestri d'intaglio che fanno gli ornamenti mirabili; e ciascuno mostra quanto sia amatore della fama buona e de' virtuosi fatti e opere egregie.
+Fiorentini. Voi dovete fare scrivere e presentare tutto il mondo.
+Peregrini. Ogni virtuoso e ogni signore amatore de' virtuosi ha nostre lettere e nostre opere.
+Fiorentini. Talmente che l'academia giova a Vinegia, alla villa academica e a tutto il mondo? Questo ordine mi diletta e n'ho gran consolazione. Chi maneggia l'intrate?
+Peregrini. Quei cinque cittadini; e il presidente, sempre del suo tempo, rivede il tutto, né ha, mentre che egli è presidente, autoritá alcuna sopra l'entrate, ma di farle ben ministrare solamente; e, nel far delle faccende, quei cinque governano e reggono il perno.
+Fiorentini. Ancor questo è modo libero e retto governo.
+Peregrini. Dove entra gentiluomini, dico de' veri gentiluomini, viniziani, vi si pon sempre ottimi ordini e liberi, perché la libertá è regina del mondo.
+Fiorentini. Una stampa particolar vi manca.
+Peregrini. Quella di messer Francesco Marcolini, un de' nostri secretari, è una, e una ne abbiamo fuori per istampare le nostre conclusioni; i nostri sonetti e i nostri epigrammi che si portano nell'academia, tutto viene lá in congregazione stampato e si pone in una bellissima arca; in un'altra urna ci sono tutte le minute delle lettere che scrive e sono scritte all'academia, e in un'altra tutte le risposte. Per ciascuno che muore, che sia academico, se gli fa fare un'orazione, ponendola in un altra urna, e l'academia, in pietra, scrive il suo epitaffio ad onore della sua fama: e altri mirabili ordini, di poca fatica, di grand'onore; e per farsi onore, non si guarda a spesa, in conto alcuno. Ma tutte le nostre cose vanno fuori del corpo dell'academia piú secretamente che si può: basta, che prima appariscono i fatti che s'odino le parole.
+Fiorentini. Viver poss'ella eternamente, ché, almanco, la non fa spampanate di grandezza di fumo né va con il cembolo in colombaia!
+Peregrini. Se voi sapeste con quanto amore noi ci veggiamo l'un l'altro e con quanta caritá ci amiamo, stupireste; non credo che sia congregazione piú separata dal vizio dell'odio che la nostra, sia detto con pace de' buoni.
+Fiorentini. Cosa rara certo e che poche volte accade in fra i pari.
+Peregrini. Ogni volta che occorrerá a far doge, l'academia gli ha a mandare a fare un'orazione e a presentargli, in nome di tutti gli academici, come suoi obedientissimi servi, tributo: e questa è una di quelle tazze d'argento con la sua arme dentro e di fuori quella dell'academia.
+Fiorentini. Quando la vostra congregazione o, per meglio dir, quei sei mancheranno?
+Peregrini. Ogni volta, come che uno muore, se n'elegge un altro; e fa quel medesimo dono perpetuo che ha fatto il suo antecessore.
+Fiorentini. In spazio di tempo cotesta academia avrá parecchi centinaia di ducati d'entrata.
+Peregrini. Chi ne dubita? non vi pare che sia stato un bel trovare senza molto carico della borsa?
+Fiorentini. L'è stata un'invenzion dolce da trarre, senza far male ad alcuno. Che si fará di quell'entrata?
+Peregrini. Protrebbesi rispondere: chi verrá a quei tempi ci pensi; ma egli s'è ordinato per istrumento reale, confermato dai nostri signori, che, avendo l'
+
+ Decodifico l'output...
+memoria. Tuttavia si fa fare de' gran litterati i ritratti e si mettono attorno alla accademia; onde fa un bellissimo vedere e mette un grand'animo alle persone di seguitar la virtú, vedendo sí fatti uomini rari correre per i secoli eterni con sí onorata fama.
+Fiorentini. Debbe esser un bel luogo e bene dotato, alla spesa che vi si fa.
+Peregrini. Abbiamo pittori nell'academia che fanno questi presenti, abbiamo gentiluomini che donano tapezzerie, e scultori che sculpiscano, maestri d'intaglio che fanno gli ornamenti mirabili; e ciascuno mostra quanto sia amatore della fama buona e de' virtuosi fatti e opere egregie.
+Fiorentini. Voi dovete fare scrivere e presentare tutto il mondo.
+Peregrini. Ogni virtuoso e ogni signore amatore de' virtuosi ha nostre lettere e nostre opere.
+Fiorentini. Talmente che l'academia giova a Vinegia, alla villa academica e a tutto il mondo? Questo ordine mi diletta e n'ho gran consolazione. Chi maneggia l'intrate?
+Peregrini. Quei cinque cittadini; e il presidente, sempre del suo tempo, rivede il tutto, né ha, mentre che egli è presidente, autoritá alcuna sopra l'entrate, ma di farle ben ministrare solamente; e, nel far delle faccende, quei cinque governano e reggono il perno.
+Fiorentini. Ancor questo è modo libero e retto governo.
+Peregrini. Dove entra gentiluomini, dico de' veri gentiluomini, viniziani, vi si pon sempre ottimi ordini e liberi, perché la libertá è regina del mondo.
+Fiorentini. Una stampa particolar vi manca.
+Peregrini. Quella di messer Francesco Marcolini, un de' nostri secretari, è una, e una ne abbiamo fuori per istampare le nostre conclusioni; i nostri sonetti e i nostri epigrammi che si portano nell'academia, tutto viene lá in congregazione stampato e si pone in una bellissima arca; in un'altra urna ci sono tutte le minute delle lettere che scrive e sono scritte all'academia, e in un'altra tutte le risposte. Per ciascuno che muore, che sia academico, se gli fa fare un'orazione, ponendola in un altra urna, e l'academia, in pietra, scrive il suo epitaffio ad onore della sua fama: e altri mirabili ordini, di poca fatica, di grand'onore; e per farsi onore, non si guarda a spesa, in conto alcuno. Ma tutte le nostre cose vanno fuori del corpo dell'academia piú secretamente che si può: basta, che prima appariscono i fatti che s'odino le parole.
+Fiorentini. Viver poss'ella eternamente, ché, almanco, la non fa spampanate di grandezza di fumo né va con il cembolo in colombaia!
+Peregrini. Se voi sapeste con quanto amore noi ci veggiamo l'un l'altro e con quanta caritá ci amiamo, stupireste; non credo che sia congregazione piú separata dal vizio dell'odio che la nostra, sia detto con pace de' buoni.
+Fiorentini. Cosa rara certo e che poche volte accade in fra i pari.
+Peregrini. Ogni volta che occorrerá a far doge, l'academia gli ha a mandare a fare un'orazione e a presentargli, in nome di tutti gli academici, come suoi obedientissimi servi, tributo: e questa è una di quelle tazze d'argento con la sua arme dentro e di fuori quella dell'academia.
+Fiorentini. Quando la vostra congregazione o, per meglio dir, quei sei mancheranno?
+Peregrini. Ogni volta, come che uno muore, se n'elegge un altro; e fa quel medesimo dono perpetuo che ha fatto il suo antecessore.
+Fiorentini. In spazio di tempo cotesta academia avrá parecchi centinaia di ducati d'entrata.
+Peregrini. Chi ne dubita? non vi pare che sia stato un bel trovare senza molto carico della borsa?
+Fiorentini. L'è stata un'invenzion dolce da trarre, senza far male ad alcuno. Che si fará di quell'entrata?
+Peregrini. Protrebbesi rispondere: chi verrá a quei tempi ci pensi; ma egli s'è ordinato per istrumento reale, confermato dai nostri signori, che, avendo l'
+Epoch 0:   0%|                  | 5/437234 [00:01<37:23:31,  3.25it/s, v_num=i5n1, train/loss=10.50]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> — Eravamo sta notte agli erbaggi, accanto al mulino di Teodosia, io, Gregorio Ivaschka e gli altri con tutti i nostri cavalli. Parea tanto fresco restare sull’erba e respirare quell’aria ch’era una vaghezza; le bestie stesse balzavano di gioia. Il fuoco era superbo, e la mugnaia venne a parlare, a ridere, a portarci del granone a pannocchie, che facemmo arrostire tra la brage. Quando ella se ne andò, restammo ancora a mangiar pannocchie ed a raccontare storielle. La calma era così profonda che si udiva fluttuare l’acqua del mulino e guizzarvi i pesci. Quasi tutti s’addormentarono; io non dormiva: steso supino, contavo le stelle. Quand’ecco d’un tratto i cani abbaiano, e rizzandomi vedo un lupo proprio vicino a’ salici, cacciar la testa dal fogliame e guardarci. Chiamo i compagni e mi lancio ad inseguire il lupo con un tizzone in mano: gli altri mi seguono col tizzone anch’essi. L’animale scompare; tuttavia, dopo una bella corsa, lo rivediamo dietro il mulino non più con quattro zampe, ma su due piedi, padrone, su due piedi, come un uomo. Gregorio ed Ivachka si fanno il segno della croce; ma Miscialik, astuto, fiuta la cosa. – Che il Diavolo mi afferri pe’ capelli, diss’egli, se quello non è un ladro venuto a rubarci la bestie! – Mentr’egli diceva così, la paura mi soffoca e mi cominciano a tremare le gambe; gli altri davano la caccia al ladro, ma io mi trascinavo verso i cavalli. Pascolavano tranquillamente, e non sarebbe stato così se il lupo fosse stato vicino, poichè i cavalli lo annasano di lontano, e cercano allora un rialzo ove insieme formano un cerchio di zoccoli al di fuori. Rassicurato, mi metto a contare, come prima le stelle, le nostre povere bestie, ma gli era impossibile da solo. Quando i compagni vennero ad aiutarmi, ci è apparso il guaio. Gli assassini ci avevano rubati quattro cavalli! Uno di loro s’era cucito in una pelle di lupo per ispaventarci e darci da fare, mentre gli altri....
+Il povero ragazzo singhiozzava a più non posso.
+— De’ quattro cavalli, due erano miei.... e il poledro aveva seguita la cavalla pezzata!... Dio sa dove sono adesso! Ma conosco i ladri, oh, se li conosco!
+— Forse Cirillo?
+Proprio lui, rispose il giovanetto: e Stawrowski con la loro banda. Rubano l’uovo sotto il ventre della chioccia e il lino dalle mani della massaia.
+— Se conosci i ladri, perchè non gl’insegui invece di startene a piangere?
+— È troppo tardi: sarebbe inutile. Quella canaglia ha gli aiuti, e i manutengoli: già un ebreo ha fatto traversar la frontiera a’ cavalli, li ha venduti in Russia ed io non rivedrò più la mia cavalla! Oh, io non torno a casa, non vi torno!
+— Ti ci accompagnerò io, gli dissi.
+— E perchè? A che serve?
+— Per parlarne a tuo padre.
+— È inutile; vi ringrazio.
+— Ma non temi dunque le bastonate?
+— Che m’importa delle bastonate!
+E si pose a gridare versando a torrenti le lagrime, graffiandosi il viso e battendoselo co’ pugni chiusi.
+— Oh, la mia giumenta pezzata!... Oh, il puledro coi piedi bianchi!... Oh, mia povera bestia: come guardavi con quegli occhioni neri! Come nitrivi udendo le mie parole! Chi ti porterà ora le carote e il mellone? Dio mio! Mi fa male il cuore.... Vorrei morire!
+E si gettò con la faccia per terra e vi rimase senza moto.
+Quindici giorni dopo questa scena, tornando dalla caccia, il mio cane inglese, che mi andava sempre innanzi, entrò nella taverna dell’Ebreo, che si trova fra il nostro villaggio e Tulava. Dovevo fare ancora una lega, l’insegna di rami verdi penzolava sulla porta in guisa tanto lusinghiera che seguii la guida addirittura.
+Di fronte alla porta tarlata si drizzava il bancone inverniciato, dietro
+
+ Decodifico l'output...
+— Eravamo sta notte agli erbaggi, accanto al mulino di Teodosia, io, Gregorio Ivaschka e gli altri con tutti i nostri cavalli. Parea tanto fresco restare sull’erba e respirare quell’aria ch’era una vaghezza; le bestie stesse balzavano di gioia. Il fuoco era superbo, e la mugnaia venne a parlare, a ridere, a portarci del granone a pannocchie, che facemmo arrostire tra la brage. Quando ella se ne andò, restammo ancora a mangiar pannocchie ed a raccontare storielle. La calma era così profonda che si udiva fluttuare l’acqua del mulino e guizzarvi i pesci. Quasi tutti s’addormentarono; io non dormiva: steso supino, contavo le stelle. Quand’ecco d’un tratto i cani abbaiano, e rizzandomi vedo un lupo proprio vicino a’ salici, cacciar la testa dal fogliame e guardarci. Chiamo i compagni e mi lancio ad inseguire il lupo con un tizzone in mano: gli altri mi seguono col tizzone anch’essi. L’animale scompare; tuttavia, dopo una bella corsa, lo rivediamo dietro il mulino non più con quattro zampe, ma su due piedi, padrone, su due piedi, come un uomo. Gregorio ed Ivachka si fanno il segno della croce; ma Miscialik, astuto, fiuta la cosa. – Che il Diavolo mi afferri pe’ capelli, diss’egli, se quello non è un ladro venuto a rubarci la bestie! – Mentr’egli diceva così, la paura mi soffoca e mi cominciano a tremare le gambe; gli altri davano la caccia al ladro, ma io mi trascinavo verso i cavalli. Pascolavano tranquillamente, e non sarebbe stato così se il lupo fosse stato vicino, poichè i cavalli lo annasano di lontano, e cercano allora un rialzo ove insieme formano un cerchio di zoccoli al di fuori. Rassicurato, mi metto a contare, come prima le stelle, le nostre povere bestie, ma gli era impossibile da solo. Quando i compagni vennero ad aiutarmi, ci è apparso il guaio. Gli assassini ci avevano rubati quattro cavalli! Uno di loro s’era cucito in una pelle di lupo per ispaventarci e darci da fare, mentre gli altri....
+Il povero ragazzo singhiozzava a più non posso.
+— De’ quattro cavalli, due erano miei.... e il poledro aveva seguita la cavalla pezzata!... Dio sa dove sono adesso! Ma conosco i ladri, oh, se li conosco!
+— Forse Cirillo?
+Proprio lui, rispose il giovanetto: e Stawrowski con la loro banda. Rubano l’uovo sotto il ventre della chioccia e il lino dalle mani della massaia.
+— Se conosci i ladri, perchè non gl’insegui invece di startene a piangere?
+— È troppo tardi: sarebbe inutile. Quella canaglia ha gli aiuti, e i manutengoli: già un ebreo ha fatto traversar la frontiera a’ cavalli, li ha venduti in Russia ed io non rivedrò più la mia cavalla! Oh, io non torno a casa, non vi torno!
+— Ti ci accompagnerò io, gli dissi.
+— E perchè? A che serve?
+— Per parlarne a tuo padre.
+— È inutile; vi ringrazio.
+— Ma non temi dunque le bastonate?
+— Che m’importa delle bastonate!
+E si pose a gridare versando a torrenti le lagrime, graffiandosi il viso e battendoselo co’ pugni chiusi.
+— Oh, la mia giumenta pezzata!... Oh, il puledro coi piedi bianchi!... Oh, mia povera bestia: come guardavi con quegli occhioni neri! Come nitrivi udendo le mie parole! Chi ti porterà ora le carote e il mellone? Dio mio! Mi fa male il cuore.... Vorrei morire!
+E si gettò con la faccia per terra e vi rimase senza moto.
+Quindici giorni dopo questa scena, tornando dalla caccia, il mio cane inglese, che mi andava sempre innanzi, entrò nella taverna dell’Ebreo, che si trova fra il nostro villaggio e Tulava. Dovevo fare ancora una lega, l’insegna di rami verdi penzolava sulla porta in guisa tanto lusinghiera che seguii la guida addirittura.
+Di fronte alla porta tarlata si drizzava il bancone inverniciato, dietro
+Epoch 0:   0%|                  | 6/437234 [00:01<33:00:45,  3.68it/s, v_num=i5n1, train/loss=10.50]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> lui Benvenuto da Imola, Jacopo della Lana ed altri commentatori di Dante, e Giovanni da Prato in una delle novelle inserite in quel suo romanzo, cui il Wesselofsky pose titolo Il Paradiso degli Alberti31. Altre ne ricorda, ma per giuoco, il Folengo nella maccheronea XVIII del Baldo. Nè più seriamente del Folengo dobbiam credere che intendesse ragionare di lui il Boccaccio, il quale nella sua novella lo fa ricordare come gran maestro di negromanzia a Bruno, non con altro fine che i burlarsi di maestro Simone.
+Si potrebbe obbiettare che nelle novelle 3a e 9a della giornata X il Boccaccio racconta di prodigi operati per arte magica come di cose veramente accadute. Nella prima narra di un fiorente giardino fatto sorgere di pien gennajo da un negromante, storia narrata anche di Alberto Magno e di molti altri presunti incantantori; nella seconda, ch'è la notissima storia di messer Torello e del Saladino, si racconta del buon cavaliere cristiano, come per arte magica, in una notte, fu trasportato sur un letto da Alessandria d'Egitto a Pavia. Ma queste due novelle, tanto provano che il Boccaccio avesse fede nella magia, quanto che l'avesse il Goethe può provare il Fausto. Qui abbiamo due temi di racconto assai diffusi nel medio evo e che il Boccaccio accoglie nel Decamerone, non perchè li creda veri, ma perchè li conosce assai vaghi, e tali da poterne con l'arte sua far ottimo uso. Accolti, s'egli vuole che ne segua l'effetto, bisogna non tocchi alla loro menzogna; e in fatto egli si guarda, contro l'usanza sua che per più esempii abbian potuto vedere in altre novelle qual sia, di dir pure una parola che lo mostri incredulo, o volga in beffa la credenza altrui. Così facendo egli segue un supremo precetto d'arte, non già la sua propria opinione, la quale è sin troppo chiarita da tutte le altre testimonianze che siam venuti notando. Il parlare seriamente di una cosa non può essere indizio di fede, quando c'entrino le ragioni dell'arte e della storia, mentre è prova certa d'incredulità il parlarne con ironia o con riso.
+Questa considerazione vale anche per ciò che mi rimane a dire delle apparizioni e dei fantasmi.
+Nella novella 3a della giornata V si narra di quella bellissima e formidabile apparizione veduta da un giovine di Ravenna nella pineta di Chiassi, quando s'incontrò in una donna ignuda che fuggiva, inseguita da due grandi mastini e da un cavaliere bruno montato sopra un cavallo nero. L'apparizione è qui data per reale, e quella donna e quel cavaliere per vere anime dannate in atto di esercitare esse stesse il castigo loro imposto. Il Boccaccio tolse la storia della apparizione da Elinando, o dal Passavanti, ma l'innestò in un racconto tutto naturale ed umano, e, per giunta, la fece servire ad un fine cui certo non avevan pensato coloro che la narrarono primi. Alle mani del Boccaccio l'apparizione diventa una macchina di racconto romanzesco. Nella novella 10a della giornata VII un giovane popolano, stato gran tempo amante di una sua comare, muore, e dopo qualche giorno, apparisce, secondo certo accordo fatto, ad un suo amico, per dargli nuove dell'altro mondo e per dirgli, che cosa? che di là non si tiene conto alcuno dei peccati commessi con le comari, e non se ne paga nessuna pena. Parodia bella e buona di quelle apparizioni d'anime dannate o purganti onde i leggendarii del medio evo son pieni. Che razza di fantasima poi sia la fantasima scongiurata da Gianni Lotteringhi e dalla moglie sua nella novella 1a della giornata VII, e di che maniera sia lo scongiuro, non ho bisogno di ricordare. Nella già citata novella 3a della giornata III, raccontando Lauretta come l'abate fosse creduto esser l'anima di Ferondo che andasse in giro facendo penitenza, dice che ciò porse argomento di molte novelle tra la gente grossa della villa. Il mondo dei fantasmi non era un mondo in cui potesse compiacersi una mente come quella del Boccaccio, aperta solo ai colori e alle forme del mondo reale, una fantasia come la sua, pittrice e scultrice della vita. Il temperamento secondava in lui la coltura, ed entrambi congiunti non gli permettevano di smarrirsi nel regno
+
+ Decodifico l'output...
+lui Benvenuto da Imola, Jacopo della Lana ed altri commentatori di Dante, e Giovanni da Prato in una delle novelle inserite in quel suo romanzo, cui il Wesselofsky pose titolo Il Paradiso degli Alberti31. Altre ne ricorda, ma per giuoco, il Folengo nella maccheronea XVIII del Baldo. Nè più seriamente del Folengo dobbiam credere che intendesse ragionare di lui il Boccaccio, il quale nella sua novella lo fa ricordare come gran maestro di negromanzia a Bruno, non con altro fine che i burlarsi di maestro Simone.
+Si potrebbe obbiettare che nelle novelle 3a e 9a della giornata X il Boccaccio racconta di prodigi operati per arte magica come di cose veramente accadute. Nella prima narra di un fiorente giardino fatto sorgere di pien gennajo da un negromante, storia narrata anche di Alberto Magno e di molti altri presunti incantantori; nella seconda, ch'è la notissima storia di messer Torello e del Saladino, si racconta del buon cavaliere cristiano, come per arte magica, in una notte, fu trasportato sur un letto da Alessandria d'Egitto a Pavia. Ma queste due novelle, tanto provano che il Boccaccio avesse fede nella magia, quanto che l'avesse il Goethe può provare il Fausto. Qui abbiamo due temi di racconto assai diffusi nel medio evo e che il Boccaccio accoglie nel Decamerone, non perchè li creda veri, ma perchè li conosce assai vaghi, e tali da poterne con l'arte sua far ottimo uso. Accolti, s'egli vuole che ne segua l'effetto, bisogna non tocchi alla loro menzogna; e in fatto egli si guarda, contro l'usanza sua che per più esempii abbian potuto vedere in altre novelle qual sia, di dir pure una parola che lo mostri incredulo, o volga in beffa la credenza altrui. Così facendo egli segue un supremo precetto d'arte, non già la sua propria opinione, la quale è sin troppo chiarita da tutte le altre testimonianze che siam venuti notando. Il parlare seriamente di una cosa non può essere indizio di fede, quando c'entrino le ragioni dell'arte e della storia, mentre è prova certa d'incredulità il parlarne con ironia o con riso.
+Questa considerazione vale anche per ciò che mi rimane a dire delle apparizioni e dei fantasmi.
+Nella novella 3a della giornata V si narra di quella bellissima e formidabile apparizione veduta da un giovine di Ravenna nella pineta di Chiassi, quando s'incontrò in una donna ignuda che fuggiva, inseguita da due grandi mastini e da un cavaliere bruno montato sopra un cavallo nero. L'apparizione è qui data per reale, e quella donna e quel cavaliere per vere anime dannate in atto di esercitare esse stesse il castigo loro imposto. Il Boccaccio tolse la storia della apparizione da Elinando, o dal Passavanti, ma l'innestò in un racconto tutto naturale ed umano, e, per giunta, la fece servire ad un fine cui certo non avevan pensato coloro che la narrarono primi. Alle mani del Boccaccio l'apparizione diventa una macchina di racconto romanzesco. Nella novella 10a della giornata VII un giovane popolano, stato gran tempo amante di una sua comare, muore, e dopo qualche giorno, apparisce, secondo certo accordo fatto, ad un suo amico, per dargli nuove dell'altro mondo e per dirgli, che cosa? che di là non si tiene conto alcuno dei peccati commessi con le comari, e non se ne paga nessuna pena. Parodia bella e buona di quelle apparizioni d'anime dannate o purganti onde i leggendarii del medio evo son pieni. Che razza di fantasima poi sia la fantasima scongiurata da Gianni Lotteringhi e dalla moglie sua nella novella 1a della giornata VII, e di che maniera sia lo scongiuro, non ho bisogno di ricordare. Nella già citata novella 3a della giornata III, raccontando Lauretta come l'abate fosse creduto esser l'anima di Ferondo che andasse in giro facendo penitenza, dice che ciò porse argomento di molte novelle tra la gente grossa della villa. Il mondo dei fantasmi non era un mondo in cui potesse compiacersi una mente come quella del Boccaccio, aperta solo ai colori e alle forme del mondo reale, una fantasia come la sua, pittrice e scultrice della vita. Il temperamento secondava in lui la coltura, ed entrambi congiunti non gli permettevano di smarrirsi nel regno
+Epoch 0:   0%|                  | 7/437234 [00:01<30:02:12,  4.04it/s, v_num=i5n1, train/loss=10.50]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> in esilio a Tessalonica da Cantacuzèno, il quale di camerier maggiore e tutore ch'egli era d'un imperatore fanciullo, erasi fatto padrone. Un Genovese, Francesco Cataluzzo, principale ministro e confidente del Paleologo, si dispose a rimettere sul trono questo monarca poco degno di regnare. Egli fece rivivere il partito formato dieci anni prima da Apocauco e dall'imperatrice Anna di Savoja, introdusse segretamente il Paleologo in Costantinopoli, sorprese Cantacuzèno e lo costrinse a farsi monaco, indi riunì tutto ciò che rimaneva dell'impero greco sotto il legittimo sovrano188. Cataluzzo sposò la sorella del Paleologo, e ricevette in feudo dal monarca, ch'egli ripose in trono, l'isola di Lesbo, o Metelina, che passò in dominio de' suoi discendenti189.
+I Veneziani, che speravano d'impegnare Cantacuzèno a dichiararsi di nuovo a loro favore, si scoraggiarono quando ebbero notizia di questa rivoluzione. La loro disfatta a Sapienza aveva pressochè distrutta tutta la loro marina; il re d'Ungheria minacciava la Schiavonia; il re d'Arragona, loro alleato, aveva le sue forze in Sardegna, colà rendute necessarie dalla guerra che gli facevano i Doria, i Malaspina ed i Gherardesca190; in così difficili circostanze scoppiò in Venezia stessa la più pericolosa congiura, che pose in pericolo l'esistenza della repubblica. Il senato acconsentì allora ad entrare in negoziazioni di pace; promise di pagare duecento mila fiorini ai Genovesi per le spese della guerra, di stabilire per tre anni un banco a Caffa, e di proibire per tutto quel tempo ai mercanti veneziani di approdare alla Tana. Tutti i prigionieri vennero rilasciati da ambe le parti senza taglia; ed il trattato di pace fu firmato in sul finire di maggio, colla riserva che il re d'Arragona potesse, volendolo, esservi compreso avanti il 28 di settembre191.
+Onde affrettare la decisione di questo monarca la signoria di Genova aveva spedite quindici galere nei mari di Sardegna sotto il comando di Filippo Doria. Questo ammiraglio, essendo rimasto perdente in un tentativo sopra Loiera, passò colla sua flotta a Trapani in Sicilia. Colà formò il progetto d'un'ardita impresa sopra la Barbaria, cui lo incoraggiarono le rivoluzioni scoppiate in quel paese.
+I figli del re di Tunisi si erano congiurati contro il lor padre, e l'avevano fatto morire. Dopo questo parricidio il regno fu desolato da guerre civili di una violenza proporzionata all'atrocità del delitto che le aveva eccitate192. La città di Tripoli, da prima subordinata ai re di Tunisi, era stata sottratta alla loro ubbidienza, ed il figlio d'un maniscalco saraceno aveva avuto il mezzo d'innalzarsi alla tirannide.
+Le coste della Barbaria non erano in allora deserte come lo sono al presente; la marina de' Cristiani rendeva sicura la navigazione del mediterraneo, e gli Affricani non trascuravano il commercio e l'agricoltura per darsi alla pirateria ed al ladroneccio. Filippo Doria, dopo aver fatto preparare a Trapani scale murali e macchine da guerra, entrò nella rada di Tripoli, una delle più ricche e commercianti città di quella costa. Sotto pretesto di comperare vittovaglie, fece sbarcare alcuni marinaj, ordinando ai medesimi di osservare l'altezza delle mura, e d'informarsi del modo con cui vi si faceva la guardia. Frattanto ricusò i doni mandatigli dal signore di Tripoli, e fece spiegare le vele, come se tornasse in Italia193.
+L'ammiraglio, quando fu in alto mare, partecipò ai comandanti delle sue galere ed alla loro ciurma il proprio progetto. Promise di farli tutti ricchi se volevano comportarsi da bravi soldati, e nel cuore della notte tornò colla flotta nel porto di Tripoli. La città riposava in piena sicurezza, ed i Genovesi erano già padroni delle mura e di una porta, prima che i cittadini fossero risvegliati per dar di piglio alle armi. Per altro il signore di Tripoli, circondato da pochi suoi sudditi, si avanzò nelle strade per combattere; ma dopo breve zuffa fu costretto ad uscire di città. I Saraceni,
+
+ Decodifico l'output...
+in esilio a Tessalonica da Cantacuzèno, il quale di camerier maggiore e tutore ch'egli era d'un imperatore fanciullo, erasi fatto padrone. Un Genovese, Francesco Cataluzzo, principale ministro e confidente del Paleologo, si dispose a rimettere sul trono questo monarca poco degno di regnare. Egli fece rivivere il partito formato dieci anni prima da Apocauco e dall'imperatrice Anna di Savoja, introdusse segretamente il Paleologo in Costantinopoli, sorprese Cantacuzèno e lo costrinse a farsi monaco, indi riunì tutto ciò che rimaneva dell'impero greco sotto il legittimo sovrano188. Cataluzzo sposò la sorella del Paleologo, e ricevette in feudo dal monarca, ch'egli ripose in trono, l'isola di Lesbo, o Metelina, che passò in dominio de' suoi discendenti189.
+I Veneziani, che speravano d'impegnare Cantacuzèno a dichiararsi di nuovo a loro favore, si scoraggiarono quando ebbero notizia di questa rivoluzione. La loro disfatta a Sapienza aveva pressochè distrutta tutta la loro marina; il re d'Ungheria minacciava la Schiavonia; il re d'Arragona, loro alleato, aveva le sue forze in Sardegna, colà rendute necessarie dalla guerra che gli facevano i Doria, i Malaspina ed i Gherardesca190; in così difficili circostanze scoppiò in Venezia stessa la più pericolosa congiura, che pose in pericolo l'esistenza della repubblica. Il senato acconsentì allora ad entrare in negoziazioni di pace; promise di pagare duecento mila fiorini ai Genovesi per le spese della guerra, di stabilire per tre anni un banco a Caffa, e di proibire per tutto quel tempo ai mercanti veneziani di approdare alla Tana. Tutti i prigionieri vennero rilasciati da ambe le parti senza taglia; ed il trattato di pace fu firmato in sul finire di maggio, colla riserva che il re d'Arragona potesse, volendolo, esservi compreso avanti il 28 di settembre191.
+Onde affrettare la decisione di questo monarca la signoria di Genova aveva spedite quindici galere nei mari di Sardegna sotto il comando di Filippo Doria. Questo ammiraglio, essendo rimasto perdente in un tentativo sopra Loiera, passò colla sua flotta a Trapani in Sicilia. Colà formò il progetto d'un'ardita impresa sopra la Barbaria, cui lo incoraggiarono le rivoluzioni scoppiate in quel paese.
+I figli del re di Tunisi si erano congiurati contro il lor padre, e l'avevano fatto morire. Dopo questo parricidio il regno fu desolato da guerre civili di una violenza proporzionata all'atrocità del delitto che le aveva eccitate192. La città di Tripoli, da prima subordinata ai re di Tunisi, era stata sottratta alla loro ubbidienza, ed il figlio d'un maniscalco saraceno aveva avuto il mezzo d'innalzarsi alla tirannide.
+Le coste della Barbaria non erano in allora deserte come lo sono al presente; la marina de' Cristiani rendeva sicura la navigazione del mediterraneo, e gli Affricani non trascuravano il commercio e l'agricoltura per darsi alla pirateria ed al ladroneccio. Filippo Doria, dopo aver fatto preparare a Trapani scale murali e macchine da guerra, entrò nella rada di Tripoli, una delle più ricche e commercianti città di quella costa. Sotto pretesto di comperare vittovaglie, fece sbarcare alcuni marinaj, ordinando ai medesimi di osservare l'altezza delle mura, e d'informarsi del modo con cui vi si faceva la guardia. Frattanto ricusò i doni mandatigli dal signore di Tripoli, e fece spiegare le vele, come se tornasse in Italia193.
+L'ammiraglio, quando fu in alto mare, partecipò ai comandanti delle sue galere ed alla loro ciurma il proprio progetto. Promise di farli tutti ricchi se volevano comportarsi da bravi soldati, e nel cuore della notte tornò colla flotta nel porto di Tripoli. La città riposava in piena sicurezza, ed i Genovesi erano già padroni delle mura e di una porta, prima che i cittadini fossero risvegliati per dar di piglio alle armi. Per altro il signore di Tripoli, circondato da pochi suoi sudditi, si avanzò nelle strade per combattere; ma dopo breve zuffa fu costretto ad uscire di città. I Saraceni,
+Epoch 0:   0%|                  | 8/437234 [00:01<29:37:02,  4.10it/s, v_num=i5n1, train/loss=10.50]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> , senza farvi soffrire coi buchi nello stomaco e con le rotelle d'osso segate dal cranio. Quanto a voi, o ramarri, se in questi cespugli ce n'è che mi ascoltino, date retta a un amico disgraziato: seguitate a fuggire. Non vi confondano le cortesie, non vi illudano le briciole di pane, non v'ingannino le manate di mosche; fuggite, per il vostro meglio, fuggite sempre, come se aveste alle calcagna un usciere. L'uomo, ecco il nemico, la bestia feroce, l'usciere, il tiranno, il professore, e chi più n'ha ne metta.-
+- Bel complimento a noi! - esclamò il naturalista.
+- E nessuno alle dame! - soggiunse il colonnello. - Eppure, tu lo avevi promesso per chiusa.
+- Mi pare di averlo fatto nel mezzo, - rispose il poeta. - Ma se credete, lo ripeterò, e serva pure di chiusa. Tra gli animali inferiori il maschio è sempre il più bello; solo nella specie umana è più bella la donna. Creda altri come vuole: io preferisco lei.-
+Il signor Lorenzo Brunelli, cavaliere e padrone di casa, diede una guardatina al suo orologio.
+- Diamine! - esclamò. - Son quasi le sei.
+- Moralità della favola! - disse l'uomo politico. - Leviamo la seduta, e andiamo subito a pranzo; con molto appetito, se debbo giudicarvi tutti da me, e con la onesta coscienza di non avere aggiunto nessuna legge nuova, alle tante che affliggono l'umanità.-
+
+
+
+
+MALANOTTE.
+
+Avevamo dormito alla meglio, o alla peggio, ma di buon sonno, in un tugurio di contadini, a Rigoso, sopra le sorgenti dell'Enza. Ci eravamo levati a bruzzico, per salire sull'Alpe del Mal Passo. Di là, penetrati in val di Tacca, malinconica per le sue boscaglie di faggi scoloriti, avevamo guadagnata la vetta dell'Orsaro, maravigliosa specola naturale, donde si vede tutta la gran valle di Lunigiana e un lembo di mare nel fondo, coi tetti luccicanti di Spezia e i camini fumanti di Pertùsola. Presso a certe capanne di sassi, che ricordavano gli abituri degli antichi volghi pelasgici, avevamo ragionato con alcuni pastori, che passavano lassù i mesi della primavera e dell'estate, pascendo una diecina di vacche e un centinaio di capre. Lassù, il mio amico Cesare Pascarella, in mancanza de' suoi prediletti somari, aveva fatto con quattro pennellate il ritratto ad una degna e meditabonda famiglia di cornipodi biforcuti, sdraiata in un campo di romice intatta. E dico intatta la romice, perchè questa pianta, che cresce così facilmente ne' luoghi incolti, è detestata dagli armenti, e si vede inutilmente rigogliosa per lunghi tratti di prateria, mentre tutto intorno gli avidi ruminanti menano il dente e non la perdonano a un fil d'erba, a un virgulto, a uno stelo. Dato ai pastori un po' del nostro tabacco, assaggiato in ricambio un pezzetto del loro cacio e della loro pattona, eravamo discesi ad ammirare il solitario Lago Santo, vero bagno di Naiade, chiuso tra i faggi e gli abeti, in una mora di ghiacciaio antico. Avevamo bevuto allo zampillo della fredda fontana che nutre quel lago; tirato giù con quattro segni un ricordo di quella scena stupenda; e quindi, ripuliti i pennelli e chiuse le cassette, ci eravamo ruzzolati fino al verde piano acquitrinoso dei Lagadelli, donde, girato il fianco della montagna che costeggia la sponda sinistra della Farinetta, si scendeva al bosco di Corniglio. Laggiù in un quieto casolare nascosto tra i castagni, volevo stringer la mano al Bandini, giovine pastore e taglialegna, amico mio, che qualche anno prima mi era servito da guida in altre escursioni per quelle vette e convalli dell'Appennino, dove si dimenticano così volentieri le noie rumorose della vita italica, i silenzi pensati delle dotte sinagoghe, e le scomuniche maggiori delle diverse chiese letterarie, che tutte si arrogano di possedere il verbo, anche
+
+ Decodifico l'output...
+, senza farvi soffrire coi buchi nello stomaco e con le rotelle d'osso segate dal cranio. Quanto a voi, o ramarri, se in questi cespugli ce n'è che mi ascoltino, date retta a un amico disgraziato: seguitate a fuggire. Non vi confondano le cortesie, non vi illudano le briciole di pane, non v'ingannino le manate di mosche; fuggite, per il vostro meglio, fuggite sempre, come se aveste alle calcagna un usciere. L'uomo, ecco il nemico, la bestia feroce, l'usciere, il tiranno, il professore, e chi più n'ha ne metta.-
+- Bel complimento a noi! - esclamò il naturalista.
+- E nessuno alle dame! - soggiunse il colonnello. - Eppure, tu lo avevi promesso per chiusa.
+- Mi pare di averlo fatto nel mezzo, - rispose il poeta. - Ma se credete, lo ripeterò, e serva pure di chiusa. Tra gli animali inferiori il maschio è sempre il più bello; solo nella specie umana è più bella la donna. Creda altri come vuole: io preferisco lei.-
+Il signor Lorenzo Brunelli, cavaliere e padrone di casa, diede una guardatina al suo orologio.
+- Diamine! - esclamò. - Son quasi le sei.
+- Moralità della favola! - disse l'uomo politico. - Leviamo la seduta, e andiamo subito a pranzo; con molto appetito, se debbo giudicarvi tutti da me, e con la onesta coscienza di non avere aggiunto nessuna legge nuova, alle tante che affliggono l'umanità.-
+
+
+
+
+MALANOTTE.
+
+Avevamo dormito alla meglio, o alla peggio, ma di buon sonno, in un tugurio di contadini, a Rigoso, sopra le sorgenti dell'Enza. Ci eravamo levati a bruzzico, per salire sull'Alpe del Mal Passo. Di là, penetrati in val di Tacca, malinconica per le sue boscaglie di faggi scoloriti, avevamo guadagnata la vetta dell'Orsaro, maravigliosa specola naturale, donde si vede tutta la gran valle di Lunigiana e un lembo di mare nel fondo, coi tetti luccicanti di Spezia e i camini fumanti di Pertùsola. Presso a certe capanne di sassi, che ricordavano gli abituri degli antichi volghi pelasgici, avevamo ragionato con alcuni pastori, che passavano lassù i mesi della primavera e dell'estate, pascendo una diecina di vacche e un centinaio di capre. Lassù, il mio amico Cesare Pascarella, in mancanza de' suoi prediletti somari, aveva fatto con quattro pennellate il ritratto ad una degna e meditabonda famiglia di cornipodi biforcuti, sdraiata in un campo di romice intatta. E dico intatta la romice, perchè questa pianta, che cresce così facilmente ne' luoghi incolti, è detestata dagli armenti, e si vede inutilmente rigogliosa per lunghi tratti di prateria, mentre tutto intorno gli avidi ruminanti menano il dente e non la perdonano a un fil d'erba, a un virgulto, a uno stelo. Dato ai pastori un po' del nostro tabacco, assaggiato in ricambio un pezzetto del loro cacio e della loro pattona, eravamo discesi ad ammirare il solitario Lago Santo, vero bagno di Naiade, chiuso tra i faggi e gli abeti, in una mora di ghiacciaio antico. Avevamo bevuto allo zampillo della fredda fontana che nutre quel lago; tirato giù con quattro segni un ricordo di quella scena stupenda; e quindi, ripuliti i pennelli e chiuse le cassette, ci eravamo ruzzolati fino al verde piano acquitrinoso dei Lagadelli, donde, girato il fianco della montagna che costeggia la sponda sinistra della Farinetta, si scendeva al bosco di Corniglio. Laggiù in un quieto casolare nascosto tra i castagni, volevo stringer la mano al Bandini, giovine pastore e taglialegna, amico mio, che qualche anno prima mi era servito da guida in altre escursioni per quelle vette e convalli dell'Appennino, dove si dimenticano così volentieri le noie rumorose della vita italica, i silenzi pensati delle dotte sinagoghe, e le scomuniche maggiori delle diverse chiese letterarie, che tutte si arrogano di possedere il verbo, anche
+Epoch 0:   0%|                  | 9/437234 [00:02<28:38:43,  4.24it/s, v_num=i5n1, train/loss=10.50]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> etro poi una giornata viene tutto il restante della famiglia.
+Le bestie poi di tante sorti strane sono infinite che lui tiene, fra quali erano sei cavalli che aveano sei piedi e sei gambe per uno, e viddi dui grandissimi struzzi e dui piccioli dietro di loro con dui colli per ciascuno e dui teste, dalle quali mangiavano; senza far menzione di altri uomini salvatichi che stanno nello giardino di detto signore, e donne tutte pelose di un pelo grande e bigio, quali han forma umana e si pascono di poma e d'altre bevande che gli ordina il signore che se gli dia: fra quali erano uomini non piú grandi di dui spanne, e questi chiamano gomiti. Nella corte ho visto uomini di un occhio nella fronte, che si chiamavano minocchi. E a quel tempo furono appresentati al signore dui, un maschio e una femina, quali avevano una spanna di busto, colla testa grossa e le gambe lunghe, e senza mani, e s'imboccavano con uno dei piedi. E viddi un gigante grande circa 20 piedi, che menava dui leoni, l'un rosso e l'altro nero, e l'altro aveva in guardia leonesse e leopardi; e con sí fatte bestie andava il signore a far caccia, a prender cervi, caprioli, lupi, cingiali, orsi e altre bestie salvatiche.
+Ma la grandezza del paese che domina questo gran principe è tanta che non bastano otto mesi ad andar da un capo all'altro per traverso, senza contarvi l'isole, che sono piú di cinquemila, avisandovi che in questo terreno del principe sono piú di duimilla grosse città, senza le castella, che son senza numero: e vi sono proposti quattro che governano l'imperio di questo gran signore. E ciascuna persona che, facendo viaggio, passa per quei paesi, di qual condizion sia, è ordinato che per dui pasti che fa non paghi nulla. Per tutto il paese vi sono torri altissime, dove sono assaissime guardie, le quali hanno sempre dui o tre corni da sonare grandissimi. E quando il signore vuol far sapere qualche novità da lungi, o vuol mandar lettere altrove che siano di grande importanza, incontanente ordina che si suoni il corno, e di mano in mano ad ogni loco, dove si trova apparecchiato un cavallo buono per posta, per tre o quattro miglia distante; ove si cambiano cavalli, persone, di tal sorte che in un giorno riceve e manda le littere dove non bastarebbono a pena dieci.
+Quando poi questo gran Cane vuol far una bella caccia, che la fa una sola volta l'anno, va in un loco che è di lungi da questa città dove egli dimora delle miglia piú di 400, dove è un grande, folto bosco. Ivi sono bestie di ogni sorte, e si diceva che 'l bosco girasse piú di 200 miglia. Qui il signore mena con seco tanti cacciatori che circonda tutto 'l bosco intorno intorno, e allora dislaccia i cani e leoni e leonesse e altre bestie fatte domestiche e acconcie a tal arte, e similmente varie sorti d'uccelli; e la gente si viene stringendo a poco a poco, e 'l signore sta nel mezo della selva, là ove è un prato che gira un miglio, con quattro uomini armati e suoi fidati. E lui sta solo in un muro di quattro passi che lo circonda fino alla cintura, ma sta a cavallo insieme con gli altri, e talora nel suo carro imperiale: e queste fiere tutte, o la maggior parte, passano dinanzi a lui, o poco lungi, con gli altri cacciatori che tengono i lioni e leonesse e leopardi che stanno di lungi una tirata d'arco. Quivi è sí forte il gridar delle genti, l'abbaiar de' cani, l'ulular delle fiere e 'l sonar de' corni e d'altri stromenti che le povere fiere, assalite da tema grande e orror di morte che porta seco, e lo presente stato che versa negli occhi delle infelici bestie, e 'l ricordarsi delle altre volte che vi sono incappate, che fa tremare come debole canna e non ben ferma, percossa di crudelissimi e violentissimi soffiar di borea o d'aquilone, le quali vengono uccise quasi per tema. Ma fatta una grande uccisione di loro, l'imperatore, come tempo gli
+
+ Decodifico l'output...
+etro poi una giornata viene tutto il restante della famiglia.
+Le bestie poi di tante sorti strane sono infinite che lui tiene, fra quali erano sei cavalli che aveano sei piedi e sei gambe per uno, e viddi dui grandissimi struzzi e dui piccioli dietro di loro con dui colli per ciascuno e dui teste, dalle quali mangiavano; senza far menzione di altri uomini salvatichi che stanno nello giardino di detto signore, e donne tutte pelose di un pelo grande e bigio, quali han forma umana e si pascono di poma e d'altre bevande che gli ordina il signore che se gli dia: fra quali erano uomini non piú grandi di dui spanne, e questi chiamano gomiti. Nella corte ho visto uomini di un occhio nella fronte, che si chiamavano minocchi. E a quel tempo furono appresentati al signore dui, un maschio e una femina, quali avevano una spanna di busto, colla testa grossa e le gambe lunghe, e senza mani, e s'imboccavano con uno dei piedi. E viddi un gigante grande circa 20 piedi, che menava dui leoni, l'un rosso e l'altro nero, e l'altro aveva in guardia leonesse e leopardi; e con sí fatte bestie andava il signore a far caccia, a prender cervi, caprioli, lupi, cingiali, orsi e altre bestie salvatiche.
+Ma la grandezza del paese che domina questo gran principe è tanta che non bastano otto mesi ad andar da un capo all'altro per traverso, senza contarvi l'isole, che sono piú di cinquemila, avisandovi che in questo terreno del principe sono piú di duimilla grosse città, senza le castella, che son senza numero: e vi sono proposti quattro che governano l'imperio di questo gran signore. E ciascuna persona che, facendo viaggio, passa per quei paesi, di qual condizion sia, è ordinato che per dui pasti che fa non paghi nulla. Per tutto il paese vi sono torri altissime, dove sono assaissime guardie, le quali hanno sempre dui o tre corni da sonare grandissimi. E quando il signore vuol far sapere qualche novità da lungi, o vuol mandar lettere altrove che siano di grande importanza, incontanente ordina che si suoni il corno, e di mano in mano ad ogni loco, dove si trova apparecchiato un cavallo buono per posta, per tre o quattro miglia distante; ove si cambiano cavalli, persone, di tal sorte che in un giorno riceve e manda le littere dove non bastarebbono a pena dieci.
+Quando poi questo gran Cane vuol far una bella caccia, che la fa una sola volta l'anno, va in un loco che è di lungi da questa città dove egli dimora delle miglia piú di 400, dove è un grande, folto bosco. Ivi sono bestie di ogni sorte, e si diceva che 'l bosco girasse piú di 200 miglia. Qui il signore mena con seco tanti cacciatori che circonda tutto 'l bosco intorno intorno, e allora dislaccia i cani e leoni e leonesse e altre bestie fatte domestiche e acconcie a tal arte, e similmente varie sorti d'uccelli; e la gente si viene stringendo a poco a poco, e 'l signore sta nel mezo della selva, là ove è un prato che gira un miglio, con quattro uomini armati e suoi fidati. E lui sta solo in un muro di quattro passi che lo circonda fino alla cintura, ma sta a cavallo insieme con gli altri, e talora nel suo carro imperiale: e queste fiere tutte, o la maggior parte, passano dinanzi a lui, o poco lungi, con gli altri cacciatori che tengono i lioni e leonesse e leopardi che stanno di lungi una tirata d'arco. Quivi è sí forte il gridar delle genti, l'abbaiar de' cani, l'ulular delle fiere e 'l sonar de' corni e d'altri stromenti che le povere fiere, assalite da tema grande e orror di morte che porta seco, e lo presente stato che versa negli occhi delle infelici bestie, e 'l ricordarsi delle altre volte che vi sono incappate, che fa tremare come debole canna e non ben ferma, percossa di crudelissimi e violentissimi soffiar di borea o d'aquilone, le quali vengono uccise quasi per tema. Ma fatta una grande uccisione di loro, l'imperatore, come tempo gli
+Epoch 0:   0%|                 | 10/437234 [00:02<27:15:20,  4.46it/s, v_num=i5n1, train/loss=10.40]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> sei della sera. Il valore vi fu uguale da ambe le parti, la vittoria utilissima alle armi imperiali. Spianò Kray col suo valore la strada alle vittorie di Melas e di Suwarow.
+Scherer, scemato il numero de' suoi, e scemato altresì l'animo loro per le sconfitte, dopo di aver fatto alcune dimostrazioni, come se volesse fermarsi sul Mincio, si deliberava a ritirarsi sulla sponda destra dell'Adda, per ivi fare opera, se ancora possibil fosse, di arrestar l'inimico, e difendere la capitale della Cisalpina. A questa deliberazione, piuttosto inevitabile che volontaria, dava motivo la grande superiorità del nemico, accresciuto dalle forze Russe per guisa che sommava a sessantamila combattenti, non noverati quei di Wukassowich e di Klenau, che romoreggiavano sui corni estremi, mentre il suo, tolti i pressidj, ch'era obbligato a lasciare in Mantova ed in Peschiera, ed in altre fortezze di minor importanza, non passava i ventimila. La medesima deliberazione rendevano necessaria i progressi fatti, e che tuttavia facevano Wukassowich e Klenau, il primo verso i monti sulla sinistra dei repubblicani, il secondo sulle rive del Po, dove metteva ogni cosa a romore. Si levavano i popoli a calca al suono delle vittorie Tedesche, e dell'arrivo dei Russi, gente strana, e riputata d'invincibile valore, non considerando, se il dominio Austriaco e Russo avesse a mostrare maggiore benignità, che quello che volevano levarsi dal collo. Ma il presente sempre noja i popoli, mentre il futuro gli alletta, perchè giudicano del primo col senso, del secondo coll'immaginazione.
+Bene è da condannarsi, che i comandanti Russi ed Austriaci queste mosse popolari in paesi estranei a loro con parole, con iscritti e con fatti suscitassero e fomentassero. Perciocchè nelle sollevazioni dei popoli, e nelle guerre civili ogni più peggior male si contiene, ed ai forestieri; che non possono vincere con le sole armi, l'umanità prescrive che se ne astengano, e che lascino riposare altrui. Le guerre bisogna lasciarle fare a chi ha il carico di farle, non a chi ha il carico di pagarle. Oltre a ciò, siccome gli eventi delle guerre sono sempre dubbj, poco umana cosa è il sollevare i popoli contro coloro, che possono tornare a vendicarsi. Queste sommosse molto ajutavano gl'imperiali, perchè intimorivano gli avversarj, tagliavano le strade, e davano spiatori utilissimi ai nuovi conquistatori. Esse erano più o meno forti, secondo le varie inclinazioni dei luoghi, ma molto romorose nel Polesine e nel Ferrarese. Grandi tempeste ancora si levavano contro i Francesi nel Bresciano e nel Bergamasco: Wukassowich vi trovava molto seguito.
+Arrivati i Francesi sulle sponde dell'Adda, fiume assai più grosso, e di rive più dirupate che il Mincio e l'Oglio non sono, nel seguente modo vi si alloggiavano. Serrurier con la sinistra custodiva le parti superiori del fiume, stanziando a Lecco sul lago, dove aveva una testa di ponte fortificata, a Imbezzago ed a Trezzo. In quest'ultima terra si congiungeva con la battaglia, o mezzana schiera, alla quale erano preposti Victor e Grenier, e che, sprolungandosi a destra, si distendeva sino a Cassano. Possedeva sulla destra del fiume una testa di ponte con trincee munite di artiglierìe, ed oltracciò le artiglierìe del castello dominavano questa parte. Un grosso di cavalleria (perchè essendo Cassano posto sulla strada maestra per a Milano, i repubblicani presumevano che i confederati avrebbero fatto impeto contro di questa terra), stava pronto, alloggiato essendo dietro a Cassano, ad accorrere, ove d'uopo ne fosse. La destra sotto la condotta di Delmas, si sprolungava lungo l'Adda, con assicurare Lodi e Pizzighettone. Quest'era l'alloggiamento preso dai Francesi sulle rive dell'Adda, in cui giudicarono poter arrestare il corso alla fortuna del vincitore. Intanto una grande mutazione si era fatta nel governo supremo dell'esercito. I soldati repubblicani stimandosi invincibili, perchè non soliti ad esser vinti, avevano concetto un grandissimo sdegno contro Scherer, di tutte le loro disgrazie
+
+ Decodifico l'output...
+sei della sera. Il valore vi fu uguale da ambe le parti, la vittoria utilissima alle armi imperiali. Spianò Kray col suo valore la strada alle vittorie di Melas e di Suwarow.
+Scherer, scemato il numero de' suoi, e scemato altresì l'animo loro per le sconfitte, dopo di aver fatto alcune dimostrazioni, come se volesse fermarsi sul Mincio, si deliberava a ritirarsi sulla sponda destra dell'Adda, per ivi fare opera, se ancora possibil fosse, di arrestar l'inimico, e difendere la capitale della Cisalpina. A questa deliberazione, piuttosto inevitabile che volontaria, dava motivo la grande superiorità del nemico, accresciuto dalle forze Russe per guisa che sommava a sessantamila combattenti, non noverati quei di Wukassowich e di Klenau, che romoreggiavano sui corni estremi, mentre il suo, tolti i pressidj, ch'era obbligato a lasciare in Mantova ed in Peschiera, ed in altre fortezze di minor importanza, non passava i ventimila. La medesima deliberazione rendevano necessaria i progressi fatti, e che tuttavia facevano Wukassowich e Klenau, il primo verso i monti sulla sinistra dei repubblicani, il secondo sulle rive del Po, dove metteva ogni cosa a romore. Si levavano i popoli a calca al suono delle vittorie Tedesche, e dell'arrivo dei Russi, gente strana, e riputata d'invincibile valore, non considerando, se il dominio Austriaco e Russo avesse a mostrare maggiore benignità, che quello che volevano levarsi dal collo. Ma il presente sempre noja i popoli, mentre il futuro gli alletta, perchè giudicano del primo col senso, del secondo coll'immaginazione.
+Bene è da condannarsi, che i comandanti Russi ed Austriaci queste mosse popolari in paesi estranei a loro con parole, con iscritti e con fatti suscitassero e fomentassero. Perciocchè nelle sollevazioni dei popoli, e nelle guerre civili ogni più peggior male si contiene, ed ai forestieri; che non possono vincere con le sole armi, l'umanità prescrive che se ne astengano, e che lascino riposare altrui. Le guerre bisogna lasciarle fare a chi ha il carico di farle, non a chi ha il carico di pagarle. Oltre a ciò, siccome gli eventi delle guerre sono sempre dubbj, poco umana cosa è il sollevare i popoli contro coloro, che possono tornare a vendicarsi. Queste sommosse molto ajutavano gl'imperiali, perchè intimorivano gli avversarj, tagliavano le strade, e davano spiatori utilissimi ai nuovi conquistatori. Esse erano più o meno forti, secondo le varie inclinazioni dei luoghi, ma molto romorose nel Polesine e nel Ferrarese. Grandi tempeste ancora si levavano contro i Francesi nel Bresciano e nel Bergamasco: Wukassowich vi trovava molto seguito.
+Arrivati i Francesi sulle sponde dell'Adda, fiume assai più grosso, e di rive più dirupate che il Mincio e l'Oglio non sono, nel seguente modo vi si alloggiavano. Serrurier con la sinistra custodiva le parti superiori del fiume, stanziando a Lecco sul lago, dove aveva una testa di ponte fortificata, a Imbezzago ed a Trezzo. In quest'ultima terra si congiungeva con la battaglia, o mezzana schiera, alla quale erano preposti Victor e Grenier, e che, sprolungandosi a destra, si distendeva sino a Cassano. Possedeva sulla destra del fiume una testa di ponte con trincee munite di artiglierìe, ed oltracciò le artiglierìe del castello dominavano questa parte. Un grosso di cavalleria (perchè essendo Cassano posto sulla strada maestra per a Milano, i repubblicani presumevano che i confederati avrebbero fatto impeto contro di questa terra), stava pronto, alloggiato essendo dietro a Cassano, ad accorrere, ove d'uopo ne fosse. La destra sotto la condotta di Delmas, si sprolungava lungo l'Adda, con assicurare Lodi e Pizzighettone. Quest'era l'alloggiamento preso dai Francesi sulle rive dell'Adda, in cui giudicarono poter arrestare il corso alla fortuna del vincitore. Intanto una grande mutazione si era fatta nel governo supremo dell'esercito. I soldati repubblicani stimandosi invincibili, perchè non soliti ad esser vinti, avevano concetto un grandissimo sdegno contro Scherer, di tutte le loro disgrazie
+Epoch 0:   0%|                 | 11/437234 [00:02<25:48:04,  4.71it/s, v_num=i5n1, train/loss=10.40]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> degnati, gli Ebrei tolgon la trave dalla piscina, e la gettano, a mo' di ponte, sul Siloe, perchè sia calcata dai piedi dei passanti. Viene a Gerusalemme la regina di Saba, e ricusa di passare sulla trave, sapendo a che sia serbata, e profetizza il Messia. Venuto il tempo della passione, gli artefici fanno con essa la croce su cui è confitto Cristo.
+Ho detto che non intendo tener dietro alle numerose versioni della leggenda; solo ricorderò che in una di esse i viaggi di Seth al Paradiso son due; e che talvolta l'angelo dà a costui, non già le tre granella, come nel racconto testè riferito, ma un ramoscello dell'albero della scienza, e che da quel ramoscello pende ancora, in uno o due casi, parte del frutto morso da Eva.
+Il viaggio che nei precedenti racconti si narra di Seth, Gotofredo da Viterbo narra di Jonito (o Jonico) figliuolo di Noè321. Jonito, udita dal padre la descrizione delle meraviglie del Paradiso, chiede a Dio in grazia di poterle contemplare con gli occhi suoi proprii, e ottenuto il suo desiderio, ne riporta tre virgulti, di abete, di palma e di cipresso, i quali piantati da lui separatamente, si congiungono in un'arbore sola, che ha tre colori, e le foglie di tre maniere, a simboleggiare la Trinità. Seguono le fortune del legno (le quali in parte solo concordano con quelle narrate nel racconto precedente) finchè di esso si fa la croce. Gotofredo cita un Atanasio, il quale è probabilmente immaginato da lui, come da lui probabilmente è immaginato il rapimento di Jonito, al Paradiso, giacchè della leggenda, in questa forma, non si trova altro vestigio. Bensì è narrato altrove che un figliuolo di Noè, per nome Jerico, desideroso di vedere la tomba di Adamo si recò nella valle d'Ebron, e trovati i tre virgulti, li svelse, poi li ripiantò, come narra il cronista322.
+Ma prima di passar oltre, fermiamoci a fare qualche considerazione non oziosa sovra un punto della leggenda di Seth e del legno della croce. Seth vede da prima l'albero del peccato, vedovo di fronde e spoglio della sua corteccia, e io ho già avvertito nel capitolo II che quell'albero è descritto assai volte come un albero secco. Ora, di un Albero Secco, posto, di solito, nel remoto Oriente, e per più ragioni mirabile, è frequente ricordo in iscritture del medio evo. Varian molto le descrizioni che se ne fanno ma io non dubito che, in alcuni casi almeno, esso non sia da identificare con la pianta disseccata del Paradiso, dalla quale; del resto, un poemetto latino, composto circa il 1300, lo fa derivare. Secondo alcune leggende riguardanti la fine del mondo, l'ultimo imperatore appenderà la corona ai rami dell'Albero Secco, o alla croce323.
+Seth vede poi la pianta mirabilmente ingrandita, e fatta simile ad uno di quegli alberi cosmogonici che in altre mitologie comprendono fra le radici la terra, e, tra i rami e le foglie, il cielo, quali lo skambha vedico, l'ilpa buddistico, l'irminsul e l'yggdrasil della mitologia germanica. Anche la croce fu considerata come un albero, la quale recò ottimo frutto, e talvolta a dirittura come un albero cosmogonico. Venanzio Fortunato così la saluta in un suo inno:
+
+Arbor decora et fulgida,
+Ornata regis purpura,
+Electa digno stipite
+Tam sancta membra tangere;
+
+e in un altro inno ecclesiastico si legge:
+
+Crux fidelis inter omnes
+Arbor una nobilis:
+Nulla silva talem profert
+Fronde, flore, germine.
+
+Come un albero di dolcissimo e vital frutto, e tutto fragrante di fiori, è invocata spesso la croce nelle laudi324, e come albero di vita in un canto latino del sec. XIV:
+
+Salve, Christi crux praeclara.
+Arbor astris pulchrior,
+Facta reis ex amara
+Mellis stilla dulcior;
+Vitae nobis viam para,
+Dux effeta gratior.
+
+L
+
+ Decodifico l'output...
+degnati, gli Ebrei tolgon la trave dalla piscina, e la gettano, a mo' di ponte, sul Siloe, perchè sia calcata dai piedi dei passanti. Viene a Gerusalemme la regina di Saba, e ricusa di passare sulla trave, sapendo a che sia serbata, e profetizza il Messia. Venuto il tempo della passione, gli artefici fanno con essa la croce su cui è confitto Cristo.
+Ho detto che non intendo tener dietro alle numerose versioni della leggenda; solo ricorderò che in una di esse i viaggi di Seth al Paradiso son due; e che talvolta l'angelo dà a costui, non già le tre granella, come nel racconto testè riferito, ma un ramoscello dell'albero della scienza, e che da quel ramoscello pende ancora, in uno o due casi, parte del frutto morso da Eva.
+Il viaggio che nei precedenti racconti si narra di Seth, Gotofredo da Viterbo narra di Jonito (o Jonico) figliuolo di Noè321. Jonito, udita dal padre la descrizione delle meraviglie del Paradiso, chiede a Dio in grazia di poterle contemplare con gli occhi suoi proprii, e ottenuto il suo desiderio, ne riporta tre virgulti, di abete, di palma e di cipresso, i quali piantati da lui separatamente, si congiungono in un'arbore sola, che ha tre colori, e le foglie di tre maniere, a simboleggiare la Trinità. Seguono le fortune del legno (le quali in parte solo concordano con quelle narrate nel racconto precedente) finchè di esso si fa la croce. Gotofredo cita un Atanasio, il quale è probabilmente immaginato da lui, come da lui probabilmente è immaginato il rapimento di Jonito, al Paradiso, giacchè della leggenda, in questa forma, non si trova altro vestigio. Bensì è narrato altrove che un figliuolo di Noè, per nome Jerico, desideroso di vedere la tomba di Adamo si recò nella valle d'Ebron, e trovati i tre virgulti, li svelse, poi li ripiantò, come narra il cronista322.
+Ma prima di passar oltre, fermiamoci a fare qualche considerazione non oziosa sovra un punto della leggenda di Seth e del legno della croce. Seth vede da prima l'albero del peccato, vedovo di fronde e spoglio della sua corteccia, e io ho già avvertito nel capitolo II che quell'albero è descritto assai volte come un albero secco. Ora, di un Albero Secco, posto, di solito, nel remoto Oriente, e per più ragioni mirabile, è frequente ricordo in iscritture del medio evo. Varian molto le descrizioni che se ne fanno ma io non dubito che, in alcuni casi almeno, esso non sia da identificare con la pianta disseccata del Paradiso, dalla quale; del resto, un poemetto latino, composto circa il 1300, lo fa derivare. Secondo alcune leggende riguardanti la fine del mondo, l'ultimo imperatore appenderà la corona ai rami dell'Albero Secco, o alla croce323.
+Seth vede poi la pianta mirabilmente ingrandita, e fatta simile ad uno di quegli alberi cosmogonici che in altre mitologie comprendono fra le radici la terra, e, tra i rami e le foglie, il cielo, quali lo skambha vedico, l'ilpa buddistico, l'irminsul e l'yggdrasil della mitologia germanica. Anche la croce fu considerata come un albero, la quale recò ottimo frutto, e talvolta a dirittura come un albero cosmogonico. Venanzio Fortunato così la saluta in un suo inno:
+
+Arbor decora et fulgida,
+Ornata regis purpura,
+Electa digno stipite
+Tam sancta membra tangere;
+
+e in un altro inno ecclesiastico si legge:
+
+Crux fidelis inter omnes
+Arbor una nobilis:
+Nulla silva talem profert
+Fronde, flore, germine.
+
+Come un albero di dolcissimo e vital frutto, e tutto fragrante di fiori, è invocata spesso la croce nelle laudi324, e come albero di vita in un canto latino del sec. XIV:
+
+Salve, Christi crux praeclara.
+Arbor astris pulchrior,
+Facta reis ex amara
+Mellis stilla dulcior;
+Vitae nobis viam para,
+Dux effeta gratior.
+
+L
+Epoch 0:   0%|                 | 12/437234 [00:02<24:30:59,  4.95it/s, v_num=i5n1, train/loss=10.40]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> no a mo’ dei rustici, chè l’aria della notte già pungeva; l’altra, spolverando le maniche del suo vestito nero inbianchito di calce, lo ridestava inconscia al pieno senso d’essere. Egli strinse le loro mani e cercò nel borsello qualche moneta. – M’hanno spogliato di tutto! – sorrise. – Non vogliamo nulla.... – risposero in coro. Una soltanto, più ardita, più ignara di poter essere crudele, approfittò del momento per confidargli una vecchia brama coltivata in secreto: “.... una memoria, un qualunque oggettino della illustrissima signora Duchessa.... Non si era mai vista una signora più buona e più bella.... Voleva tanto bene ai miei figliuoli....” – Fu quella voce di natura che agli occhi rimasti durante tutte le avversità del giorno come lastre d’acciaio, di pietra o di vetro, corrose invano da un acido smanioso, fece spargere due lagrime. Ogni pena dell’anima fu finalmente sul ciglio! Si allontanavano, egli silenzioso e le donne loquaci, dalla taverna miasmatica, e già l’austera frescura della campagna calmava con svolazzi d’aria le fronti. Egli avrebbe voluto sentir parlare a lungo, semplicemente, della bellezza e della bontà di Laus. Ma da lontano venne, come un buffo fervido, come un calore sonoro, il diavolìo della disputa accesa, e le donne s’accommiatarono spacciatamente, con scuse e sospiri; corsero ai figli, ai mariti, agli sposi; svanirono in men d’un attimo da lui e dal suo mondo illusorio....
+Egli tese l’orecchio, a piè d’un albero, sentendone l’altezza su di sè.... – Perchè non ritorni? Perchè non li accheti? – Voci importune nel suo cervello! Egli riprese il cammino, ostinandosi a ricostituire da memorie stranamente vaghe la bontà e la bellezza di Laus; e andava, così solo e automatico, verso il castello, verso l’altura d’onde le voci si dileguavano, verso l’asilo delle musiche notturne di Bertramo e della putrescenza di Zoilo; la sua nostalgia faceva quel cammino fino dai primi disgusti del giorno; ma ora i rimorsi gli impedivano quasi d’andare, e s’arrestava quale un ubriaco innanzi ad ogni albero, come si trattenesse di dar di cozzo nei tronchi.... E d’ogni albero misurava l’altezza sopra di sè, il contorno tenebroso nella notte. Quando gli parve si fosse dentro di sè deciso irrevocabilmente di non riafferrare le forze per ricacciarsi nell’osteria ad impedire gli allucinanti torbidi del vino e le effusioni di sangue, sentì come infranta una corda e irrecongiungibili nei desiderii il suo paese e lui.
+— Ohimè, – egli disse, – io mi sono alienato un patrimonio d’amore; non lo ritroverò più; che cosa fa ora don Filippo? quanti già mi odiano? e quanti mi odieranno domani?... Calco già una terra di stranieri; vacillo come quegli che ha smarrito la via.... E vado a rifugiarmi nel mio castello, tra la tosse di Zoilo e le musiche di Bertramo che mi sbigottiscono attraversando il silenzio a notte tarda; domani deporrò l’anima mia, con le fibrille impercettibili di colore, su le pergamene celate a tutti gli occhi.... O Bertramo, tu hai ragione: tutti gli alberi sono cipressi nella notte! Godi: io attraverso lo spazio come un’ombra e ti porto veramente una vita estinta....
+E gli parve che Bertramo, chinato sul cuore suo, lo toccasse, dicendo:
+— Sei bene certo che ella non viva ancora?
+X.
+Lavorìo di tarli.
+Intento il Duca a contemplare Zoilo assopito, tornavano nella sua mente certe parole della Morale della morte: “Ti sia di grande ammaestramento il contemplare l’azione dei lenti veleni. Ti parrà come all’uomo vivo sia verità così inconcepibile la morte, che ne puoi già imbalsamare il corpo per le esequie ed egli pensa ancora ad ogni strano malessere, tranne alla fine della sua vita.”
+Tutte queste imagini funebri intorbidivano assiduamente il cervello dell’angoscioso; però che dalla notte che Bertramo gli aveva proposto
+
+ Decodifico l'output...
+no a mo’ dei rustici, chè l’aria della notte già pungeva; l’altra, spolverando le maniche del suo vestito nero inbianchito di calce, lo ridestava inconscia al pieno senso d’essere. Egli strinse le loro mani e cercò nel borsello qualche moneta. – M’hanno spogliato di tutto! – sorrise. – Non vogliamo nulla.... – risposero in coro. Una soltanto, più ardita, più ignara di poter essere crudele, approfittò del momento per confidargli una vecchia brama coltivata in secreto: “.... una memoria, un qualunque oggettino della illustrissima signora Duchessa.... Non si era mai vista una signora più buona e più bella.... Voleva tanto bene ai miei figliuoli....” – Fu quella voce di natura che agli occhi rimasti durante tutte le avversità del giorno come lastre d’acciaio, di pietra o di vetro, corrose invano da un acido smanioso, fece spargere due lagrime. Ogni pena dell’anima fu finalmente sul ciglio! Si allontanavano, egli silenzioso e le donne loquaci, dalla taverna miasmatica, e già l’austera frescura della campagna calmava con svolazzi d’aria le fronti. Egli avrebbe voluto sentir parlare a lungo, semplicemente, della bellezza e della bontà di Laus. Ma da lontano venne, come un buffo fervido, come un calore sonoro, il diavolìo della disputa accesa, e le donne s’accommiatarono spacciatamente, con scuse e sospiri; corsero ai figli, ai mariti, agli sposi; svanirono in men d’un attimo da lui e dal suo mondo illusorio....
+Egli tese l’orecchio, a piè d’un albero, sentendone l’altezza su di sè.... – Perchè non ritorni? Perchè non li accheti? – Voci importune nel suo cervello! Egli riprese il cammino, ostinandosi a ricostituire da memorie stranamente vaghe la bontà e la bellezza di Laus; e andava, così solo e automatico, verso il castello, verso l’altura d’onde le voci si dileguavano, verso l’asilo delle musiche notturne di Bertramo e della putrescenza di Zoilo; la sua nostalgia faceva quel cammino fino dai primi disgusti del giorno; ma ora i rimorsi gli impedivano quasi d’andare, e s’arrestava quale un ubriaco innanzi ad ogni albero, come si trattenesse di dar di cozzo nei tronchi.... E d’ogni albero misurava l’altezza sopra di sè, il contorno tenebroso nella notte. Quando gli parve si fosse dentro di sè deciso irrevocabilmente di non riafferrare le forze per ricacciarsi nell’osteria ad impedire gli allucinanti torbidi del vino e le effusioni di sangue, sentì come infranta una corda e irrecongiungibili nei desiderii il suo paese e lui.
+— Ohimè, – egli disse, – io mi sono alienato un patrimonio d’amore; non lo ritroverò più; che cosa fa ora don Filippo? quanti già mi odiano? e quanti mi odieranno domani?... Calco già una terra di stranieri; vacillo come quegli che ha smarrito la via.... E vado a rifugiarmi nel mio castello, tra la tosse di Zoilo e le musiche di Bertramo che mi sbigottiscono attraversando il silenzio a notte tarda; domani deporrò l’anima mia, con le fibrille impercettibili di colore, su le pergamene celate a tutti gli occhi.... O Bertramo, tu hai ragione: tutti gli alberi sono cipressi nella notte! Godi: io attraverso lo spazio come un’ombra e ti porto veramente una vita estinta....
+E gli parve che Bertramo, chinato sul cuore suo, lo toccasse, dicendo:
+— Sei bene certo che ella non viva ancora?
+X.
+Lavorìo di tarli.
+Intento il Duca a contemplare Zoilo assopito, tornavano nella sua mente certe parole della Morale della morte: “Ti sia di grande ammaestramento il contemplare l’azione dei lenti veleni. Ti parrà come all’uomo vivo sia verità così inconcepibile la morte, che ne puoi già imbalsamare il corpo per le esequie ed egli pensa ancora ad ogni strano malessere, tranne alla fine della sua vita.”
+Tutte queste imagini funebri intorbidivano assiduamente il cervello dell’angoscioso; però che dalla notte che Bertramo gli aveva proposto
+Epoch 0:   0%|                 | 13/437234 [00:02<23:28:33,  5.17it/s, v_num=i5n1, train/loss=10.40]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> al proprio focolare, che la più atroce tortura. Tutto si paga. Quel trionfatore, quel privilegiato del denaro, singhiozzava sul mucchio d’oro, che cresceva ad ogni inventario.
+Si mostrò molto benevolo, promise di soccorrere Toussaint. Ma che poteva fare? Non ammetterebbe mai il principio delle pensioni, perchè era la negazione stessa del salariato come funzionava oggi. Difendeva molto energicamente i suoi diritti da principale, ripetendo che la forte concorrenza costringeva ad esercitarli senza nessuna restrizione, fintanto che il sistema attuale funzionasse. Il suo mestiere era di fare dei buoni affari in modo onesto.
+E rimpianse che gli operai non avessero dato seguito al loro progetto di una Cassa-pensioni; fece anzi capire che li spingerebbe a riprenderlo.
+Le sue guancie si erano accese; era trasformato, riafferrato dalla sua vita di lotta quotidiana.
+— Volevo dunque dirvi, a proposito di quel piccolo motore…
+E ne parlò a lungo con Tommaso, mentre Pietro aspettava, col cuore in iscompiglio, agitato dal bisogno della felicità universale. Afferrava le parole, si smarriva fra i termini tecnici.
+L’officina aveva fabbricato altre volte dei piccoli motori a vapore, ma parevano condannati dalla pratica; per cui si cercava un’altra forza. L’elettricità, la regina del domani, non era ancor possibile, pel peso degli apparecchi che richiedeva. Non restava che il petrolio, dunque; ma questo presentava degli inconvenienti così seri, che la vittoria e la fortuna passerebbero certo dalla parte del costruttore che sapesse surrogarlo con un agente nuovo, ancora sconosciuto. La soluzione del problema stava nel trovare ed applicare quel nuovo agente.
+— Sì, ho fretta ‒ disse Grandidier con grande fervore. ‒ Vi ho lasciato cercare in pace senza importunarvi di domande curiose. Ma la soluzione urge.
+Tommaso sorrideva.
+— Un po’ di pazienza ancora: credo di esser sulla buona strada.
+E Grandidier strinse la mano ad entrambi, poi andò a far il solito giro attraverso i vari laboratorî in moto, mentre il padiglione lo aspettava nel suo silenzio di morte, chiuso e fremente pel dolore continuo ed insanabile a cui egli tornava ogni sera.
+La luce decresceva già quando Pietro e Tommaso, risaliti sul poggio Montmartre, si diressero verso il grande studio vetrato che lo scultore Jahan aveva fabbricato per eseguirvi l’angelo colossale ordinatogli. Quello studio sorgeva fra le rimesse, le tende, le baracche di ogni genere erette per la costruzione della basilica del Sacro Cuore. Si vedevano in quel punto dei terreni incolti, ingombri di una baraonda straordinaria di materiale d’ogni specie, di pietre da costruzione, di armature, di murature; ed in attesa dei selciatori che dovevano rimettere le cose in assetto, restavano qua e là delle buche aperte, delle scale rotte che sprofondavano nel terreno, delle porte chiuse da semplici steccati che mettevano alle basi della chiesa.
+Tommaso, che s’era fermato davanti allo studio di Jahan, indicò una di quelle porte da cui si scendeva ai lavori delle fondamenta.
+— Non v’è mai venuta l’idea di visitare le basi della chiesa? E’ un mondo intero e riesce veramente interessantissimo. Hanno affondato dei milioni laggiù, sapete, avendo dovuto andar a cercare il buon terreno in fondo al poggio, per cui hanno scavato più di ottanta pozzi, nei quali hanno fatto sciogliere dello smalto per poggiare la chiesa su quelle ottanta colonne sotterranee… Non si vedono, ma sono esse che sostengono, al disopra di Parigi, quel monumento di assurdità e di sfida.
+Pietro, avvicinatosi allo steccato, s’era messo a guardare una porta aperta, una specie di pianerottolo buio, d’onde si staccava una scala. E sognava di quelle colonne invisibili, di tutta l’energia caparbia, di tutta la fiera volontà di comando che reggeva quell’edifizio.
+Tommaso fu costretto a richiamarlo.
+— Affrettiamoci: vien notte. Non si vedrebbe più nulla.
+Antonio li aspettava da Jahan, che aveva un nuovo abbozzo da mostrare. Quando entrarono, due scalpellini lavoravano ancora attorno all’angelo monumentale, di cui dirozzavano dall’alto d’un palco le ali simmetriche, mentre lo scultore, seduto
+
+ Decodifico l'output...
+al proprio focolare, che la più atroce tortura. Tutto si paga. Quel trionfatore, quel privilegiato del denaro, singhiozzava sul mucchio d’oro, che cresceva ad ogni inventario.
+Si mostrò molto benevolo, promise di soccorrere Toussaint. Ma che poteva fare? Non ammetterebbe mai il principio delle pensioni, perchè era la negazione stessa del salariato come funzionava oggi. Difendeva molto energicamente i suoi diritti da principale, ripetendo che la forte concorrenza costringeva ad esercitarli senza nessuna restrizione, fintanto che il sistema attuale funzionasse. Il suo mestiere era di fare dei buoni affari in modo onesto.
+E rimpianse che gli operai non avessero dato seguito al loro progetto di una Cassa-pensioni; fece anzi capire che li spingerebbe a riprenderlo.
+Le sue guancie si erano accese; era trasformato, riafferrato dalla sua vita di lotta quotidiana.
+— Volevo dunque dirvi, a proposito di quel piccolo motore…
+E ne parlò a lungo con Tommaso, mentre Pietro aspettava, col cuore in iscompiglio, agitato dal bisogno della felicità universale. Afferrava le parole, si smarriva fra i termini tecnici.
+L’officina aveva fabbricato altre volte dei piccoli motori a vapore, ma parevano condannati dalla pratica; per cui si cercava un’altra forza. L’elettricità, la regina del domani, non era ancor possibile, pel peso degli apparecchi che richiedeva. Non restava che il petrolio, dunque; ma questo presentava degli inconvenienti così seri, che la vittoria e la fortuna passerebbero certo dalla parte del costruttore che sapesse surrogarlo con un agente nuovo, ancora sconosciuto. La soluzione del problema stava nel trovare ed applicare quel nuovo agente.
+— Sì, ho fretta ‒ disse Grandidier con grande fervore. ‒ Vi ho lasciato cercare in pace senza importunarvi di domande curiose. Ma la soluzione urge.
+Tommaso sorrideva.
+— Un po’ di pazienza ancora: credo di esser sulla buona strada.
+E Grandidier strinse la mano ad entrambi, poi andò a far il solito giro attraverso i vari laboratorî in moto, mentre il padiglione lo aspettava nel suo silenzio di morte, chiuso e fremente pel dolore continuo ed insanabile a cui egli tornava ogni sera.
+La luce decresceva già quando Pietro e Tommaso, risaliti sul poggio Montmartre, si diressero verso il grande studio vetrato che lo scultore Jahan aveva fabbricato per eseguirvi l’angelo colossale ordinatogli. Quello studio sorgeva fra le rimesse, le tende, le baracche di ogni genere erette per la costruzione della basilica del Sacro Cuore. Si vedevano in quel punto dei terreni incolti, ingombri di una baraonda straordinaria di materiale d’ogni specie, di pietre da costruzione, di armature, di murature; ed in attesa dei selciatori che dovevano rimettere le cose in assetto, restavano qua e là delle buche aperte, delle scale rotte che sprofondavano nel terreno, delle porte chiuse da semplici steccati che mettevano alle basi della chiesa.
+Tommaso, che s’era fermato davanti allo studio di Jahan, indicò una di quelle porte da cui si scendeva ai lavori delle fondamenta.
+— Non v’è mai venuta l’idea di visitare le basi della chiesa? E’ un mondo intero e riesce veramente interessantissimo. Hanno affondato dei milioni laggiù, sapete, avendo dovuto andar a cercare il buon terreno in fondo al poggio, per cui hanno scavato più di ottanta pozzi, nei quali hanno fatto sciogliere dello smalto per poggiare la chiesa su quelle ottanta colonne sotterranee… Non si vedono, ma sono esse che sostengono, al disopra di Parigi, quel monumento di assurdità e di sfida.
+Pietro, avvicinatosi allo steccato, s’era messo a guardare una porta aperta, una specie di pianerottolo buio, d’onde si staccava una scala. E sognava di quelle colonne invisibili, di tutta l’energia caparbia, di tutta la fiera volontà di comando che reggeva quell’edifizio.
+Tommaso fu costretto a richiamarlo.
+— Affrettiamoci: vien notte. Non si vedrebbe più nulla.
+Antonio li aspettava da Jahan, che aveva un nuovo abbozzo da mostrare. Quando entrarono, due scalpellini lavoravano ancora attorno all’angelo monumentale, di cui dirozzavano dall’alto d’un palco le ali simmetriche, mentre lo scultore, seduto
+Epoch 0:   0%|                 | 14/437234 [00:02<22:33:11,  5.39it/s, v_num=i5n1, train/loss=10.40]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> noi non ha altro rapporto col proprietario, che un contratto non perpetuo. La divisione de' frutti delle terre si fa per metà fra il terriere ed il colono; ovvero s'aggrava il colono di pagare una determinata somma o in denaro o in frutti, e tutto l'eccedente ricade a suo profitto. Questo antico sistema, da una parte, anima la coltivazione delle terre, cointeressando il villano; e dall'altra, pone minore intervallo fra il signore e il villano medesimo; poiché in luogo di comando e subordinazione, da noi non vi è che un contratto prodotto dai bisogni vicendevoli fra un ricco ed un povero. Perciò io credo che da noi sarebbe impossibile il conservare lungamente un governo aristocratico, a meno che gli ottimati non discendessero a quella popolarità che rende cara ai Veneziani la forma del loro governo; se pure anche Venezia non deve in parte la sua antichissima tranquillità alla natura del luogo su di cui è piantata: mentre ogni cittadino, sentendo di vivere dove perirebbe nel momento in cui nascesse confusione nel governo, forza è che freni l'inquietudine, e contribuisca a quell'ordine sociale, senza di cui ivi né avrebbe alimento né mezzi di procurarselo. I costumi de' nobili da noi erano invece orgogliosi e dispotici, talvolta sino all'atrocità. Il Fiamma ci racconta che a' suoi tempi certo popolare, per nome Guglielmo da Salvo, di porta Vercellina, andava creditore di rilevante somma verso di Guglielmo da Landriano, uomo nobile; e che il debitore invitò il popolare ad una sua villa in Marnate, posta nel contato del Seprio, ove, per liberarsi dal pagamento, trucidò miseramente il povero creditore. Il qual fatto sospettatosi nella città, la plebe, inferocita per l'enorme tradimento, si portò a Marnate, scoprì il cadavere, lo trasportò a Milano, e mostrando per le strade lo strazio crudele, la prepotenza, l'insidia, la violata fede d'ospitalità, vennero diroccate le case dei Landriani e scacciati nuovamente i nobili tutti dalla città. Così racconta il Fiamma questo fatto; e a lui dobbiamo prestar più fede che non al Corio ed al Calco, i quali erano scrittori più lontani; e forse non avevano stima bastante de' nobili del tempo loro per credere che dovesse essere sempre loro piacevole la verità della storia, quand'anche annunziasse i delitti de' loro maggiori. Il Corio per altro non ebbe difficoltà di assicurarci che, prima dell'anno 1065, siasi fatta dai nobili la legge orrenda: che ciascuno nobile potesse occidere un plebeo con la pena de' libre septe, e soldo uno de terzoli, per la qual cosa molti erano morti. Io credo falsa questa asserzione. Essa però fa conoscere come si pensava; poiché il Corio l'avrà trovata in qualche antica tradizione. Per tai motivi può facilmente intendersi la costanza della dissensione, sempre mantenutasi nella città; giacché la plebe naturalmente non ha mire ambiziose per dominare su i nobili, né da essi si allontana né con essi guerreggia, se non per intolleranza dell'oppressione. Colla morte dell'imperatore Corrado cominciarono le inquietudini del popolo contro de' nobili; poi si sfogarono i due partiti colla questione de' preti ammogliati; indi i pericoli di un esterno nemico contennero le interne fazioni; ma cessati che furono, sempre si videro rianimate, sintanto che, come dissi e come in appresso vedremo, rovinò la Repubblica, e la città si rese suddita di un solo.
+(1208) Colla morte di Filippo, duca di Svevia, seguìta l'anno 1208, non rimanevano che due pretendenti alla dignità imperiale, Ottone e Federico; ma Ottone venne proclamato in Germania re de' Romani, e in Roma incoronato imperatore da Innocenzo III. L'imperatore Ottone IV era, siccome dissi, del sangue della casa d'Este; egli era figlio di Arrigo il Leone, il quale, dopo d'avere seguitato l'imperatore Federico I nelle lunghe spedizioni d'Italia, per un tratto del suo dispotismo era stato privato della Baviera e della Sassonia. Questa era una cagione bastante per rendere l'imperatore Ottone nemico di Federico, e per renderlo caro ai Milanesi, come lo fu sommamente. In una lettera che quell'augusto
+
+ Decodifico l'output...
+noi non ha altro rapporto col proprietario, che un contratto non perpetuo. La divisione de' frutti delle terre si fa per metà fra il terriere ed il colono; ovvero s'aggrava il colono di pagare una determinata somma o in denaro o in frutti, e tutto l'eccedente ricade a suo profitto. Questo antico sistema, da una parte, anima la coltivazione delle terre, cointeressando il villano; e dall'altra, pone minore intervallo fra il signore e il villano medesimo; poiché in luogo di comando e subordinazione, da noi non vi è che un contratto prodotto dai bisogni vicendevoli fra un ricco ed un povero. Perciò io credo che da noi sarebbe impossibile il conservare lungamente un governo aristocratico, a meno che gli ottimati non discendessero a quella popolarità che rende cara ai Veneziani la forma del loro governo; se pure anche Venezia non deve in parte la sua antichissima tranquillità alla natura del luogo su di cui è piantata: mentre ogni cittadino, sentendo di vivere dove perirebbe nel momento in cui nascesse confusione nel governo, forza è che freni l'inquietudine, e contribuisca a quell'ordine sociale, senza di cui ivi né avrebbe alimento né mezzi di procurarselo. I costumi de' nobili da noi erano invece orgogliosi e dispotici, talvolta sino all'atrocità. Il Fiamma ci racconta che a' suoi tempi certo popolare, per nome Guglielmo da Salvo, di porta Vercellina, andava creditore di rilevante somma verso di Guglielmo da Landriano, uomo nobile; e che il debitore invitò il popolare ad una sua villa in Marnate, posta nel contato del Seprio, ove, per liberarsi dal pagamento, trucidò miseramente il povero creditore. Il qual fatto sospettatosi nella città, la plebe, inferocita per l'enorme tradimento, si portò a Marnate, scoprì il cadavere, lo trasportò a Milano, e mostrando per le strade lo strazio crudele, la prepotenza, l'insidia, la violata fede d'ospitalità, vennero diroccate le case dei Landriani e scacciati nuovamente i nobili tutti dalla città. Così racconta il Fiamma questo fatto; e a lui dobbiamo prestar più fede che non al Corio ed al Calco, i quali erano scrittori più lontani; e forse non avevano stima bastante de' nobili del tempo loro per credere che dovesse essere sempre loro piacevole la verità della storia, quand'anche annunziasse i delitti de' loro maggiori. Il Corio per altro non ebbe difficoltà di assicurarci che, prima dell'anno 1065, siasi fatta dai nobili la legge orrenda: che ciascuno nobile potesse occidere un plebeo con la pena de' libre septe, e soldo uno de terzoli, per la qual cosa molti erano morti. Io credo falsa questa asserzione. Essa però fa conoscere come si pensava; poiché il Corio l'avrà trovata in qualche antica tradizione. Per tai motivi può facilmente intendersi la costanza della dissensione, sempre mantenutasi nella città; giacché la plebe naturalmente non ha mire ambiziose per dominare su i nobili, né da essi si allontana né con essi guerreggia, se non per intolleranza dell'oppressione. Colla morte dell'imperatore Corrado cominciarono le inquietudini del popolo contro de' nobili; poi si sfogarono i due partiti colla questione de' preti ammogliati; indi i pericoli di un esterno nemico contennero le interne fazioni; ma cessati che furono, sempre si videro rianimate, sintanto che, come dissi e come in appresso vedremo, rovinò la Repubblica, e la città si rese suddita di un solo.
+(1208) Colla morte di Filippo, duca di Svevia, seguìta l'anno 1208, non rimanevano che due pretendenti alla dignità imperiale, Ottone e Federico; ma Ottone venne proclamato in Germania re de' Romani, e in Roma incoronato imperatore da Innocenzo III. L'imperatore Ottone IV era, siccome dissi, del sangue della casa d'Este; egli era figlio di Arrigo il Leone, il quale, dopo d'avere seguitato l'imperatore Federico I nelle lunghe spedizioni d'Italia, per un tratto del suo dispotismo era stato privato della Baviera e della Sassonia. Questa era una cagione bastante per rendere l'imperatore Ottone nemico di Federico, e per renderlo caro ai Milanesi, come lo fu sommamente. In una lettera che quell'augusto
+Epoch 0:   0%|                 | 15/437234 [00:02<21:51:01,  5.56it/s, v_num=i5n1, train/loss=10.40]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> una somma di 5.000 lire, prestata da un usuraio di Nancy, Isacco Beer. Un altro ebreo, rigattiere, presta cauzione per dei mobili. Intanto la signora de la Motte aveva fatto tornare il marito e, verso Pasqua del 1784, può finalmente prendere possesso della casa di via Neuve-Saint-Gilles.
+La signora de la Motte si sosteneva grazie alla devozione de' suoi servitori; meravigliosa devozione di esseri semplici e amanti, la cui essenza è l'attaccamento al padrone; servitori come se ne videro tanti sotto l'Antico Regime, rimasti al servizio dei loro signori senza stipendio, aiutandoli anzi coi proprii denari nei momenti di estremo disagio, sacrificandosi per loro fino alla morte. Rosalia, cameriera di Giovanna di Valois, e il suo cameriere Deschamps furono in quel periodo della sua vita i suoi più solidi appoggi.
+«L'apparente agiatezza di via Neuve-Saint-Gilles – prosegue l'avvocato Target – non fa, in realtà, che accrescere la miseria effettiva. Marito e moglie non riescivano a vivere di prestiti. Talvolta privi di mobilio in tutto o in parte, a seconda delle strettezze che lo impedivano o dei casi fortunati che ne permettevano il ritorno. Dei piatti di stagno e i giorni di ricevimento, sei piatti d'argento presi a prestito; una pensione di 800 lire, aumentata a 1500, poi ceduta con perdita per l'assoluto stato di miseria; dei domestici mal pagati, degli affari trattati con merci che poi si mandavano al Monte di Pietà; e intanto, sempre viaggi, sempre sollecitazioni a Versailles, a Fontainbleau, qualche presente subito ingoiato dal bisogno non appena ricevuto, e debiti e intrighi».
+Alla fine d'ogni settimana, Giovanna, aiutata da Rosalia, risciacquava le sue due vesti di mussola e le due sottane di tela, le sole che non avesse date in pegno, e poi le stirava sulla tavola della sala da pranzo. Quanto al conte, non osava più uscire, per mancanza d'abiti. Il cuoco, anticipava del proprio, per pagare il macellaio ed il fornaio. Ma la borsa del servitore finì coll'esaurirsi. Convenne digiunare.
+«Andiamo a letto – diceva Rosalia. – Quando si dorme non si ha fame».
+Di quando in quando Giovanna si creava delle risorse «facendo degli affari», ossia speculazioni su merci: prendeva molto a credito: a un punto tale che la polizia se ne insospettì.
+In agosto, ci fu un allarme vivace. Gli usceri battevano all'uscio. Il fedele Deschamps mise in salvo il letto e le poltrone del salotto, aiutato da un giovane parrucchiere. Li portarono sulla schiena fin da un certo Berlandeux, in via delle Tournelles.
+— Presto, mio caro Deschamps, – esclamava la signora de La Motte – staccate gli specchi del salotto e le tende delle finestre.
+— Per portarli dove?
+— Su, svelto, al Monte di Pietà!
+E il domestico corre e torna con cinque luigi.
+Il barone di Vieuxvillers presta 200 lire, uno dei frati Minimi venticinque luigi. Si comprano dei bei vestiti; un «panier» di pizzo per la contessa, un frac di velluto per il conte, per mettersi in condizione di andare a Corte a presentarvi le proprie petizioni. Siamo nell'ottobre del 1783. Gli sposi La Motte partono alla volta di Fontainbleau. Giovanna, col marito, s'insedia nell'antica casa della cancelleria in via d'Avon. Ha una stanza quadrata, abbastanza grande, addobbata bene. Un caminetto di marmo bianco; alle finestre delle tende di mussola a fiori. «Molti signori per bene venivano alternativamente a trovare la signora contessa, mentre il signor conte andava a scaldarsi negli appartamenti del castello». – «Militari e magistrati facevano a gara nel farle visita e lasciarle delle prove della loro generosità».
+XI.
+ATTORNO ALLA CORTE.
+Il denaro ricevuto veniva sprecato e urgevano sempre nuove risorse. Si escogitano mille e un sistema. Per andare a Corte, la coppia comitale ha preso a nolo una carrozza da rimessa. Ma non ha denaro. Passano ambedue, nella loro vettura, in via Sant
+
+ Decodifico l'output...
+una somma di 5.000 lire, prestata da un usuraio di Nancy, Isacco Beer. Un altro ebreo, rigattiere, presta cauzione per dei mobili. Intanto la signora de la Motte aveva fatto tornare il marito e, verso Pasqua del 1784, può finalmente prendere possesso della casa di via Neuve-Saint-Gilles.
+La signora de la Motte si sosteneva grazie alla devozione de' suoi servitori; meravigliosa devozione di esseri semplici e amanti, la cui essenza è l'attaccamento al padrone; servitori come se ne videro tanti sotto l'Antico Regime, rimasti al servizio dei loro signori senza stipendio, aiutandoli anzi coi proprii denari nei momenti di estremo disagio, sacrificandosi per loro fino alla morte. Rosalia, cameriera di Giovanna di Valois, e il suo cameriere Deschamps furono in quel periodo della sua vita i suoi più solidi appoggi.
+«L'apparente agiatezza di via Neuve-Saint-Gilles – prosegue l'avvocato Target – non fa, in realtà, che accrescere la miseria effettiva. Marito e moglie non riescivano a vivere di prestiti. Talvolta privi di mobilio in tutto o in parte, a seconda delle strettezze che lo impedivano o dei casi fortunati che ne permettevano il ritorno. Dei piatti di stagno e i giorni di ricevimento, sei piatti d'argento presi a prestito; una pensione di 800 lire, aumentata a 1500, poi ceduta con perdita per l'assoluto stato di miseria; dei domestici mal pagati, degli affari trattati con merci che poi si mandavano al Monte di Pietà; e intanto, sempre viaggi, sempre sollecitazioni a Versailles, a Fontainbleau, qualche presente subito ingoiato dal bisogno non appena ricevuto, e debiti e intrighi».
+Alla fine d'ogni settimana, Giovanna, aiutata da Rosalia, risciacquava le sue due vesti di mussola e le due sottane di tela, le sole che non avesse date in pegno, e poi le stirava sulla tavola della sala da pranzo. Quanto al conte, non osava più uscire, per mancanza d'abiti. Il cuoco, anticipava del proprio, per pagare il macellaio ed il fornaio. Ma la borsa del servitore finì coll'esaurirsi. Convenne digiunare.
+«Andiamo a letto – diceva Rosalia. – Quando si dorme non si ha fame».
+Di quando in quando Giovanna si creava delle risorse «facendo degli affari», ossia speculazioni su merci: prendeva molto a credito: a un punto tale che la polizia se ne insospettì.
+In agosto, ci fu un allarme vivace. Gli usceri battevano all'uscio. Il fedele Deschamps mise in salvo il letto e le poltrone del salotto, aiutato da un giovane parrucchiere. Li portarono sulla schiena fin da un certo Berlandeux, in via delle Tournelles.
+— Presto, mio caro Deschamps, – esclamava la signora de La Motte – staccate gli specchi del salotto e le tende delle finestre.
+— Per portarli dove?
+— Su, svelto, al Monte di Pietà!
+E il domestico corre e torna con cinque luigi.
+Il barone di Vieuxvillers presta 200 lire, uno dei frati Minimi venticinque luigi. Si comprano dei bei vestiti; un «panier» di pizzo per la contessa, un frac di velluto per il conte, per mettersi in condizione di andare a Corte a presentarvi le proprie petizioni. Siamo nell'ottobre del 1783. Gli sposi La Motte partono alla volta di Fontainbleau. Giovanna, col marito, s'insedia nell'antica casa della cancelleria in via d'Avon. Ha una stanza quadrata, abbastanza grande, addobbata bene. Un caminetto di marmo bianco; alle finestre delle tende di mussola a fiori. «Molti signori per bene venivano alternativamente a trovare la signora contessa, mentre il signor conte andava a scaldarsi negli appartamenti del castello». – «Militari e magistrati facevano a gara nel farle visita e lasciarle delle prove della loro generosità».
+XI.
+ATTORNO ALLA CORTE.
+Il denaro ricevuto veniva sprecato e urgevano sempre nuove risorse. Si escogitano mille e un sistema. Per andare a Corte, la coppia comitale ha preso a nolo una carrozza da rimessa. Ma non ha denaro. Passano ambedue, nella loro vettura, in via Sant
+Epoch 0:   0%|                 | 16/437234 [00:02<21:37:23,  5.62it/s, v_num=i5n1, train/loss=10.40]--- SUPER DEBUG ---
+Il tokenizzatore è: <matformer.tokenizers.MatformerTokenizer object at 0x7ff294c32a50>
+Sta entrando un <class 'torch.Tensor'>
+L'obiettivo è un <class 'torch.Tensor'>
+Dimensione lista input: 1024
+
+Decodifico l'input...
+<s> . Berlino, Reimer, 1895.
+G. Boissier, Rome and Pompeii: archaeological rambles. Translated by D. Hav. Fisher. Londra, 1896.
+A. Erman, Obelisken römischer Zeit, in Mittheil d. kais. d. arch. Instit. (Röm. Abth. 1896).
+- Wandtafel des Forum romanum der Kaiserzeit. Monaco, Oldenbourg, 1896.
+[182]
+C. Weichardt, Pompei vor die Zerstörung. Lipsia, 1897.
+L. Borsari, Topografia di Roma antica. Milano, Hoepli, 1897, con 7 tavole.
+E. Petersen-A. v. Domaszewski-G. Calderini, Die Marcus-Säule auf Piazza Colonna in Rom., gr. folio, in 128 tavole, col testo in folio. Monaco, Bruckmann, 1897. - Cfr. L. Mariani, La colonna di Marc'Aurelio in Roma nella Nuova antologia, 1897, vol. 68, fasc. 7.
+Frothingham, Der Trajansbogen in Benevent, in Acad. d. inscript. et bell. lett., 30, VII, 1897.
+G. Pinza, Sulle mura romane attribuite all'epoca dei Re (in Bull. Corr. Arch., XXV, pag. 228-261).
+A. Mau, Der Tempel der Fortuna Augusta in Pompeji, in Mittheilungen d. k. deutsch. Archaeol. Inst., 1896, pag. 269 e segg.
+Id., Der städtische Larentempel in Pompeji, in Mittheilungen citate, pag. 285 e segg.
+Ch. Hülsen, Über die Geschichte des Colosseums in späten Alterthum in Mittheilungen d. k. d. Arch. Instit. (Römische Abtheilung, XII, 97 (Sitzungsberichte)).
+R. Lanciani, Ruins and excavations of ancient Rome. Boston, 1897.
+Aust, Die stadtrömischen Tempelgründungen der Kaiserzeit. Programm., Francoforte, 1898.
+R. Engelmann, Pompei (in Berühmte Kunststätten, n. 4). Lipsia, Seemann, 1898.
+W. Doerpfeld, Über ägyptische und hellenische Architektur; besonders über die Verwendung der Säulen bei beiden Völkern. (in Astu, n. 2891).
+M. Babucke, Geschichte des Kolosseums. Königsberg, Koch, 1898.
+A. Lehmann, Kulturgeschichtliche Bilder: Inneres eines römischen Hauses: Haus d. Cornelius Rufus in Pompeji (ricostruzione). Lipsia, Wachsmuth, 1898.
+G. Gatteschi, Geschichte der “Basilica Aemilia„ in Bullettino della Commiss. archeol. comun. di Roma, 1899, II. p. 116 e segg.
+Cfr. R. Lanciani, Le escavazioni del Foro, I; La Basilica Aemilia, ibid. 1899, tav. XIII-XV, pag. 169 e segg.
+
+Plastica.
+
+Giustiniani, Galleria del marchese Vincenzo Giustiniani. 2 voll. Roma, 1631, 1640.
+J. P. Bellori, Veterum illustrium philosophorum poetarum imagines. Roma, 1686.
+A. M. Zanetti, Delle antiche statue greche e romane che nella antisala della libreria di S.
+
+ Decodifico l'output...
+. Berlino, Reimer, 1895.
+G. Boissier, Rome and Pompeii: archaeological rambles. Translated by D. Hav. Fisher. Londra, 1896.
+A. Erman, Obelisken römischer Zeit, in Mittheil d. kais. d. arch. Instit. (Röm. Abth. 1896).
+- Wandtafel des Forum romanum der Kaiserzeit. Monaco, Oldenbourg, 1896.
+[182]
+C. Weichardt, Pompei vor die Zerstörung. Lipsia, 1897.
+L. Borsari, Topografia di Roma antica. Milano, Hoepli, 1897, con 7 tavole.
+E. Petersen-A. v. Domaszewski-G. Calderini, Die Marcus-Säule auf Piazza Colonna in Rom., gr. folio, in 128 tavole, col testo in folio. Monaco, Bruckmann, 1897. - Cfr. L. Mariani, La colonna di Marc'Aurelio in Roma nella Nuova antologia, 1897, vol. 68, fasc. 7.
+Frothingham, Der Trajansbogen in Benevent, in Acad. d. inscript. et bell. lett., 30, VII, 1897.
+G. Pinza, Sulle mura romane attribuite all'epoca dei Re (in Bull. Corr. Arch., XXV, pag. 228-261).
+A. Mau, Der Tempel der Fortuna Augusta in Pompeji, in Mittheilungen d. k. deutsch. Archaeol. Inst., 1896, pag. 269 e segg.
+Id., Der städtische Larentempel in Pompeji, in Mittheilungen citate, pag. 285 e segg.
+Ch. Hülsen, Über die Geschichte des Colosseums in späten Alterthum in Mittheilungen d. k. d. Arch. Instit. (Römische Abtheilung, XII, 97 (Sitzungsberichte)).
+R. Lanciani, Ruins and excavations of ancient Rome. Boston, 1897.
+Aust, Die stadtrömischen Tempelgründungen der Kaiserzeit. Programm., Francoforte, 1898.
+R. Engelmann, Pompei (in Berühmte Kunststätten, n. 4). Lipsia, Seemann, 1898.
+W. Doerpfeld, Über ägyptische und hellenische Architektur; besonders über die Verwendung der Säulen bei beiden Völkern. (in Astu, n. 2891).
+M. Babucke, Geschichte des Kolosseums. Königsberg, Koch, 1898.
+A. Lehmann, Kulturgeschichtliche Bilder: Inneres eines römischen Hauses: Haus d. Cornelius Rufus in Pompeji (ricostruzione). Lipsia, Wachsmuth, 1898.
+G. Gatteschi, Geschichte der “Basilica Aemilia„ in Bullettino della Commiss. archeol. comun. di Roma, 1899, II. p. 116 e segg.
+Cfr. R. Lanciani, Le escavazioni del Foro, I; La Basilica Aemilia, ibid. 1899, tav. XIII-XV, pag. 169 e segg.
+
+Plastica.
+
+Giustiniani, Galleria del marchese Vincenzo Giustiniani. 2 voll. Roma, 1631, 1640.
+J. P. Bellori, Veterum illustrium philosophorum poetarum imagines. Roma, 1686.
+A. M. Zanetti, Delle antiche statue greche e romane che nella antisala della libreria di S.
+
+Detected KeyboardInterrupt, attempting graceful shutdown ...

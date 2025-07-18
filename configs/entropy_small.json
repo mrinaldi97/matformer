@@ -39,7 +39,7 @@
   "data": {
     "data_root": "../matformer_norepo/liberliber_1024",
     "batch_size": 64,
-    "num_workers": 4
+    "num_workers": 2
   },
   "save_dir": "./checkpoints",
   "wandb_project": "matformer",

@@ -1,0 +1,15 @@
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type                  | Params | Mode
+--------------------------------------------------------
+0 | model | TransformerWithLMHead | 51.9 M | train
+--------------------------------------------------------
+51.9 M    Trainable params
+0         Non-trainable params
+51.9 M    Total params
+207.792   Total estimated model params size (MB)
+120       Modules in train mode
+0         Modules in eval mode
+Epoch 0:   6%|█                 | 718/12145 [04:47<1:16:07,  2.50it/s, v_num=2jv2, train/loss=5.180]
+
+Detected KeyboardInterrupt, attempting graceful shutdown ...

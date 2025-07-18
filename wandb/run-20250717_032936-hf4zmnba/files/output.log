@@ -1,0 +1,17 @@
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type                  | Params | Mode
+--------------------------------------------------------
+0 | model | TransformerWithLMHead | 18.6 M | train
+--------------------------------------------------------
+18.6 M    Trainable params
+0         Non-trainable params
+18.6 M    Total params
+74.509    Total estimated model params size (MB)
+120       Modules in train mode
+0         Modules in eval mode
+/home/matteo/envs/torch-cuda/lib/python3.13/site-packages/torch/utils/data/dataloader.py:624: UserWarning: This DataLoader will create 4 worker processes in total. Our suggested max number of worker in current system is 2, which is smaller than what this DataLoader is going to create. Please be aware that excessive worker creation might get DataLoader running slow or even freeze, lower the worker number to avoid potential slowness/freeze if necessary.
+  warnings.warn(
+Epoch 0:   1%|          | 224/25067 [01:21<2:31:11,  2.74it/s, v_num=mnba, train/loss=1.890]
+
+Detected KeyboardInterrupt, attempting graceful shutdown ...

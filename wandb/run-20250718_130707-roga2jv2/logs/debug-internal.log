@@ -1,0 +1,15 @@
+{"time":"2025-07-18T13:07:07.973216082+02:00","level":"INFO","msg":"stream: starting","core version":"0.19.10","symlink path":"wandb/run-20250718_130707-roga2jv2/logs/debug-core.log"}
+{"time":"2025-07-18T13:07:08.383469932+02:00","level":"INFO","msg":"created new stream","id":"roga2jv2"}
+{"time":"2025-07-18T13:07:08.383519939+02:00","level":"INFO","msg":"stream: started","id":"roga2jv2"}
+{"time":"2025-07-18T13:07:08.384591883+02:00","level":"INFO","msg":"handler: started","stream_id":"roga2jv2"}
+{"time":"2025-07-18T13:07:08.384651389+02:00","level":"INFO","msg":"sender: started","stream_id":"roga2jv2"}
+{"time":"2025-07-18T13:07:08.384685193+02:00","level":"INFO","msg":"writer: Do: started","stream_id":"roga2jv2"}
+{"time":"2025-07-18T13:07:08.963515856+02:00","level":"INFO","msg":"Starting system monitor"}
+{"time":"2025-07-18T13:12:08.64563498+02:00","level":"INFO","msg":"stream: closing","id":"roga2jv2"}
+{"time":"2025-07-18T13:12:08.646525227+02:00","level":"INFO","msg":"Stopping system monitor"}
+{"time":"2025-07-18T13:12:08.648460289+02:00","level":"INFO","msg":"Stopped system monitor"}
+{"time":"2025-07-18T13:12:09.37458384+02:00","level":"INFO","msg":"fileTransfer: Close: file transfer manager closed"}
+{"time":"2025-07-18T13:12:09.670455476+02:00","level":"INFO","msg":"handler: closed","stream_id":"roga2jv2"}
+{"time":"2025-07-18T13:12:09.670611231+02:00","level":"INFO","msg":"sender: closed","stream_id":"roga2jv2"}
+{"time":"2025-07-18T13:12:09.670620171+02:00","level":"INFO","msg":"writer: Close: closed","stream_id":"roga2jv2"}
+{"time":"2025-07-18T13:12:09.670982668+02:00","level":"INFO","msg":"stream: closed","id":"roga2jv2"}

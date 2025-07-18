@@ -22,7 +22,7 @@
     "bias": false,
     "training_objective": "autoregressive",
     "alibi": true,
-    "is_causal": false,
+    "is_causal": true,
     "attn_impl": "flash"
   },
   "training": {
@@ -40,7 +40,7 @@
   "data": {
     "data_root": "../matformer_norepo/liberliber_1024_tokens",
     "batch_size": 36,
-    "num_workers": 4
+    "num_workers": 2
   },
   "save_dir": "./checkpoints",
   "wandb_project": "matformer",

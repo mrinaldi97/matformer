@@ -1,0 +1,24 @@
+2025-07-18 12:30:11,671 INFO    MainThread:36903 [wandb_setup.py:_flush():68] Current SDK version is 0.19.10
+2025-07-18 12:30:11,671 INFO    MainThread:36903 [wandb_setup.py:_flush():68] Configure stats pid to 36903
+2025-07-18 12:30:11,671 INFO    MainThread:36903 [wandb_setup.py:_flush():68] Loading settings from /home/matteo/.config/wandb/settings
+2025-07-18 12:30:11,671 INFO    MainThread:36903 [wandb_setup.py:_flush():68] Loading settings from /home/matteo/Ricerca/miei_progetti/matformer/wandb/settings
+2025-07-18 12:30:11,671 INFO    MainThread:36903 [wandb_setup.py:_flush():68] Loading settings from environment variables
+2025-07-18 12:30:11,673 INFO    MainThread:36903 [wandb_init.py:setup_run_log_directory():724] Logging user logs to ./wandb/run-20250718_123011-s49lhp5j/logs/debug.log
+2025-07-18 12:30:11,673 INFO    MainThread:36903 [wandb_init.py:setup_run_log_directory():725] Logging internal logs to ./wandb/run-20250718_123011-s49lhp5j/logs/debug-internal.log
+2025-07-18 12:30:11,673 INFO    MainThread:36903 [wandb_init.py:init():852] calling init triggers
+2025-07-18 12:30:11,673 INFO    MainThread:36903 [wandb_init.py:init():857] wandb.init called with sweep_config: {}
+config: {'model_class': 'EntropyModel', 'model_config': {'name': 'Micro-Albertino', 'hidden_dim': 512, 'ffn_factor': 1.0, 'n_layers': 10, 'n_heads': 8, 'vocab_size': 32768, 'bos_id': 1, 'eos_id': 2, 'pad_id': 0, 'tie_word_embeddings': False, 'rms_norm_eps': 1e-06, 'attention_type': ['sliding'], 'sliding_window_size': 512, 'sliding_layers': [0, 2, 4, 6, 8], 'sliding_type': 'partial', 'max_seqlen': 1024, 'block_size_for_attention': 128, 'compile_flexattn': False, 'bias': False, 'training_objective': 'masked', 'alibi': True, 'is_causal': False, 'attn_impl': 'flash'}, 'training': {'lr': 0.0001, 'max_steps': 100000, 'accumulate_grad_batches': 1, 'seed': 27, 'checkpoint_name': 'micro_albertino'}, 'tokenizer': {'type': 'huggingface', 'pretrained_name': 'sapienzanlp/Minerva-350M-base-v1.0', 'varlen_strategy': 'unpadding'}, 'data': {'data_root': '../matformer_norepo/liberliber_1024_tokens', 'batch_size': 1, 'num_workers': 2}, 'save_dir': './checkpoints', 'wandb_project': 'matformer', 'wandb_run_name': 'micro-albertino-liberliber-1024-tokens', '_wandb': {}}
+2025-07-18 12:30:11,673 INFO    MainThread:36903 [wandb_init.py:init():893] starting backend
+2025-07-18 12:30:11,673 INFO    MainThread:36903 [wandb_init.py:init():897] sending inform_init request
+2025-07-18 12:30:11,678 INFO    MainThread:36903 [backend.py:_multiprocessing_setup():101] multiprocessing start_methods=fork,spawn,forkserver, using: spawn
+2025-07-18 12:30:11,678 INFO    MainThread:36903 [wandb_init.py:init():907] backend started and connected
+2025-07-18 12:30:11,695 INFO    MainThread:36903 [wandb_init.py:init():1002] updated telemetry
+2025-07-18 12:30:11,714 INFO    MainThread:36903 [wandb_init.py:init():1026] communicating run to backend with 90.0 second timeout
+2025-07-18 12:30:12,630 INFO    MainThread:36903 [wandb_init.py:init():1101] starting run threads in backend
+2025-07-18 12:30:13,237 INFO    MainThread:36903 [wandb_run.py:_console_start():2566] atexit reg
+2025-07-18 12:30:13,237 INFO    MainThread:36903 [wandb_run.py:_redirect():2414] redirect: wrap_raw
+2025-07-18 12:30:13,237 INFO    MainThread:36903 [wandb_run.py:_redirect():2483] Wrapping output streams.
+2025-07-18 12:30:13,237 INFO    MainThread:36903 [wandb_run.py:_redirect():2506] Redirects installed.
+2025-07-18 12:30:13,240 INFO    MainThread:36903 [wandb_init.py:init():1147] run started, returning control to user process
+2025-07-18 12:30:15,921 INFO    MainThread:36903 [wandb_run.py:_config_callback():1429] config_cb None None {'config': "ModelConfig(hidden_dim=512, ffn_factor=1.0, n_layers=10, n_heads=8, vocab_size=32768, pad_id=0, bos_id=1, eos_id=2, tie_word_embeddings=False, rms_norm_eps=1e-06, attention_type=['sliding'], sliding_window_size=512, sliding_layers=[0, 2, 4, 6, 8], sliding_type='partial', max_seqlen=1024, block_size_for_attention=128, compile_flexattn=False, bias=False, name='Micro-Albertino', training_objective='masked', is_causal=False, alibi=True, attn_impl='flash')", 'tokenizer': '<matformer.tokenizers.MatformerTokenizer object at 0x7ff8ac295810>', 'device': 'cuda', 'train_config': {'lr': 0.0001, 'max_steps': 100000, 'accumulate_grad_batches': 1, 'seed': 27, 'checkpoint_name': 'micro_albertino'}, 'inference_fix': False, 'nested': False, 'attn_impl': 'flash'}
+2025-07-18 12:30:18,924 INFO    MsgRouterThr:36903 [mailbox.py:close():129] [no run ID] Closing mailbox, abandoning 1 handles.

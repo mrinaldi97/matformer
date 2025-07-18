@@ -1,0 +1,118 @@
+_wandb:
+    value:
+        cli_version: 0.19.10
+        m:
+            - "1": trainer/global_step
+              "6":
+                - 3
+              "7": []
+        python_version: 3.13.5
+        t:
+            "1":
+                - 1
+                - 5
+                - 9
+                - 11
+                - 41
+                - 49
+                - 53
+                - 55
+                - 71
+                - 103
+                - 105
+            "2":
+                - 1
+                - 5
+                - 9
+                - 11
+                - 41
+                - 49
+                - 53
+                - 55
+                - 71
+                - 103
+                - 105
+            "3":
+                - 7
+                - 13
+                - 16
+                - 23
+                - 55
+                - 66
+            "4": 3.13.5
+            "5": 0.19.10
+            "6": 4.52.0.dev0
+            "8":
+                - 5
+            "12": 0.19.10
+            "13": linux-x86_64
+attn_impl:
+    value: flash
+config:
+    value: ModelConfig(hidden_dim=512, ffn_factor=1.0, n_layers=10, n_heads=8, vocab_size=32768, pad_id=0, bos_id=1, eos_id=2, tie_word_embeddings=False, rms_norm_eps=1e-06, attention_type=['sliding'], sliding_window_size=512, sliding_layers=[0, 2, 4, 6, 8], sliding_type='partial', max_seqlen=1024, block_size_for_attention=128, compile_flexattn=False, bias=False, name='Micro-Albertino', training_objective='masked', is_causal=False, alibi=True, attn_impl='flash')
+data:
+    value:
+        batch_size: 1
+        data_root: ../matformer_norepo/liberliber_1024_tokens
+        num_workers: 2
+device:
+    value: cuda
+inference_fix:
+    value: false
+model_class:
+    value: EntropyModel
+model_config:
+    value:
+        alibi: true
+        attention_type:
+            - sliding
+        attn_impl: flash
+        bias: false
+        block_size_for_attention: 128
+        bos_id: 1
+        compile_flexattn: false
+        eos_id: 2
+        ffn_factor: 1
+        hidden_dim: 512
+        is_causal: false
+        max_seqlen: 1024
+        n_heads: 8
+        n_layers: 10
+        name: Micro-Albertino
+        pad_id: 0
+        rms_norm_eps: 1e-06
+        sliding_layers:
+            - 0
+            - 2
+            - 4
+            - 6
+            - 8
+        sliding_type: partial
+        sliding_window_size: 512
+        tie_word_embeddings: false
+        training_objective: masked
+        vocab_size: 32768
+nested:
+    value: false
+save_dir:
+    value: ./checkpoints
+tokenizer:
+    value: <matformer.tokenizers.MatformerTokenizer object at 0x7fae0e389450>
+train_config:
+    value:
+        accumulate_grad_batches: 1
+        checkpoint_name: micro_albertino
+        lr: 0.0001
+        max_steps: 100000
+        seed: 27
+training:
+    value:
+        accumulate_grad_batches: 1
+        checkpoint_name: micro_albertino
+        lr: 0.0001
+        max_steps: 100000
+        seed: 27
+wandb_project:
+    value: matformer
+wandb_run_name:
+    value: micro-albertino-liberliber-1024-tokens

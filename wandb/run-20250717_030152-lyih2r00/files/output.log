@@ -1,0 +1,14 @@
+LOCAL_RANK: 0 - CUDA_VISIBLE_DEVICES: [0]
+
+  | Name  | Type                  | Params | Mode
+--------------------------------------------------------
+0 | model | TransformerWithLMHead | 51.9 M | train
+--------------------------------------------------------
+51.9 M    Trainable params
+0         Non-trainable params
+51.9 M    Total params
+207.792   Total estimated model params size (MB)
+120       Modules in train mode
+0         Modules in eval mode
+Epoch 0:   0%|          | 37/12145 [00:23<2:06:48,  1.59it/s, v_num=2r00, train/loss=8.050]
+[rank: 0] Received SIGTERM: 15
