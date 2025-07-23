@@ -27,8 +27,8 @@
   },
   "training": {
 	"optimizer":"muon",
-    "muon_lr":1e-2,
-    "lr": 1e-4,
+    "muon_lr":5e-3,
+    "lr": 1e-3,
     "weight_decay": 1e-2,
     "max_steps": 100000000000000000,
     "accumulate_grad_batches": 1,

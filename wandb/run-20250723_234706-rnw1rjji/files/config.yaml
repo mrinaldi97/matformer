@@ -1,0 +1,131 @@
+_wandb:
+    value:
+        cli_version: 0.19.10
+        m:
+            - "1": trainer/global_step
+              "6":
+                - 3
+              "7": []
+            - "1": train/loss
+              "5": 1
+              "6":
+                - 1
+                - 3
+              "7": []
+            - "1": epoch
+              "5": 1
+              "6":
+                - 1
+                - 3
+              "7": []
+        python_version: 3.13.5
+        t:
+            "1":
+                - 1
+                - 5
+                - 9
+                - 11
+                - 41
+                - 49
+                - 53
+                - 55
+                - 71
+                - 103
+                - 105
+            "2":
+                - 1
+                - 5
+                - 9
+                - 11
+                - 41
+                - 49
+                - 53
+                - 55
+                - 71
+                - 103
+                - 105
+            "3":
+                - 7
+                - 13
+                - 16
+                - 23
+                - 55
+                - 66
+            "4": 3.13.5
+            "5": 0.19.10
+            "6": 4.52.0.dev0
+            "8":
+                - 5
+            "12": 0.19.10
+            "13": linux-x86_64
+ModelClass:
+    value: BERTModel
+config:
+    value: ModelConfig(hidden_size=768, ffn_factor=1.0, num_hidden_layers=24, num_attention_heads=12, vocab_size=32768, pad_token_id=0, bos_token_id=1, eos_token_id=2, tie_word_embeddings=False, rms_norm_eps=1e-06, attention_type=['sliding'], sliding_window_size=512, sliding_layers=[], sliding_type='disabled', max_position_embeddings=1024, block_size_for_attention=128, compile_flexattn=False, bias=False, name='Medio-Albertino Muon', training_objective='masked', is_causal=False, alibi=True, attn_impl='flash')
+data:
+    value:
+        batch_size: 20
+        data_root: ../matformer_norepo/liberliber_1024_tokens
+        num_workers: 2
+device:
+    value: cuda
+inference_fix:
+    value: false
+model_class:
+    value: BERTModel
+model_config:
+    value:
+        alibi: true
+        attention_type:
+            - sliding
+        attn_impl: flash
+        bias: false
+        block_size_for_attention: 128
+        bos_token_id: 1
+        compile_flexattn: false
+        eos_token_id: 2
+        ffn_factor: 1
+        hidden_size: 768
+        is_causal: false
+        max_position_embeddings: 1024
+        name: Medio-Albertino Muon
+        num_attention_heads: 12
+        num_hidden_layers: 24
+        pad_token_id: 0
+        rms_norm_eps: 1e-06
+        sliding_layers: []
+        sliding_type: disabled
+        sliding_window_size: 512
+        tie_word_embeddings: false
+        training_objective: masked
+        vocab_size: 32768
+nested:
+    value: false
+save_dir:
+    value: ./checkpoints
+tokenizer:
+    value: <matformer.tokenizers.MatformerTokenizer object at 0x7f6e3948aad0>
+train_config:
+    value:
+        accumulate_grad_batches: 1
+        checkpoint_name: medio_albertino
+        lr: 0.0001
+        max_steps: 100000000000000000
+        muon_lr: 0.01
+        optimizer: muon
+        seed: 27
+        weight_decay: 0.01
+training:
+    value:
+        accumulate_grad_batches: 1
+        checkpoint_name: medio_albertino
+        lr: 0.0001
+        max_steps: 100000000000000000
+        muon_lr: 0.01
+        optimizer: muon
+        seed: 27
+        weight_decay: 0.01
+wandb_project:
+    value: matformer
+wandb_run_name:
+    value: medio-albertino-muon-liberliber-1024-tokens
