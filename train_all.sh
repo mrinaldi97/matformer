@@ -1,6 +1,6 @@
 CONFIGS=(
-    "configs/micro_albertino_wiki.json"
-    "configs/micro_gpt_wiki.json"
+    "configs/medio_albertino_muon.json"
+    "configs/medio_albertino.json"
 )
 
 mkdir -p logs

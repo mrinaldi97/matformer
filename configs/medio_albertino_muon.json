@@ -1,0 +1,51 @@
+{
+  "model_class": "BERTModel",
+  "model_config": {
+    "name": "Medio-Albertino Muon",
+    "hidden_size": 768,
+    "ffn_factor": 1.0,
+    "num_hidden_layers": 24,
+    "num_attention_heads": 12,
+    "vocab_size": 32768,
+    "bos_token_id": 1,
+    "eos_token_id": 2,
+    "pad_token_id": 0,
+    "tie_word_embeddings": false,
+    "rms_norm_eps": 1e-6,
+    "attention_type": ["sliding"],
+    "sliding_window_size": 512,
+    "sliding_layers": [],
+    "sliding_type": "disabled",
+    "max_position_embeddings": 1024,
+    "block_size_for_attention": 128,
+    "compile_flexattn": false,
+    "bias": false,
+    "training_objective": "masked",
+    "alibi": true,
+    "is_causal": false,
+    "attn_impl": "flash"
+  },
+  "training": {
+	"optimizer":"muon",
+    "muon_lr":1e-2,
+    "lr": 1e-4,
+    "weight_decay": 1e-2,
+    "max_steps": 100000000000000000,
+    "accumulate_grad_batches": 1,
+    "seed": 27,
+    "checkpoint_name": "medio_albertino"
+  },
+  "tokenizer": {
+    "type": "huggingface",
+    "pretrained_name": "sapienzanlp/Minerva-350M-base-v1.0",
+    "varlen_strategy": "unpadding"
+  },
+  "data": {
+    "data_root": "../matformer_norepo/liberliber_1024_tokens",
+    "batch_size": 20,
+    "num_workers": 2
+  },
+  "save_dir": "./checkpoints",
+  "wandb_project": "matformer",
+  "wandb_run_name": "medio-albertino-muon-liberliber-1024-tokens"
+}

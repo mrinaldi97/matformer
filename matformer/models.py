@@ -140,7 +140,7 @@ class PL_ModelWrapper(pl.LightningModule):
                 optimizer = SingleDeviceMuonWithAuxAdam(param_groups)
 
         else:
-            optimizer = torch.optim.AdamW(self.parameters(), lr=self.train_config["lr"])
+            optimizer = torch.optim.AdamW(self.parameters(), lr=self.train_config["lr"], weight_decay=self.train_config["weight_decay"])
 
         return optimizer
 
