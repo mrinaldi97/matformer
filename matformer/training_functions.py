@@ -14,7 +14,6 @@ class MatformerDataModule(pl.LightningDataModule):
 
     def setup(self, stage=None):
         self.dataset = AtlasDataset(self.data_root)
-
     def _collate_fn(self, batch):
         texts = [item['text'] for item in batch]
         tokenized=dict()

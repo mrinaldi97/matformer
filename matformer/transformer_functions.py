@@ -12,7 +12,7 @@ from dataclasses import replace
 
 from torch.nn.functional import scaled_dot_product_attention
 try:
-    from flash_attn import flash_attn_qkvpacked_func, flash_attn_func, flash_attn_varlen_func
+    from flash_attn import flash_attn_qkvpacked_func, flash_attn_func, flash_attn_varlen_func, flash_attn_varlen_qkvpacked_func
     from flash_attn.modules.mha import get_alibi_slopes
     _is_flash_attn_available=True
 except:
@@ -36,7 +36,7 @@ class MultiHeadAttention(nn.Module):
                 q_dim: int,
                 k_dim: int,
                 v_dim: int,
-                tot_dim: int,
+                hidden_size: int,
                 nheads: int,
                 bias: bool,
                 #dropout: float=0.0, //Not supported by FlexAttention yet
@@ -52,10 +52,8 @@ class MultiHeadAttention(nn.Module):
         self.attn_impl=attn_impl
         self.alibi=alibi
         self.is_causal=is_causal
-        if attn_impl=='flash' and _is_flash_attn_available and alibi:
-              self.alibi_slopes = torch.tensor(get_alibi_slopes(nheads), device=self.device, dtype=torch.float32) #Precomputing alibi slopes
-        assert tot_dim % self.nheads == 0, "Embedding dim is not divisible by nheads"
-        self.tot_dim=tot_dim
+        assert hidden_size % self.nheads == 0, "Embedding dim is not divisible by nheads"
+        self.hidden_size=hidden_size
         """
         The block mask can either be defined during the inizialization, in cases such as vanilla
         causal or sliding window, or directly passed during the forward, in cases such as document
@@ -66,18 +64,23 @@ class MultiHeadAttention(nn.Module):
         #self.dropout=dropout
         self.bias=bias
         self.qkv_samedim = q_dim==k_dim and q_dim==v_dim
-        self.residual_dim=q_dim #Residual dim is used also as output dim
-        self.head_dim=tot_dim//self.nheads
-
-        if self.qkv_samedim:
-            self.packed_proj=nn.Linear(self.residual_dim,3*tot_dim,bias=bias)
+        self.q_dim=q_dim
+        self.head_dim=hidden_size//self.nheads
+        
+        if attn_impl=='flash' and _is_flash_attn_available and alibi:
+            self.alibi_slopes = torch.tensor(get_alibi_slopes(nheads), device=self.device, dtype=torch.float32) #Precomputing alibi slopes
         else:
-            self.q_proj=nn.Linear(q_dim,tot_dim,bias=bias)
-            self.k_proj=nn.Linear(k_dim,tot_dim,bias=bias)
-            self.v_proj=nn.Linear(v_dim,tot_dim,bias=bias)
+            self.alibi_slopes=None
+        if self.qkv_samedim:
+            self.packed_proj=nn.Linear(self.q_dim,3*hidden_size,bias=bias)
+        else:
+            self.q_proj=nn.Linear(q_dim,hidden_size,bias=bias)
+            self.k_proj=nn.Linear(k_dim,hidden_size,bias=bias)
+            self.v_proj=nn.Linear(v_dim,hidden_size,bias=bias)
 
-        self.out_proj=nn.Linear(tot_dim,self.residual_dim,bias=bias)
-
+        self.out_proj=nn.Linear(hidden_size,self.q_dim,bias=bias)
+    def _project_packed(self,qkv):
+        return self.packed_proj(qkv)
     def _project(self, q, k, v):
         if self.qkv_samedim:
             if q is k and k is v:
@@ -99,20 +102,43 @@ class MultiHeadAttention(nn.Module):
             return replace(orig, tensor=x)
         return x
 
-    def _flash_forward(self, q, k, v, query_input, key_input):
-        q, k, v = map(lambda x: x.transpose(1, 2), (q, k, v))  # B, S, H, Hd
-        if isinstance(query_input, UnpaddedTensor):
-            return flash_attn_varlen_func(
-                q, k, v,
-                cu_seqlens_q=query_input.cu_seqlens.to(self.device),
-                cu_seqlens_k=key_input.cu_seqlens.to(self.device),
-                max_seqlen_q=query_input.max_seq_len,
-                max_seqlen_k=key_input.max_seq_len,
-                alibi_slopes=self.alibi_slopes,
-                causal=self.is_causal
-            ).transpose(1, 2)
+    def _flash_forward(self, q=None, k=None, v=None, qkv=None, query_input=None, key_input=None, packed=False, sliding=False, sliding_window_size=None):
+        # Inputs: (B,H,S,Hd)
+        if sliding:
+            sliding_window=(-sliding_window_size,-sliding_window_size)
         else:
-            return flash_attn_func(q, k, v, alibi_slopes=self.alibi_slopes, causal=self.is_causal).transpose(1, 2)
+            sliding_window=(-1,-1) #From flash attn docs, this disables sliding window
+        if not packed:
+            q, k, v = map(lambda x: x.transpose(1, 2), (q, k, v))  # [B], S, H, Hd
+        if isinstance(query_input, UnpaddedTensor):
+            #(S, H, Hd).
+            if packed:
+                return flash_attn_varlen_qkvpacked_func(
+                    qkv,
+                    cu_seqlens=query_input.cu_seqlens.to(self.device),
+                    max_seqlen=query_input.max_seq_len,
+                    alibi_slopes=None,
+                    causal=self.is_causal,
+                    window_size=sliding_window
+                )               
+            else:
+                return flash_attn_varlen_func(
+                    q, k, v,
+                    cu_seqlens_q=query_input.cu_seqlens.to(self.device),
+                    cu_seqlens_k=key_input.cu_seqlens.to(self.device),
+                    max_seqlen_q=query_input.max_seq_len,
+                    max_seqlen_k=key_input.max_seq_len,
+                    alibi_slopes=self.alibi_slopes,
+                    causal=self.is_causal,
+                    window_size=sliding_window
+                )
+        else:
+            #Inputs: (B,S,H,Hd)
+            # Outputs: out: (B,S,H,Hd).
+            if packed:
+                return flash_attn_qkvpacked_func(qkv, alibi_slopes=self.alibi_slopes, causal=self.is_causal, window_size=sliding_window)
+            else:
+                return flash_attn_func(q, k, v, alibi_slopes=self.alibi_slopes, causal=self.is_causal, window_size=sliding_window)
 
     def _flex_forward(self, q, k, v, block_mask):
         if self.alibi:
@@ -147,7 +173,8 @@ class MultiHeadAttention(nn.Module):
         else:
             return scaled_dot_product_attention(q, k, v, attn_mask=block_mask, is_causal=self.is_causal)
 
-    def forward(self, query_input, key_input, value_input, block_mask = None):
+    def forward(self, query_input, key_input, value_input, block_mask = None,sliding=False,sliding_window_size=None):
+        # The sliding window info are required only by flash attn
         """
         Input Tensors:
         query_input: (Batch, Seqlen, Qdim)
@@ -176,15 +203,29 @@ class MultiHeadAttention(nn.Module):
 
         """
         # Common parts
-        query_tensor=query_input.tensor
-        key_tensor=key_input.tensor
-        value_tensor=value_input.tensor
+        # We are using TensorDC dataclasses, thus tensors should be extracted using .tensor
+        query_tensor=query_input.tensor #(B,S,D)
+        key_tensor=key_input.tensor #(B,S,D)
+        value_tensor=value_input.tensor #(B,S,D)
+        
+        if self.attn_impl=='flash' and self.qkv_samedim and query_tensor is key_tensor and key_tensor is value_tensor:
+            # I can use flash attention with packed projection for efficiency
+            qkv=self._project_packed(query_tensor) # (B, S, 3*H)
+            qkv=qkv.unflatten(-1, [3, self.nheads, self.head_dim])  # (B, S, 3, H, Hd)
+            packed=True
+        else:
+            packed=False
+            query, key, value = self._project(query_tensor, key_tensor, value_tensor) #(B,S,D)
+            query, key, value = map(self._reshape_heads, (query, key, value)) #(B,H,S,Hd)
 
-        query, key, value = self._project(query_tensor, key_tensor, value_tensor)
-        query, key, value = map(self._reshape_heads, (query, key, value)) # B, H, S, Hd
-
+        # Up to this part, shapes are in the form: B,H,S,Hd
+        # After the execution of the attention implementation, B,S,H,Hd is expected
+        # Batch has to be considered to be omitted when we use unpadding + flash attention
         if self.attn_impl=='flash':
-            attn_output = self._flash_forward(query, key, value, query_input, key_input)
+            if packed:
+                attn_output = self._flash_forward(qkv=qkv, query_input=query_input, key_input=key_input, packed=True, sliding=sliding, sliding_window_size=sliding_window_size) # (B, S, H, Hd) [B not present in case of unpadding]              
+            else:
+                attn_output = self._flash_forward(q=query, k=key, v=value, query_input=query_input, key_input=key_input, packed=False, sliding=sliding, sliding_window_size=sliding_window_size) # (B, S, H, Hd) [B not present in case of unpadding]
 
         else:
             if self.set_mask == 1:
@@ -203,9 +244,13 @@ class MultiHeadAttention(nn.Module):
             else:  # SDPA
                 attn_output = self._sdpa_forward(query, key, value, block_mask)
 
-            attn_output = attn_output.transpose(1, 2)  # back to (B, S, H, Hd)
+            attn_output = attn_output.transpose(1, 2)  # Transpose to match: (B, S, H, Hd)
+        
 
         attn_output = attn_output.flatten(-2)
+       
+        #attn_output = attn_output.flatten(-2) #The flatten expects: (B, S, H, Hd)
+        
         return self._maybe_unpad(self.out_proj(attn_output), query_input)
 
       
@@ -216,10 +261,10 @@ class PackedSwiGLUFFN(nn.Module):
         config: ModelConfig
     ):
         super().__init__()
-        dim = config.hidden_dim
-        hidden_dim = int(config.hidden_dim * config.ffn_factor)  # Direct scaling
-        self.w13 = nn.Linear(dim, 2 * hidden_dim, bias=False)
-        self.w2 = nn.Linear(hidden_dim, dim, bias=False)
+        dim = config.hidden_size
+        hidden_size = int(config.hidden_size * config.ffn_factor)  # Direct scaling
+        self.w13 = nn.Linear(dim, 2 * hidden_size, bias=False)
+        self.w2 = nn.Linear(hidden_size, dim, bias=False)
 
     def forward(self, _input):
         x=_input.tensor
@@ -232,7 +277,7 @@ class RMSNorm(nn.Module):
     #From https://github.com/Emericen/tiny-qwen
     def __init__(self, config: ModelConfig):
         super().__init__()
-        self.weight = nn.Parameter(torch.ones(config.hidden_dim))
+        self.weight = nn.Parameter(torch.ones(config.hidden_size))
         self.variance_epsilon = config.rms_norm_eps
     def forward(self, x):
         input_dtype = x.dtype

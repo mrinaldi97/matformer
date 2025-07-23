@@ -91,3 +91,20 @@ def printmem(text):
     free, total = torch.cuda.mem_get_info(device)
     mem_used_MB = (total - free) / 1024 ** 2
     print(f"Memory at {text}: {mem_used_MB}")
+
+
+from dataclasses import is_dataclass, fields
+from typing import TypeVar
+
+T = TypeVar("T")
+
+
+def dataclass_from_dict(d: dict, ty: type[T]) -> T:
+#https://gist.github.com/paxbun/3eb7d762a013f915fce69d4daecfab37    
+    assert is_dataclass(ty)
+    for field in fields(ty):
+        if field.name in d:
+            if is_dataclass(field.type):
+                assert isinstance(d[field.name], dict)
+                d[field.name] = fromdict(d[field.name], field.type)
+    return ty(**d)

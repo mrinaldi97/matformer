@@ -2,21 +2,21 @@
   "model_class": "BERTModel",
   "model_config": {
     "name": "Micro-Albertino",
-    "hidden_size": 512,
+    "hidden_dim": 768,
     "ffn_factor": 1.0,
-    "num_hidden_layers": 10,
-    "num_attention_heads": 8,
+    "n_layers": 12,
+    "n_heads": 12,
     "vocab_size": 32768,
-    "bos_token_id": 1,
-    "eos_token_id": 2,
-    "pad_token_id": 0,
+    "bos_id": 1,
+    "eos_id": 2,
+    "pad_id": 0,
     "tie_word_embeddings": false,
     "rms_norm_eps": 1e-6,
     "attention_type": ["sliding"],
     "sliding_window_size": 512,
     "sliding_layers": [0,2,4,6,8],
     "sliding_type": "partial",
-    "max_position_embeddings": 1024,
+    "max_seqlen": 1024,
     "block_size_for_attention": 128,
     "compile_flexattn": false,
     "bias": false,
@@ -26,9 +26,8 @@
     "attn_impl": "flash"
   },
   "training": {
-	"optimizer":"adam",
     "lr": 1e-4,
-    "max_steps": 10,
+    "max_steps": 100000,
     "accumulate_grad_batches": 1,
     "seed": 27,
     "checkpoint_name": "micro_albertino"
@@ -40,7 +39,7 @@
   },
   "data": {
     "data_root": "../matformer_norepo/liberliber_1024_tokens",
-    "batch_size": 56,
+    "batch_size": 36,
     "num_workers": 2
   },
   "save_dir": "./checkpoints",

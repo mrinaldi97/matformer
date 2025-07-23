@@ -20,8 +20,8 @@ class MatformerTokenizer:
         else:
             self.tokenizer = tokenizer
 
-        self.seq_len = config.max_seqlen
-        self.pad_id = config.pad_id
+        self.seq_len = config.max_position_embeddings
+        self.pad_token_id = config.pad_token_id
         self.varlen_strategy = varlen_strategy
         """
         Note about self.config.varlen_strategy: this is very important!
@@ -62,9 +62,9 @@ class MatformerTokenizer:
             targets = torch.nested.nested_tensor([ids[1:] for ids in all_input_ids], layout=torch.jagged)
             return inputs, targets, sequence
 
-        padded_ids = [ids + [self.pad_id] * (self.seq_len - len(ids)) for ids in all_input_ids]
+        padded_ids = [ids + [self.pad_token_id] * (self.seq_len - len(ids)) for ids in all_input_ids]
         tensors = torch.tensor(padded_ids, dtype=torch.long)
-        padding_masks = (tensors == self.pad_id)
+        padding_masks = (tensors == self.pad_token_id)
         sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks)
         if self.varlen_strategy == 'unpadding':
                 sequence = sequence.unpad()
@@ -73,16 +73,16 @@ class MatformerTokenizer:
 
 class ByteLevelTokenizer:
     def __init__(self, config):
-        self.bos_id = config.bos_id
-        self.eos_id = config.eos_id
-        self.pad_id = config.pad_id
+        self.bos_token_id = config.bos_token_id
+        self.eos_token_id = config.eos_token_id
+        self.pad_token_id = config.pad_token_id
         self.offset = 0
 
     def __call__(self, text: str) -> dict:
-        byte_ids = [self.bos_id] + [b + self.offset for b in text.encode('utf-8', errors='ignore')] + [self.eos_id]
+        byte_ids = [self.bos_token_id] + [b + self.offset for b in text.encode('utf-8', errors='ignore')] + [self.eos_token_id]
         return {'input_ids': byte_ids}
 
     def decode(self, ids: List[int]) -> str:
-        special_tokens = {self.bos_id, self.eos_id, self.pad_id}
+        special_tokens = {self.bos_token_id, self.eos_token_id, self.pad_token_id}
         bytes_data = bytearray([max(0, i - self.offset) for i in ids if i not in special_tokens])
         return bytes_data.decode('utf-8', errors='ignore')

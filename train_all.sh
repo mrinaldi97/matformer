@@ -1,7 +1,6 @@
 CONFIGS=(
-    "configs/micro_albertino.json"
-    "configs/micro_gpt.json"
-    "configs/entropy_small.json"
+    "configs/micro_albertino_wiki.json"
+    "configs/micro_gpt_wiki.json"
 )
 
 mkdir -p logs

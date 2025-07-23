@@ -18,7 +18,7 @@ class BitsPerByte(torchmetrics.Metric):
     def update(self, loss, batch):
         # Calculate total bytes in batch (excluding special tokens)
         # batch shape: [batch_size, seq_len]
-        mask = (batch != config.eos_id) & (batch != config.pad_id) & (batch != config.bos_id)  # Exclude BOS, EOS, PAD
+        mask = (batch != config.eos_token_id) & (batch != config.pad_token_id) & (batch != config.bos_token_id)  # Exclude BOS, EOS, PAD
         byte_count = mask.sum().item()
         
         # Accumulate loss and byte count

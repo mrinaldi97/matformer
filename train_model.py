@@ -11,9 +11,9 @@ from transformers import AutoTokenizer
 from matformer.tokenizers import MatformerTokenizer
 from matformer.training_functions import MatformerDataModule
 from matformer.model_config import ModelConfig
+from matformer.models import PL_ModelWrapper
 from pytorch_lightning.loggers import WandbLogger
-from pytorch_lightning.callbacks import ModelCheckpoint
-
+from pytorch_lightning.callbacks import Callback, ModelCheckpoint
 
 def load_config(path):
     with open(path, 'r') as f:
@@ -40,7 +40,7 @@ def parse_args():
     return args.config, overrides
 
 def get_model_class(model_class: str):
-    module = import_module("matformer.models")
+    module = import_module("matformer.transformer_blocks")
     return getattr(module, model_class)
 
 def main():
@@ -74,7 +74,7 @@ def main():
     )
 
     ModelClass = get_model_class(cfg['model_class'])
-    model = ModelClass(config=model_cfg, tokenizer=tokenizer, train_config=train_cfg, device='cuda')
+    model = PL_ModelWrapper(ModelClass, config=model_cfg, tokenizer=tokenizer, train_config=train_cfg, device='cuda')
 
     wandb_logger = WandbLogger(
         name=cfg.get('wandb_run_name', 'training-run'),
@@ -87,7 +87,6 @@ def main():
         save_top_k=1,
         save_last=True
     )
-
     trainer = pl.Trainer(
         logger=wandb_logger,
         callbacks=[checkpoint],
@@ -98,11 +97,20 @@ def main():
         log_every_n_steps=100,
         accumulate_grad_batches=train_cfg.get('accumulate_grad_batches', 1),
         default_root_dir=save_dir,
-        max_epochs=1
+        max_epochs=1,
     )
 
     torch.set_float32_matmul_precision('high')
-    trainer.fit(model, data)
+    try:
+        trainer.fit(model, data)
+    except KeyboardInterrupt:
+        response = input("\nTraining interrupted. Save model? (y/n): ").strip().lower()
+        if response == 'y':
+            trainer.save_checkpoint(f"{save_dir}/interrupted.ckpt")
+            print("Checkpoint saved.")
+        else:
+            print("Checkpoint not saved.")
+
 
 if __name__ == '__main__':
     main()

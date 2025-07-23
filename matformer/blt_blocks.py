@@ -27,14 +27,14 @@ class TextEncoder(nn.Module):
        self.device = device
        self.text_config = configs_dict['text_encoder']
        self.entropy_config = configs_dict['entropy_model']
-       # The query (patches) in principle can be of different dimension, but in this implementation we will use the same hidden_dim        
-       qkvdim = self.text_config.hidden_dim
+       # The query (patches) in principle can be of different dimension, but in this implementation we will use the same hidden_size        
+       qkvdim = self.text_config.hidden_size
                
        self.byte_embeddings = nn.Embedding(self.entropy_config.vocab_size, qkvdim)
        self.pooling = LpPooling()   
-       self.bytes_layers = nn.ModuleList([NakedTransformer(self.text_config, device) for _ in range(self.text_config.n_layers)])
+       self.bytes_layers = nn.ModuleList([NakedTransformer(self.text_config, device) for _ in range(self.text_config.num_hidden_layers)])
        # Same things for the cross-attention number of heads. In this implementation, it will be the same as bytes' self attention number of heads, but it could be changed        
-       self.patches_layers = nn.ModuleList([MultiHeadAttention(bias=self.text_config.bias, q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=self.text_config.n_heads) for _ in range(self.text_config.n_layers)])
+       self.patches_layers = nn.ModuleList([MultiHeadAttention(bias=self.text_config.bias, q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=self.text_config.num_attention_heads) for _ in range(self.text_config.num_hidden_layers)])
        self.norm = RMSNorm(normalized_shape=qkvdim, eps=self.text_config.rms_norm_eps, elementwise_affine=True)
        self.mask_builder = MaskBuilder(self.text_config)
    def debug_raw_input(self, input_tensor, cutting_points):
@@ -123,9 +123,9 @@ class TextDecoder(nn.Module):
        super().__init__()
        self.device = device
        self.text_config = configs_dict['text_decoder']
-       qkvdim = self.text_config.hidden_dim
-       self.xattn = nn.ModuleList([MultiHeadAttention(bias=self.text_config.bias, q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=self.text_config.n_heads) for _ in range(self.text_config.n_layers)])
-       self.block = nn.ModuleList([NakedTransformer(self.text_config, device) for _ in range(self.text_config.n_layers)])
+       qkvdim = self.text_config.hidden_size
+       self.xattn = nn.ModuleList([MultiHeadAttention(bias=self.text_config.bias, q_dim=qkvdim, k_dim=qkvdim, v_dim=qkvdim, tot_dim=qkvdim, nheads=self.text_config.num_attention_heads) for _ in range(self.text_config.num_hidden_layers)])
+       self.block = nn.ModuleList([NakedTransformer(self.text_config, device) for _ in range(self.text_config.num_hidden_layers)])
        self.norm = RMSNorm(qkvdim, eps=self.text_config.rms_norm_eps)
        self.output = nn.Linear(qkvdim, self.text_config.vocab_size, bias=False)
        self.mask_builder = MaskBuilder(self.text_config)
