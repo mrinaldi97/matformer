@@ -1,10 +1,10 @@
 {
-  "model_class": "BERTModel",
+  "model_class": "Autoregressive_Model",
   "model_config": {
-    "name": "Micro-Albertino",
-    "hidden_size": 512,
+    "name": "Pico_GPT",
+    "hidden_size": 256,
     "ffn_factor": 1.0,
-    "num_hidden_layers": 10,
+    "num_hidden_layers": 4,
     "num_attention_heads": 8,
     "vocab_size": 32768,
     "bos_token_id": 1,
@@ -14,24 +14,25 @@
     "rms_norm_eps": 1e-6,
     "attention_type": ["sliding"],
     "sliding_window_size": 512,
-    "sliding_layers": [0,2,4,6,8],
-    "sliding_type": "partial",
+    "sliding_layers": [],
+    "sliding_type": "disabled",
     "max_position_embeddings": 1024,
     "block_size_for_attention": 128,
     "compile_flexattn": false,
     "bias": false,
-    "training_objective": "masked",
+    "training_objective": "autoregressive",
     "alibi": true,
-    "is_causal": false,
+    "is_causal": true,
     "attn_impl": "flash"
   },
   "training": {
 	"optimizer":"adam",
     "lr": 1e-4,
-    "max_steps": 1000000,
+    "weight_decay": 1e-2,
+    "max_steps": 100000000000000000,
     "accumulate_grad_batches": 1,
     "seed": 27,
-    "checkpoint_name": "micro_albertino"
+    "checkpoint_name": "pico_gpt"
   },
   "tokenizer": {
     "type": "huggingface",
@@ -40,10 +41,10 @@
   },
   "data": {
     "data_root": "../matformer_norepo/liberliber_1024_tokens",
-    "batch_size": 56,
+    "batch_size": 36,
     "num_workers": 2
   },
   "save_dir": "./checkpoints",
   "wandb_project": "matformer",
-  "wandb_run_name": "micro-albertino-liberliber-1024-tokens"
+  "wandb_run_name": "pico-gpt-liberliber-1024-tokens"
 }

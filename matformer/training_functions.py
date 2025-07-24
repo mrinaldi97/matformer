@@ -25,7 +25,7 @@ class MatformerDataModule(pl.LightningDataModule):
         return DataLoader(
             self.dataset,
             batch_size=self.batch_size,
-            shuffle=True,
+            shuffle=False,
             num_workers=self.num_workers,
             pin_memory=True,
             drop_last=True,

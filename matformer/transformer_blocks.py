@@ -46,7 +46,23 @@ class TransformerBlock(nn.Module):
         x = x + self.self_attn(query_input=x, key_input=x, value_input=x, block_mask=block_mask, sliding=sliding, sliding_window_size=self.config.sliding_window_size)
         x = x + self.mlp(self.post_attention_layernorm(x))
         return x
+    def debug_forward(self, x, block_mask=None, sliding=False):
+        x0 = x  
+        x1 = self.input_layernorm(x0)
+        x1.tensor.register_hook(lambda g: print("grad @ input_layernorm:", g.norm().item()))
+        
+        a = self.self_attn(query_input=x1, key_input=x1, value_input=x1, block_mask=block_mask, sliding=sliding, sliding_window_size=self.config.sliding_window_size)
+        a.tensor.register_hook(lambda g: print("grad @ attn_out:", g.norm().item()))
 
+        x2 = x1 + a
+        m = self.post_attention_layernorm(x2)
+        m.tensor.register_hook(lambda g: print("grad @ post_ln:", g.norm().item()))
+        
+        f = self.mlp(m)  
+        f.tensor.register_hook(lambda g: print("grad @ mlp_out:", g.norm().item()))
+        
+        x3 = x2 + f
+        return x3
 
 
 
@@ -113,9 +129,9 @@ class NakedTransformer(nn.Module):
             
         for layer_idx, layer in enumerate(self.layers):
             if layer_idx in self.config.sliding_layers or self.config.sliding_type=='full' :
-                x = layer(x, block_mask=sliding_mask, sliding=False)
+                x = layer(x, block_mask=sliding_mask, sliding=True)
             else:
-                x = layer(x, block_mask=block_mask, sliding=True)
+                x = layer(x, block_mask=block_mask, sliding=False)
         x = self.norm(x)
 
         return x

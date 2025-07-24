@@ -207,8 +207,8 @@ class MultiHeadAttention(nn.Module):
         query_tensor=query_input.tensor #(B,S,D)
         key_tensor=key_input.tensor #(B,S,D)
         value_tensor=value_input.tensor #(B,S,D)
-        
-        if self.attn_impl=='flash' and self.qkv_samedim and query_tensor is key_tensor and key_tensor is value_tensor:
+        #Packed flash attention is temporarily disabled for debug (checking if projection is done correctly + checking alibi slopes in the packed case)
+        if False and self.attn_impl=='flash' and self.qkv_samedim and query_tensor is key_tensor and key_tensor is value_tensor:
             # I can use flash attention with packed projection for efficiency
             qkv=self._project_packed(query_tensor) # (B, S, 3*H)
             qkv=qkv.unflatten(-1, [3, self.nheads, self.head_dim])  # (B, S, 3, H, Hd)
@@ -247,11 +247,8 @@ class MultiHeadAttention(nn.Module):
             attn_output = attn_output.transpose(1, 2)  # Transpose to match: (B, S, H, Hd)
         
 
-        attn_output = attn_output.flatten(-2)
-       
-        #attn_output = attn_output.flatten(-2) #The flatten expects: (B, S, H, Hd)
-        
-        return self._maybe_unpad(self.out_proj(attn_output), query_input)
+        attn_output = attn_output.flatten(-2) #The flatten expects: (B, S, H, Hd)
+        return replace(query_input, tensor=self.out_proj(attn_output))        
 
       
 class PackedSwiGLUFFN(nn.Module):
@@ -266,11 +263,12 @@ class PackedSwiGLUFFN(nn.Module):
         self.w13 = nn.Linear(dim, 2 * hidden_size, bias=False)
         self.w2 = nn.Linear(hidden_size, dim, bias=False)
 
-    def forward(self, _input):
-        x=_input.tensor
-        x1, x3 = torch.chunk(self.w13(x), 2, dim=-1)
-        _input.tensor=self.w2(F.silu(x1) * x3)
-        return _input
+    def forward(self, _input: TensorDC) -> TensorDC:
+        x = _input.tensor
+        x1, x3 = torch.chunk(self.w13(x), 2, -1)
+        out = self.w2(F.silu(x1) * x3)
+        return replace(_input, tensor=out)
+        
 
 """
 class RMSNorm(nn.Module):

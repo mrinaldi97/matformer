@@ -14,7 +14,6 @@ from matformer.model_config import ModelConfig
 from matformer.models import PL_ModelWrapper
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
-
 def load_config(path):
     with open(path, 'r') as f:
         return json.load(f)
@@ -94,12 +93,13 @@ def main():
         precision='16-mixed',
         accelerator='gpu',
         devices=1,
-        log_every_n_steps=100,
+        log_every_n_steps=10,
         accumulate_grad_batches=train_cfg.get('accumulate_grad_batches', 1),
         default_root_dir=save_dir,
-        max_epochs=1,
+        max_epochs=1
     )
-
+     #overfit_batches=1 => Useful for debug
+ 
     torch.set_float32_matmul_precision('high')
     try:
         trainer.fit(model, data)

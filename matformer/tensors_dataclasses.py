@@ -136,6 +136,7 @@ class ModuleWrapper(nn.Module):
 
     def forward(self, x, *args, **kwargs):
         if isinstance(x, TensorDC):
-            x.tensor = self.module(x.tensor, *args, **kwargs)
-            return x
-        return self.module(x, *args, **kwargs)
+            out_tensor = self.module(x.tensor, *args, **kwargs)
+            return replace(x, tensor=out_tensor)
+        else:
+            return self.module(x, *args, **kwargs)

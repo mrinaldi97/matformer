@@ -140,11 +140,19 @@ class PL_ModelWrapper(pl.LightningModule):
                 optimizer = SingleDeviceMuonWithAuxAdam(param_groups)
 
         else:
-            optimizer = torch.optim.AdamW(self.parameters(), lr=self.train_config["lr"], weight_decay=self.train_config["weight_decay"])
-
+            #optimizer = torch.optim.AdamW(self.parameters(), lr=self.train_config["lr"], weight_decay=self.train_config["weight_decay"])
+            optimizer = torch.optim.AdamW(self.parameters(), lr=self.train_config["lr"])
         return optimizer
 
-
+    def on_after_backward(self):
+        for name, param in self.named_parameters():
+            if param.requires_grad and param.grad is None:
+                self.logger.experiment.log({"broken_grad/" + name: 1})
+            elif param.grad is not None:
+                grad_norm = param.grad.norm().item()
+                self.logger.experiment.log({f"grad/{name}": grad_norm})
+                self.log(f"grad_max/{name}", param.grad.abs().max().item(), on_step=True)
+                self.log(f"grad_min/{name}", param.grad.abs().min().item(), on_step=True)
     @staticmethod
     def load_from_checkpoint(checkpoint_path, config=None, map_location=None, inference_fix=False, tokenizer=None, varlen_strategy='padding'):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
