@@ -11,16 +11,18 @@ class MatformerDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.config=config
         self.tokenizer=tokenizer
-
-    def setup(self, stage=None):
         self.dataset = AtlasDataset(self.data_root)
+        self.len=len(self.dataset)
+    def setup(self, stage=None):
+        pass
     def _collate_fn(self, batch):
         texts = [item['text'] for item in batch]
         tokenized=dict()
         tokenized['input_ids'] = self.tokenizer.batch_encode(texts)
         tokenized['text'] = texts #I add back the raw text, this is currently required in the BLT model
         return tokenized
-
+    def __len__(self):
+        return self.len
     def train_dataloader(self):
         return DataLoader(
             self.dataset,

@@ -26,12 +26,15 @@
     "attn_impl": "flash"
   },
   "training": {
-	"optimizer":"adam",
-    "lr": 1e-4,
-    "max_steps": 1000000,
-    "accumulate_grad_batches": 1,
-    "seed": 27,
-    "checkpoint_name": "micro_albertino"
+      "optimizer": "adam",
+      "lr": 5e-5,
+      "weight_decay": 0.01,
+      "scheduler": "linear",
+      "warmup_steps": 700,    
+      "max_epochs": 1,
+      "accumulate_grad_batches": 1,
+      "seed": 27,
+      "checkpoint_name": "micro_albertino"
   },
   "tokenizer": {
     "type": "huggingface",

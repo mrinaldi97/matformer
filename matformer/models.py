@@ -12,6 +12,10 @@ from matformer.masked_models import maskerator
 #import matformer.transformer_blocks
 from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor,NormalTensor
 from matformer.debug_methods import train_debug_print
+from torch.optim import AdamW
+from transformers import get_scheduler
+import math
+
 try:
     from transformers import AutoTokenizer
 except:
@@ -38,7 +42,7 @@ class PL_ModelWrapper(pl.LightningModule):
             sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
         else:
             sequence = batch['input_ids'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
-
+        batch_size = sequence.tensor.size(0) 
         masked=True if self.config['training_objective']=='masked' else False
 
         input_sequence=sequence
@@ -86,15 +90,18 @@ class PL_ModelWrapper(pl.LightningModule):
             mask = base_mask[1:]
             #train_debug_print(_input=model_input.tensor, output=targets_flat[1:][mask], model_cfg=self.config, tokenizer=self.tokenizer, varlen_strategy='unpadding')            
             loss = F.cross_entropy(logits_flat[:-1][mask], targets_flat[1:][mask])
-
-        self.log('train/loss', loss, prog_bar=True)
+        if masked: #Logging also the accuracy
+            preds = logits_flat[mask].argmax(dim=-1)
+            targets = targets_flat[mask]
+            acc = (preds == targets).float().mean()
+            self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=batch_size)
+         
+        current_lr = self.lr_schedulers().get_last_lr()[0]
+        self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=batch_size)
+        self.log('train/loss', loss, prog_bar=True,batch_size=batch_size)
         return loss
-
     def configure_optimizers(self):
-        if self.train_config["optimizer"]=='muon':
-            use_muon = True
-        else:
-            use_muon = False
+        use_muon = self.train_config["optimizer"].lower() == "muon"
 
         if use_muon:
             from muon import MuonWithAuxAdam, SingleDeviceMuonWithAuxAdam
@@ -122,27 +129,62 @@ class PL_ModelWrapper(pl.LightningModule):
                     params=hidden_weights,
                     use_muon=True,
                     lr=self.train_config["muon_lr"],
-                    weight_decay=0.01,
-                    momentum=0.95
+                    weight_decay=self.train_config.get("weight_decay", 0.01),
+                    momentum=self.train_config.get("muon_momentum", 0.95)
                 ),
                 dict(
                     params=adamw_params,
                     use_muon=False,
                     lr=self.train_config["lr"],
-                    betas=(0.9, 0.95),
-                    eps=1e-10,
-                    weight_decay=0.01,
+                    betas=self.train_config.get("betas", (0.9, 0.95)),
+                    eps=self.train_config.get("eps", 1e-10),
+                    weight_decay=self.train_config.get("weight_decay", 0.01),
                 ),
             ]
-            if dist.is_available() and dist.is_initialized():
-                optimizer = MuonWithAuxAdam(param_groups)
-            else:
-                optimizer = SingleDeviceMuonWithAuxAdam(param_groups)
+
+            optimizer = (
+                MuonWithAuxAdam(param_groups)
+                if dist.is_available() and dist.is_initialized()
+                else SingleDeviceMuonWithAuxAdam(param_groups)
+            )
 
         else:
-            #optimizer = torch.optim.AdamW(self.parameters(), lr=self.train_config["lr"], weight_decay=self.train_config["weight_decay"])
-            optimizer = torch.optim.AdamW(self.parameters(), lr=self.train_config["lr"])
-        return optimizer
+            optimizer = AdamW(
+                self.parameters(),
+                lr=self.train_config["lr"],
+                weight_decay=self.train_config.get("weight_decay", 0.01)
+            )
+
+        # === Scheduler ===
+        total_training_steps = self.train_config["total_steps"]
+        num_training_batches = self.train_config["num_batches"]
+        accumulate_grad_batches = self.train_config.get("accumulate_grad_batches", 1)
+        max_epochs = self.train_config.get("max_epochs", 1)
+
+        total_training_steps = math.ceil(
+            (num_training_batches // accumulate_grad_batches) * max_epochs
+        )
+
+        scheduler_name = self.train_config.get("scheduler", "linear")
+        warmup_steps = self.train_config.get("warmup_steps", int(0.05 * total_training_steps))
+
+        scheduler = get_scheduler(
+            name=scheduler_name,
+            optimizer=optimizer,
+            num_warmup_steps=warmup_steps,
+            num_training_steps=total_training_steps
+        )
+
+        self.total_training_steps = total_training_steps
+
+        return {
+            "optimizer": optimizer,
+            "lr_scheduler": {
+                "scheduler": scheduler,
+                "interval": "step",
+                "frequency": 1,
+            }
+        }
 
     def on_after_backward(self):
         for name, param in self.named_parameters():

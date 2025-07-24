@@ -71,7 +71,13 @@ def main():
         config=model_cfg,
         tokenizer=tokenizer
     )
+    num_batches = len(data)
+    accumulate_grad_batches = train_cfg.get("accumulate_grad_batches", 1)
+    max_epochs = train_cfg.get("max_epochs", 1)
 
+    total_steps = (num_batches // accumulate_grad_batches) * max_epochs
+    train_cfg["total_steps"] = total_steps
+    train_cfg["num_batches"]=num_batches
     ModelClass = get_model_class(cfg['model_class'])
     model = PL_ModelWrapper(ModelClass, config=model_cfg, tokenizer=tokenizer, train_config=train_cfg, device='cuda')
 
@@ -89,7 +95,6 @@ def main():
     trainer = pl.Trainer(
         logger=wandb_logger,
         callbacks=[checkpoint],
-        max_steps=train_cfg['max_steps'],
         precision='16-mixed',
         accelerator='gpu',
         devices=1,
@@ -99,7 +104,7 @@ def main():
         max_epochs=1
     )
      #overfit_batches=1 => Useful for debug
- 
+     #max_steps=train_cfg['max_steps'],
     torch.set_float32_matmul_precision('high')
     try:
         trainer.fit(model, data)
