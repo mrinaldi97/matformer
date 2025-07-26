@@ -6,15 +6,17 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 from matformer.tokenizers import ByteLevelTokenizer,MatformerTokenizer
 from matformer.metrics import BitsPerByte  
-from matformer.training_functions import MatformerDataModule
+from matformer.training_functions import MatformerDataModule,Muon
 from matformer.model_config import ModelConfig  
 from matformer.masked_models import maskerator
+from matformer.initialization import init_transformer_weights_
 #import matformer.transformer_blocks
 from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor,NormalTensor
 from matformer.debug_methods import train_debug_print
 from torch.optim import AdamW
 from transformers import get_scheduler
 import math
+import torch.distributed as dist
 
 try:
     from transformers import AutoTokenizer
@@ -25,7 +27,7 @@ from copy import deepcopy
 
 
 class PL_ModelWrapper(pl.LightningModule):
-    def __init__(self,ModelClass,config,tokenizer,device,train_config=None,inference_fix=False,nested=False):
+    def __init__(self,ModelClass,config,tokenizer,device,batch_size,train_config=None,inference_fix=False,nested=False):
         super().__init__()
         self.config=config
         self.train_config=train_config
@@ -33,7 +35,9 @@ class PL_ModelWrapper(pl.LightningModule):
         self.save_hyperparameters()  
         self.inference_fix=inference_fix #Temporaneo
         self.model = ModelClass(config) 
-        self.tokenizer=tokenizer
+        self.model.apply(init_transformer_weights_)
+        self.tokenizer=tokenizer #Un MatformerTokenizer
+        self.batch_size=batch_size # Utile per il learning rate scheduling
     def forward(self, _input):
         return self.model(_input.to(self.device),inference_fix=self.inference_fix)
     def training_step(self, batch, batch_idx):
@@ -42,7 +46,6 @@ class PL_ModelWrapper(pl.LightningModule):
             sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
         else:
             sequence = batch['input_ids'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
-        batch_size = sequence.tensor.size(0) 
         masked=True if self.config['training_objective']=='masked' else False
 
         input_sequence=sequence
@@ -94,99 +97,90 @@ class PL_ModelWrapper(pl.LightningModule):
             preds = logits_flat[mask].argmax(dim=-1)
             targets = targets_flat[mask]
             acc = (preds == targets).float().mean()
-            self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=batch_size)
+            self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
          
         current_lr = self.lr_schedulers().get_last_lr()[0]
-        self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=batch_size)
-        self.log('train/loss', loss, prog_bar=True,batch_size=batch_size)
+        self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
+        self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)
         return loss
     def configure_optimizers(self):
         use_muon = self.train_config["optimizer"].lower() == "muon"
-
         if use_muon:
-            from muon import MuonWithAuxAdam, SingleDeviceMuonWithAuxAdam
-            import torch.distributed as dist
-
-            hidden_weights = []
+            muon_params = []
             adamw_params = []
-
             for name, param in self.named_parameters():
                 if not param.requires_grad:
                     continue
                 if (
-                    'lm_head' in name
-                    or 'embed_tokens' in name
+                    "lm_head" in name
+                    or "embed_tokens" in name
                     or param.ndim < 2
                 ):
                     adamw_params.append(param)
-                    print(f"{name} in Adam (ndim= {param.ndim})")
+                    print(f"{name} in AdamW (ndim={param.ndim})")
                 else:
-                    hidden_weights.append(param)
+                    muon_params.append(param)
                     print(f"{name} in Muon")
 
-            param_groups = [
-                dict(
-                    params=hidden_weights,
-                    use_muon=True,
-                    lr=self.train_config["muon_lr"],
-                    weight_decay=self.train_config.get("weight_decay", 0.01),
-                    momentum=self.train_config.get("muon_momentum", 0.95)
-                ),
-                dict(
-                    params=adamw_params,
-                    use_muon=False,
-                    lr=self.train_config["lr"],
-                    betas=self.train_config.get("betas", (0.9, 0.95)),
-                    eps=self.train_config.get("eps", 1e-10),
-                    weight_decay=self.train_config.get("weight_decay", 0.01),
-                ),
-            ]
-
-            optimizer = (
-                MuonWithAuxAdam(param_groups)
-                if dist.is_available() and dist.is_initialized()
-                else SingleDeviceMuonWithAuxAdam(param_groups)
+            optimizer = Muon(
+                lr=self.train_config["lr"],
+                wd=self.train_config.get("weight_decay", 0.01),
+                muon_params=muon_params,
+                momentum=self.train_config.get("muon_momentum", 0.95),
+                nesterov=self.train_config.get("muon_nesterov", True),
+                ns_steps=self.train_config.get("muon_ns_steps", 5),
+                adamw_params=adamw_params,
+                adamw_betas=self.train_config.get("betas", (0.9, 0.95)),
+                adamw_eps=self.train_config.get("eps", 1e-10),
             )
-
         else:
             optimizer = AdamW(
                 self.parameters(),
                 lr=self.train_config["lr"],
-                weight_decay=self.train_config.get("weight_decay", 0.01)
+                weight_decay=self.train_config.get("weight_decay", 0.01),
             )
 
         # === Scheduler ===
-        total_training_steps = self.train_config["total_steps"]
-        num_training_batches = self.train_config["num_batches"]
-        accumulate_grad_batches = self.train_config.get("accumulate_grad_batches", 1)
-        max_epochs = self.train_config.get("max_epochs", 1)
+        if not self.train_config.get("lr_scheduling", False):
+            return optimizer
 
-        total_training_steps = math.ceil(
-            (num_training_batches // accumulate_grad_batches) * max_epochs
+        total_steps = math.ceil(
+            (self.train_config["num_batches"] // self.train_config.get("accumulate_grad_batches", 1))
+            * self.train_config.get("max_epochs", 1)
         )
+        self.total_training_steps = total_steps
 
-        scheduler_name = self.train_config.get("scheduler", "linear")
-        warmup_steps = self.train_config.get("warmup_steps", int(0.05 * total_training_steps))
+        if self.train_config.get("scheduler") == "custom":
+            warmup   = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            hold     = self.train_config.get("hold_steps", int(0.10 * total_steps))
+            target   = self.train_config.get("final_lr", 0.0)
+            base_lr  = optimizer.param_groups[0]["lr"]
+            factor   = target / base_lr if base_lr > 0 else 0.0
 
-        scheduler = get_scheduler(
-            name=scheduler_name,
-            optimizer=optimizer,
-            num_warmup_steps=warmup_steps,
-            num_training_steps=total_training_steps
-        )
+            def lr_schedule(step):
+                if step < warmup: return step / max(1, warmup)
+                if step < warmup + hold: return 1.0
+                prog = (step - warmup - hold) / max(1, total_steps - warmup - hold)
+                return factor + (1 - factor) * 0.5 * (1 + math.cos(math.pi * prog))
 
-        self.total_training_steps = total_training_steps
+            scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_schedule, last_epoch=-1)
+        else:
+            warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            scheduler = get_scheduler(
+                name=self.train_config.get("scheduler", "linear"),
+                optimizer=optimizer,
+                num_warmup_steps=warmup,
+                num_training_steps=total_steps
+            )
 
         return {
             "optimizer": optimizer,
-            "lr_scheduler": {
-                "scheduler": scheduler,
-                "interval": "step",
-                "frequency": 1,
-            }
+            "lr_scheduler": {"scheduler": scheduler, "interval": "step", "frequency": 1},
         }
 
-    def on_after_backward(self):
+
+    def debug_on_after_backward(self):
+        # Log dei gradienti per debug
         for name, param in self.named_parameters():
             if param.requires_grad and param.grad is None:
                 self.logger.experiment.log({"broken_grad/" + name: 1})

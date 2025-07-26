@@ -14,6 +14,7 @@ from matformer.model_config import ModelConfig
 from matformer.models import PL_ModelWrapper
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
+import math
 def load_config(path):
     with open(path, 'r') as f:
         return json.load(f)
@@ -58,6 +59,7 @@ def main():
         AutoTokenizer.from_pretrained(tok_cfg['pretrained_name']) 
         if tok_cfg['type'] == 'huggingface' else 'bytes'
     )
+    
     tokenizer = MatformerTokenizer(
         model_cfg,
         tokenizer=tokenizer,
@@ -71,15 +73,15 @@ def main():
         config=model_cfg,
         tokenizer=tokenizer
     )
-    num_batches = len(data)
+    num_batches = math.ceil(len(data)/data_cfg["batch_size"])
     accumulate_grad_batches = train_cfg.get("accumulate_grad_batches", 1)
     max_epochs = train_cfg.get("max_epochs", 1)
 
     total_steps = (num_batches // accumulate_grad_batches) * max_epochs
     train_cfg["total_steps"] = total_steps
-    train_cfg["num_batches"]=num_batches
+    train_cfg["num_batches"] = num_batches
     ModelClass = get_model_class(cfg['model_class'])
-    model = PL_ModelWrapper(ModelClass, config=model_cfg, tokenizer=tokenizer, train_config=train_cfg, device='cuda')
+    model = PL_ModelWrapper(ModelClass, config=model_cfg, tokenizer=tokenizer, train_config=train_cfg, device='cuda', batch_size=data_cfg['batch_size'])
 
     wandb_logger = WandbLogger(
         name=cfg.get('wandb_run_name', 'training-run'),

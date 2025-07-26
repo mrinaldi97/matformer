@@ -1,7 +1,7 @@
 {
   "model_class": "BERTModel",
   "model_config": {
-    "name": "Micro-Albertino",
+    "name": "Micro-Albertino-Liber-Wiki-1024-Muon",
     "hidden_size": 512,
     "ffn_factor": 1.0,
     "num_hidden_layers": 10,
@@ -12,10 +12,10 @@
     "pad_token_id": 0,
     "tie_word_embeddings": false,
     "rms_norm_eps": 1e-6,
-    "attention_type": ["sliding"],
-    "sliding_window_size": 512,
-    "sliding_layers": [0,2,4,6,8],
-    "sliding_type": "partial",
+    "attention_type": [],
+    "sliding_window_size": 1024,
+    "sliding_layers": [],
+    "sliding_type": "disabled",
     "max_position_embeddings": 1024,
     "block_size_for_attention": 128,
     "compile_flexattn": false,
@@ -26,16 +26,18 @@
     "attn_impl": "flash"
   },
   "training": {
-      "optimizer": "adam",
+      "optimizer": "muon",
       "lr_scheduling": true,
-      "lr": 5e-5,
+      "lr": 2e-4,
+      "final_lr":1e-5,
       "weight_decay": 0.01,
-      "scheduler": "linear",
-      "warmup_steps": 700,    
+      "scheduler": "custom",
+      "warmup_steps": 3500,
+      "hold_steps": 3500,
       "max_epochs": 1,
       "accumulate_grad_batches": 1,
       "seed": 27,
-      "checkpoint_name": "micro_albertino"
+      "checkpoint_name": "micro_albertino_liber_wiki_1024_muon"
   },
   "tokenizer": {
     "type": "huggingface",
@@ -43,11 +45,11 @@
     "varlen_strategy": "unpadding"
   },
   "data": {
-    "data_root": "../matformer_norepo/liberliber_1024_tokens",
-    "batch_size": 56,
+    "data_root": "../matformer_norepo/merged_cleaned_1024",
+    "batch_size": 64,
     "num_workers": 2
   },
   "save_dir": "./checkpoints",
   "wandb_project": "matformer",
-  "wandb_run_name": "micro-albertino-liberliber-1024-tokens"
+  "wandb_run_name": "micro-albertino-liber-wiki-1024-tokens_muon"
 }
