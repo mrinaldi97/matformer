@@ -311,11 +311,12 @@ def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/
             # Retrieve the dataset associated with the idx
             ds_id,doc_id=retrieve_dataset_id(cu_ds_lens,idx)  
             doc=ds_pointers[ds_id][doc_id]  
-            for ds in ds_pointers:
-                for shard in ds.shards:
-                    if hasattr(shard, 'last_block'):
-                        shard.last_block = None
-                        shard.last_block_idx = None            
+            if shuffle:
+                for ds in ds_pointers:
+                    for shard in ds.shards:
+                        if hasattr(shard, 'last_block'):
+                            shard.last_block = None
+                            shard.last_block_idx = None            
             # Prepare data to pack
             pack_data = [ds_id, doc_id]
             
