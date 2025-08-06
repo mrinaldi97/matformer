@@ -101,10 +101,13 @@ class UnpaddedTensor(TensorDC):
     batch_size: int
     isUnpadded: ClassVar[bool] = True
 
-    def pad(self, seq_len: Optional[int] = None) -> PaddedTensor:
+    def pad(self, seq_len: Optional[int] = None, pad_token=0) -> PaddedTensor:
         target_seq_len = seq_len if seq_len is not None else self.original_seq_len
-        
-        out = self.tensor.new_zeros(self.batch_size * target_seq_len, *self.tensor.shape[1:])
+        if pad_token==0:
+            out = self.tensor.new_zeros(self.batch_size * target_seq_len, *self.tensor.shape[1:])
+        else:
+            out = self.tensor.new_ones(self.batch_size * target_seq_len, *self.tensor.shape[1:])*pad_token
+            
         out[self.indices] = self.tensor
         
         padding_mask_flat = torch.ones(size=(self.batch_size * target_seq_len,), dtype=torch.bool, device=self.indices.device)

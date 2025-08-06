@@ -9,7 +9,6 @@ from typing import Optional, List
 from matformer.model_config import ModelConfig
 from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
 from dataclasses import replace
-
 from torch.nn.functional import scaled_dot_product_attention
 try:
     from flash_attn import flash_attn_qkvpacked_func, flash_attn_func, flash_attn_varlen_func, flash_attn_varlen_qkvpacked_func
@@ -250,24 +249,31 @@ class MultiHeadAttention(nn.Module):
         attn_output = attn_output.flatten(-2) #The flatten expects: (B, S, H, Hd)
         return replace(query_input, tensor=self.out_proj(attn_output))        
 
-      
 class PackedSwiGLUFFN(nn.Module):
-    #Adapted from https://docs.pytorch.org/tutorials/intermediate/transformer_building_blocks.html
     def __init__(
         self,
-        config: ModelConfig
+        config: Optional[ModelConfig] = None,
+        hidden_size: Optional[int] = None,
+        ffn_factor: Optional[float] = None
     ):
         super().__init__()
-        dim = config.hidden_size
-        hidden_size = int(config.hidden_size * config.ffn_factor)  # Direct scaling
-        self.w13 = nn.Linear(dim, 2 * hidden_size, bias=False)
-        self.w2 = nn.Linear(hidden_size, dim, bias=False)
+
+        if config is not None:
+            hidden_size = config.hidden_size
+            ffn_factor = config.ffn_factor
+
+        # Fail hard if still None
+        hidden_size = int(hidden_size * ffn_factor)
+
+        self.w13 = nn.Linear(hidden_size, 2 * hidden_size, bias=False)
+        self.w2 = nn.Linear(hidden_size, hidden_size, bias=False)
 
     def forward(self, _input: TensorDC) -> TensorDC:
-        x = _input.tensor
-        x1, x3 = torch.chunk(self.w13(x), 2, -1)
+        x1, x3 = torch.chunk(self.w13(_input.tensor), 2, -1)
         out = self.w2(F.silu(x1) * x3)
         return replace(_input, tensor=out)
+
+
         
 
 """

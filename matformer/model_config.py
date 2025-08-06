@@ -40,3 +40,26 @@ class ModelConfig:
 
     def __getitem__(self, key):
         return getattr(self, key)
+
+
+@dataclass
+class RNNConfig:
+    max_epochs: int
+    vocab_size: int
+    input_dim: int
+    hidden_dim: int
+    output_dim: int
+    num_layers: int
+    rnn_type: str
+    bidirectional: bool
+    eos_token_id: int
+    pad_token_id: int
+    bos_token_id: int  
+    lr: float
+    max_target_len: int
+    beta: float  
+    def __setitem__(self, key, value):
+        setattr(self, key, value)
+
+    def __getitem__(self, key):
+        return getattr(self, key)    

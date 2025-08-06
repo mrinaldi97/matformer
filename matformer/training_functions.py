@@ -1,6 +1,6 @@
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
-from torch_atlas_ds import AtlasDataset
+
 from matformer.model_config import ModelConfig  
 
 #Imports for Muon
@@ -10,36 +10,66 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from transformers import get_cosine_schedule_with_warmup
 
+from matformer.matformer_dataset import MatformerDataset
+
 class MatformerDataModule(pl.LightningDataModule):
     def __init__(self, data_root, batch_size, tokenizer, config, num_workers=0):
         super().__init__()
         self.data_root = data_root
+        # Is it an Atlas or a MatformerDataset?
+        if os.path.exists('data_root/matformer_dataset.mdat'):
+            self.type='mdat'
+        else:
+            self.type='atlas'
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.config=config
         self.tokenizer=tokenizer
     def setup(self, stage=None):
-        self.dataset = AtlasDataset(self.data_root)
-    def _collate_fn(self, batch):
+        if self.type=='atlas':
+            self.dataset = AtlasDataset(self.data_root)
+        else:
+            self.dataset = MatformerDataset(
+                path=self.data_root,
+                modality='tokens',
+                tokens=self.config.max_position_embeddings
+            )
+    
+
+    def _collate_fn_old(self, batch):
         texts = [item['text'] for item in batch]
         tokenized=dict()
         tokenized['input_ids'] = self.tokenizer.batch_encode(texts)
         tokenized['text'] = texts #I add back the raw text, this is currently required in the BLT model
         return tokenized
+    def _collate_fn(self, batch):
+       
+        # batch is a list of token sequences from MatformerDataset
+        from matformer.tokenizers import process_pretokenized_batch
+        
+        sequence = process_pretokenized_batch(
+            token_sequences=batch,
+            config=self.config,
+            varlen_strategy=self.tokenizer.varlen_strategy,
+            pad_token_id=self.config.pad_token_id
+        )
+        
+        return {'input_ids': sequence}        
     def __len__(self):
         #Molto temporaneamente, apro e richiudo l'atlas dataset solo per calcolarne la lunghezza; questo perchè l'informazione serve prima del setup.
-        return len(AtlasDataset(self.data_root))
+        if self.type=='atlas':
+            return len(AtlasDataset(self.data_root))
+        else:
+            return len(self.dataset)
+
     def train_dataloader(self):
         return DataLoader(
             self.dataset,
             batch_size=self.batch_size,
-            shuffle=False,
             num_workers=self.num_workers,
-            pin_memory=True,
-            drop_last=True,
-            collate_fn=self._collate_fn 
+            collate_fn=self.collate_fn,  
+            shuffle=False  
         )
-
 #Copied from https://github.com/MoonshotAI/Moonlight/blob/5afcb6911077e7f182d1d7faa3c2cd45acba4666/examples/toy_train.py
 @torch.compile
 def zeropower_via_newtonschulz5(G, steps):

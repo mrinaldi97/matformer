@@ -147,7 +147,12 @@ class TransformerWithEmbeddingHead(nn.Module):
     def forward(self,x, **kwargs): 
         embeddings=self.embed_tokens(x)
         return self.transformer(embeddings,**kwargs)
-    
+
+
+
+		 
+	
+
 class TransformerWithLMHead(nn.Module):
     """
     Adding an LM Head to TransformerWithEmbeddingHead. This is enough for Bert-like/GPT-like models.
