@@ -14,9 +14,9 @@ from functools import partial
 from nltk.tokenize.punkt import PunktTokenizer 
 import numpy as np 
 import json 
-from datasets import load_dataset 
-
-
+from datasets import Dataset,load_dataset
+import zlib
+import lmdb
 def retrieve_dataset_id(cu_dslens,idx):
     ds_id=bisect_right(cu_dslens,idx)-1
     doc_id=idx-cu_dslens[ds_id]
@@ -41,6 +41,27 @@ class RandomPermutator:
             return (self.a*i+self.b)%self.max_len
         else:
             raise Exception("Index out of range") 
+class LMDBDataset:
+    def __init__(self, path, readonly=True, lock=False):
+        self.env = lmdb.open(
+            path,
+            subdir=os.path.isdir(path),
+            readonly=readonly,
+            lock=lock,
+            readahead=True,
+            meminit=False,
+            max_readers=1
+        )
+        with self.env.begin(write=False) as txn:
+            self.length = pickle.loads(zlib.decompress(txn.get(b"__len__")))
+    def __len__(self):
+        return self.length
+    def __getitem__(self, index):
+        with self.env.begin(write=False) as txn:
+            data = txn.get(str(index).encode("utf-8"))
+            if data is None:
+                raise IndexError(f"Index {index} not found in LMDB dataset.")
+            return pickle.loads(zlib.decompress(data))
 
 
 def split_by_tokens(document, max_tokens, punkt_tokenizer, tokenizer, language='italian'):  
@@ -111,7 +132,7 @@ def process_batch(batch_items, tokenizer_name, num_tokens, text_field, punkt_tok
 
 
 def tokenize_dataset(input_data, output_path, tokenizer_name="sapienzanlp/Minerva-350M-base-v1.0", 
-                    token_per_segment=1024, text_field='text', num_workers=None, batch_size=100, debug=False):  
+                    token_per_segment=1024, text_field='text', num_workers=None, batch_size=100, debug=False, out_type='atlas'):  
     """
     It receives as input three possible iterables: an atlas dataset, a jsonl file or an huggingface dataset object
     """
@@ -170,23 +191,58 @@ def tokenize_dataset(input_data, output_path, tokenizer_name="sapienzanlp/Minerv
         punkt_tokenizer=nl_tokenizer
     )
     
-    with AtlasDatasetWriter(output_path, shard_size=256, block_size=10000) as writer:
-        with mp.Pool(num_workers) as pool:
-            # Stream process batches  
-            batch_gen = batch_iterator(dataset_iter, batch_size)
-            total_batches = math.ceil(total_items / batch_size) if total_items else None
-            
-            for batch_results in tqdm(  
-                pool.imap(process_func, batch_gen),
-                total=total_batches,
-                desc="Processing and writing batches"
-            ):
-                for item in batch_results:
-                    writer.add_example(item)
-    
-    print(f"Created tokenized dataset at {output_path}")
+    batch_gen = batch_iterator(dataset_iter, batch_size)
+    total_batches = math.ceil(total_items / batch_size) if total_items else None
+
+    if out_type == 'atlas':
+        with AtlasDatasetWriter(output_path, shard_size=256, block_size=10000) as writer:
+            with mp.Pool(num_workers) as pool:
+                for batch_results in tqdm(
+                    pool.imap(process_func, batch_gen),
+                    total=total_batches,
+                    desc="Processing and writing batches"
+                ):
+                    for item in batch_results:
+                        writer.add_example(item)
+        print(f"Created tokenized AtlasDataset at {output_path}")
+    elif out_type == 'hf':
+        def stream_tokenized_items():
+            for batch in tqdm(batch_iterator(dataset_iter, batch_size), desc="Streaming batches"):
+                processed_batch = process_func(batch)  # No multiprocessing
+                for item in processed_batch:
+                    yield item
+
+        hf_dataset = Dataset.from_generator(stream_tokenized_items)
+        hf_dataset.save_to_disk(output_path)
+        print(f"Created tokenized HuggingFace dataset at {output_path}")
+    elif out_type == 'lmdb':
 
 
+        map_size = 1 << 40  # 1 TB
+        env = lmdb.open(output_path, map_size=map_size)
+
+        def compress(obj):
+            return zlib.compress(pickle.dumps(obj))
+
+        with env.begin(write=True) as txn:
+            current_index = 0
+            with mp.Pool(num_workers) as pool:
+                for batch_results in tqdm(
+                    pool.imap(process_func, batch_gen),
+                    total=total_batches,
+                    desc="Processing and writing to LMDB (compressed)"
+                ):
+                    for item in batch_results:
+                        key = str(current_index).encode('utf-8')
+                        value = compress(item)
+                        txn.put(key, value)
+                        current_index += 1
+
+            txn.put(b"__len__", compress(current_index))
+
+        env.sync()
+        env.close()
+        print(f"Created ZLIB + LMDB dataset at {output_path}")
 def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/Minerva-350M-base-v1.0", 
                encoder_type=None, encoder_name=None, token_per_segment=1024, patch_per_segment=1024, shuffle=True):  
     """
@@ -198,8 +254,27 @@ def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/
     precomputed_byte_lengths=[0 for x in range(0,8)]  # precomputed lengths for bytes
     # 1. Get the name of each dataset
     ds_names=names
+    
     # 2. Open each dataset 
-    ds_pointers=[AtlasDataset(x) for x in ds_names]  
+    ds_pointers=[]
+    ds_types=[]
+    for x in ds_names:
+        # Check if it's an AtlasDataset, if not, it's a LMDB or HuggingFace dataset (temporary!)
+        if os.path.exists(os.path.join(x,'data.mdb')):
+            #It is an LMDB
+            _ds=LMDBDataset(x)
+            ds_pointers.append(_ds)
+            ds_types.append('lmdb')
+        else:
+            try:
+                _ds=AtlasDataset(x)
+                ds_pointers.append(_ds)
+                ds_types.append('atlas')
+            except:
+                _ds=load_dataset(dataset_path)
+                ds_pointers.append(_ds)
+                ds_types.append('hf')
+    #ds_pointers=[AtlasDataset(x) for x in ds_names]  
     # 3. Get the length of each dataset
     ds_lens=[len(ds) for ds in ds_pointers]
     # 4. Compute the cumulative lenghts
@@ -245,13 +320,13 @@ def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/
     # 7. Check if all the datasets have token segments
     hasSegments=True
     for ds in ds_pointers:
-        if 'tokens_chunks' in ds[0].keys() and 'tokens_chunks' in ds[-1].keys():
+        if 'tokens_chunks' in ds[0].keys():
             pass
         else:
             hasSegments=False
     hasPatches=True
     for ds in ds_pointers:
-        if 'patches' in ds[0].keys() and 'patches' in ds[-1].keys():
+        if 'patches' in ds[0].keys():
             pass
         else:
             hasPatches=False
@@ -282,7 +357,8 @@ def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/
             "token_per_segment":token_per_segment, 
             "patch_per_segment":patch_per_segment,
             "precomputed_length":precomputed_lengths,
-            "precomputed_byte_length":precomputed_byte_lengths,  
+            "precomputed_byte_length":precomputed_byte_lengths,
+            "ds_types":ds_types,  
             "ds_pointers":ds_names,
             "ds_lens":ds_lens,  
             "structs":{
@@ -311,7 +387,7 @@ def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/
             # Retrieve the dataset associated with the idx
             ds_id,doc_id=retrieve_dataset_id(cu_ds_lens,idx)  
             doc=ds_pointers[ds_id][doc_id]  
-            if shuffle:
+            if False and shuffle:
                 for ds in ds_pointers:
                     for shard in ds.shards:
                         if hasattr(shard, 'last_block'):
@@ -518,8 +594,13 @@ class MatformerDataset:
         
         # Opening actual dataset(s)
         # Currently, only supports AtlasDatasets but can be easily extended to any kind of dataset (ex. HuggingFace)
-        self.ds_pointers=[AtlasDataset(os.path.join(path,x)) for x in self.mdat_header['ds_pointers']]
-        
+        self.ds_pointers = [
+            AtlasDataset(os.path.join(path, x)) if t == 'atlas'
+            else load_dataset(os.path.join(path, x)) if t == 'hf'
+            else LMDBDataset(os.path.join(path, x)) if t == 'lmdb'
+            else None  # or raise error if unknown type
+            for x, t in zip(self.mdat_header['ds_pointers'], self.mdat_header['ds_types'])
+        ]        
         if modality == 'tokens' and len(self.precomputed_lengths) >= self.chunk_size:  
             self.len=self.precomputed_lengths[self.chunk_size-1]  
         elif modality == 'bytes' and len(self.precomputed_byte_lengths) >= 1:  
@@ -648,7 +729,7 @@ def auto_discover_datasets():
     for item in os.listdir('.'):
         if os.path.isdir(item):
             try:
-                AtlasDataset(item) 
+                #AtlasDataset(item) 
                 datasets.append(item)
             except:
                 continue
@@ -668,6 +749,7 @@ def main():
     parser.add_argument('--tokenize', action='store_true', help='Tokenize datasets before merging')  
     parser.add_argument('--tokenize-input', type=str, help='Input path for tokenization')  
     parser.add_argument('--tokenize-output', type=str, help='Output path for tokenized dataset')  
+    parser.add_argument('--tokenize-out-type',type=str,help='atlas or hf')
     parser.add_argument('--debug', action='store_true', help='Debug mode - limit to 5000 samples')  
     
     args = parser.parse_args()
@@ -682,6 +764,7 @@ def main():
             output_path=args.tokenize_output,
             tokenizer_name=args.tokenizer_name,
             token_per_segment=args.token_per_segment,
+            out_type=args.tokenize_out_type,
             debug=args.debug
         )
         return
