@@ -21,7 +21,7 @@ def retrieve_dataset_id(cu_dslens,idx):
     ds_id=bisect_right(cu_dslens,idx)-1
     doc_id=idx-cu_dslens[ds_id]
     return ds_id,doc_id
-
+import torch
 
 class RandomPermutator:
     def __init__(self,max_len,seed=27):
@@ -503,7 +503,7 @@ def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/
     print(f"Created matformer_dataset.mdat with {total_doc_len} documents")
         
 
-class MatformerDataset:
+class MatformerDataset(torch.utils.data.IterableDataset):
     def __init__(self,path,modality='tokens',chunk_size=None,tokens=None,n_bytes=None,state=None):
         """
             Path => The path of a .mdat file
@@ -623,7 +623,7 @@ class MatformerDataset:
             row = struct.unpack(self.struct_format, row_data)  
             self.current_document = self.ds_pointers[row[0]][row[1]]
             self.current_document_step = 0
-            self.current_document_remainder = row[3] if len(row) > 3 and self.mdat_header['structs'].get('token_remainder') else 0  #EDITED BY LLM: store remainder for exact token count
+            self.current_document_remainder = row[3] if len(row) > 3 and self.mdat_header['structs'].get('token_remainder') else 0 
         except (EOFError, StopIteration):
             self.current_document = None
         

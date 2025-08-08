@@ -2,6 +2,7 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 
 from matformer.model_config import ModelConfig  
+from torch_atlas_ds import AtlasDataset, AtlasDatasetWriter  
 
 #Imports for Muon
 import os
@@ -17,14 +18,20 @@ class MatformerDataModule(pl.LightningDataModule):
         super().__init__()
         self.data_root = data_root
         # Is it an Atlas or a MatformerDataset?
-        if os.path.exists('data_root/matformer_dataset.mdat'):
+        if os.path.exists(data_root+'/matformer_dataset.mdat'):
             self.type='mdat'
+            print("È UN MDAT!")
         else:
             self.type='atlas'
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.config=config
         self.tokenizer=tokenizer
+        self.dataset = MatformerDataset(
+                path=self.data_root,
+                modality='tokens',
+                tokens=1024
+            )
     def setup(self, stage=None):
         if self.type=='atlas':
             self.dataset = AtlasDataset(self.data_root)
@@ -32,7 +39,7 @@ class MatformerDataModule(pl.LightningDataModule):
             self.dataset = MatformerDataset(
                 path=self.data_root,
                 modality='tokens',
-                tokens=self.config.max_position_embeddings
+                tokens=1024
             )
     
 
@@ -42,12 +49,11 @@ class MatformerDataModule(pl.LightningDataModule):
         tokenized['input_ids'] = self.tokenizer.batch_encode(texts)
         tokenized['text'] = texts #I add back the raw text, this is currently required in the BLT model
         return tokenized
-    def _collate_fn(self, batch):
+    def collate_fn(self, batch):
        
         # batch is a list of token sequences from MatformerDataset
-        from matformer.tokenizers import process_pretokenized_batch
         
-        sequence = process_pretokenized_batch(
+        sequence = self.tokenizer.process_pretokenized_batch(
             token_sequences=batch,
             config=self.config,
             varlen_strategy=self.tokenizer.varlen_strategy,
@@ -66,7 +72,7 @@ class MatformerDataModule(pl.LightningDataModule):
         return DataLoader(
             self.dataset,
             batch_size=self.batch_size,
-            num_workers=self.num_workers,
+            num_workers=1,
             collate_fn=self.collate_fn,  
             shuffle=False  
         )

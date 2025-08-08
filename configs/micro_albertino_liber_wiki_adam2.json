@@ -1,7 +1,7 @@
 {
   "model_class": "BERTModel",
   "model_config": {
-    "name": "Micro-Albertino-Liber-Wiki-1024-Adam2",
+    "name": "Micro-Albertino-Liber-Wiki-1024-Adam3",
     "hidden_size": 512,
     "ffn_factor": 1.0,
     "num_hidden_layers": 10,
@@ -37,7 +37,7 @@
       "max_epochs": 1,
       "accumulate_grad_batches": 1,
       "seed": 27,
-      "checkpoint_name": "micro_albertino_liber_wiki_1024_adam2"
+      "checkpoint_name": "micro_albertino_liber_wiki_1024_adam3"
   },
   "tokenizer": {
     "type": "huggingface",
@@ -45,11 +45,11 @@
     "varlen_strategy": "unpadding"
   },
   "data": {
-    "data_root": "../matformer_norepo/merged_cleaned_1024",
-    "batch_size": 64,
-    "num_workers": 2
+    "data_root": "../matformer_norepo/Minerva1024_lmdb",
+    "batch_size": 56,
+    "num_workers": 1
   },
-  "save_dir": "./checkpoints_adam",
+  "save_dir": "./checkpoints",
   "wandb_project": "matformer",
-  "wandb_run_name": "micro-albertino-liber-wiki-1024-tokens_adam2"
+  "wandb_run_name": "micro-albertino-liber-wiki-1024-tokens_adam3"
 }

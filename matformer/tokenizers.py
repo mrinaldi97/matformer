@@ -35,7 +35,7 @@ class MatformerTokenizer:
         self.config.masked.masking_percentage (how may tokens to substitute with [MASK], ex. 0.8 for 80%), then self.config.masked.random_percentage
         and self.config.masked.same_percentage for the other possible masking strategies amounts.
         """
-    def process_pretokenized_batch(token_sequences, config, varlen_strategy, pad_token_id):
+    def process_pretokenized_batch(self,token_sequences, config, varlen_strategy, pad_token_id):
         """
         Helper function to process pre-tokenized sequences from MatformerDataset
         into the format expected by the model training code.
