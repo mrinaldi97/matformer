@@ -725,7 +725,7 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             _string = document[start:end]
             self.current_document_step = end
             print(f"DEBUG: mando {len(_string)} bytes")
-            return self.byte_tokenizer(_string) #Tokenize using a ByteLevelTokenizer instance
+            return self.byte_tokenizer.encode(_string) #Tokenize using a ByteLevelTokenizer instance
 
         raise StopIteration 
 def auto_discover_datasets(): 
