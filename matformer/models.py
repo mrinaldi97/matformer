@@ -190,7 +190,7 @@ class PL_ModelWrapper(pl.LightningModule):
                 self.log(f"grad_max/{name}", param.grad.abs().max().item(), on_step=True)
                 self.log(f"grad_min/{name}", param.grad.abs().min().item(), on_step=True)
     @staticmethod
-    def load_from_checkpoint(checkpoint_path, ModelClass=EntropyModel, config=None, map_location=None, inference_fix=False, tokenizer=None, varlen_strategy='padding'):
+    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, map_location=None, inference_fix=False, tokenizer=None, varlen_strategy='padding'):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
 
         if config is None:
