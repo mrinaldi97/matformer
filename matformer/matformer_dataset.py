@@ -685,7 +685,7 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             patches_output=[x for z in patches[start:end] for x in z] # I take chunk_size chunks from the current document
             return patches_output
             
-    def next_bytes(self):
+    def _next_bytes(self):
         while self.current_document:
             document = self.current_document.get('text')
             if not document:

@@ -75,7 +75,7 @@ class MatformerDataModule(pl.LightningDataModule):
         return DataLoader(
             self.dataset,
             batch_size=self.batch_size,
-            num_workers=1,
+            num_workers=0,
             collate_fn=self.collate_fn,  
             shuffle=False  
         )
