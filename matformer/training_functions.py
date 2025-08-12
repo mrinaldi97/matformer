@@ -29,7 +29,7 @@ class MatformerDataModule(pl.LightningDataModule):
         self.tokenizer=tokenizer
         self.dataset = MatformerDataset(
                 path=self.data_root,
-                modality='tokens',
+                modality='bytes' if tokenizer=='bytes' else 'tokens',
                 tokens=1024
             )
     def setup(self, stage=None):
