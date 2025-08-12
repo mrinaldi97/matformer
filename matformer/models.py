@@ -27,7 +27,7 @@ from copy import deepcopy
 
 
 class PL_ModelWrapper(pl.LightningModule):
-    def __init__(self,ModelClass,config,tokenizer,device,batch_size,train_config=None,inference_fix=False,nested=False):
+    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference_fix=False,nested=False):
         super().__init__()
         self.config=config
         self.train_config=train_config
@@ -190,7 +190,7 @@ class PL_ModelWrapper(pl.LightningModule):
                 self.log(f"grad_max/{name}", param.grad.abs().max().item(), on_step=True)
                 self.log(f"grad_min/{name}", param.grad.abs().min().item(), on_step=True)
     @staticmethod
-    def load_from_checkpoint(checkpoint_path, config=None, map_location=None, inference_fix=False, tokenizer=None, varlen_strategy='padding'):
+    def load_from_checkpoint(checkpoint_path, ModelClass=EntropyModel, config=None, map_location=None, inference_fix=False, tokenizer=None, varlen_strategy='padding'):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
 
         if config is None:
@@ -209,8 +209,9 @@ class PL_ModelWrapper(pl.LightningModule):
             config,
             tokenizer=tokenizer,
             varlen_strategy=varlen_strategy
-        )                
-        model = PL_TransformerWithLMHead(config, device=map_location, inference_fix=inference_fix, train_config=None, tokenizer=tokenizer)  
+        )     
+
+        model = PL_ModelWrapper(ModelClass, config, tokenizer, device=map_location, inference_fix=inference_fix, train_config=None, tokenizer=tokenizer)  
         model.load_state_dict(checkpoint['state_dict'])
         return model,config   
         
