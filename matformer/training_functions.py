@@ -33,7 +33,7 @@ class MatformerDataModule(pl.LightningDataModule):
         else:
             self.modality='tokens'
         self.dataset=MatformerDataset(path=self.data_root,modality=self.modality,
-                tokens=self.config.max_position_embeddings+1, n_bytes=self.config.max_position_embeddings+1,
+                tokens=self.config.max_position_embeddings, n_bytes=self.config.max_position_embeddings,
                 byte_tokenizer=self.tokenizer)
 
     def setup(self, stage=None):
