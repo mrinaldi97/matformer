@@ -157,11 +157,11 @@ class TransformerWithLMHead(nn.Module):
     """
     Adding an LM Head to TransformerWithEmbeddingHead. This is enough for Bert-like/GPT-like models.
     """
-    def __init__(self,config: ModelConfig,tokenizer=None):
+    def __init__(self,config: ModelConfig,tokenizer=None,device=None):
         super().__init__()      
         self.lm_head = ModuleWrapper(nn.Linear(config.hidden_size, config.vocab_size))
         self.transformer = TransformerWithEmbeddingHead(config)
-
+        self.device=device #This is used only for inference!
         if config.tie_word_embeddings:
             self.lm_head.weight = self.transformer.embed_tokens.weight
         self.config=config

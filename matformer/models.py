@@ -34,7 +34,7 @@ class PL_ModelWrapper(pl.LightningModule):
         self.nested=nested # Poco elegante, temporaneo ma in genere rivedere l'implementazione Nested, per ora WIP
         self.save_hyperparameters()  
         self.inference_fix=inference_fix #Temporaneo
-        self.model = ModelClass(config,tokenizer=tokenizer) 
+        self.model = ModelClass(config,tokenizer=tokenizer,device=device) 
         self.model.apply(init_transformer_weights_)
         self.tokenizer=tokenizer #Un MatformerTokenizer
         self.batch_size=batch_size # Utile per il learning rate scheduling
