@@ -116,7 +116,7 @@ class MultiHeadAttention(nn.Module):
             if packed:
                 return flash_attn_varlen_qkvpacked_func(
                     qkv,
-                    cu_seqlens=query_input.cu_seqlens.type_as(qkv),  
+                    cu_seqlens=query_input.cu_seqlens.type_as(qkv).to(dtype=torch.int32),  
                     max_seqlen=query_input.max_seq_len,
                     alibi_slopes=None,
                     causal=self.is_causal,
@@ -125,8 +125,8 @@ class MultiHeadAttention(nn.Module):
             else:
                 return flash_attn_varlen_func(
                     q, k, v,
-                    cu_seqlens_q=query_input.cu_seqlens.type_as(q),  
-                    cu_seqlens_k=key_input.cu_seqlens.type_as(k),    
+                    cu_seqlens_q=query_input.cu_seqlens.type_as(q).to(dtype=torch.int32),  
+                    cu_seqlens_k=key_input.cu_seqlens.type_as(k).to(dtype=torch.int32),    
                     max_seqlen_q=query_input.max_seq_len,
                     max_seqlen_k=key_input.max_seq_len,
                     alibi_slopes=self.alibi_slopes,
