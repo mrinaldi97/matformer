@@ -27,20 +27,22 @@ class MatformerDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.config=config
         self.tokenizer=tokenizer
-        self.dataset = MatformerDataset(
-                path=self.data_root,
-                modality='bytes' if tokenizer=='bytes' else 'tokens',
-                tokens=1024
-            )
+        if tokenizer=='bytes':
+			self.modality='bytes'
+		else:
+			self.modality='tokens'
+	
+		self.dataset=MatformerDataset(path=self.data_root,modality=self.modality,
+				tokens=self.config.max_position_embeddings, n_bytes=self.config.max_position_embeddings,
+				byte_tokenizer=self.tokenizer)
+
     def setup(self, stage=None):
         if self.type=='atlas':
             self.dataset = AtlasDataset(self.data_root)
         else:
-            self.dataset = MatformerDataset(
-                path=self.data_root,
-                modality='tokens',
-                tokens=1024
-            )
+            self.dataset=MatformerDataset(path=self.data_root,modality=self.modality,
+                    tokens=self.config.max_position_embeddings, n_bytes=self.config.max_position_embeddings,
+                    byte_tokenizer=self.tokenizer)
     
 
     def _collate_fn_old(self, batch):

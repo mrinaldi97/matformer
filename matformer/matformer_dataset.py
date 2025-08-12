@@ -504,7 +504,7 @@ def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/
         
 
 class MatformerDataset(torch.utils.data.IterableDataset):
-    def __init__(self,path,modality='tokens',chunk_size=None,tokens=None,n_bytes=None,state=None):
+    def __init__(self,path,modality='tokens',chunk_size=None,tokens=None,n_bytes=None,state=None,byte_tokenizer=None):
         """
             Path => The path of a .mdat file
             Modality => 'tokens' to return chunk of tokenized text, 'bytes' to return chunks of raw bytes, 'patches' to return patches  #EDITED BY LLM: added patches modality
@@ -515,7 +515,10 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             assert chunk_size is not None or tokens is not None
         elif modality=='patches':  
             assert chunk_size is not None
-        else:
+        elif modality=='bytes':
+            print("DEBUG: BYTE MODE ENABLED")
+            assert byte_tokenizer is not None
+            self.byte_tokenizer=byte_tokenizer
             assert n_bytes is not None
             self.chunk_size=n_bytes
         
@@ -720,7 +723,8 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             # Extract the actual string only once at the end
             _string = document[start:end]
             self.current_document_step = end
-            return _string
+            print(f"DEBUG: mando {len(_string)} bytes")
+            return self.byte_tokenizer(_string) #Tokenize using a ByteLevelTokenizer instance
 
         raise StopIteration 
 def auto_discover_datasets(): 

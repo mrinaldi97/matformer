@@ -1,0 +1,54 @@
+{
+  "model_class": "EntropyModel",
+  "model_config": {
+    "name": "EntropySmall",
+    "hidden_size": 512,
+    "ffn_factor": 1.0,
+    "num_hidden_layers": 10,
+    "num_attention_heads": 8,
+    "vocab_size": 260,
+    "bos_token_id": 256,
+    "eos_token_id": 257,
+    "pad_token_id": 258,
+    "tie_word_embeddings": false,
+    "rms_norm_eps": 1e-6,
+    "attention_type": [],
+    "sliding_window_size": 512,
+    "sliding_layers": [],
+    "sliding_type": "disabled",
+    "max_position_embeddings": 1024,
+    "block_size_for_attention": 128,
+    "compile_flexattn": false,
+    "bias": false,
+    "training_objective": "autoregressive",
+    "alibi": true,
+    "is_causal": true,
+    "attn_impl": "flash"
+  },
+  "training": {
+      "optimizer": "adam",
+      "lr_scheduling": true,
+      "lr": 2e-4,
+      "final_lr":1e-5,
+      "weight_decay": 0.01,
+      "scheduler": "custom",
+      "warmup_steps": 3500,
+      "hold_steps": 3500,
+      "max_epochs": 1,
+      "accumulate_grad_batches": 1,
+      "seed": 27,
+      "checkpoint_name": "entropy_liber_wiki_1024_adam"
+  },
+  "tokenizer": {
+    "type": "bytes",
+    "varlen_strategy": "unpadding"
+  },
+  "data": {
+    "data_root": "../matformer_norepo/Minerva1024_lmdb",
+    "batch_size": 64,
+    "num_workers": 0
+  },
+  "save_dir": "./checkpoints",
+  "wandb_project": "matformer",
+  "wandb_run_name": "entropy_liber-wiki-1024-chars"
+}
