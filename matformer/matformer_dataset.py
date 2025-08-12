@@ -504,7 +504,7 @@ def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/
         
 
 class MatformerDataset(torch.utils.data.IterableDataset):
-    def __init__(self,path,modality='tokens',chunk_size=None,tokens=None,n_bytes=None,state=None,byte_tokenizer=None):
+    def __init__(self,path,modality,chunk_size=None,tokens=None,n_bytes=None,state=None,byte_tokenizer=None):
         """
             Path => The path of a .mdat file
             Modality => 'tokens' to return chunk of tokenized text, 'bytes' to return chunks of raw bytes, 'patches' to return patches  #EDITED BY LLM: added patches modality

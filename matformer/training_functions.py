@@ -28,7 +28,7 @@ class MatformerDataModule(pl.LightningDataModule):
         self.config=config
         print(f"Max pos emb. in data module {self.config.max_position_embeddings}")
         self.tokenizer=tokenizer
-        if tokenizer=='bytes':
+        if self.tokenizer.tokenizer_modality=='bytes':
             self.modality='bytes'
             print("DEBUG: DATA MODULE IN BYTES MODALITY")
         else:

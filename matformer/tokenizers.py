@@ -17,9 +17,10 @@ class MatformerTokenizer:
         self.config = config
         if tokenizer == 'bytes':
             self.tokenizer = ByteLevelTokenizer(config)
+            self.tokenizer_modality='bytes'
         else: #Directly pass an HuggingFace tokenizer
             self.tokenizer = tokenizer
-
+            self.tokenizer_modality='huggingface'
         self.seq_len = config.max_position_embeddings
         self.pad_token_id = config.pad_token_id
         self.varlen_strategy = varlen_strategy
