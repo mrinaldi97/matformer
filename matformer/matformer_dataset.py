@@ -520,6 +520,7 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             assert byte_tokenizer is not None
             self.byte_tokenizer=byte_tokenizer
             assert n_bytes is not None
+            self.n_bytes=n_bytes
             self.chunk_size=n_bytes
         
         self.modality=modality
@@ -698,7 +699,7 @@ class MatformerDataset(torch.utils.data.IterableDataset):
                 self._load_next_document()
                 continue
 
-            end = min(start + self.chunk_size, doc_len)
+            end = min(start + self.n_bytes, doc_len)
             
             # If we're not at the document end, try to find a word boundary
             if end < doc_len:
@@ -715,7 +716,7 @@ class MatformerDataset(torch.utils.data.IterableDataset):
                 
                 # Ensure forward progress - if no space found or end <= start, use original end
                 if not space_found or end <= start:
-                    end = min(start + self.chunk_size, doc_len)
+                    end = min(start + self.n_bytes, doc_len)
             
             # Guarantee forward progress
             if end <= start:
