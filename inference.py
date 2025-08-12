@@ -47,7 +47,10 @@ model, cfg = PL_ModelWrapper.load_from_checkpoint(
 )
 print("Loaded model on", device)
 print("Config:", cfg)
-model = model.to(device).eval()
+model = model.to(device).to(torch.bfloat16).eval()
+for module in model.modules():
+    if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
+        module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
 
 # ---- FNS ----
 def do_autoreg(prompt):
@@ -63,16 +66,18 @@ def do_masked(prompt):
 
 def do_entropy(prompt):
     ent = model.model.compute_entropy(prompt)
-    print("\n--- Entropy per token ---")
-    print(ent.squeeze().tolist())
-    if args.smoothing is not None:
-        cuts, cmask, gmask = model.model.monotonicity_breakpoints(prompt=prompt, smoothing=args.smoothing)
-        print("Cutting points:", cuts)
-        try:
-            chunks = model.model.cut_text(prompt, cutting_points=cuts[0])
-            print("Chunks:", chunks)
-        except Exception as e:
-            print("Cut text failed:", e)
+    #print(ent.squeeze().tolist())
+    if args.smoothing is None:
+        smoothing=0.0
+        
+    cuts, cmask, gmask = model.model.monotonicity_breakpoints(prompt=prompt, smoothing=args.smoothing)
+    #print("Cutting points:", cuts)
+    try:
+      chunks = model.model.cut_text(prompt, cutting_points=cuts[0])
+      print("Chunks:", chunks)
+      print(f"Text divided into {len(chunks)} chunks")
+    except Exception as e:
+      print("Cut text failed:", e)
     print("------\n")
 
 def run_once(prompt):

@@ -20,7 +20,8 @@ from torch.nn.attention.flex_attention import (
 )
 from matformer.masked_models import maskerator
 from matformer.tokenizers import ByteLevelTokenizer,MatformerTokenizer
-
+import torch.nn.functional as F
+from tqdm import tqdm
 
 #flex_attention = torch.compile(flex_attention) # Chiarire questione compilazione (dove? di che tipo? migliora o peggiora? in che casi farla?)
 
@@ -314,7 +315,7 @@ class EntropyModel(Autoregressive_Model):
             logits = self(prompt_ids)  # [B, seq_len, vocab_size]
 
         epsilon = 1e-10
-        probs = torch.nn.functional.softmax(logits, dim=-1)
+        probs = torch.nn.functional.softmax(logits.tensor, dim=-1)
         logprobs = torch.log(probs + epsilon)
         entropy = -torch.sum(probs * logprobs, dim=-1)  # [B, seq_len]
 
