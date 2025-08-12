@@ -30,6 +30,7 @@ class MatformerDataModule(pl.LightningDataModule):
         self.tokenizer=tokenizer
         if tokenizer=='bytes':
             self.modality='bytes'
+            print("DEBUG: DATA MODULE IN BYTES MODALITY")
         else:
             self.modality='tokens'
         self.dataset=MatformerDataset(path=self.data_root,modality=self.modality,
