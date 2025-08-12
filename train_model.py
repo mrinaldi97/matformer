@@ -35,16 +35,17 @@ def parse_args():
     parser = argparse.ArgumentParser()
     parser.add_argument('--config', type=str, required=True)
     parser.add_argument('--override', nargs='*', default=[])
+    parser.add_argument('--gpu', type=int, default=1)
     args = parser.parse_args()
     overrides = dict(kv.split('=') for kv in args.override)
-    return args.config, overrides
+    return args.config, overrides, args.gpu
 
 def get_model_class(model_class: str):
     module = import_module("matformer.transformer_blocks")
     return getattr(module, model_class)
 
 def main():
-    config_path, overrides = parse_args()
+    config_path, overrides, device_count = parse_args()
     cfg = apply_overrides(load_config(config_path), overrides)
 
     model_cfg = ModelConfig(**cfg['model_config'])
@@ -99,7 +100,8 @@ def main():
         callbacks=[checkpoint],
         precision='16-mixed',
         accelerator='gpu',
-        devices=1,
+        devices=device_count,
+        strategy='ddp',
         log_every_n_steps=10,
         accumulate_grad_batches=train_cfg.get('accumulate_grad_batches', 1),
         default_root_dir=save_dir,

@@ -103,43 +103,56 @@ class MultiHeadAttention(nn.Module):
             return replace(orig, tensor=x)
         return x
 
-    def _flash_forward(self, q=None, k=None, v=None, qkv=None, query_input=None, key_input=None, packed=False, sliding=False, sliding_window_size=None):
-        # Inputs: (B,H,S,Hd)
-        if sliding:
-            sliding_window=(-sliding_window_size,-sliding_window_size)
-        else:
-            sliding_window=(-1,-1) #From flash attn docs, this disables sliding window
-        if not packed:
-            q, k, v = map(lambda x: x.transpose(1, 2), (q, k, v))  # [B], S, H, Hd
-        if isinstance(query_input, UnpaddedTensor):
-            #(S, H, Hd).
+    def _flash_forward(
+            self, q=None, k=None, v=None, qkv=None,
+            query_input=None, key_input=None,
+            packed=False, sliding=False, sliding_window_size=None
+        ):
+            sliding_window = (-sliding_window_size, -sliding_window_size) if sliding else (-1, -1)
+
+            if not packed:
+                q, k, v = map(lambda x: x.transpose(1, 2), (q, k, v))  # [B, H, S, Hd]
+
+            if isinstance(query_input, UnpaddedTensor):
+                device = (qkv if packed else q).device
+                cu_q = query_input.cu_seqlens.to(device=device, dtype=torch.int32)
+                cu_k = key_input.cu_seqlens.to(device=device, dtype=torch.int32)
+
+                if packed:
+                    return flash_attn_varlen_qkvpacked_func(
+                        qkv,
+                        cu_seqlens=cu_q,
+                        max_seqlen=query_input.max_seq_len,
+                        alibi_slopes=None,
+                        causal=self.is_causal,
+                        window_size=sliding_window
+                    )
+                else:
+                    return flash_attn_varlen_func(
+                        q, k, v,
+                        cu_seqlens_q=cu_q,
+                        cu_seqlens_k=cu_k,
+                        max_seqlen_q=query_input.max_seq_len,
+                        max_seqlen_k=key_input.max_seq_len,
+                        alibi_slopes=self.alibi_slopes,
+                        causal=self.is_causal,
+                        window_size=sliding_window
+                    )
+
             if packed:
-                return flash_attn_varlen_qkvpacked_func(
+                return flash_attn_qkvpacked_func(
                     qkv,
-                    cu_seqlens=query_input.cu_seqlens.type_as(qkv).to(dtype=torch.int32),  
-                    max_seqlen=query_input.max_seq_len,
-                    alibi_slopes=None,
-                    causal=self.is_causal,
-                    window_size=sliding_window
-                )               
-            else:
-                return flash_attn_varlen_func(
-                    q, k, v,
-                    cu_seqlens_q=query_input.cu_seqlens.type_as(q).to(dtype=torch.int32),  
-                    cu_seqlens_k=key_input.cu_seqlens.type_as(k).to(dtype=torch.int32),    
-                    max_seqlen_q=query_input.max_seq_len,
-                    max_seqlen_k=key_input.max_seq_len,
                     alibi_slopes=self.alibi_slopes,
                     causal=self.is_causal,
                     window_size=sliding_window
                 )
-        else:
-            #Inputs: (B,S,H,Hd)
-            # Outputs: out: (B,S,H,Hd).
-            if packed:
-                return flash_attn_qkvpacked_func(qkv, alibi_slopes=self.alibi_slopes, causal=self.is_causal, window_size=sliding_window)
             else:
-                return flash_attn_func(q, k, v, alibi_slopes=self.alibi_slopes, causal=self.is_causal, window_size=sliding_window)
+                return flash_attn_func(
+                    q, k, v,
+                    alibi_slopes=self.alibi_slopes,
+                    causal=self.is_causal,
+                    window_size=sliding_window
+                )
 
     def _flex_forward(self, q, k, v, block_mask):
         if self.alibi:

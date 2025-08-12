@@ -22,6 +22,7 @@ def retrieve_dataset_id(cu_dslens,idx):
     doc_id=idx-cu_dslens[ds_id]
     return ds_id,doc_id
 import torch
+import torch.distributed as dist
 
 class RandomPermutator:
     def __init__(self,max_len,seed=27):
@@ -631,18 +632,43 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             self.current_document_remainder = row[3] if len(row) > 3 and self.mdat_header['structs'].get('token_remainder') else 0 
         except (EOFError, StopIteration):
             self.current_document = None
-        
+
+    def _skip_one(self):
+        try:
+            if self.modality == 'tokens':
+                self._next_tokens()
+            elif self.modality == 'patches':
+                self._next_patches()
+            else:
+                self._next_bytes()
+        except StopIteration:
+            raise        
     def __iter__(self):
-        return self
-        
-    def __next__(self):
-        if self.modality=='tokens':
-            return self._next_tokens()
-        elif self.modality=='patches':  
-            return self._next_patches()
+        # Una modifica estremamente sporca per consentire il training multi-gpu. Bisogna cambiarlo con uno sharding appropriato. In questo modo si limita a saltare gli esempi visti dalle altre gpu (inefficiente!)
+        if dist.is_available() and dist.is_initialized():
+            self.rank = dist.get_rank()
+            self.world_size = dist.get_world_size()
         else:
-            return self._next_bytes()
-    
+            self.rank = 0
+            self.world_size = 1
+        self.i = 0
+        return self
+
+    def __next__(self):
+        while self.i % self.world_size != self.rank:
+            self._skip_one()
+            self.i += 1
+
+        if self.modality == 'tokens':
+            sample = self._next_tokens()
+        elif self.modality == 'patches':
+            sample = self._next_patches()
+        else:
+            sample = self._next_bytes()
+
+        self.i += 1
+        return sample
+
     def _next_tokens(self):
         # I expect in the document dictionary the field "tokens_chunks"
         if self.current_document is None:  #EDITED BY LLM: changed assert to if check for graceful handling
