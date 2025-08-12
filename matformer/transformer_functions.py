@@ -43,11 +43,10 @@ class MultiHeadAttention(nn.Module):
                 attn_impl='flash',
                 alibi=True,
                 is_causal=True,
-                device='cuda'
+                device='cuda'  
                 ):
         super().__init__()
         self.nheads=nheads
-        self.device=device
         self.attn_impl=attn_impl
         self.alibi=alibi
         self.is_causal=is_causal
@@ -67,9 +66,12 @@ class MultiHeadAttention(nn.Module):
         self.head_dim=hidden_size//self.nheads
         
         if attn_impl=='flash' and _is_flash_attn_available and alibi:
-            self.alibi_slopes = torch.tensor(get_alibi_slopes(nheads), device=self.device, dtype=torch.float32) #Precomputing alibi slopes
+            #For multi gpu training, register alibi_slopes as buffer instead of creating tensor 
+            alibi_slopes = torch.tensor(get_alibi_slopes(nheads), dtype=torch.float32)
+            self.register_buffer('alibi_slopes', alibi_slopes)
         else:
-            self.alibi_slopes=None
+            self.register_buffer('alibi_slopes', None)  
+            
         if self.qkv_samedim:
             self.packed_proj=nn.Linear(self.q_dim,3*hidden_size,bias=bias)
         else:
@@ -114,7 +116,7 @@ class MultiHeadAttention(nn.Module):
             if packed:
                 return flash_attn_varlen_qkvpacked_func(
                     qkv,
-                    cu_seqlens=query_input.cu_seqlens.to(self.device),
+                    cu_seqlens=query_input.cu_seqlens.type_as(qkv),  
                     max_seqlen=query_input.max_seq_len,
                     alibi_slopes=None,
                     causal=self.is_causal,
@@ -123,8 +125,8 @@ class MultiHeadAttention(nn.Module):
             else:
                 return flash_attn_varlen_func(
                     q, k, v,
-                    cu_seqlens_q=query_input.cu_seqlens.to(self.device),
-                    cu_seqlens_k=key_input.cu_seqlens.to(self.device),
+                    cu_seqlens_q=query_input.cu_seqlens.type_as(q),  
+                    cu_seqlens_k=key_input.cu_seqlens.type_as(k),    
                     max_seqlen_q=query_input.max_seq_len,
                     max_seqlen_k=key_input.max_seq_len,
                     alibi_slopes=self.alibi_slopes,
@@ -148,14 +150,15 @@ class MultiHeadAttention(nn.Module):
                 alibi_bias = []
                 for h in range(H):
                     alibi_bias.append(-((h + 1) * 8.0 / H))
-                alibi_bias = torch.tensor(alibi_bias).to(q.device)
-                alibi_bias = torch.exp2(alibi_bias).to(q.device)
-                return alibi_bias.to(q.device)
+                alibi_bias = torch.tensor(alibi_bias)  
+                alibi_bias = alibi_bias.type_as(q)     
+                alibi_bias = torch.exp2(alibi_bias).type_as(q)  
+                return alibi_bias
 
             self.alibi_bias = generate_alibi_bias(self.nheads)
 
             def _alibi_score_mod(score, b, h, q_idx, kv_idx):
-                return (score + self.alibi_bias[h] * (kv_idx - q_idx)).to(q.device)
+                return (score + self.alibi_bias[h] * (kv_idx - q_idx))  
 
             return flex_attention(q, k, v, score_mod=_alibi_score_mod, block_mask=block_mask)
         else:
@@ -165,7 +168,7 @@ class MultiHeadAttention(nn.Module):
         if self.alibi:
             L, S = q.shape[-2], k.shape[-2]
             pos_bias = self.alibi_bias.view(-1, 1, 1) * (
-                torch.arange(S, device=q.device) - torch.arange(L, device=q.device).view(-1, 1)
+                torch.arange(S).type_as(q) - torch.arange(L).type_as(q).view(-1, 1)  
             )
             attn_mask = torch.where(block_mask.unsqueeze(0), pos_bias, float('-inf')) if block_mask is not None else pos_bias
             return scaled_dot_product_attention(q, k, v, attn_mask=attn_mask, is_causal=False)
@@ -290,5 +293,3 @@ class RMSNorm(nn.Module):
         x = x * torch.rsqrt(variance + self.variance_epsilon)
         return self.weight * x.to(input_dtype)
 """
-
-

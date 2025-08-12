@@ -121,3 +121,21 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+"""
+CLI overrides via --override
+train_model.py --config CONFIG.json --override key1=val1 key2.nested=val2 
+• Each override is a single KEY=VALUE pair.
+• Keys are dotted paths that mirror the JSON hierarchy.
+• Values are parsed with eval first; if that fails they are kept as strings.
+Examples: 
+
+# Run a quick debug with smaller model
+--override model_config.hidden_size=128 model_config.num_hidden_layers=2
+
+# Switch to cosine scheduler and longer warmup
+--override training.scheduler="cosine" training.warmup_steps=5000
+
+# Change batch-size, learning-rate and run name
+--override data.batch_size=32 training.lr=1e-4 wandb_run_name=quick_try
+"""
