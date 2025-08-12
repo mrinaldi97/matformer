@@ -28,13 +28,12 @@ class MatformerDataModule(pl.LightningDataModule):
         self.config=config
         self.tokenizer=tokenizer
         if tokenizer=='bytes':
-			self.modality='bytes'
-		else:
-			self.modality='tokens'
-	
-		self.dataset=MatformerDataset(path=self.data_root,modality=self.modality,
-				tokens=self.config.max_position_embeddings, n_bytes=self.config.max_position_embeddings,
-				byte_tokenizer=self.tokenizer)
+            self.modality='bytes'
+        else:
+            self.modality='tokens'
+        self.dataset=MatformerDataset(path=self.data_root,modality=self.modality,
+                tokens=self.config.max_position_embeddings, n_bytes=self.config.max_position_embeddings,
+                byte_tokenizer=self.tokenizer)
 
     def setup(self, stage=None):
         if self.type=='atlas':
