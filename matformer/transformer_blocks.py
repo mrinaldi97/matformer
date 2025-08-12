@@ -307,7 +307,7 @@ class EntropyModel(Autoregressive_Model):
         if isinstance(prompts, str):
             prompts = [prompts]
 
-        prompt_ids = self.tokenizer.batch_encode(prompts, padding=True, truncation=True)  # [B, seq_len]
+        prompt_ids = self.tokenizer.batch_encode(prompts)  # [B, seq_len]
         prompt_ids = prompt_ids.to(self.device)
 
         with torch.no_grad():
