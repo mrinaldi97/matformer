@@ -685,50 +685,31 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             patches_output=[x for z in patches[start:end] for x in z] # I take chunk_size chunks from the current document
             return patches_output
             
-    def _next_bytes(self):
+    def next_bytes(self):
         while self.current_document:
             document = self.current_document.get('text')
-            if not document:  # Handle empty or None document
+            if not document:
                 self._load_next_document()
                 continue
                 
             start = self.current_document_step
-            doc_len = len(document)
-
-            if start >= doc_len:
+            if start >= len(document):
                 self._load_next_document()
                 continue
-
-            end = min(start + self.n_bytes, doc_len)
-            
-            # If we're not at the document end, try to find a word boundary
-            if end < doc_len:
-                # Look back from end to find a space, but limit search to last 100 chars
-                search_start = max(start, end - 100)
-                space_found = False
                 
-                # Search backwards for a space
-                for i in range(end - 1, search_start - 1, -1):
-                    if document[i] == ' ':
-                        end = i + 1  # Position after the space
-                        space_found = True
-                        break
+            chunk = document[start:start + self.n_bytes]
+            if start + len(chunk) < len(document):  # Not at document end
+                words = chunk.split(' ')
+                if len(words) > 1:  
+                    chunk = ' '.join(words[:-1]) + ' '  # Keep all but last partial word
+            
+            if not chunk:
+                chunk = document[start:start + 1]
                 
-                # Ensure forward progress - if no space found or end <= start, use original end
-                if not space_found or end <= start:
-                    end = min(start + self.n_bytes, doc_len)
+            self.current_document_step = start + len(chunk)
+            return self.byte_tokenizer.encode(chunk)
             
-            # Guarantee forward progress
-            if end <= start:
-                end = min(start + 1, doc_len)  # Move at least 1 character forward
-            
-            # Extract the actual string only once at the end
-            _string = document[start:end]
-            self.current_document_step = end
-            print(f"DEBUG: mando {len(_string)} bytes")
-            return self.byte_tokenizer.encode(_string) #Tokenize using a ByteLevelTokenizer instance
-
-        raise StopIteration 
+        raise StopIteration
 def auto_discover_datasets(): 
     """Auto-discover AtlasDataset directories in current folder"""
     datasets = []
