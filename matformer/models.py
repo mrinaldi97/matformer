@@ -211,7 +211,7 @@ class PL_ModelWrapper(pl.LightningModule):
             varlen_strategy=varlen_strategy
         )     
 
-        model = PL_ModelWrapper(ModelClass, config, tokenizer, device=map_location, inference_fix=inference_fix, train_config=None, tokenizer=tokenizer)  
+        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, tokenizer=tokenizer, device=map_location, inference_fix=inference_fix, train_config=None)  
         model.load_state_dict(checkpoint['state_dict'])
         return model,config   
         

@@ -4,6 +4,7 @@ import pytorch_lightning as pl
 from matformer.tokenizers import MatformerTokenizer
 from matformer.model_config import ModelConfig  
 from matformer.models import PL_ModelWrapper
+from transformers import AutoTokenizer
 
 
 parser = argparse.ArgumentParser(description='Inference on a Matformer model')
@@ -18,7 +19,9 @@ parser.add_argument('--tokenizer', default=None)
 
 args = parser.parse_args()
 checkpoint_path = args.model 
-model,config = PL_ModelWrapper.load_from_checkpoint(checkpoint_path, inference_fix=True)
+tokenizer = 'bytes' if args.tokenizer is None else AutoTokenizer.from_pretrained(args.tokenizer)
+
+model,config = PL_ModelWrapper.load_from_checkpoint(checkpoint_path, tokenizer=tokenizer inference_fix=True)
 print(f"Model loaded. Config = {config}")
 device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 model = model.to(device)
@@ -38,7 +41,6 @@ generated_ids = model.generate(
 # If the model is a autoregressive, generate tokens
 # If it's a masked, show the masked sequence and the predicted token for each masked position (wrong, true) plus a calculation of accuracy.
  
-tokenizer = 'bytes' if args.tokenizer is None else AutoTokenizer.from_pretrained(args.tokenizer)
 generation = tokenizer.decode(generated_ids.cpu().numpy())
 print(f"Output: {generation}")
 

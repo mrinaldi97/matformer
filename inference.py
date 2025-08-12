@@ -5,7 +5,7 @@ from transformers import AutoTokenizer
 from matformer.transformer_blocks import Autoregressive_Model, BERTModel, EntropyModel
 
 # ---- ARGS ----
-p = argparse.ArgumentParser("Matformer quick 'n dirty inference")
+p = argparse.ArgumentParser("Matformer inference")
 p.add_argument('--model', required=True)
 p.add_argument('--arch', required=True,
                choices=['gpt', 'bert', 'entropy'],
