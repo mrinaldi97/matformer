@@ -26,13 +26,14 @@ class MatformerDataModule(pl.LightningDataModule):
         self.batch_size = batch_size
         self.num_workers = num_workers
         self.config=config
+        print(f"Max pos emb. in data module {self.config.max_position_embeddings}")
         self.tokenizer=tokenizer
         if tokenizer=='bytes':
             self.modality='bytes'
         else:
             self.modality='tokens'
         self.dataset=MatformerDataset(path=self.data_root,modality=self.modality,
-                tokens=self.config.max_position_embeddings, n_bytes=self.config.max_position_embeddings,
+                tokens=self.config.max_position_embeddings+1, n_bytes=self.config.max_position_embeddings+1,
                 byte_tokenizer=self.tokenizer)
 
     def setup(self, stage=None):
@@ -40,7 +41,7 @@ class MatformerDataModule(pl.LightningDataModule):
             self.dataset = AtlasDataset(self.data_root)
         else:
             self.dataset=MatformerDataset(path=self.data_root,modality=self.modality,
-                    tokens=self.config.max_position_embeddings, n_bytes=self.config.max_position_embeddings,
+                    tokens=self.config.max_position_embeddings+1, n_bytes=self.config.max_position_embeddings+1,
                     byte_tokenizer=self.tokenizer)
     
 
