@@ -581,6 +581,7 @@ class MatformerDataset(torch.utils.data.IterableDataset):
         if chunk_size is not None:
             self.chunk_size=chunk_size
         else:
+            print(f"tokens: {tokens}, token_per_segment: {self.token_per_segment}")
             assert tokens%self.token_per_segment==0
             self.chunk_size=tokens//self.token_per_segment
         
