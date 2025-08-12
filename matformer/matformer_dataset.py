@@ -619,6 +619,8 @@ class MatformerDataset(torch.utils.data.IterableDataset):
         self._load_next_document() # Loading the first document
         
     def __len__(self):
+        if dist.is_available() and dist.is_initialized():
+            return self.len // dist.get_world_size()
         return self.len
         
     def _load_next_document(self):
