@@ -22,7 +22,7 @@ from matformer.masked_models import maskerator
 from matformer.tokenizers import ByteLevelTokenizer,MatformerTokenizer
 import torch.nn.functional as F
 from tqdm import tqdm
-
+from datetime import datetime
 #flex_attention = torch.compile(flex_attention) # Chiarire questione compilazione (dove? di che tipo? migliora o peggiora? in che casi farla?)
 
 class TransformerBlock(nn.Module):
@@ -151,8 +151,8 @@ class TransformerWithEmbeddingHead(nn.Module):
 
 
 
-		 
-	
+         
+    
 
 class TransformerWithLMHead(nn.Module):
     """
@@ -320,8 +320,73 @@ class EntropyModel(Autoregressive_Model):
         entropy = -torch.sum(probs * logprobs, dim=-1)  # [B, seq_len]
 
         return entropy[:, 1:] 
-
     def monotonicity_breakpoints(self, prompt=None, entropy=None, smoothing=None):
+        # Da cambiare: il taglio delle patch provenienti dal text encoder potrebbe effettuarsi qui, sfruttando i nested tensor
+        # Al momento l'implementazione che prevede il ciclo sui batch nel text encoder funziona ma è esageratamente inefficiente a livello di tempi di calcolo
+        if smoothing is None:
+            smoothing = 0
+            print("WARNING: You are running the entropy model without a smoothing set.")
+        if prompt is not None:
+            entropy = self.compute_entropy(prompt)  # Expected shape: [B, seq_len]
+        elif entropy is None:
+            raise ValueError("Either provide `prompt` or `entropy`.")
+        if entropy.dim() == 1:
+            entropy = entropy.unsqueeze(0)  # Make it batched [1, seq_len]
+        B, seq_len = entropy.shape
+        cutting_masks = torch.zeros_like(entropy, device='cpu')
+        group_masks = torch.zeros_like(entropy, dtype=torch.long, device='cpu')
+        cutting_points_all = []
+        
+        # VECTORIZED VERSION - replaces the batch loop
+        # Move entropy to CPU once for all operations
+        ent_cpu = entropy.cpu()
+        
+        # Create padding for comparison: add infinity at the beginning of each sequence
+        # This ensures the first element is never considered a breaking point
+        inf_pad = torch.full((B, 1), float('inf'), device='cpu')
+        padded_entropy = torch.cat([inf_pad, ent_cpu], dim=1)  # Shape: [B, seq_len+1]
+        
+        # Vectorized monotonicity violation detection
+        # Compare each position with the previous one across all batches simultaneously
+        # breaking_points[b, i] = True if entropy[b, i] > entropy[b, i-1] + smoothing
+        breaking_points = ent_cpu > padded_entropy[:, :-1] + smoothing  # Shape: [B, seq_len]
+        
+        # Convert breaking points to cutting masks (same logic as before, but vectorized)
+        cutting_masks_vectorized = breaking_points.float()
+        
+        # Generate group masks using cumulative sum (vectorized version of the previous logic)
+        group_masks_vectorized = torch.cumsum(breaking_points.long(), dim=1)
+        
+        # Extract cutting points for each batch item
+        # This part still requires some iteration, but only over breaking points, not all positions
+        cutting_points_all_vectorized = []
+        for b in range(B):
+            # Find positions where breaking points occur
+            break_positions = torch.where(breaking_points[b])[0]
+            cutting_points = []
+            
+            if len(break_positions) > 0:
+                start_point = 0
+                for pos in break_positions:
+                    cutting_points.append((start_point, pos.item() + 1))
+                    start_point = pos.item() + 1
+            
+            cutting_points_all_vectorized.append(cutting_points)
+        
+        # Update the output tensors with vectorized results
+        cutting_masks[:] = cutting_masks_vectorized
+        group_masks[:] = group_masks_vectorized
+        cutting_points_all = cutting_points_all_vectorized
+        
+        #print("------------- ENTROPY DEBUG ------------------")
+        #print("----CUTTING MASK:")
+        #print(cutting_masks)
+        #print("----- GROUP MASKs")
+        #print(group_masks)
+        #print("CUTTING POINTS")
+        #print(cutting_points_all)
+        return cutting_points_all, cutting_masks, group_masks
+    def old_monotonicity_breakpoints(self, prompt=None, entropy=None, smoothing=None):
         # Da cambiare: il taglio delle patch provenienti dal text encoder potrebbe effettuarsi qui, sfruttando i nested tensor
         # Al momento l'implementazione che prevede il ciclo sui batch nel text encoder funziona ma è esageratamente inefficiente a livello di tempi di calcolo
         if smoothing is None:
@@ -329,9 +394,13 @@ class EntropyModel(Autoregressive_Model):
             print("WARNING: You are running the entropy model without a smoothing set.")
 
         if prompt is not None:
+            #start=datetime.now()
             entropy = self.compute_entropy(prompt)  # Expected shape: [B, seq_len]
+            #end=datetime.now()
+            #print(f"Esecuzione del modello {end-start}")
         elif entropy is None:
             raise ValueError("Either provide `prompt` or `entropy`.")
+        #start=datetime.now()
 
         if entropy.dim() == 1:
             entropy = entropy.unsqueeze(0)  # Make it batched [1, seq_len]
@@ -340,7 +409,9 @@ class EntropyModel(Autoregressive_Model):
         cutting_masks = torch.zeros_like(entropy, device='cpu')
         group_masks = torch.zeros_like(entropy, dtype=torch.long, device='cpu')
         cutting_points_all = []
-
+        #end=datetime.now()
+        #print(f"Creazione delle robette {end-start}")  
+        #start=datetime.now()    
         for b in range(B):
             ent = entropy[b].cpu()
             cutting_points = []
@@ -364,9 +435,11 @@ class EntropyModel(Autoregressive_Model):
         #print(group_masks)
         #print("CUTTING POINTS")
         #print(cutting_points_all)
+        #end=datetime.now()
+        #print(f"Ciclo sui batch: {end-start}")
         return cutting_points_all, cutting_masks, group_masks
 
-    def cut_text(self,text,cutting_points=None,smoothing=None):
+    def old_cut_text(self,text,cutting_points=None,smoothing=None):
         """
         Cut a text according to cutting points
         """
@@ -374,3 +447,62 @@ class EntropyModel(Autoregressive_Model):
             cutting_points,_=self.monotonicity_breakpoints(prompt=text,smoothing=smoothing)
         text_chunks=[text[i:j] for i,j in cutting_points]
         return text_chunks
+    def cut_text(self, text, cutting_points=None, smoothing=None, hard_limit=None):
+            """
+            Cut a text or batch of texts according to cutting points.
+            
+            Args:
+                text: str or list of str - single text or batch of texts
+                cutting_points: list of tuples or list of list of tuples - cutting points for each text
+                smoothing: float - smoothing parameter if cutting_points is None
+                hard_limit: int - maximum character length for chunks, splits if exceeded
+                
+            Returns:
+                list of str chunks (if single text) or list of list of str chunks (if batch)
+            """
+            # Handle single text input (backwards compatibility)
+            hard_limit_violations=0
+            if isinstance(text, str):
+                if cutting_points is None:
+                    cutting_points, _, _ = self.monotonicity_breakpoints(prompt=text, smoothing=smoothing)
+                # cutting_points is a list of lists, take the first (and only) one
+                if isinstance(cutting_points[0], list):
+                    cutting_points = cutting_points[0]
+                text_chunks = [text[i:j] for i, j in cutting_points]
+                # Apply hard limit splitting
+                if hard_limit is not None:
+                    final_chunks = []
+                    for chunk in text_chunks:
+                        if len(chunk) <= hard_limit:
+                            final_chunks.append(chunk)
+                        else:
+                            final_chunks.extend([chunk[k:k+hard_limit] for k in range(0, len(chunk), hard_limit)])
+                            hard_limit_violations+=1
+                    text_chunks = final_chunks
+                return text_chunks
+            
+            # Handle batch input
+            if isinstance(text, list):
+                if cutting_points is None:
+                    cutting_points, _, _ = self.monotonicity_breakpoints(prompt=text, smoothing=smoothing)
+                
+                # Vectorized batch processing - process all texts simultaneously
+                all_chunks = []
+                for text_item, cutting_item in zip(text, cutting_points):
+                    text_chunks = [text_item[i:j] for i, j in cutting_item]
+                    # Apply hard limit splitting
+                    if hard_limit is not None:
+                        final_chunks = []
+                        for chunk in text_chunks:
+                            if len(chunk) <= hard_limit:
+                                final_chunks.append(chunk)
+                            else:
+                                final_chunks.extend([chunk[k:k+hard_limit] for k in range(0, len(chunk), hard_limit)])
+                                hard_limit_violations+=1
+                        text_chunks = final_chunks
+                    all_chunks.append(text_chunks)
+                
+                return all_chunks,hard_limit_violations
+            
+            else:
+                raise ValueError("text must be either a string or a list of strings")

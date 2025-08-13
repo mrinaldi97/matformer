@@ -505,25 +505,30 @@ def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/
         
 
 class MatformerDataset(torch.utils.data.IterableDataset):
-    def __init__(self,path,modality,chunk_size=None,tokens=None,n_bytes=None,state=None,byte_tokenizer=None):
+    def __init__(self,path,modality,chunk_size=None,tokens=None,n_bytes=None,state=None,byte_tokenizer=None, return_type='ids'):
         """
             Path => The path of a .mdat file
             Modality => 'tokens' to return chunk of tokenized text, 'bytes' to return chunks of raw bytes, 'patches' to return patches  #EDITED BY LLM: added patches modality
             chunk_size => How many chunks to return at each iteration. If the current documents has smaller chunk, return the entire document
             state => The document to restart again if saved; still to be implemented
         """
+        assert return_type in ['ids','text','dict']
+        self.return_type=return_type
         if modality=='tokens':
             assert chunk_size is not None or tokens is not None
         elif modality=='patches':  
             assert chunk_size is not None
         elif modality=='bytes':
             print("DEBUG: BYTE MODE ENABLED")
-            assert byte_tokenizer is not None
+            #assert byte_tokenizer is not None
             self.byte_tokenizer=byte_tokenizer
             assert n_bytes is not None
             self.n_bytes=n_bytes
             self.chunk_size=n_bytes
-        
+        if dist.is_available() and dist.is_initialized(): # Dirty multi-gpu stuff, temporanea
+            self.dist=True
+        else:
+            self.dist=False
         self.modality=modality
         try:
             self.fp=open(os.path.join(path,'matformer_dataset.mdat'),"rb")  
@@ -580,12 +585,13 @@ class MatformerDataset(torch.utils.data.IterableDataset):
         self.avg_doc_chars = stats_data[21]
         
         self.token_per_segment=self.mdat_header['token_per_segment']
-        if chunk_size is not None:
-            self.chunk_size=chunk_size
-        else:
-            print(f"tokens: {tokens}, token_per_segment: {self.token_per_segment}")
-            assert tokens%self.token_per_segment==0
-            self.chunk_size=tokens//self.token_per_segment
+        if modality=='tokens':
+            if chunk_size is not None:
+                self.chunk_size=chunk_size
+            else:
+                print(f"tokens: {tokens}, token_per_segment: {self.token_per_segment}")
+                assert tokens%self.token_per_segment==0
+                self.chunk_size=tokens//self.token_per_segment
         
         # Build struct format for reading
         struct_parts = ['<', self.mdat_header['structs']['ds_pointer'], self.mdat_header['structs']['item']]
@@ -619,7 +625,7 @@ class MatformerDataset(torch.utils.data.IterableDataset):
         self._load_next_document() # Loading the first document
         
     def __len__(self):
-        if dist.is_available() and dist.is_initialized():
+        if self.dist:
             return self.len // dist.get_world_size()
         return self.len
         
@@ -647,19 +653,18 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             raise        
     def __iter__(self):
         # Una modifica estremamente sporca per consentire il training multi-gpu. Bisogna cambiarlo con uno sharding appropriato. In questo modo si limita a saltare gli esempi visti dalle altre gpu (inefficiente!)
-        if dist.is_available() and dist.is_initialized():
+        if self.dist:
             self.rank = dist.get_rank()
-            self.world_size = dist.get_world_size()
-        else:
-            self.rank = 0
-            self.world_size = 1
+            self.world_size = dist.get_world_size()      
+
         self.i = 0
         return self
 
     def __next__(self):
-        while self.i % self.world_size != self.rank:
-            self._skip_one()
-            self.i += 1
+        if self.dist:
+            while self.i % self.world_size != self.rank:
+                self._skip_one()
+                self.i += 1
 
         if self.modality == 'tokens':
             sample = self._next_tokens()
@@ -668,7 +673,8 @@ class MatformerDataset(torch.utils.data.IterableDataset):
         else:
             sample = self._next_bytes()
 
-        self.i += 1
+        if self.dist:
+            self.i += 1
         return sample
 
     def _next_tokens(self):
@@ -735,7 +741,15 @@ class MatformerDataset(torch.utils.data.IterableDataset):
                 chunk = document[start:start + 1]
                 
             self.current_document_step = start + len(chunk)
-            return self.byte_tokenizer.encode(chunk)
+            if self.return_type=='ids':
+                return self.byte_tokenizer.encode(chunk)
+            elif self.return_type=='text':
+                return chunk
+            else:
+                return {
+                'ids':self.byte_tokenizer.encode(chunk),
+                'text':chunk
+                }
             
         raise StopIteration
 def auto_discover_datasets(): 
