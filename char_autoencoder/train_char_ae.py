@@ -64,7 +64,8 @@ class TransCharAutoencoderLightning(pl.LightningModule):
         
         loss = 2 * seqlen_loss + char_loss
         acc = self._compute_accuracy(char_logits.tensor, input_ids.tensor, self.encoder_config.pad_token_id)
-        
+        self.log("train/seqlen_loss",seqlen_loss)
+        self.log("train/char_loss",char_loss)        
         self.log("train/loss", loss, prog_bar=True)
         self.log("train/acc", acc, prog_bar=True)
         return loss
@@ -128,7 +129,8 @@ class TransCharAutoencoderLightning(pl.LightningModule):
         # compute combined loss
         loss = (1.4 * seqlen_loss + 0.7 * char_loss) if self.curriculumStep == 0 else (2 * seqlen_loss + char_loss)
         self.log("train/loss", loss)
-        
+        self.log("train/seqlen_loss",seqlen_loss)
+        self.log("train/char_loss",char_loss)
         print(f"Step {batch_idx}: loss={loss.item():.4f}, seqlen={seqlen_loss.item():.4f}, char={char_loss.item():.4f} Curriculum: {self.curriculumStep}")
         
         # EDITED BY LLM: until-convergence behavior
@@ -209,19 +211,25 @@ class TransCharAutoencoderLightning(pl.LightningModule):
         return torch.utils.data.DataLoader(
             dataset, 
             batch_size=self.train_config['batch_size'],
-            shuffle=True,
+            shuffle=False,
             num_workers=self.train_config.get('num_workers', 2),
             collate_fn=partial(collate_fn, max_len=max_len, pad_token=self.encoder_config.pad_token_id)
         )
 
-    def val_dataloader(self):
-        max_len = min(self.train_config.get('max_len', self.encoder_config.max_position_embeddings),
-                      self.encoder_config.max_position_embeddings)
+    def val_dataloader(self, limit_val_examples: bool = True):
+
+        max_len = min(
+            self.train_config.get('max_len', self.encoder_config.max_position_embeddings),
+            self.encoder_config.max_position_embeddings
+        )
         val_batch_size = self.train_config.get('val_batch_size', self.train_config['batch_size'])
         
         loaders = []
         for path in [self.train_config['patches_path'], self.train_config['rand_path']]:
             dataset = JSONLDataset(path)
+            if limit_val_examples:
+                dataset = torch.utils.data.Subset(dataset, range(min(300*val_batch_size, len(dataset))))
+            
             loaders.append(torch.utils.data.DataLoader(
                 dataset,
                 batch_size=val_batch_size,
@@ -230,6 +238,21 @@ class TransCharAutoencoderLightning(pl.LightningModule):
                 collate_fn=partial(collate_fn, max_len=max_len, pad_token=self.encoder_config.pad_token_id)
             ))
         return loaders
+
+
+    def on_train_end(self):
+        full_val_loaders = self.val_dataloader(limit_val_examples=False)
+
+        results = self.trainer.validate(self, dataloaders=full_val_loaders)
+
+        if isinstance(results, list):
+            for i, res in enumerate(results):
+                for k, v in res.items():
+                    self.log(f"val_full/dataloader_{i}/{k}", v, prog_bar=False)
+        else:
+            for k, v in results.items():
+                self.log(f"val_full/{k}", v, prog_bar=False)
+
 
 class CurriculumCheckpointCallback(pl.Callback):
     def __init__(self, dirpath="./checkpoints_trans_autoencoder/"):
@@ -266,7 +289,7 @@ def main():
     parser.add_argument("--patches_path", type=str, default=None)
     parser.add_argument("--rand_path", type=str, default=None)
     parser.add_argument("--val_every_n_steps", type=int, default=None)
-    parser.add_argument("--val_batch_size", type=int, default=None)
+    parser.add_argument("--val_batch_size", type=int, default=2048)
     args = parser.parse_args()
     
     with open(args.config, 'r') as f:

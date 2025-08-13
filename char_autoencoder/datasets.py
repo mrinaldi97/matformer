@@ -2,9 +2,10 @@ import sys
 sys.path.append('../') # Da sostituire con pyproject.toml eccetera ok per oraimport torch
 from torch.utils.data import Dataset
 from matformer.tensors_dataclasses import PaddedTensor, NormalTensor
+import torch
 
 class JSONLDataset(Dataset):
-    def __init__(self, path):
+    def __init__(self, path, debug=False):
         with open(path, 'r', encoding='utf-8') as f:
             self.data = f.read().splitlines()
     
