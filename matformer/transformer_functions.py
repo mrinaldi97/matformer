@@ -179,6 +179,19 @@ class MultiHeadAttention(nn.Module):
 
     def _sdpa_forward(self, q, k, v, block_mask):
         if self.alibi:
+            def generate_alibi_bias(H):
+                #WARNING: THIS IS INEFFICIENT AND SHOULD BE FIXED,
+                # Alibi Bias
+                # From https://github.com/pytorch-labs/attention-gym/examples/flex_attn.ipynb
+                alibi_bias = []
+                for h in range(H):
+                    alibi_bias.append(-((h + 1) * 8.0 / H))
+                alibi_bias = torch.tensor(alibi_bias)  
+                alibi_bias = alibi_bias.type_as(q)     
+                alibi_bias = torch.exp2(alibi_bias).type_as(q)  
+                return alibi_bias
+
+            self.alibi_bias = generate_alibi_bias(self.nheads)          
             L, S = q.shape[-2], k.shape[-2]
             pos_bias = self.alibi_bias.view(-1, 1, 1) * (
                 torch.arange(S).type_as(q) - torch.arange(L).type_as(q).view(-1, 1)  

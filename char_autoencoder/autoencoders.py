@@ -7,6 +7,7 @@ from matformer.transformer_blocks import NakedTransformer, PackedSwiGLUFFN, RMSN
 from matformer.tensors_dataclasses import ModuleWrapper
 from matformer.utils import PositionalEncodingPermute1D
 from matformer.model_config import ModelConfig
+from matformer.tensors_dataclasses import PaddedTensor, NormalTensor
 
 class TransCharAutoencoder_Encoder(nn.Module):
     def __init__(self, config: ModelConfig, device='cuda'):
@@ -27,14 +28,15 @@ class TransCharAutoencoder_Encoder(nn.Module):
         self.to(device)
 
     def forward(self, input_ids, lengths):
+        #print(f"All'autoencoder arriva: {input_ids.shape}")
         chars_emb = self.embed_chars(input_ids)              # (B,S,D)
-        len_emb = self.embed_seq_lens(lengths)              # (B,1,D)
+        #len_emb = self.embed_seq_lens(lengths)              # (B,1,D)
         p_enc = self.pos_enc(chars_emb)
         chars_emb = chars_emb + p_enc
         chars_emb = self.encoder_transformer(chars_emb) + chars_emb
         pooled = chars_emb.tensor.mean(-2)
         pooled = replace(chars_emb, tensor=pooled.unsqueeze(1))
-        pooled = pooled + len_emb
+        #pooled = pooled + len_emb
         pooled = self.normalization(pooled)
         bottleneck = self.attn(query_input=pooled, key_input=chars_emb, value_input=chars_emb) + pooled
         bottleneck = self.mlp(bottleneck) + bottleneck
@@ -56,8 +58,24 @@ class TransCharAutoencoder_Decoder(nn.Module):
         self.config = config
         self.device = device
         self.to(device)
-
     def forward(self, z, lengths, real_mode=False):
+        B, _, D = z.tensor.size()
+        #guessed_seqlen_logits = self.seqlen_guesser(z)
+        #guessed_seqlen_logits = replace(guessed_seqlen_logits, tensor=guessed_seqlen_logits.tensor.squeeze(1))
+        #guessed_seqlen_value = guessed_seqlen_logits.tensor.argmax(-1).clamp(min=1)
+        guessed_seqlen_logits=None
+        #target_lengths = guessed_seqlen_value if real_mode else lengths.tensor.squeeze(-1)
+        max_len = self.config.max_position_embeddings
+        expanded_z = z.tensor.expand(-1, max_len, -1)
+        
+        expanded_z = replace(z, tensor=expanded_z)
+        p_enc = self.pos_enc(expanded_z)
+        x = expanded_z + p_enc
+        x = self.cross_attn(query_input=x, key_input=z, value_input=z) + x
+        out = self.decoder_transformer(x)
+        char_logits = self.char_head(out)
+        return char_logits, guessed_seqlen_logits
+    def _forward(self, z, lengths, real_mode=False):
         B, _, D = z.tensor.size()
         guessed_seqlen_logits = self.seqlen_guesser(z)
         guessed_seqlen_logits = replace(guessed_seqlen_logits, tensor=guessed_seqlen_logits.tensor.squeeze(1))

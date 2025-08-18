@@ -43,7 +43,26 @@ def parse_args():
 def get_model_class(model_class: str):
     module = import_module("matformer.transformer_blocks")
     return getattr(module, model_class)
+"""
 
+Il dataloader prende il documento, usa il modello di entropia per 
+dividere il documento in patch. Può però far vedere al modello di entropia solo 1024 caratteri alla volta.
+
+Il dataloader ritorna al chiamante le patch, in formato testuale, ad esempio:
+["ciao ","come ","stai?"]
+
+Il chiamante esegue la codifica delle patch testuali
+in patch unicode ed esegue il padding delle patch NON CON IL TOKEN DI PAD ma con l'EOS dell'encoder. È ancora un bug da risolvere.
+["ciao <EOS><EOS>...","come <EOS><EOS>...","stai?<EOS><EOS>..."]
+
+Il modello riceve in ingresso il batch delle patch.
+La loss viene calcolata sul testo paddato con l'EOS
+
+1) Caricare il modello di entropia nello script di training
+2) Passarlo al dataloader
+
+
+"""
 def main():
     config_path, overrides, device_count = parse_args()
     cfg = apply_overrides(load_config(config_path), overrides)
@@ -53,12 +72,12 @@ def main():
     data_cfg = cfg['data']
     tok_cfg = cfg['tokenizer']
     save_dir = cfg.get('save_dir', './checkpoints')
-
+    
     pl.seed_everything(train_cfg.get('seed', 27))
 
     tokenizer = (
         AutoTokenizer.from_pretrained(tok_cfg['pretrained_name']) 
-        if tok_cfg['type'] == 'huggingface' else 'bytes'
+        if tok_cfg['type'] == 'huggingface' else str(tok_cfg['type'])
     )
     
     tokenizer = MatformerTokenizer(
@@ -66,7 +85,7 @@ def main():
         tokenizer=tokenizer,
         varlen_strategy=tok_cfg['varlen_strategy']
     )
-
+    
     data = MatformerDataModule(
         data_root=data_cfg['data_root'],
         batch_size=data_cfg['batch_size'],
@@ -74,13 +93,16 @@ def main():
         config=model_cfg,
         tokenizer=tokenizer
     )
-    num_batches = math.ceil(len(data)/data_cfg["batch_size"])
-    accumulate_grad_batches = train_cfg.get("accumulate_grad_batches", 1)
     max_epochs = train_cfg.get("max_epochs", 1)
-
-    total_steps = (num_batches // accumulate_grad_batches) * max_epochs
-    train_cfg["total_steps"] = total_steps
-    train_cfg["num_batches"] = num_batches
+    if data.__len__() is not None:
+        num_batches = math.ceil(len(data)/data_cfg["batch_size"])
+        accumulate_grad_batches = train_cfg.get("accumulate_grad_batches", 1)
+        total_steps = (num_batches // accumulate_grad_batches) * max_epochs
+        train_cfg["total_steps"] = total_steps
+        train_cfg["num_batches"] = num_batches
+    else:
+        print("The Datamodule is not returning the length. Thus, LR scheduling is disabled")
+        train_cfg["lr_scheduling"]=False
     ModelClass = get_model_class(cfg['model_class'])
     model = PL_ModelWrapper(ModelClass, config=model_cfg, tokenizer=tokenizer, train_config=train_cfg, device='cuda', batch_size=data_cfg['batch_size'])
 
@@ -101,7 +123,6 @@ def main():
         precision='16-mixed',
         accelerator='gpu',
         devices=device_count,
-        strategy='ddp',
         log_every_n_steps=10,
         accumulate_grad_batches=train_cfg.get('accumulate_grad_batches', 1),
         default_root_dir=save_dir,

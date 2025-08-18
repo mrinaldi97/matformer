@@ -10,40 +10,74 @@ import math
 import torch
 from torch.utils.data import DataLoader, Dataset
 from transformers import get_cosine_schedule_with_warmup
-
+from matformer.transformer_blocks import EntropyModel
 from matformer.matformer_dataset import MatformerDataset
 
 class MatformerDataModule(pl.LightningDataModule):
     def __init__(self, data_root, batch_size, tokenizer, config, num_workers=0):
         super().__init__()
         self.data_root = data_root
-        # Is it an Atlas or a MatformerDataset?
-        if os.path.exists(data_root+'/matformer_dataset.mdat'):
-            self.type='mdat'
-            print("È UN MDAT!")
-        else:
-            self.type='atlas'
         self.batch_size = batch_size
         self.num_workers = num_workers
-        self.config=config
-        print(f"Max pos emb. in data module {self.config.max_position_embeddings}")
-        self.tokenizer=tokenizer
-        if self.tokenizer.tokenizer_modality=='bytes':
-            self.modality='bytes'
+        self.config = config
+        self.tokenizer = tokenizer
+
+        self.type = 'mdat' if os.path.exists(os.path.join(data_root, 'matformer_dataset.mdat')) else 'atlas'
+        if self.type == 'mdat':
+            print("È UN MDAT!")
+
+        print(f"Max pos emb. in data module: {self.config.max_position_embeddings}")
+
+        if self.tokenizer.tokenizer_modality == 'bytes':
+            self.modality = 'bytes'
             print("DEBUG: DATA MODULE IN BYTES MODALITY")
         else:
-            self.modality='tokens'
-        self.dataset=MatformerDataset(path=self.data_root,modality=self.modality,
-                tokens=self.config.max_position_embeddings, n_bytes=self.config.max_position_embeddings,
-                byte_tokenizer=self.tokenizer)
+            self.modality = 'tokens'
 
+        # Ha l'entropia?
+        self.entropy_function = None
+        self.entropy_model = None
+        self.entropy_smoothing = None
+        self.n_bytes=self.config.max_position_embeddings
+        self.chunk_size=None
+        if getattr(self.config, "has_text_autencoder", True):
+            if self.config.has_text_autoencoder is not None:
+                self.modality = 'entropy_patches'
+                import sys
+                sys.path.append('../')
+                from inference import load_inference_model, compute_entropy
+                self.entropy_model,entropy_cfg = load_inference_model(self.config.entropy.entropy_model_path, ModelClass=EntropyModel, tokenizer='bytes', map_location=torch.device('cuda'))
+                self.entropy_smoothing = self.config.entropy.entropy_smoothing
+                self.entropy_function = compute_entropy
+                self.n_bytes=self.config.encoder.max_position_embeddings
+                self.chunk_size=self.config.max_position_embeddings
+        # Dataset
+        self.dataset = MatformerDataset(
+            path=self.data_root,
+            modality=self.modality,
+            tokens=self.config.max_position_embeddings,
+            n_bytes=self.n_bytes,
+            byte_tokenizer=self.tokenizer,
+            chunk_size=self.chunk_size,
+            entropy_function=self.entropy_function,
+            entropy_model=self.entropy_model,
+            entropy_smoothing=self.entropy_smoothing
+        )
     def setup(self, stage=None):
         if self.type=='atlas':
             self.dataset = AtlasDataset(self.data_root)
         else:
-            self.dataset=MatformerDataset(path=self.data_root,modality=self.modality,
-                    tokens=self.config.max_position_embeddings+1, n_bytes=self.config.max_position_embeddings+1,
-                    byte_tokenizer=self.tokenizer)
+            self.dataset = MatformerDataset(
+                path=self.data_root,
+                modality=self.modality,
+                tokens=self.config.max_position_embeddings,
+                n_bytes=self.n_bytes,
+                byte_tokenizer=self.tokenizer,
+                chunk_size=self.chunk_size,
+                entropy_function=self.entropy_function,
+                entropy_model=self.entropy_model,
+                entropy_smoothing=self.entropy_smoothing
+            )
     
 
     def _collate_fn_old(self, batch):
@@ -52,24 +86,29 @@ class MatformerDataModule(pl.LightningDataModule):
         tokenized['input_ids'] = self.tokenizer.batch_encode(texts)
         tokenized['text'] = texts #I add back the raw text, this is currently required in the BLT model
         return tokenized
+        
     def collate_fn(self, batch):
-       
-        # batch is a list of token sequences from MatformerDataset
-        
-        sequence = self.tokenizer.process_pretokenized_batch(
-            token_sequences=batch,
-            config=self.config,
-            varlen_strategy=self.tokenizer.varlen_strategy,
-            pad_token_id=self.config.pad_token_id
-        )
-        
-        return {'input_ids': sequence}        
+        if self.modality == 'entropy_patches':
+            #  batch is a list (len: batch_size) containing list of strings (patches)
+            
+            sequence = self.tokenizer.batch_encode(batch)
+            # Sequence after tokenizer is torch.Size([B, seq_len(P), encoder_seq_len(S)])
+            
+        else:
+            # Here batch is list of token sequences
+            sequence = self.tokenizer.process_pretokenized_batch(
+                token_sequences=batch,
+                config=self.config,
+                varlen_strategy=self.tokenizer.varlen_strategy,
+                pad_token_id=self.config.pad_token_id,
+            )
+        return {'input_ids': sequence}     
     def __len__(self):
         #Molto temporaneamente, apro e richiudo l'atlas dataset solo per calcolarne la lunghezza; questo perchè l'informazione serve prima del setup.
         if self.type=='atlas':
             return len(AtlasDataset(self.data_root))
         else:
-            return len(self.dataset)
+            return self.dataset.__len__()
 
     def train_dataloader(self):
         return DataLoader(

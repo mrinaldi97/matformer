@@ -17,7 +17,7 @@ from torch.optim import AdamW
 from transformers import get_scheduler
 import math
 import torch.distributed as dist
-
+import numpy as np
 try:
     from transformers import AutoTokenizer
 except:
@@ -46,7 +46,7 @@ class PL_ModelWrapper(pl.LightningModule):
             sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
         else:
             sequence = batch['input_ids'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
-        masked=True if self.config['training_objective']=='masked' else False
+        masked=True if self.config.training_objective=='masked' else False
 
         input_sequence=sequence
 
@@ -66,17 +66,26 @@ class PL_ModelWrapper(pl.LightningModule):
         ### Input al modello ###
         model_input=deepcopy(input_sequence)
         logits = self(deepcopy(model_input))
-
+        #print(f"Shape di sequence: {sequence.shape}")
         if self.nested:
             logits_flat = torch.cat(logits.unbind())
             targets_flat = torch.cat(sequence.unbind()).to(logits_flat.device)
             base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
             cloze_mask_flat = torch.cat(cloze_mask.unbind()).to(logits_flat.device) if masked else None
         elif logits.isPadded:
-            _,_, vocab_size = logits.shape
+            vocab_size = logits.shape[-1]
             logits_flat = logits.tensor.reshape(-1, vocab_size)
             targets_flat = sequence.tensor.reshape(-1)
+            #print(f"Logits flat shape: {logits_flat.shape}")
+            #print(f"Targets flat shape: {targets_flat.shape}")
             base_mask = (targets_flat != self.config.pad_token_id)
+            autoencoders_experimental=True
+
+            if autoencoders_experimental:
+                base_mask = (targets_flat.to(logits.tensor.device) != 259)   
+                fake_mask = ~logits.padding_mask.reshape(-1).to(logits.tensor.device )
+                base_mask = base_mask & fake_mask               
+
             cloze_mask_flat = cloze_mask.reshape(-1) if masked else None
         else:
             logits_flat = logits.tensor
@@ -92,15 +101,19 @@ class PL_ModelWrapper(pl.LightningModule):
         else:
             mask = base_mask[1:]
             #train_debug_print(_input=model_input.tensor, output=targets_flat[1:][mask], model_cfg=self.config, tokenizer=self.tokenizer, varlen_strategy='unpadding')            
+            # So this was wrong? Jerik controlla se puoi:
             loss = F.cross_entropy(logits_flat[:-1][mask], targets_flat[1:][mask])
+            #loss=F.cross_entropy(logits_flat[:-1][mask[:-1]], targets_flat[1:][mask[:-1]])
+
+            
         if masked: #Logging also the accuracy
             preds = logits_flat[mask].argmax(dim=-1)
             targets = targets_flat[mask]
             acc = (preds == targets).float().mean()
             self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
          
-        current_lr = self.lr_schedulers().get_last_lr()[0]
-        self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
+        #current_lr = self.lr_schedulers().get_last_lr()[0]
+        #self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
         self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)
         return loss
     def configure_optimizers(self):

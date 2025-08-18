@@ -505,13 +505,14 @@ def mergeAtlas(names, tokenizer_type="huggingface", tokenizer_name="sapienzanlp/
         
 
 class MatformerDataset(torch.utils.data.IterableDataset):
-    def __init__(self,path,modality,chunk_size=None,tokens=None,n_bytes=None,state=None,byte_tokenizer=None, return_type='ids'):
+    def __init__(self,path,modality,chunk_size=None,tokens=None,n_bytes=None,state=None,byte_tokenizer=None, entropy_model=None, entropy_function=None, entropy_smoothing=None, return_type='ids'):
         """
             Path => The path of a .mdat file
             Modality => 'tokens' to return chunk of tokenized text, 'bytes' to return chunks of raw bytes, 'patches' to return patches  #EDITED BY LLM: added patches modality
             chunk_size => How many chunks to return at each iteration. If the current documents has smaller chunk, return the entire document
             state => The document to restart again if saved; still to be implemented
         """
+        self.compute_entropy=entropy_function
         assert return_type in ['ids','text','dict']
         self.return_type=return_type
         if modality=='tokens':
@@ -525,6 +526,17 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             assert n_bytes is not None
             self.n_bytes=n_bytes
             self.chunk_size=n_bytes
+        elif modality=='entropy_patches':
+            print("DEBUG: ENTROPY MODE ENABLED")
+            print("Length will not be returned")
+            assert entropy_model is not None
+            self.entropy_model=entropy_model
+            self.n_bytes=n_bytes
+            self.chunk_size=chunk_size
+            self.current_segment_group = None
+            self.current_segment_step = 0  
+            self.current_entropy_byte_pos = 0
+            self.entropy_smoothing = entropy_smoothing
         if dist.is_available() and dist.is_initialized(): # Dirty multi-gpu stuff, temporanea
             self.dist=True
         else:
@@ -618,6 +630,9 @@ class MatformerDataset(torch.utils.data.IterableDataset):
         elif modality == 'bytes' and len(self.precomputed_byte_lengths) >= 1:  
             # For bytes, use the first precomputed length as approximation
             self.len = self.precomputed_byte_lengths[0]
+        elif modality == 'entropy_patches':
+            print(f"WARNING: length for entropy mode not yet implemented. You will not know the remaining time during training.")
+            self.len=None
         else:
             print(f"WARNING: length for {self.chunk_size*self.token_per_segment} was not computed during dataset creation!")
             self.len=None
@@ -625,7 +640,7 @@ class MatformerDataset(torch.utils.data.IterableDataset):
         self._load_next_document() # Loading the first document
         
     def __len__(self):
-        if self.dist:
+        if self.dist and self.len is not None:
             return self.len // dist.get_world_size()
         return self.len
         
@@ -670,8 +685,12 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             sample = self._next_tokens()
         elif self.modality == 'patches':
             sample = self._next_patches()
-        else:
+        elif self.modality=='bytes':
             sample = self._next_bytes()
+        elif self.modality=='entropy_patches':
+            sample=self._next_entropy_segment()
+        else:
+            print(f"ERRORE NON IMPLEMENTATO {self.modality}")
 
         if self.dist:
             self.i += 1
@@ -719,7 +738,71 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             patches_output=[x for z in patches[start:end] for x in z] # I take chunk_size chunks from the current document
             return patches_output
             
-    def _next_bytes(self):
+    def _load_next_segment_group(self):
+        if self.current_document is None:
+            raise StopIteration
+        if "text" not in self.current_document:
+            raise KeyError("Document missing 'text' field.")
+
+        collected_chunks = []
+        while self.current_document:
+            chars = self._next_bytes(force_return_type='text',exceed_doc=False)       # <= n_bytes
+            if not chars:       
+                break 
+
+            new_chunks = self.compute_entropy(self.entropy_model,
+                                              chars,
+                                              return_type='chunks',
+                                              smoothing=self.entropy_smoothing)
+            collected_chunks.extend(new_chunks)
+
+            if len(collected_chunks) >= self.chunk_size:
+                break
+
+
+        self.current_segment_group = collected_chunks
+        self.current_segment_step = 0
+    def _next_entropy_segment(self):
+        if not hasattr(self, 'current_segment_group') or self.current_segment_group is None:  
+            self._load_next_segment_group()
+        
+        while True: 
+            start = self.current_segment_step * self.chunk_size  
+            end = start + self.chunk_size
+            
+            if start >= len(self.current_segment_group):  
+                self._load_next_segment_group()
+                continue  
+                
+            self.current_segment_step += 1
+            segments_output = self.current_segment_group[start:end]  
+            
+            if self.return_type == 'ids':
+                
+                pass  
+            elif self.return_type == 'text':
+                return segments_output
+            else:  # return_type == 'dict'
+                return {
+                    'text': segments_output,
+                    'ids': None 
+                }
+            
+            return segments_output  
+
+        
+        
+
+    def _next_document(self):
+        document=self.current_document
+        self._load_next_document()
+        return document    
+        
+    def _next_bytes(self, force_return_type=None, exceed_doc=True):
+        if force_return_type is not None:
+            return_type=force_return_type
+        else:
+            return_type=self.return_type
         while self.current_document:
             document = self.current_document.get('text')
             if not document:
@@ -729,7 +812,10 @@ class MatformerDataset(torch.utils.data.IterableDataset):
             start = self.current_document_step
             if start >= len(document):
                 self._load_next_document()
-                continue
+                if exceed_doc:
+                    continue
+                else:
+                    return None
                 
             chunk = document[start:start + self.n_bytes]
             if start + len(chunk) < len(document):  # Not at document end
@@ -741,9 +827,9 @@ class MatformerDataset(torch.utils.data.IterableDataset):
                 chunk = document[start:start + 1]
                 
             self.current_document_step = start + len(chunk)
-            if self.return_type=='ids':
+            if return_type=='ids':
                 return self.byte_tokenizer.encode(chunk)
-            elif self.return_type=='text':
+            elif return_type=='text':
                 return chunk
             else:
                 return {
