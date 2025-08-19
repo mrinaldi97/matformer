@@ -14,7 +14,8 @@ from matformer.model_config import ModelConfig
 from matformer.models import PL_ModelWrapper
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
-import math
+import math, os
+
 def load_config(path):
     with open(path, 'r') as f:
         return json.load(f)
@@ -36,9 +37,11 @@ def parse_args():
     parser.add_argument('--config', type=str, required=True)
     parser.add_argument('--override', nargs='*', default=[])
     parser.add_argument('--gpu', type=int, default=1)
+    parser.add_argument('--checkpoint', type=str, default=None) 
+    parser.add_argument('--start-from-scratch', action='store_true') 
     args = parser.parse_args()
     overrides = dict(kv.split('=') for kv in args.override)
-    return args.config, overrides, args.gpu
+    return args.config, overrides, args.gpu, args.checkpoint, args.start_from_scratch
 
 def get_model_class(model_class: str):
     module = import_module("matformer.transformer_blocks")
@@ -64,7 +67,7 @@ La loss viene calcolata sul testo paddato con l'EOS
 
 """
 def main():
-    config_path, overrides, device_count = parse_args()
+    config_path, overrides, device_count, ckpt_arg, start_scratch = parse_args()
     cfg = apply_overrides(load_config(config_path), overrides)
 
     model_cfg = ModelConfig(**cfg['model_config'])
@@ -115,7 +118,8 @@ def main():
         dirpath=save_dir,
         filename=train_cfg.get('checkpoint_name', 'model'),
         save_top_k=1,
-        save_last=True
+        save_last=True,
+        every_n_train_steps=train_cfg.get("save_every_n_steps", None)  
     )
     trainer = pl.Trainer(
         logger=wandb_logger,
@@ -131,8 +135,18 @@ def main():
      #overfit_batches=1 => Useful for debug
      #max_steps=train_cfg['max_steps'],
     torch.set_float32_matmul_precision('high')
+
+    ckpt_path = None
+    if not start_scratch:
+        if ckpt_arg and os.path.exists(ckpt_arg):
+            ckpt_path = ckpt_arg
+        else:
+            last_ckpt = Path(save_dir) / "last.ckpt"
+            if last_ckpt.exists():
+                ckpt_path = str(last_ckpt)
+
     try:
-        trainer.fit(model, data)
+        trainer.fit(model, data, ckpt_path=ckpt_path)
     except KeyboardInterrupt:
         response = input("\nTraining interrupted. Save model? (y/n): ").strip().lower()
         if response == 'y':

@@ -53,6 +53,7 @@ class LMDBDataset:
             meminit=False,
             max_readers=1
         )
+        self.zlib_attempts=100 #Tyring to avoid zlib bug
         with self.env.begin(write=False) as txn:
             self.length = pickle.loads(zlib.decompress(txn.get(b"__len__")))
     def __len__(self):
@@ -62,7 +63,28 @@ class LMDBDataset:
             data = txn.get(str(index).encode("utf-8"))
             if data is None:
                 raise IndexError(f"Index {index} not found in LMDB dataset.")
-            return pickle.loads(zlib.decompress(data))
+            try:
+                return pickle.loads(zlib.decompress(data))
+            except:
+                print(f"WARNING: error loading data at index {index}.")
+                print("It seems there is a bug with zlib.")
+                print(f"First, let's try to load the data again {self.zlib_attempts} times.")
+                for i in range(1,self.zlib_attempts):
+                    try:
+                        x=pickle.loads(zlib.decompress(data))
+                        print(f"It worked at attemp: {i}")
+                        with open("zlib_error_logs.txt","a") as l:
+                            l.write(f"Zlib error at {i}. Recovered after {i}/{self.zlib_attempts} attempts.\n")
+                        return x
+                    except:
+                        pass
+                print(f"It didn't worked after {self.zlib_attempts}. Returning a dummy structure to avoid breaking training. Event logged")
+                with open("zlib_error_logs.txt","a") as l:
+                    l.write(f"Zlib error at {i}. Not recovered after {self.zlib_attempts} attempts.\n")
+                return {
+                "text":" ",
+                "tokens_chunks":[[1,1,1],[1,1,1]]
+                }
 
 
 def split_by_tokens(document, max_tokens, punkt_tokenizer, tokenizer, language='italian'):  

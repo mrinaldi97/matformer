@@ -34,12 +34,15 @@ class PL_ModelWrapper(pl.LightningModule):
         self.nested=nested # Poco elegante, temporaneo ma in genere rivedere l'implementazione Nested, per ora WIP
         self.save_hyperparameters()  
         self.inference_fix=inference_fix #Temporaneo
-        self.model = ModelClass(config,tokenizer=tokenizer,device=device) 
-        self.model.apply(init_transformer_weights_)
+        self.model = ModelClass(config,tokenizer=tokenizer,device=device)
+        if not getattr(self, "_restored_from_ckpt", False): 
+            self.model.apply(init_transformer_weights_)
         self.tokenizer=tokenizer #Un MatformerTokenizer
         self.batch_size=batch_size # Utile per il learning rate scheduling
     def forward(self, _input):
         return self.model(_input.to(self.device),inference_fix=self.inference_fix)
+    def on_load_checkpoint(self, checkpoint):
+        self._restored_from_ckpt = True        
     def training_step(self, batch, batch_idx):
         if self.nested:
             #Not implemented yet! Wrong code below (won't work with tok.zers different than Bytes)
@@ -79,7 +82,7 @@ class PL_ModelWrapper(pl.LightningModule):
             #print(f"Logits flat shape: {logits_flat.shape}")
             #print(f"Targets flat shape: {targets_flat.shape}")
             base_mask = (targets_flat != self.config.pad_token_id)
-            autoencoders_experimental=True
+            autoencoders_experimental=False
 
             if autoencoders_experimental:
                 base_mask = (targets_flat.to(logits.tensor.device) != 259)   
@@ -112,9 +115,47 @@ class PL_ModelWrapper(pl.LightningModule):
             acc = (preds == targets).float().mean()
             self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
          
-        #current_lr = self.lr_schedulers().get_last_lr()[0]
-        #self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
-        self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)
+        current_lr = self.lr_schedulers().get_last_lr()[0]
+        try:
+            self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
+            self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)
+        except:
+            pass
+        additional_metrics=True
+        if additional_metrics:
+            if self.global_step % 100 == 0:
+               grad_norms, param_norms, grad_param_ratios = {}, {}, {}
+               all_grads = []
+               for name, p in self.named_parameters():
+                   if p.grad is not None:
+                       grad_norm = p.grad.detach().norm(2).item()
+                       param_norm = p.detach().norm(2).item()
+                       
+                       grad_norms[f"grad_norm/{name}"] = grad_norm
+                       param_norms[f"param_norm/{name}"] = param_norm
+                       
+                       if param_norm > 1e-8:
+                           grad_param_ratios[f"grad_param_ratio/{name}"] = grad_norm / param_norm
+                       
+                       all_grads.append(p.grad.detach().flatten())
+                       
+                       if hasattr(self, '_prev_params') and name in self._prev_params:
+                           update_norm = (p.detach() - self._prev_params[name]).norm(2).item()
+                           self.log(f"param_update/{name}", update_norm, on_step=True, batch_size=self.batch_size)
+               
+               if all_grads:
+                   total_grad_norm = torch.norm(torch.cat(all_grads)).item()
+                   self.log("diagnostics/total_grad_norm", total_grad_norm, on_step=True, batch_size=self.batch_size)
+               
+               for metrics in [grad_norms, param_norms, grad_param_ratios]:
+                   for k, v in metrics.items():
+                       self.log(k, v, on_step=True, on_epoch=False, batch_size=self.batch_size)
+               
+               self._prev_params = {name: p.detach().clone() for name, p in self.named_parameters()}
+               
+               max_param = max(param_norms.values()) if param_norms else 0
+               min_param = min(param_norms.values()) if param_norms else 0
+               self.log("diagnostics/param_norm_spread", max_param - min_param, on_step=True, batch_size=self.batch_size)            
         return loss
     def configure_optimizers(self):
         use_muon = self.train_config["optimizer"].lower() == "muon"

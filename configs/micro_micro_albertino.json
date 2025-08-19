@@ -1,11 +1,11 @@
 {
   "model_class": "BERTModel",
   "model_config": {
-    "name": "Albertino-Liber-Wiki-1024-Adam",
-    "hidden_size": 512,
+    "name": "Micro-Micro-Albertino",
+    "hidden_size": 64,
     "ffn_factor": 1.0,
-    "num_hidden_layers": 12,
-    "num_attention_heads": 8,
+    "num_hidden_layers": 3,
+    "num_attention_heads": 4,
     "vocab_size": 32768,
     "bos_token_id": 1,
     "eos_token_id": 2,
@@ -32,13 +32,12 @@
       "final_lr":1e-5,
       "weight_decay": 0.01,
       "scheduler": "custom",
-      "warmup_steps": 3500,
-      "hold_steps": 2500,
+      "warmup_steps": 1500,
+      "hold_steps": 1500,
       "max_epochs": 1,
-      "accumulate_grad_batches": 5,
+      "accumulate_grad_batches": 2,
       "seed": 27,
-      "save_every_n_steps": 5000,
-      "checkpoint_name": "albertino_liber_wiki_1024_adam"
+      "checkpoint_name": "micro-micro-albertino"
   },
   "tokenizer": {
     "type": "huggingface",
@@ -47,10 +46,10 @@
   },
   "data": {
     "data_root": "../matformer_norepo/Minerva1024_lmdb",
-    "batch_size": 52,
+    "batch_size": 186,
     "num_workers": 1
   },
   "save_dir": "./checkpoints",
-  "wandb_project": "Albertino",
-  "wandb_run_name": "Albertino-liber-wiki-1024-tokens_adam"
+  "wandb_project": "Albertone-Test",
+  "wandb_run_name": "micro-micro-albertino"
 }
