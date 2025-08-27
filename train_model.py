@@ -173,8 +173,6 @@ def main():
         for i, (phase, batch_size) in enumerate(zip(phases, batch_sizes)):
 
             print(f"\nStarting Phase {i+1}: {phase} with batch size {batch_size}")
-            if i!=2:
-                continue           
             # Update data module if batch size changed
             if batch_size != data_cfg['batch_size']:
                 print(f"Reinitializing data module with batch size {batch_size}")
