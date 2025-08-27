@@ -111,13 +111,14 @@ class MatformerDataModule(pl.LightningDataModule):
         else:
             return self.dataset.__len__()
             
+    """ 
     def state_dict(self):
         state = {"current_train_batch_index": self.current_train_batch_index}
         return state
 
     def load_state_dict(self, state_dict):
         self.current_train_batch_index = state_dict["current_train_batch_index"]
-        
+    """
     def train_dataloader(self):
         return DataLoader(
             self.dataset,
