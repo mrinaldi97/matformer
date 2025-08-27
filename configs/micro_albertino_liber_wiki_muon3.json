@@ -1,0 +1,58 @@
+{
+  "model_class": "BERTModel",
+  "model_config": {
+    "name": "Albertino-Liber-Wiki-1024-Muon",
+    "hidden_size": 512,
+    "ffn_factor": 1.0,
+    "num_hidden_layers": 12,
+    "num_attention_heads": 8,
+    "vocab_size": 0,
+    "masked_substitution_rate":0.25,    
+    "bos_token_id": 1,
+    "eos_token_id": 2,
+    "pad_token_id": 0,
+    "tie_word_embeddings": false,
+    "rms_norm_eps": 1e-6,
+    "attention_type": [],
+    "sliding_window_size": 1024,
+    "sliding_layers": [],
+    "sliding_type": "disabled",
+    "max_position_embeddings": 1024,
+    "block_size_for_attention": 128,
+    "compile_flexattn": false,
+    "bias": false,
+    "training_objective": "masked",
+    "alibi": true,
+    "is_causal": false,
+    "attn_impl": "flash"
+  },
+  "training": {
+      "optimizer": "muon",
+      "lr_scheduling": true,
+      "lr": 5e-4,
+      "final_lr":2e-5,
+      "hold_steps":300,
+      "weight_decay": 0.01,
+      "scheduler": "custom",
+      "gradient_clip_val":1.0,
+      "warmup_steps": 750,
+      "max_epochs": 1,
+      "accumulate_grad_batches": 5,
+      "seed": 27,
+      "save_every_n_steps": 5000,
+      "checkpoint_name": "albertino_liber_wiki_1024_muon"
+  },
+  "tokenizer": {
+    "type": "huggingface",
+    "pretrained_name": "sapienzanlp/Minerva-350M-base-v1.0",
+    "varlen_strategy": "unpadding"
+  },
+  "data": {
+    "data_root": "../matformer_norepo/Minerva1024_lmdb",
+    "batch_size": 52,
+    "num_workers": 1
+  },
+  "save_dir": "./checkpoints",
+  "wandb_project": "Albertino",
+  "wandb_run_name": "Albertino-liber-wiki-1024-tokens-Muon"
+}
