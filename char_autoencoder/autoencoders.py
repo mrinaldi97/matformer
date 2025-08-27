@@ -27,20 +27,25 @@ class TransCharAutoencoder_Encoder(nn.Module):
         self.device = device
         self.to(device)
 
-    def forward(self, input_ids, lengths):
+    def forward(self, input_ids, lengths=None):
+        """
+        Inputs: a TensorDC of shape B,S (
+        Outputs: a TensorDC of shape B,D
+        """
+        
         #print(f"All'autoencoder arriva: {input_ids.shape}")
         chars_emb = self.embed_chars(input_ids)              # (B,S,D)
         #len_emb = self.embed_seq_lens(lengths)              # (B,1,D)
-        p_enc = self.pos_enc(chars_emb)
-        chars_emb = chars_emb + p_enc
-        chars_emb = self.encoder_transformer(chars_emb) + chars_emb
-        pooled = chars_emb.tensor.mean(-2)
+        p_enc = self.pos_enc(chars_emb)                      # (B,S,D)
+        chars_emb = chars_emb + p_enc                        # (B,S,D)
+        chars_emb = self.encoder_transformer(chars_emb) + chars_emb # (B,S,D)
+        pooled = chars_emb.tensor.mean(-2) # (B,D)
         pooled = replace(chars_emb, tensor=pooled.unsqueeze(1))
         #pooled = pooled + len_emb
         pooled = self.normalization(pooled)
         bottleneck = self.attn(query_input=pooled, key_input=chars_emb, value_input=chars_emb) + pooled
         bottleneck = self.mlp(bottleneck) + bottleneck
-        return bottleneck
+        return bottleneck #(B,D)
 
 class TransCharAutoencoder_Decoder(nn.Module):
     def __init__(self, config: ModelConfig, device='cuda'):
@@ -58,15 +63,18 @@ class TransCharAutoencoder_Decoder(nn.Module):
         self.config = config
         self.device = device
         self.to(device)
-    def forward(self, z, lengths, real_mode=False):
-        B, _, D = z.tensor.size()
+    def forward(self, z, lengths=None, real_mode=False):
+        B,_, D = z.tensor.size()
+        # Adding a singleton dimension to handle the sequence predictions
+        #z=z.tensor.unsqueeze(-2) #(B,1,D)
         #guessed_seqlen_logits = self.seqlen_guesser(z)
         #guessed_seqlen_logits = replace(guessed_seqlen_logits, tensor=guessed_seqlen_logits.tensor.squeeze(1))
         #guessed_seqlen_value = guessed_seqlen_logits.tensor.argmax(-1).clamp(min=1)
         guessed_seqlen_logits=None
         #target_lengths = guessed_seqlen_value if real_mode else lengths.tensor.squeeze(-1)
         max_len = self.config.max_position_embeddings
-        expanded_z = z.tensor.expand(-1, max_len, -1)
+        # Re-expanding the tensor to max. sequence length
+        expanded_z = z.tensor.expand(-1, max_len, -1) #(B,S,D)
         
         expanded_z = replace(z, tensor=expanded_z)
         p_enc = self.pos_enc(expanded_z)
@@ -74,7 +82,7 @@ class TransCharAutoencoder_Decoder(nn.Module):
         x = self.cross_attn(query_input=x, key_input=z, value_input=z) + x
         out = self.decoder_transformer(x)
         char_logits = self.char_head(out)
-        return char_logits, guessed_seqlen_logits
+        return char_logits, guessed_seqlen_logits # (B,S,D)
     def _forward(self, z, lengths, real_mode=False):
         B, _, D = z.tensor.size()
         guessed_seqlen_logits = self.seqlen_guesser(z)
@@ -101,6 +109,6 @@ class TransCharAutoencoder(nn.Module):
         self.encoder_config = encoder_config
         self.decoder_config = decoder_config
     
-    def forward(self, input_ids, lengths, real_mode=False):
+    def forward(self, input_ids, lengths=None, real_mode=False):
         z = self.encoder(input_ids, lengths)
         return self.decoder(z, lengths, real_mode=real_mode)

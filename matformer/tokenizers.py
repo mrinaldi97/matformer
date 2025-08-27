@@ -104,22 +104,34 @@ class MatformerTokenizer:
         
     def batch_encode(self, batch: List[Union[str, List[str]]]):
         if len(batch) > 0 and isinstance(batch[0], list):
+            #### This branch is intended to be used only for the char autoencoder experiment ###
             ae_tok = self.tokenizer
-            per_seq = [ae_tok.batch_encode(patches) for patches in batch]  # each [P, S]
-            B = len(per_seq)
-            S = per_seq[0].shape[1]
-            P_pad = self.seq_len  # pad/truncate patches to big-transformer length
+            
+            # 1. Get tensors and masks from the nested batches
+            per_seq = [ae_tok.batch_encode(patches) for patches in batch]
+            per_seq_tensors, per_seq_masks = zip(*per_seq)
+            
+            B = len(per_seq_tensors)
+            S = self.config.encoder.max_position_embeddings
+            P_pad = self.seq_len
 
-            # init with "empty patch" (all EOS)
-            tensors = torch.full((B, P_pad, S), 259, dtype=torch.long)
-            padding_masks = torch.ones((B, P_pad, S), dtype=torch.bool)  # True = padded patch
-            for b, t in enumerate(per_seq):
-                P = min(t.shape[0], P_pad)
+            # 2. Initializing "empty patches" filled with only PAD ids
+            tensors = torch.full((B, P_pad, S), self.config.encoder.pad_token_id, dtype=torch.long)
+            padding_masks_external = torch.ones((B, P_pad, S), dtype=torch.bool)
+            padding_masks_internal=torch.ones((B, P_pad, S), dtype=torch.bool)
+            # 3. Fill the tensors and masks
+            for b in range(B):
+                t_batch = per_seq_tensors[b]
+                m_batch = per_seq_masks[b]
+                P = min(t_batch.shape[0], P_pad)
+                
                 if P > 0:
-                    tensors[b, :P, :] = t[:P]
-                    padding_masks[b, :P, :] = False  
-            #print(f"Shape of tensors: {tensors.shape}")
+                    tensors[b, :P, :] = t_batch[:P]  # Fill with token IDs from the inner batch
+                    padding_masks_external[b, :P, :] = False #These boolean value refers only to fully padded patches, to be used to perform unpadding on the big transformer
+                    padding_masks_internal[b, :P, :] = m_batch[:P]    # Fill with the actual padding mask from the tokenizer, to be used in the autoencoder
+                    return {'tensor':tensors,'padding_masks_external':padding_masks_external,'padding_masks_internal':padding_masks_internal,'varlen_strategy':self.varlen_strategy}
         else:
+            ### This is the normal Matformer branch ###
             #print("DEBUG: SOno nel ramo normale")
             all_input_ids = []
             for s in batch:
@@ -191,21 +203,27 @@ class AutoencoderByteTokenizer:
         It will return a structure:
         B,P,S where B is the external batch, the one seen by the big transormer, and here we will apply usual Padding or Unpadding
         P is the internal batch, here we will apply internal padding when we tokenize
+        The encode and batch_encode functions will also return "internal" padding masks
         def encode_texts(texts, max_len, pad_token, eos_token):
     """
     def __init__(self, encoder_seq_len: int, eos_token_id: int):
         self.encoder_seq_len = int(encoder_seq_len)
         self.eos = int(eos_token_id)
+        self.pad=int(259)
     def encode(self, text: str) -> torch.Tensor:
         ids = list(text.encode("utf-8"))
-        ids += [self.eos, self.eos]
+        ids += [self.eos]
         ids = ids[: self.encoder_seq_len]
         if len(ids) < self.encoder_seq_len:
-            ids += [259] * (self.encoder_seq_len - len(ids))
-        return torch.tensor(ids, dtype=torch.long)
+            ids += [self.pad] * (self.encoder_seq_len - len(ids))
+        tensor=torch.tensor(ids, dtype=torch.long)
+        padding_mask=tensor==self.pad
+        return tensor,padding_mask
 
-    def batch_encode(self, texts: List[str]) -> torch.Tensor:
-        return torch.stack([self.encode(t) for t in texts], dim=0)  # [B, S]        
+    def batch_encode(self, texts: List[str]) -> tuple[torch.Tensor, torch.Tensor]:
+        encoded_pairs = [self.encode(t) for t in texts]
+        tensors, padding_masks = zip(*encoded_pairs)
+        return torch.stack(tensors, dim=0), torch.stack(padding_masks, dim=0) 
         
 
 class ByteLevelTokenizer:

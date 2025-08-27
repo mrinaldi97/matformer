@@ -27,7 +27,7 @@ from copy import deepcopy
 
 
 class PL_ModelWrapper(pl.LightningModule):
-    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference_fix=False,nested=False):
+    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference_fix=False,nested=False,autoencoder_experiment=None,autoencoder_experiment_training_phase=None):
         super().__init__()
         self.config=config
         self.train_config=train_config
@@ -35,6 +35,8 @@ class PL_ModelWrapper(pl.LightningModule):
         self.save_hyperparameters()  
         self.inference_fix=inference_fix #Temporaneo
         self.model = ModelClass(config,tokenizer=tokenizer,device=device)
+        self.is_autoencoder = hasattr(self.model, 'set_training_phase')         # Check if this is an autoencoder model
+        
         if not getattr(self, "_restored_from_ckpt", False): 
             self.model.apply(init_transformer_weights_)
         self.tokenizer=tokenizer #Un MatformerTokenizer
@@ -44,6 +46,10 @@ class PL_ModelWrapper(pl.LightningModule):
     def on_load_checkpoint(self, checkpoint):
         self._restored_from_ckpt = True        
     def training_step(self, batch, batch_idx):
+        # Delegate to autoencoder training if applicable
+        if self.is_autoencoder and hasattr(self.model, 'training_phase'):
+            return self.model.training_step(batch, self.model.training_phase, log=self.log)
+            
         if self.nested:
             #Not implemented yet! Wrong code below (won't work with tok.zers different than Bytes)
             sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
@@ -55,12 +61,12 @@ class PL_ModelWrapper(pl.LightningModule):
 
         if masked:
             if self.nested:
-                masked_sequences, cloze_masks = zip(*[maskerator(seq, MASK_TOKEN=0, substitution_rate=0.25) 
+                masked_sequences, cloze_masks = zip(*[maskerator(seq, mask_token=self.config.mask_token_id, substitution_rate=self.config.masked_substitution_rate) 
                                                       for seq in sequence.unbind()])
                 sequence = torch.stack(masked_sequences)
                 cloze_mask = torch.stack(cloze_masks)
             else:
-                masked_list, cloze_list = maskerator(sequence.tensor, MASK_TOKEN=0, substitution_rate=0.25)
+                masked_list, cloze_list = maskerator(sequence.tensor, mask_token=self.config.mask_token_id, substitution_rate=self.config.masked_substitution_rate)
                 masked_sequence=deepcopy(sequence)
                 masked_sequence = replace(masked_sequence,tensor=masked_list)
                 cloze_mask = cloze_list
@@ -157,6 +163,16 @@ class PL_ModelWrapper(pl.LightningModule):
                min_param = min(param_norms.values()) if param_norms else 0
                self.log("diagnostics/param_norm_spread", max_param - min_param, on_step=True, batch_size=self.batch_size)            
         return loss
+    def on_before_optimizer_step(self, optimizer):
+        # This runs after gradient clipping but before optimizer step
+        if self.global_step % 100 == 0:
+            clipped_grads = []
+            for p in self.parameters():
+                if p.grad is not None:
+                    clipped_grads.append(p.grad.detach().flatten())
+            if clipped_grads:
+                post_clip_norm = torch.norm(torch.cat(clipped_grads)).item()
+                self.log("diagnostics/post_clip_grad_norm", post_clip_norm, on_step=True, batch_size=self.batch_size)
     def configure_optimizers(self):
         use_muon = self.train_config["optimizer"].lower() == "muon"
         if use_muon:
@@ -205,19 +221,45 @@ class PL_ModelWrapper(pl.LightningModule):
         self.total_training_steps = total_steps
 
         if self.train_config.get("scheduler") == "custom":
-            warmup   = self.train_config.get("warmup_steps", int(0.05 * total_steps))
-            hold     = self.train_config.get("hold_steps", int(0.10 * total_steps))
-            target   = self.train_config.get("final_lr", 0.0)
-            base_lr  = optimizer.param_groups[0]["lr"]
-            factor   = target / base_lr if base_lr > 0 else 0.0
+            warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            hold = self.train_config.get("hold_steps", int(0.10 * total_steps))
+            target = self.train_config.get("final_lr", 0.0)
+            base_lr = optimizer.param_groups[0]["lr"]
+            factor = target / base_lr if base_lr > 0 else 0.0
 
             def lr_schedule(step):
-                if step < warmup: return step / max(1, warmup)
-                if step < warmup + hold: return 1.0
+                if step < warmup:
+                    return step / max(1, warmup)
+                if step < warmup + hold:
+                    return 1.0
                 prog = (step - warmup - hold) / max(1, total_steps - warmup - hold)
                 return factor + (1 - factor) * 0.5 * (1 + math.cos(math.pi * prog))
 
             scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_schedule, last_epoch=-1)
+
+        elif self.train_config.get("scheduler") == "cosine_decay":
+            from transformers import get_cosine_schedule_with_warmup
+            
+            warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            final_lr = self.train_config.get("final_lr", 0.0)
+            
+            scheduler = get_cosine_schedule_with_warmup(
+                optimizer=optimizer,
+                num_warmup_steps=warmup,
+                num_training_steps=total_steps            )
+
+        elif self.train_config.get("scheduler") == "linear_decay":
+            from transformers import get_linear_schedule_with_warmup
+            
+            warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            
+            scheduler = get_linear_schedule_with_warmup(
+                optimizer=optimizer,
+                num_warmup_steps=warmup,
+                num_training_steps=total_steps
+            )
+
+
         else:
             warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
             scheduler = get_scheduler(

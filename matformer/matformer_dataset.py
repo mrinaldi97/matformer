@@ -23,7 +23,7 @@ def retrieve_dataset_id(cu_dslens,idx):
     return ds_id,doc_id
 import torch
 import torch.distributed as dist
-
+import re
 class RandomPermutator:
     def __init__(self,max_len,seed=27):
         self.max_len=max_len
@@ -530,13 +530,15 @@ class MatformerDataset(torch.utils.data.IterableDataset):
     def __init__(self,path,modality,chunk_size=None,tokens=None,n_bytes=None,state=None,byte_tokenizer=None, entropy_model=None, entropy_function=None, entropy_smoothing=None, return_type='ids'):
         """
             Path => The path of a .mdat file
-            Modality => 'tokens' to return chunk of tokenized text, 'bytes' to return chunks of raw bytes, 'patches' to return patches  #EDITED BY LLM: added patches modality
+            Modality => 'tokens' to return chunk of tokenized text, 'bytes' to return chunks of raw bytes, 'patches' to return patches  
             chunk_size => How many chunks to return at each iteration. If the current documents has smaller chunk, return the entire document
             state => The document to restart again if saved; still to be implemented
         """
         self.compute_entropy=entropy_function
         assert return_type in ['ids','text','dict']
         self.return_type=return_type
+        self.dummy_entropy_mode=True
+        self.hard_limit=27 #This is needed just for tests with entropy model
         if modality=='tokens':
             assert chunk_size is not None or tokens is not None
         elif modality=='patches':  
@@ -624,7 +626,7 @@ class MatformerDataset(torch.utils.data.IterableDataset):
                 self.chunk_size=chunk_size
             else:
                 print(f"tokens: {tokens}, token_per_segment: {self.token_per_segment}")
-                assert tokens%self.token_per_segment==0
+                #assert tokens%self.token_per_segment==0
                 self.chunk_size=tokens//self.token_per_segment
         
         # Build struct format for reading
@@ -639,7 +641,6 @@ class MatformerDataset(torch.utils.data.IterableDataset):
         self.struct_size = struct.calcsize(self.struct_format)  
         
         # Opening actual dataset(s)
-        # Currently, only supports AtlasDatasets but can be easily extended to any kind of dataset (ex. HuggingFace)
         self.ds_pointers = [
             AtlasDataset(os.path.join(path, x)) if t == 'atlas'
             else load_dataset(os.path.join(path, x)) if t == 'hf'
@@ -720,9 +721,9 @@ class MatformerDataset(torch.utils.data.IterableDataset):
 
     def _next_tokens(self):
         # I expect in the document dictionary the field "tokens_chunks"
-        if self.current_document is None:  #EDITED BY LLM: changed assert to if check for graceful handling
+        if self.current_document is None:  
             raise StopIteration
-        if "tokens_chunks" not in self.current_document.keys():  #EDITED BY LLM: better error message
+        if "tokens_chunks" not in self.current_document.keys():  
             raise KeyError(f"Document missing 'tokens_chunks' field. Did you run tokenize_dataset first?")
         
         while self.current_document:
@@ -768,19 +769,43 @@ class MatformerDataset(torch.utils.data.IterableDataset):
 
         collected_chunks = []
         while self.current_document:
-            chars = self._next_bytes(force_return_type='text',exceed_doc=False)       # <= n_bytes
-            if not chars:       
-                break 
+            chars = self._next_bytes(force_return_type='text', exceed_doc=False)  # <= n_bytes
+            if not chars:
+                break
 
-            new_chunks = self.compute_entropy(self.entropy_model,
-                                              chars,
-                                              return_type='chunks',
-                                              smoothing=self.entropy_smoothing)
+            if getattr(self, "dummy_entropy_mode", False):
+                # === Dummy entropy mode ===
+                words = list(re.finditer(r"\S+", chars))
+                start = 0
+                new_chunks = []
+                for w in words:
+                    end = w.end()
+                    # Force a cut before exceeding hard_limit
+                    if end - start > self.hard_limit:
+                        if start < w.start():
+                            new_chunks.append(chars[start:w.start()])
+                        start = w.start()
+                    # With some probability, cut here if still under the limit
+                    elif random.random() < 0.3:
+                        new_chunks.append(chars[start:end])
+                        start = end
+                if start < len(chars):
+                    new_chunks.append(chars[start:len(chars)])
+
+            else:
+                # === Normal entropy mode ===
+                new_chunks = self.compute_entropy(
+                    self.entropy_model,
+                    chars,
+                    return_type='chunks',
+                    smoothing=self.entropy_smoothing,
+                    hard_limit=self.hard_limit
+                )
+
             collected_chunks.extend(new_chunks)
 
             if len(collected_chunks) >= self.chunk_size:
                 break
-
 
         self.current_segment_group = collected_chunks
         self.current_segment_step = 0
@@ -798,7 +823,6 @@ class MatformerDataset(torch.utils.data.IterableDataset):
                 
             self.current_segment_step += 1
             segments_output = self.current_segment_group[start:end]  
-            
             if self.return_type == 'ids':
                 
                 pass  
@@ -860,6 +884,10 @@ class MatformerDataset(torch.utils.data.IterableDataset):
                 }
             
         raise StopIteration
+"""       
+    def _next_recurrent_chunk():
+
+"""
 def auto_discover_datasets(): 
     """Auto-discover AtlasDataset directories in current folder"""
     datasets = []

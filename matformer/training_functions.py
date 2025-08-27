@@ -14,7 +14,7 @@ from matformer.transformer_blocks import EntropyModel
 from matformer.matformer_dataset import MatformerDataset
 
 class MatformerDataModule(pl.LightningDataModule):
-    def __init__(self, data_root, batch_size, tokenizer, config, num_workers=0):
+    def __init__(self, data_root, batch_size, tokenizer, config, num_workers=0, autoencoder_experiment=False):
         super().__init__()
         self.data_root = data_root
         self.batch_size = batch_size
@@ -40,9 +40,10 @@ class MatformerDataModule(pl.LightningDataModule):
         self.entropy_smoothing = None
         self.n_bytes=self.config.max_position_embeddings
         self.chunk_size=None
-        if getattr(self.config, "has_text_autencoder", True):
-            if self.config.has_text_autoencoder is not None:
+        if getattr(self.config, "has_text_autencoder", True) or autoencoder_experiment:
+            if self.config.has_text_autoencoder is not None or autoencoder_experiment:
                 self.modality = 'entropy_patches'
+                print("Stiamo usando la modalità sperimentale autoencoder.")
                 import sys
                 sys.path.append('../')
                 from inference import load_inference_model, compute_entropy
@@ -109,7 +110,14 @@ class MatformerDataModule(pl.LightningDataModule):
             return len(AtlasDataset(self.data_root))
         else:
             return self.dataset.__len__()
+            
+    def state_dict(self):
+        state = {"current_train_batch_index": self.current_train_batch_index}
+        return state
 
+    def load_state_dict(self, state_dict):
+        self.current_train_batch_index = state_dict["current_train_batch_index"]
+        
     def train_dataloader(self):
         return DataLoader(
             self.dataset,

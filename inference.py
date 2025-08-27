@@ -21,12 +21,12 @@ def load_inference_model(checkpoint_path,ModelClass,map_location,tokenizer):
             module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
     return model,cfg
             
-def compute_entropy(model,prompt,return_type='chunks',smoothing=0.0):
+def compute_entropy(model,prompt,return_type='chunks',smoothing=0.0,hard_limit=None):
     #print(f"DEBUG: {prompt}")
     ent=model.model.compute_entropy(prompt)
     cuts, cmask, gmask = model.model.monotonicity_breakpoints(prompt=prompt, smoothing=smoothing)
     #print(f"DEBUG: {cuts}")
-    chunks = [x for x in model.model.cut_text(prompt, cutting_points=cuts) if len(x)>0]
+    chunks = [x for x in model.model.cut_text(prompt, cutting_points=cuts,hard_limit=hard_limit) if len(x)>0]
 
     if return_type=='dict':
         return {"chunks":chunks,"cuts":cuts,"cmask":cmask,"gmask":gmask,"ent":ent}

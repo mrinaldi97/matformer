@@ -156,147 +156,214 @@ class TransformerWithEmbeddingHead(nn.Module):
 
 
          
-    
 class TransformerWithCharAutoencoder(nn.Module):
-    def __init__(self,config:ModelConfig,device=None, tokenizer=None):
+    def __init__(self, config, device=None, tokenizer=None, log=None):
         super().__init__()
-        from char_autoencoder.autoencoders import TransCharAutoencoder, TransCharAutoencoder_Encoder, TransCharAutoencoder_Decoder
-        self.encoder=TransCharAutoencoder_Encoder(config=config.encoder)
-        self.decoder=TransCharAutoencoder_Decoder(config=config.decoder)
-        self.transformer=NakedTransformer(config)
-        self.projection_in=ModuleWrapper(nn.Linear(config.encoder.hidden_size,config.hidden_size))
-        self.projection_out=ModuleWrapper(nn.Linear(config.hidden_size,config.decoder.hidden_size))
-    def forward(self, x, **kwargs):
+        from char_autoencoder.autoencoders import TransCharAutoencoder_Encoder, TransCharAutoencoder_Decoder
+        self.log=log
+        self.encoder = TransCharAutoencoder_Encoder(config=config.encoder)
+        self.decoder = TransCharAutoencoder_Decoder(config=config.decoder)
+        self.transformer = NakedTransformer(config)
+        self.projection_in = ModuleWrapper(nn.Linear(config.encoder.hidden_size, config.hidden_size))
+        self.projection_out = ModuleWrapper(nn.Linear(config.hidden_size, config.decoder.hidden_size))
+        self.config = config
+        
+        # Training phase state
+        self.training_phase = 'autoencoder-training'
+
+    def forward(self, x, skip_transformer=False, skip_decoder=False):
+        """Phase 1: Train autoencoder only (bypass transformer)
+        Input could be [B,S] or [B,P,S]
+        If [B,S], we expect a PaddedTensor or a NormalTensor (for inference), "padding" refers to "internal" padding (per each sequence)
+        If [B,P,S], we expect a PaddedTensor or an Unpadded Tensor (or NormalTensor for inference), where "padding" refers to "external" padding (per each batch). Thus, to reconstruct the internal padding, we need the internal padding mask
+        
+        If input is of shape B,P,S, flatten the patch with the batch => B,P,S => B*P,S but skip computation on "external" padding
         """
-        Input:
-            x: TensorDC with fields:
-               - tensor: LongTensor of token ids, shape [B, P, S]  (or [P, S] if UnpaddedTensor)
-               - padding_mask: BoolTensor, shape [B, P, S]
-                   False = real token, True = padded token *inside* that patch S.
-                   Additionally, whole "fake" patches have all True across S.
-
-            B = batch size (number of sequences)
-            P = max number of patches per sequence (global big-transformer length)
-            S = tokens per patch (chars per patch)
-
-        Goal:
-            1) Skip compute for fake patches in encoder and decoder.
-            2) Keep big transformer input [B, P, D] with fixed P (no inter-sequence mixing).
-            3) Preserve padding_mask; return it broadcast to decoder length.
         """
-
-        # 1) Creating padding masks
-        if isinstance(x, UnpaddedTensor):
+        I expect as input a dictionary composed of
+        {
+        "tensor": see comment above
+        "padding_masks_external": True if the entire patch is to be padded, False otherwise [B,P,S]
+        "padding_masks_internal": Contains information about padding of each sequence inside patches (ready to be flattened) [B,P,S]
+        }
+        """
+        tensor = x["tensor"]  # [B,P,S]
+        padding_masks_external = x["padding_masks_external"]  # [B,P,S]
+        padding_masks_internal = x["padding_masks_internal"]  # [B,P,S]
+        
+        # Step 1: Encoder - Filter valid patches
+        valid_patch_mask = ~padding_masks_external.all(dim=-1)  # [B,P]
+        valid_tensor = tensor[valid_patch_mask]  # [B*P_valid, S]
+        valid_internal_masks = padding_masks_internal[valid_patch_mask]  # [B*P_valid, S]
+        
+        padded_tensor = PaddedTensor(
+            tensor=valid_tensor,
+            padding_mask=valid_internal_masks
+        )
+        z = self.encoder(padded_tensor)  # [B*P_valid, S] -> [B*P_valid, D]
+        
+        if not skip_transformer:
+            # Step 2: Reshape for transformer
+            B, P = valid_patch_mask.shape
+            D = z.tensor.size(-1)
+            z_full = torch.zeros(B, D, device=z.device, dtype=z.dtype)
+            z_full[valid_patch_mask] = z.tensor  # [B, P]
             
-            B = 1 # Unpadding is as if batch size is 1
-            P, S = x.tensor.shape
-            padding_mask = torch.zeros((B, P, S), dtype=torch.bool, device=x.tensor.device)
+            external_padding_mask = ~valid_patch_mask  # [B, P]
+            z_padded = PaddedTensor(tensor=z_full, padding_mask=external_padding_mask)
+            
+            # Step 3: Transformer
+            z = self.projection_in(z_padded)
+            z = self.transformer(z)  # [B, P, D]
+            z = self.projection_out(z)
+            
+            # Step 4: Back to decoder format
+            z_valid = z.tensor[valid_patch_mask]  # [B*P_valid, D]
+            z_valid_wrapped = replace(z, tensor=z_valid)
         else:
-            B, P, S = x.tensor.shape
-            padding_mask = x.padding_mask  # [B, P, S], True = padded token
-            assert padding_mask.shape == (B, P, S)
+            # Skip transformer - encoder directly connected to decoder
+            z_valid_wrapped = z
+        
+        # Early return for encoder-only phase
+        if skip_decoder:
+            return z_valid_wrapped  # [B*P_valid, D]
+        
+        # Step 5: Decoder
+        logits, _ = self.decoder(z_valid_wrapped)  # [B*P_valid, D] -> [B*P_valid, S, vocab_size]
+        
+        # Step 6: Restore final output
+        B, P = valid_patch_mask.shape
+        S = tensor.size(-1)
+        vocab_size = logits.tensor.size(-1)
+        output_logits = torch.zeros(B, P, S, vocab_size, device=tensor.device, dtype=logits.tensor.dtype)
+        output_logits[valid_patch_mask] = logits.tensor
+        
+        return output_logits
 
-        # To align with big transformer sequence length, there are "Fake patch" where all S tokens are padded
-        # patch_mask[b, p] == True  means a "fake patch"
-        patch_mask = padding_mask.all(dim=-1)     #[B,P] Bool => This indicates the patches where each element is True, thus patches that are entirely padding and should be skipped     
-        keep_idx = (~patch_mask).reshape(B * P) #Patches to be encoded, that contains actual charachters      # [B*P], Bool
-        num_real = keep_idx.sum().item()              # N_real
+    def set_training_phase(self, phase: str):
+        """Set training phase and configure module gradients"""
+        self.training_phase = phase
+        
+        phase_configs = {
+            'autoencoder-training': {'encoder': True, 'transformer': False, 'decoder': True},
+            'patch-training': {'encoder': True, 'transformer': True, 'decoder': False},
+            'autoencoder-final-annealing': {'encoder': False, 'transformer': True, 'decoder': True}
+        }
+        
+        if phase not in phase_configs:
+            raise ValueError(f"Unknown phase: {phase}")
+        
+        config = phase_configs[phase]
+        self.encoder.requires_grad_(config['encoder'])
+        self.transformer.requires_grad_(config['transformer'])
+        self.decoder.requires_grad_(config['decoder'])
 
-        # 2) Encoder (only on real patches to save compute)
-        #  [B, P, S] => [B*P, S], only "real patches" (keep_idx), final shape => [N_real, S].
-        flat_x = replace(
-            x,
-            tensor=x.tensor.view(B * P, S)[keep_idx],                  # [N_real, S]
-            padding_mask=padding_mask.view(B * P, S)[keep_idx]         # [N_real, S]
-        )
+    def training_step(self, batch, phase=None, log=None):
+        """Simplified training step dispatcher"""
+        phase = phase or self.training_phase
+        
+        if phase == 'autoencoder-training':
+            return self._autoencoder_loss(batch, log=log)
+        elif phase == 'patch-training':
+            return self._patch_loss(batch)
+        elif phase == 'autoencoder-final-annealing':
+            return self._fine_tuning_loss(batch)
+        else:
+            raise ValueError(f"Unknown training phase: {phase}")
 
+    def _autoencoder_loss(self, batch, log):
+        """Phase 1: Autoencoder reconstruction loss"""
+        x = batch['input_ids'] 
+        
+        # Forward with autoencoder only (skip transformer)
+        logits = self.forward(x, skip_transformer=True)  # [B, P, S, vocab_size]
+        
+        # Get target tensor
+        targets = x["tensor"]  # [B, P, S]
+        valid_mask = ~x["padding_masks_external"].all(dim=-1)  # [B, P]
+        
+        # Compute loss only on valid patches
+        loss = 0
+        count = 0
+        for b in range(targets.size(0)):
+            for p in range(targets.size(1)):
+                if valid_mask[b, p]:
+                    patch_logits = logits[b, p]  # [S, vocab_size]
+                    patch_targets = targets[b, p]  # [S]
+                    
+                    # Mask internal padding
+                    internal_mask = ~x["padding_masks_internal"][b, p]
+                    if internal_mask.any():
+                        valid_logits = patch_logits[internal_mask]
+                        valid_targets = patch_targets[internal_mask]
+                        loss += F.cross_entropy(valid_logits, valid_targets)
+                        count += 1
+        loss=loss / max(count, 1)
+        log('train/autoencoder_loss', loss, prog_bar=True)
+        return loss
 
-        flat_z = self.encoder(flat_x, lengths=None)                    # [N_real, 1, D]
-        D = flat_z.tensor.shape[-1]
-        z_real = replace(flat_z, tensor=flat_z.tensor.view(-1, D))     # [N_real, 1, D] => [N_real, D]
+    def _patch_loss(self, batch):
+        """Phase 2: Patch-level autoregressive prediction"""
+        x = batch['input_ids']
+        
+        # Get patch embeddings (skip decoder)
+        z = self.forward(x, skip_decoder=True)  # [B*P_valid, D]
+        
+        # Reshape to get batch structure back
+        valid_mask = ~x["padding_masks_external"].all(dim=-1)  # [B, P]
+        B, P = valid_mask.shape
+        D = z.tensor.size(-1)
+        
+        z_full = torch.zeros(B, P, D, device=z.tensor.device, dtype=z.tensor.dtype)
+        z_full[valid_mask] = z.tensor
+        
+        # Autoregressive loss: predict next patch from previous patches
+        if P <= 1:
+            return torch.tensor(0.0, device=z.tensor.device, requires_grad=True)
+        
+        # Input: patches 0 to P-2, Target: patches 1 to P-1
+        input_patches = z_full[:, :-1]  # [B, P-1, D]
+        target_patches = z_full[:, 1:]  # [B, P-1, D]
+        
+        # Only compute loss where both input and target are valid
+        input_valid = valid_mask[:, :-1]
+        target_valid = valid_mask[:, 1:]
+        both_valid = input_valid & target_valid
+        
+        if both_valid.any():
+            return F.mse_loss(input_patches[both_valid], target_patches[both_valid])
+        else:
+            return torch.tensor(0.0, device=z.tensor.device, requires_grad=True)
 
-        # 3) Go back to [B, P, D] for the big transformer, reinserting fake patches
-        z_full_tensor = z_real.tensor.new_zeros(B, P, D)               # [B, P, D], zeros
-        z_full_tensor.view(B * P, D)[keep_idx] = z_real.tensor         # Fill the zeros with data where there are real patches
-        # In the TensorDC for the transformer, reuse the original token-level padding_mask
-        z_full = replace(z_real, tensor=z_full_tensor, padding_mask=padding_mask)  # [B, P, D]
-
-        # 4) Big transformer (fixed-length [B, P, D], eventually unpadded to save compute)
-        z_t = self.projection_in(z_full)                               # [B, P, hidden_in]
-
-        # ---- elegant patch-level unpad: build a patch-unpadded tensor using patch_mask ----
-        # We create a temporary UnpaddedTensor that represents PACKED real patches per sequence,
-        # where each row is one patch embedding (we ignore token-level padding inside real patches).
-        # This way the transformer will receive packed rows = N_real and cu_seqlens tracking counts PER SEQUENCE.
-        device = z_t.tensor.device
-        H = z_t.tensor.shape[-1]  # hidden dim
-
-        # patch_keep: True for real (keep) patches, False for fake patches
-        patch_keep = (~patch_mask)  # [B, P] bool, True = keep
-
-        # indices: flat indices into view(B*P, H) selecting rows to pack (order: seq0 patches, seq1 patches, ...)
-        indices = torch.nonzero(patch_keep.view(B * P), as_tuple=False).flatten().to(device=device).long()  # [N_real]
-
-        # packed: [N_real, H] in the same order that cu_seqlens will expect
-        packed = z_t.tensor.view(B * P, H)[indices]  # [N_real, H]
-
-        # keep_counts: number of kept patches per sequence (length B)
-        #keep_counts = patch_keep.sum(dim=1, dtype=torch.long, device=device)  # [B]
-        keep_counts = patch_keep.sum(dim=1)
-        keep_counts=keep_counts.to(torch.long).to(device)
-        # cu_seqlens: prefix-sum with initial zero, shape [B+1], dtype long (int64)
-        cu_seqlens = torch.cat([torch.tensor([0], device=device, dtype=torch.long),
-                                torch.cumsum(keep_counts, dim=0)])  # [B+1]
-
-        # Build a temporary UnpaddedTensor describing the packed patch rows.
-        # Note: we set original_seq_len = P so pad() will put rows back into B x P layout.
-        z_packed_input = UnpaddedTensor(
-            tensor=packed,            # [N_real, H]
-            indices=indices,          # linear indices into (B*P) layout
-            cu_seqlens=cu_seqlens,    # [B+1]
-            max_seq_len=int(keep_counts.max().item()) if keep_counts.numel() > 0 else 0,
-            original_seq_len=P,
-            batch_size=B
-        )
-
-        # Now call transformer in packed/unpadded mode (your transformer should detect UnpaddedTensor and use flash-attn)
-        z_packed_out = self.transformer(z_packed_input, **kwargs)  # returns UnpaddedTensor (packed rows) [N_real, H_out]
-
-        # Pad the packed output back to full [B, P, H_out] (uses the indices/cu_seqlens inside UnpaddedTensor)
-        z_t = z_packed_out.pad(seq_len=P)      # [B, P, H_dec]
-
-        # ---- end of patch-level unpad/pad trick ----------------------------------------------------
-
-        z_t = self.projection_out(z_t)                                 # [B, P, H_dec]
-        # z_t=z_t.pad()  # already padded
-
-        # 5) Decoder (only real patches to save compute)
-        # [B, P, H_dec] => [N_real, H_dec]
-        z_real_post = replace(
-            z_t,
-            tensor=z_t.tensor.view(B * P, -1)[keep_idx],               # [N_real, H_dec]
-            padding_mask=None
-        )
-
-        z_real_post = replace(z_real_post, tensor=z_real_post.tensor.view(-1, 1, z_real_post.tensor.shape[-1]))  # [N_real, 1, H_dec]
-        x_real_logits, _ = self.decoder(z_real_post, lengths=None)     # [N_real, S_out, V]
-        S_out, vocab_size = x_real_logits.tensor.shape[1], x_real_logits.tensor.shape[2]
-
-        # ---- 5) SCATTER decoder outputs back into [B, P, S_out, V] -----------------------------------
-        full_logits = x_real_logits.tensor.new_zeros(B, P, S_out, vocab_size)   # [B, P, S_out, V]
-        full_logits.view(B * P, S_out, vocab_size)[keep_idx] = x_real_logits.tensor
-
-        # ---- 6) Output padding mask (broadcast to S_out) ---------------------------------------------
-        # We keep the original token-level mask for real patches INSIDE S (to mask inner 259 in loss),
-        # but for the output we also need the global fake-patch mask at the decoder length S_out.
-        # The safest default is to broadcast the patch-level padding to S_out (True on fake patches).
-        out_padding_mask = patch_mask.unsqueeze(-1).expand(B, P, S_out)  # [B, P, S_out], True = fake patch positions
-
-        # Return logits as a TensorDC; we preserve the "global" padding via out_padding_mask.
-        return replace(x_real_logits, tensor=full_logits, padding_mask=out_padding_mask)
-
-
-                   
+    def _fine_tuning_loss(self, batch):
+        """Phase 3"""
+        x = batch['input_ids']
+        
+        # Full forward pass
+        logits = self.forward(x)  # [B, P, S, vocab_size]
+        targets = x["tensor"]  # [B, P, S]
+        
+        # Compute loss on all valid positions
+        loss = 0
+        count = 0
+        
+        valid_patch_mask = ~x["padding_masks_external"].all(dim=-1)
+        
+        for b in range(targets.size(0)):
+            for p in range(targets.size(1)):
+                if valid_patch_mask[b, p]:
+                    patch_logits = logits[b, p]  # [S, vocab_size]
+                    patch_targets = targets[b, p]  # [S]
+                    
+                    # Use internal padding mask
+                    internal_mask = ~x["padding_masks_internal"][b, p]
+                    if internal_mask.any():
+                        valid_logits = patch_logits[internal_mask]
+                        valid_targets = patch_targets[internal_mask]
+                        loss += F.cross_entropy(valid_logits, valid_targets)
+                        count += 1
+        
+        return loss / max(count, 1)
 class TransformerWithLMHead(nn.Module):
     """
     Adding an LM Head to TransformerWithEmbeddingHead. This is enough for Bert-like/GPT-like models.

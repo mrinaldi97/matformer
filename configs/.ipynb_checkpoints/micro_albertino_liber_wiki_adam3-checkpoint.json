@@ -1,17 +1,15 @@
 {
   "model_class": "BERTModel",
   "model_config": {
-    "name": "Micro-Albertino-Liber-Wiki-1024-Adam3",
-    "hidden_size": 768,
+    "name": "Albertino-Liber-Wiki-1024-Adam-Hyperparameter-search-2",
+    "hidden_size": 512,
     "ffn_factor": 1.0,
-    "num_hidden_layers": 28,
-    "num_attention_heads": 12,
+    "num_hidden_layers": 12,
+    "num_attention_heads": 8,
     "vocab_size": 32768,
     "bos_token_id": 1,
     "eos_token_id": 2,
     "pad_token_id": 0,
-    "mask_token_id":32768,
-    "masked_substitution_rate":0.25,
     "tie_word_embeddings": false,
     "rms_norm_eps": 1e-6,
     "attention_type": [],
@@ -30,17 +28,18 @@
   "training": {
       "optimizer": "adam",
       "lr_scheduling": true,
-      "lr": 2e-4,
-      "final_lr":1e-5,
+      "lr": 5e-4,
+      "final_lr":2e-5,
+      "hold_steps":300,
       "weight_decay": 0.01,
       "scheduler": "custom",
-      "warmup_steps": 15000,
-      "hold_steps": 10000,
+      "gradient_clip_val":1.0,
+      "warmup_steps": 750,
       "max_epochs": 1,
-      "accumulate_grad_batches": 6,
+      "accumulate_grad_batches": 5,
       "seed": 27,
-      "checkpoint_name": "albertone_liberwiki_1024_adam",
-      "save_every_n_steps": 7500
+      "save_every_n_steps": 5000,
+      "checkpoint_name": "albertino_liber_wiki_1024_adam-search-3"
   },
   "tokenizer": {
     "type": "huggingface",
@@ -49,10 +48,10 @@
   },
   "data": {
     "data_root": "../matformer_norepo/Minerva1024_lmdb",
-    "batch_size": 18,
+    "batch_size": 52,
     "num_workers": 1
   },
   "save_dir": "./checkpoints",
-  "wandb_project": "Albertone",
-  "wandb_run_name": "Albertone_liberwiki_1024_adam"
+  "wandb_project": "Albertino",
+  "wandb_run_name": "Albertino-liber-wiki-1024-tokens_adam-search-2"
 }

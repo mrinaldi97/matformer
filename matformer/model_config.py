@@ -26,7 +26,9 @@ class BaseSubModelConfig:
     sliding_type: Optional[Literal['full','disabled','partial']] = None
     max_position_embeddings: Optional[int] = None
     block_size_for_attention: Optional[int] = None
-
+    # stuff for masked modeling:
+    mask_token_id: Optional[int] = None
+    masked_substitution_rate:Optional[float] = None
     # compilation & bias
     compile_flexattn: Optional[bool] = None
     bias: Optional[bool] = None
