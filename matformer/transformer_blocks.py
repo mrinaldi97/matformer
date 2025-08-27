@@ -26,7 +26,7 @@ from datetime import datetime
 import sys
 sys.path.append('../')
 from dataclasses import replace
-
+from copy import deepcopy
 #flex_attention = torch.compile(flex_attention) # Chiarire questione compilazione (dove? di che tipo? migliora o peggiora? in che casi farla?)
 
 class TransformerBlock(nn.Module):
@@ -411,11 +411,11 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         
 
 class BERTModel(TransformerWithLMHead):
-    def inference_testing(self, input_text, masking_ratio=0.25,datatype=torch.bfloat16):
+    def inference_testing(self, input_text, masking_ratio=0.25,mask_token=32768,datatype=torch.bfloat16):
         #Copiata qui al volo per far girare i modelli già addestrati, da togliere. 
         sequence = self.tokenizer.encode(input_text)
         sequence = torch.tensor(sequence).unsqueeze(0).to(self.device)
-        masked_list, cloze_list = maskerator(sequence, MASK_TOKEN=0, substitution_rate=masking_ratio)
+        masked_list, cloze_list = maskerator(sequence, mask_token=mask_token, substitution_rate=masking_ratio)
         masked_list.to(self.device)
         masked_sequence = NormalTensor(tensor=masked_list)
         model_input=deepcopy(masked_sequence)
