@@ -13,20 +13,29 @@ class MatformerTokenizer:
     to adapt it to the logic of the Matformer architecture. In particular, it will take care of the delicate batch encoding, working with
     all the possibilities compatible with Matformers: PaddedTensors, UnpaddedTensors and Pytorch's Nested Tensors.
     """
-    def __init__(self, config, tokenizer, varlen_strategy):
+    def __init__(self, tokenizer, varlen_strategy=None, config=None):
         self.config = config
         if tokenizer == 'bytes':
             self.tokenizer = ByteLevelTokenizer(config)
             self.tokenizer_modality='bytes'
+            self.vocabsize=255
+            self.return_type=int
         elif tokenizer =='ae_bytes':
             self.tokenizer=AutoencoderByteTokenizer(encoder_seq_len=config.encoder.max_position_embeddings, eos_token_id=config.encoder.eos_token_id)
             self.tokenizer_modality='ae_bytes'
+            self.vocabsize=255
+            self.return_type=int
         else: #Directly pass an HuggingFace tokenizer
             self.tokenizer = tokenizer
             self.tokenizer_modality='huggingface'
-        self.seq_len = config.max_position_embeddings
-        self.pad_token_id = config.pad_token_id
-        self.varlen_strategy = varlen_strategy
+            self.vocab_size=tokenizer.vocab_size
+            self.return_type=int
+        else:
+			self.vocab_size=None
+        self.seq_len = config.max_position_embeddings if config else None
+        self.pad_token_id = config.pad_token_id if config else None
+        self.varlen_strategy = varlen_strategy if varlen_strategy else None
+        
         """
         Note about self.config.varlen_strategy: this is very important!
         It decides the type of tensor coming from the tokenizer:
@@ -90,8 +99,12 @@ class MatformerTokenizer:
             sequence = sequence.unpad()
         
         return sequence
-    def encode(self, text: str, truncation=True):
-        input_ids = self.tokenizer(text)['input_ids']
+    def encode(self, text: str, truncation=False, add_eos=False, add_bos=False):
+        input_ids = self.tokenizer(text, add_special_tokens=False)['input_ids']
+        if add_eos:
+			pass
+		if add_bos:
+			pass
         if truncation:
             input_ids = input_ids[:self.seq_len]
         return input_ids
