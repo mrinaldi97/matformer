@@ -13,25 +13,30 @@ class MatformerTokenizer:
     to adapt it to the logic of the Matformer architecture. In particular, it will take care of the delicate batch encoding, working with
     all the possibilities compatible with Matformers: PaddedTensors, UnpaddedTensors and Pytorch's Nested Tensors.
     """
-    def __init__(self, tokenizer, varlen_strategy=None, config=None):
+    def __init__(self, tokenizer=None,tokenizer_type=None, tokenizer_name=None, tokenizer_args=None, varlen_strategy=None, config=None):
         self.config = config
+        tokenizer=tokenizer_type #[kept for compatibility, deprecated]
         if tokenizer == 'bytes':
             self.tokenizer = ByteLevelTokenizer(config)
             self.tokenizer_modality='bytes'
-            self.vocabsize=255
+            self.vocab_size=255
             self.return_type=int
         elif tokenizer =='ae_bytes':
             self.tokenizer=AutoencoderByteTokenizer(encoder_seq_len=config.encoder.max_position_embeddings, eos_token_id=config.encoder.eos_token_id)
             self.tokenizer_modality='ae_bytes'
-            self.vocabsize=255
+            self.vocab:size=255
             self.return_type=int
-        else: #Directly pass an HuggingFace tokenizer
+        elif tokenizer=='huggingface':
+			from transformers import AutoTokenizer
+			tokenizer=AutoTokenizer.from_pretrained(tokenizer_name,tokenizer_args)
+			self.vocab_size=tokenizer.vocab_size
+			self.return_type=int
+        else: #Directly pass an HuggingFace tokenizer [kept for compatibility, deprecated]
             self.tokenizer = tokenizer
             self.tokenizer_modality='huggingface'
             self.vocab_size=tokenizer.vocab_size
             self.return_type=int
-        else:
-			self.vocab_size=None
+
         self.seq_len = config.max_position_embeddings if config else None
         self.pad_token_id = config.pad_token_id if config else None
         self.varlen_strategy = varlen_strategy if varlen_strategy else None
