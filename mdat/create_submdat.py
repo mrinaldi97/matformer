@@ -28,9 +28,7 @@ import argparse
 import logging
 from tqdm import tqdm
 from concurrent.futures import ThreadPoolExecutor
-from lmdb_dataset import LMDBDataset
 from matformer_dataset import MatformerDataset, SubMdat
-
 try:
    import orjson
 except ImportError:
@@ -80,156 +78,20 @@ def setup_logging(mdat_path, submdat_name, suppress_warnings=False):
    logger.addHandler(file_handler)
    return logger
 
-
-def JSONIterator(json_path):
+def create_submdat(input_path, output_path, name, dataset_type, compress_data, compress_meta, data_key, map_size, modality, do_transform=False, do_filtering=False, custom_path=None):
    logger = logging.getLogger('create_submdat')
-   file_size = os.path.getsize(json_path)
-   with open(json_path, 'r') as f:
-       with tqdm(total=file_size, unit='B', unit_scale=True, desc="Processing JSONL file...") as pbar:
-           for i,row in enumerate(f):
-               try:
-                   if orjson: 
-                       try:
-                           data = orjson.loads(row)
-                       except Exception as e:
-                           logger.warning(f"Row: {i} orjson failed: {e}, falling back to json.")
-                           data = json.loads(row)
-                   else:
-                       data = json.loads(row)
-               except Exception as e:
-                   logger.error(f"Row {i} Failed to parse JSON row: {e}")
-                   data = None
-               pbar.update(len(row.encode('utf-8')))
-               yield data
-
-
-def LMDBIterator(lmdb_path):
-   logger = logging.getLogger('create_submdat')
-   db = LMDBDataset(lmdb_path) 
-   for i in tqdm(range(len(db))):
-       try:
-           yield db[i]
-       except Exception as e:
-           logger.error(f"Error reading LMDB item {i}: {e}")
-           yield None
-
-
-def create_submdat(input_path, output_path, name, dataset_type, compress_data, compress_meta, data_key, map_size, do_transform=False, do_filtering=False, custom_path=None):
-   logger = logging.getLogger('create_submdat')
-   # Create or open the MDAT
+   dataset_args={}
    mdat = MatformerDataset.create_or_update(output_path, create=True, shuffle=False)
    submdat = mdat.add_submdat(name, create=True, compression_levels={'data':compress_data,'meta':compress_meta}, map_sizes={'data':map_size,'meta':map_size})
-
-
-
-   data_db = submdat.db['data']
-   meta_db = submdat.db['meta']
-
-
-   hasDataError = 0 
-   
-   if dataset_type == 'jsonl':
-       generator_fn = JSONIterator(input_path)
-   elif dataset_type == 'lmdb':
-       generator_fn = LMDBIterator(input_path)
-   else:
-       logger.error(f"Unsupported dataset type: {dataset_type}")
-       return
-   
-   n_filtered = 0
-   raw_data_bytes=0
-   raw_meta_bytes=0
-   for i, item in enumerate(generator_fn):
-       if item is None:
-           continue
-           
-       # A transformer function can be specified by the user
-       if do_transform:
-           # item = transformer_function(item)
-           logger.warning("Transformer function not implemented")
+   result = submdat.convert_to_submdat(dataset_type=dataset_type,dataset_path=input_path,dataset_args=dataset_args,data_key=data_key,modality=modality,do_transform=do_transform,do_filtering=do_filtering,logger=logger,progress_bar=True)
+   logger.info(f"Sub-MDAT {name} created successfully in {output_path}")
+   for k,v in zip(result.keys(),result.values()): #Result contains useful stuff such as errors, disk size, document number
+       if isinstance(v,dict):
+           for k2,v2 in zip(v.keys(),v.values()):
+               logger.info(f"({k}) {k2}={v2}")
+       else:
+           logger.info(f"{k} = {v}")
        
-       if data_key not in item:
-           logger.warning(f"Data key '{data_key}' not found in item {i}. Item has keys {item.keys()}")
-           continue
-           
-       data = item[data_key]
-       if isinstance(data,str):
-           data=data.encode('utf-8')
-       del item[data_key]
-       
-       # Data can be passed through filters for selection (ex. language identification, quality metrics...)
-       filtered = False
-       if do_filtering:
-           # for filter_fn in filters:
-           #     data = filter_fn(data)
-           #     if data is None:
-           #         filtered = True
-           #         n_filtered += 1
-           #     else:
-           #         filtered = False
-           logger.warning("Filter functions not implemented")
-       
-       if filtered:
-           continue
-       
-       error = data_db.write(data, key=i) 
-       if error is not None:
-           hasDataError += 1
-           
-       try:
-           if orjson:
-               try:
-                   serialized = orjson.dumps(item)
-               except:
-                   serialized = json.dumps(item).encode() 
-           else:
-               serialized = json.dumps(item).encode()
-       except Exception as e:
-           logger.error(f'Serialization of item id {i} failed: {e}')
-           continue
-           
-       error = meta_db.write(serialized, key=i)
-       if error is not None:
-           hasDataError += 1
-       # Computing the size of the data just inserted
-       raw_data_bytes+=len(data)
-       raw_meta_bytes+=len(serialized)
-       
-   # Close the databases 
-   try:
-       data_db.close()
-   except Exception:
-       pass
-   try:
-       meta_db.close()
-   except Exception:
-       pass
-
-   # Computing size on disk for the new submdat
-   db_disk_bytes = 0
-   for root, dirs, files in os.walk(os.path.join(output_path, 'datasets', name)):
-       for file in files:
-               db_disk_bytes += os.path.getsize(os.path.join(root, file))
-   
-   if True:
-       submdat.new_manifest(
-           submdat_name=name,
-           raw_data_bytes=raw_data_bytes,
-           raw_meta_bytes=raw_meta_bytes,
-           db_disk_bytes=db_disk_bytes,
-           documents_number=len(data_db),
-       )
-       mdat.update_manifest()
-
-
-   
-   if hasDataError == 0:
-       logger.info(f"Sub-MDAT {name} created successfully in {output_path}. Elements={len(data_db)}. {n_filtered} elements were filtered.")
-       print(f"Sub-MDAT {name} created successfully in {output_path}. Elements={len(data_db)}. {n_filtered} elements were filtered.")
-   else:
-       logger.error(f"Sub-MDAT {name} created with {hasDataError} errors in {output_path}. Elements={len(data_db)}. Check the logs. {n_filtered} elements were filtered.")
-       print(f"Sub-MDAT {name} created with {hasDataError} errors in {output_path}. Elements={len(data_db)}. Check the logs. {n_filtered} elements were filtered.")
-
 def main():
    args = parse_arguments()
    

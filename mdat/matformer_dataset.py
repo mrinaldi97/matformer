@@ -1,44 +1,17 @@
-from mdat_utils import sanify_name
 import os
 import json
-from lmdb_dataset import LMDBDataset
-import orjson
-# ===== Added: missing exception classes used in existing/added code (kept minimal) =====
-class NameAlreadyUsed(Exception):
-    pass
+try:
+	from tqdm import tqdm
+except:
+	pass
 
-class StrategyNotRegistered(Exception):
-    pass
-# =======================================================================================
+#from lmdb_dataset import LMDBDataset
+try:
+    import orjson
+except:
+    orjson=None
 
-class MDatNotShuffled(Exception):
-    pass
 
-class MDatNotFound(Exception):
-    pass
-
-class MDatAlreadyPresent(Exception):
-    pass
-
-class MDatAlreadyShuffled(Exception):
-    pass
-
-class TooManySubmDats(Exception):
-    pass
-
-class MdatIsWriteOnly(Exception):
-    pass
-
-class SubmDatNotFound(Exception):
-    pass
-
-# ===== NEW: Allowed pretok db names and filenames (kept simple, referenced by SubMdat) ===
-_PRETOK_ALLOWED_DBS = {
-    'tokens': 'tokens.dat',
-    'chunks': 'chunks.dat',
-    'extra':  'extra.dat',
-}
-# =========================================================================================
 
 class MatformerDataset:
     def __init__(self, path, shuffle=True, ds_view=None, distributed=False):
@@ -314,16 +287,19 @@ class SubMdat:
                 if 'tokens' in current_strategy['db_names']:
                     pass
         return composed
-    def get_generator(self, with_tqdm=False,wanted_from_dbs='full',wanted_from_strategy=None,raw=False):
-        from tqdm import tqdm
-        for key in tqdm(range(self.len)):
-            yield self._compose_return(wanted_from_dbs=wanted_from_dbs,wanted_from_strategy=wanted_from_strategy,raw=raw)
+    def get_generator(self, progress_bar=False,wanted_from_dbs='full',wanted_from_strategy=None,raw=False):
+        if progress_bar:
+            from tqdm import tqdm
+            for key in tqdm(range(self.len)):
+                yield self._compose_return(wanted_from_dbs=wanted_from_dbs,wanted_from_strategy=wanted_from_strategy,raw=raw)
+        else:
+                yield self._compose_return(wanted_from_dbs=wanted_from_dbs,wanted_from_strategy=wanted_from_strategy,raw=raw)                           
     @classmethod
     def create_new(cls, parent_mdat, submdat_name, tokenization_registry=None, **manifest_params):
         return cls(parent_mdat, submdat_name, create=True,tokenization_registry=tokenization_registry, **manifest_params)
     
     
-    def create_submdat(self,compression_levels,map_sizes,**manifest_params):
+    def create_submdat(self,compression_levels,map_sizes):
         # Check if submdat already exists
         if os.path.isdir(self.submdat_path):
                 raise FileExistsError("SubMdat already present")
@@ -333,13 +309,11 @@ class SubMdat:
         # Create submdat directory
         os.makedirs(self.submdat_path, exist_ok=True)
         
-        # Create manifest if parameters provided
-        if manifest_params:
-            self.new_manifest(**manifest_params)
-        else:
-            self.manifest = None
+        # Create the manifest
         for db_type in self.db_types.keys():
              self.create_db(db_type,compression_level=compression_levels[db_type],map_size=map_sizes[db_type])
+        self.new_manifest(submdat_name=self.submdat_name)
+
         
     
     def load_submdat(self):
@@ -379,15 +353,11 @@ class SubMdat:
         return self.manifest
     
     def write_manifest(self): 
-        try:
-            with open(self.manifest_path, "w") as m:  
-                return m.write(json.dumps(self.manifest)) 
-        except Exception as e:
-            print(f"Caught exception {e} in writing the manifest {self.manifest_path}") 
-            return None 
+        with open(self.manifest_path, "w") as m:  
+            return m.write(json.dumps(self.manifest)) 
+ 
     
-    def new_manifest(self, submdat_name, raw_data_bytes, raw_meta_bytes, db_disk_bytes,documents_number, data_type='text', data_key='text', hybrid_data=[]):
-        if self.manifest is None: 
+    def new_manifest(self, submdat_name, raw_data_bytes=0, raw_meta_bytes=0, db_disk_bytes=0,documents_number=0, data_type='text', data_key='text', hybrid_data=[]):
             self.manifest = {
                 "type": "sub-mdat",
                 "name": submdat_name,
@@ -402,11 +372,11 @@ class SubMdat:
                 "map_size_data": self.db['data'].map_size,
                 "map_size_meta":self.db['meta'].map_size,
                 "documents_number": documents_number,
+                "errors_counters":{},
                 "pretokenization_strategies":[]
             }
             self.write_manifest() 
-        else:
-            print("Can't write a new manifest: the manifest already exists")
+
         
     
     
@@ -438,6 +408,334 @@ class SubMdat:
         self.write_manifest()   
     def current_strategy(self):
         return self.current_strategy
-
+    def convert_to_submdat(self, dataset_type, dataset_path, dataset_args={}, data_key='text', modality='text',logger=False,progress_bar=True, do_transform=False, do_filtering=False): 
+        """
+        A function to populate the submdat's databases with data coming from other datasets' formats
+        """
+    
+        class PrintLogger:
+            def warning(self, message):
+                print("Warning: ",message)
+            def error(self, message):
+                print("Error: ", message)
+            def info(self, message):
+                print("Info: ", message)                
+        logger_fn = logger if logger else PrintLogger()
         
+        if not hasattr(self, 'db'):
+            logger_fn.error(f"Databases are not loaded for submat {self.submat_name}. Are you sure Submat was created and loaded correctly?")
+            return None
+        
+        #If there is orjson, better
+        try:
+            import orjson
+        except:
+            orjson=False
+        # Instantiating the correct generator for the dataset_type
+        """
+        Example dataset_args: json_batch_read=False, files_recurse_in_folder=True, 
+                              files_metadata_type='multiple_json', csv_has_header=False, csv_data_field=0,
+                              hf_split='train', hf_subdataset=None,
+        """
+        if dataset_type == 'jsonl':
+            #from datasets_iterators import JSONIterator
+            generator_fn = JSONIterator(json_path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger)
+        elif dataset_type == 'lmdb':
+            #from datasets_iterators import LMDBIterator
+            generator_fn = LMDBIterator(dataset_path, dataset_args,data_key, progress_bar=progress_bar,logger=logger)
+        elif dataset_type == 'hf':
+            generator_fn = HuggingFaceIterator(dataset_path, dataset_args,dataset_path, data_key, progress_bar=progress_bar,logger=logger)
+        elif dataset_type == 'sqlite':
+            return
+        elif dataset_type == 'csv':
+            return
+        elif dataset_type == 'files':
+            return
+        else:
+            error=f"Unsupported dataset type: {dataset_type}"
+            logger_fn.error(error)
+            return error
+            
+        # Initialize stats (error stats and raw size stats)
+        errors_counters=dict()  
+        errors_counters['hasDataError'] = 0 
+        errors_counters['generatorReturnedNone']=0
+        errors_counters['missingDataKey']=0
+        n_filtered = 0
+        raw_data_bytes=0
+        raw_meta_bytes=0
+        
+        # Iterating over the generator
+        for i, item in enumerate(generator_fn):
+            if item is None:
+                errors_counters['generatorReturnedNone']+=1
+                
+            # A transformer function can be specified by the user (useful, not implemented yet)
+            if do_transform:
+                # item = transformer_function(item)
+                pass
+            
+            if data_key not in item:
+                warning=f"Data key '{data_key}' not found in item {i}. Item has keys {item.keys()}"
+                logger_fn.warning(warning)
+                errors_counters['missingDataKey']+=1
+                
+            data = item[data_key]
+            if isinstance(data,str):
+                data=data.encode('utf-8')
+            if not isinstance(data,bytes):
+                logger_fn.warning(f"Data is of types {type(data)} but it should be either string or bytes")
+            del item[data_key]
+            
+            # Data can be passed through filters for selection (ex. language identification, quality metrics...)
+            filtered = False
+            if do_filtering:
+                 pass
+                 logger_fn.warning("Filter functions not implemented")
+            
+            if filtered:
+                continue
+            
+            returned_error = self.db['data'].write(data, key=i)  
+            if returned_error is not None:
+                errors_counters['hasDataError'] += 1    
+            try:
+                if orjson:
+                    try:
+                        serialized = orjson.dumps(item)
+                    except:
+                        serialized = json.dumps(item).encode()  
+                else:
+                    serialized = json.dumps(item).encode()
+            except Exception as e:
+                logger_fn.error(f'Serialization of item id {i} failed: {e}')
+                continue
+                
+            error = self.db['meta'].write(serialized, key=i)
+            if error is not None:
+                hasDataError += 1
+            # Computing the size of the data just inserted
+            raw_data_bytes+=len(data)
+            raw_meta_bytes+=len(serialized)
+            
+        # Close the databases 
+        documents_number=len(self.db['data'])
+        self.db['data'].close()
+        self.db['meta'].close()
 
+        # Computing size on disk for the new submdat
+        db_disk_bytes = 0
+        for root, dirs, files in os.walk(self.submdat_path):
+            for file in files:
+                    db_disk_bytes += os.path.getsize(os.path.join(root, file))
+                    
+        partial_manifest={}
+        partial_manifest['raw_data_bytes']=raw_data_bytes
+        partial_manifest['raw_meta_bytes']=raw_meta_bytes
+        partial_manifest['db_disk_bytes']=db_disk_bytes
+        partial_manifest['documents_number']=documents_number
+        partial_manifest['errors_counters']=errors_counters
+        self.manifest.update(partial_manifest)
+        self.write_manifest()
+        return partial_manifest
+       
+
+def sanify_name(_input):
+    return ''.join(c if c.isalnum() or c in '_-' else '_' for c in _input)
+    
+class RandomPermutator:
+    def __init__(self,max_len,seed=27):
+        self.max_len=max_len
+        random.seed(seed)
+        self.a=self.create_coprime()  
+        self.b=random.randint(0,max_len-1) 
+        
+    def create_coprime(self):
+        while True:
+            a=random.randint(1,self.max_len-1)
+            if math.gcd(a,self.max_len) == 1: 
+                return a
+                
+    def __call__(self,i):
+        if i<=self.max_len:
+            return (self.a*i+self.b)%self.max_len
+        else:
+            raise Exception("Index out of range")       
+
+# Exceptions
+class NameAlreadyUsed(Exception):
+    pass
+
+class StrategyNotRegistered(Exception):
+    pass
+
+class MDatNotShuffled(Exception):
+    pass
+
+class MDatNotFound(Exception):
+    pass
+
+class MDatAlreadyPresent(Exception):
+    pass
+
+class MDatAlreadyShuffled(Exception):
+    pass
+
+class TooManySubmDats(Exception):
+    pass
+
+class MdatIsWriteOnly(Exception):
+    pass
+
+class SubmDatNotFound(Exception):
+    pass
+
+# LMDBDataset's stuff:
+import zlib
+import lmdb
+import orjson
+import pickle
+import os
+
+class LMDBDataset:
+    def __init__(self, path, readonly=True, lock=False, compressed=False, compression_level=0,map_size=1<<40,batch_size=50000):
+        self.env = lmdb.open(
+            path,
+            subdir=os.path.isdir(path),
+            readonly=readonly,
+            lock=lock,
+            readahead=True,
+            meminit=False,
+            max_readers=1,
+            map_size=map_size
+        )
+        self.map_size=map_size
+        self.path=path
+        self.readonly=readonly
+        self.compressed=compressed
+        self.compression_level=compression_level
+        self.batch_size = batch_size
+        self.batch_buffer = []
+        self.zlib_attempts=100 #Tyring to avoid zlib bug
+        with self.env.begin(write=False) as txn:
+            try:
+                self.length = int(txn.get(b"__len__").decode())
+            except:
+                self.length=0
+    def __len__(self):
+        return self.length
+    def start_transaction(self):
+        self.txn=self.env.begin(write=True)
+    def close_transaction(self):
+        pass
+    def write(self, obj, key=None, batched=False):
+        """
+        "Obj" can be:
+            * A byte object, directly inserted
+            * Other types, orjson serialized
+        If batched==True:
+            * A list of data is expected
+        Return "current_index" if data is correctly added, None if error happened
+        """
+        
+        if key==None and batched==False:
+            key=self.length
+        if key is not None and batched==True:
+            print("LMDBDataset Warning: You should not provide a key if the input data is batched! Key value is ignored.")
+        
+        batch = obj if isinstance(obj, list) else [obj]
+        if len(batch) > self.batch_size:
+            raise ValueError(f"Batch size {len(batch)} exceeds maximum {self.batch_size}")
+        
+        for data in batch:
+            if not isinstance(data, bytes):
+                data = orjson.dumps(data)  # Serialize non-bytes objects, for example python dictionaries
+            if self.compressed:
+                data = zlib.compress(data, self.compression_level)
+            self.batch_buffer.append((str(self.length).encode(), data))
+            self.length += 1
+            
+            if len(self.batch_buffer) >= self.batch_size:
+                self._flush_batch()
+        
+    def _flush_batch(self):
+        if not self.batch_buffer:
+            return
+        with self.env.begin(write=True) as txn:
+            for key, data in self.batch_buffer:
+                txn.put(key, data)
+        self.batch_buffer.clear()
+
+    def close(self):
+        self._flush_batch()  # Flush remaining items
+        if self.readonly == False:
+            with self.env.begin(write=True) as txn:
+                txn.put(b"__len__", str(self.length).encode())  # Synchronizing correct length
+            self.env.sync()
+        self.env.close()
+                
+            
+        
+    def __getitem__(self, key):
+        key=str(key).encode()
+        with self.env.begin(write=False) as txn:
+            data = txn.get(key)
+            if data is None:
+                raise IndexError(f"Index {key} not found in LMDB dataset.")
+            if self.compressed:
+                try:
+                    return zlib.decompress(data)
+                except:
+                    safe_path = ''.join(c if c.isalnum() or c in '_-' else '_' for c in self.path)
+                    print(f"LMDBDataset {self.path} WARNING: error loading data at index {key}.")
+                    print("It seems there is a bug with zlib.")
+                    print(f"First, let's try to load the data again {self.zlib_attempts} times.")
+                    for i in range(1,self.zlib_attempts):
+                        try:
+                            x=zlib.decompress(data)
+                            print(f"It worked at attemp: {i}")
+                            with open("zlib_error_logs_{safe_path}.txt","a") as l:
+                                l.write(f"Zlib error at {i}. Recovered after {i}/{self.zlib_attempts} attempts.\n")
+                            return x
+                        except:
+                            pass
+                    print(f"It didn't worked after {self.zlib_attempts}. Returning a dummy structure to avoid breaking training. Event logged in ./zlib_error_logs_{safe_path}.txt")
+                    with open(f"zlib_error_logs_{safe_path}.txt","a") as l:
+                        l.write(f"Zlib error at {i}. Not recovered after {self.zlib_attempts} attempts.\n")
+                    return None
+            else:
+                return data
+
+# Dataset's iterators for creating a new Submdat:
+
+def JSONIterator(json_path,logger,dataset_args={},progress_bar=True):
+   file_size = os.path.getsize(json_path)
+   ProgressBar = tqdm if progress_bar else lambda *args, **kwargs: ToBeFixed() 
+   with open(json_path, 'r') as f:
+       with ProgressBar(total=file_size, unit='B', unit_scale=True, desc="Processing JSONL file...") as pbar:
+           for i,row in enumerate(f):
+               try:
+                   if orjson: 
+                       try:
+                           data = orjson.loads(row)
+                       except Exception as e:
+                           logger.warning(f"Row: {i} orjson failed: {e}, falling back to json.")
+                           data = json.loads(row)
+                   else:
+                       data = json.loads(row)
+               except Exception as e:
+                   logger.error(f"Row {i} Failed to parse JSON row: {e}")
+                   data = None
+               pbar.update(len(row.encode('utf-8')))
+               yield data
+
+
+def LMDBIterator(lmdb_path,logger,dataset_args={},progress_bar=True):
+   db = LMDBDataset(lmdb_path) 
+   ProgressBar = tqdm if progress_bar else lambda *args, **kwargs: ToBeFixed() 
+   for i in ProgressBar(range(len(db))):
+       try:
+           yield db[i]
+       except Exception as e:
+           logger.error(f"Error reading LMDB item {i}: {e}")
+           yield None
