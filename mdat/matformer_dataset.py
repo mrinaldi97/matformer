@@ -934,7 +934,7 @@ class SubMdat:
         for i, item in enumerate(generator_fn):
             if item is None:
                 errors_counters['generatorReturnedNone']+=1
-                
+                continue
             # A transformer function can be specified by the user (useful, not implemented yet)
             if do_transform:
                 # item = transformer_function(item)
@@ -944,7 +944,7 @@ class SubMdat:
                 warning=f"Data key '{data_key}' not found in item {i}. Item has keys {item.keys()}"
                 logger_fn.warning(warning)
                 errors_counters['missingDataKey']+=1
-                
+                continue
             data = item[data_key]
             if isinstance(data,str):
                 data=data.encode('utf-8')
