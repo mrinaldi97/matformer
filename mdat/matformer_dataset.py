@@ -910,6 +910,8 @@ class SubMdat:
             generator_fn = HuggingFaceIterator(dataset_path, dataset_args,dataset_path, data_key, progress_bar=progress_bar,logger=logger)
         elif dataset_type == 'sqlite':
             return
+        elif dataset_type == 'atlas':
+            generator_fn = AtlasIterator(path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger)
         elif dataset_type == 'csv':
             return
         elif dataset_type == 'files':
@@ -1209,6 +1211,16 @@ def JSONIterator(json_path,logger,dataset_args={},progress_bar=True):
                pbar.update(len(row.encode('utf-8')))
                yield data
 
+def AtlasIterator(lmdb_path,logger,dataset_args={},progress_bar=True):
+   from torch_atlas_ds import AtlasDataset
+   db = AtlasDataset(lmdb_path) 
+   ProgressBar = tqdm if progress_bar else lambda *args, **kwargs: ToBeFixed() 
+   for i in ProgressBar(range(len(db))):
+       try:
+           yield db[i]
+       except Exception as e:
+           logger.error(f"Error reading Atlas item {i}: {e}")
+           yield None
 
 def LMDBIterator(lmdb_path,logger,dataset_args={},progress_bar=True):
    db = LMDBDataset(lmdb_path) 
