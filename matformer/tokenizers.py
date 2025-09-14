@@ -27,10 +27,10 @@ class MatformerTokenizer:
             self.vocab:size=255
             self.return_type=int
         elif tokenizer=='huggingface':
-			from transformers import AutoTokenizer
-			tokenizer=AutoTokenizer.from_pretrained(tokenizer_name,tokenizer_args)
-			self.vocab_size=tokenizer.vocab_size
-			self.return_type=int
+            from transformers import AutoTokenizer
+            self.tokenizer=AutoTokenizer.from_pretrained(tokenizer_name,**tokenizer_args)
+            self.vocab_size=self.tokenizer.vocab_size
+            self.return_type=int
         else: #Directly pass an HuggingFace tokenizer [kept for compatibility, deprecated]
             self.tokenizer = tokenizer
             self.tokenizer_modality='huggingface'
@@ -104,12 +104,12 @@ class MatformerTokenizer:
             sequence = sequence.unpad()
         
         return sequence
-    def encode(self, text: str, truncation=False, add_eos=False, add_bos=False):
-        input_ids = self.tokenizer(text, add_special_tokens=False)['input_ids']
+    def encode(self, text: str, truncation=False, add_eos=False, add_bos=False, add_special_tokens=False):
+        input_ids = self.tokenizer(text, add_special_tokens=add_special_tokens)['input_ids']
         if add_eos:
-			pass
-		if add_bos:
-			pass
+            pass
+        if add_bos:
+            pass
         if truncation:
             input_ids = input_ids[:self.seq_len]
         return input_ids

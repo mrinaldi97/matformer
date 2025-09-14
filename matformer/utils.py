@@ -111,10 +111,6 @@ def dataclass_from_dict(d: dict, ty: type[T]) -> T:
 
 
 #https://github.com/tatp22/multidim-positional-encoding/blob/efeb8d9d70e8184da50eae9fddd1bbda10896529/positional_encodings/torch_encodings.py
-
-
-
-
 def get_emb(sin_inp):
     """
     Gets a base embedding for one dimension with sin and cos intertwined

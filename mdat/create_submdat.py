@@ -78,11 +78,12 @@ def setup_logging(mdat_path, submdat_name, suppress_warnings=False):
    logger.addHandler(file_handler)
    return logger
 
-def create_submdat(input_path, output_path, name, dataset_type, compress_data, compress_meta, data_key, map_size, modality, do_transform=False, do_filtering=False, custom_path=None):
+def create_submdat(input_path, output_path, name, dataset_type, compress_data, compress_meta, data_key, map_size, modality, data_type='text',do_transform=False, do_filtering=False, custom_path=None):
    logger = logging.getLogger('create_submdat')
    dataset_args={}
-   mdat = MatformerDataset.create_or_update(output_path, create=True, shuffle=False)
-   submdat = mdat.add_submdat(name, create=True, compression_levels={'data':compress_data,'meta':compress_meta}, map_sizes={'data':map_size,'meta':map_size})
+   mdat = MatformerDataset.load_dataset(path=output_path,create_if_not_existent=True)
+   submdat = mdat.add_submdat(submdat_name=name, compression_levels={'data':compress_data,'meta':compress_meta}, map_sizes={'data':map_size,'meta':map_size},
+        data_type=data_type,db_types = ['meta','data'])
    result = submdat.convert_to_submdat(dataset_type=dataset_type,dataset_path=input_path,dataset_args=dataset_args,data_key=data_key,modality=modality,do_transform=do_transform,do_filtering=do_filtering,logger=logger,progress_bar=True)
    logger.info(f"Sub-MDAT {name} created successfully in {output_path}")
    for k,v in zip(result.keys(),result.values()): #Result contains useful stuff such as errors, disk size, document number
@@ -95,8 +96,6 @@ def create_submdat(input_path, output_path, name, dataset_type, compress_data, c
 def main():
    args = parse_arguments()
    
-   # Create the MDAT if not existent
-   os.makedirs(args.output_path, exist_ok=True)
   
    logger = setup_logging(mdat_path=os.path.join(args.output_path), submdat_name=args.name, suppress_warnings=args.suppress_warnings)
 

@@ -156,214 +156,7 @@ class TransformerWithEmbeddingHead(nn.Module):
 
 
          
-class TransformerWithCharAutoencoder(nn.Module):
-    def __init__(self, config, device=None, tokenizer=None, log=None):
-        super().__init__()
-        from char_autoencoder.autoencoders import TransCharAutoencoder_Encoder, TransCharAutoencoder_Decoder
-        self.log=log
-        self.encoder = TransCharAutoencoder_Encoder(config=config.encoder)
-        self.decoder = TransCharAutoencoder_Decoder(config=config.decoder)
-        self.transformer = NakedTransformer(config)
-        self.projection_in = ModuleWrapper(nn.Linear(config.encoder.hidden_size, config.hidden_size))
-        self.projection_out = ModuleWrapper(nn.Linear(config.hidden_size, config.decoder.hidden_size))
-        self.config = config
-        
-        # Training phase state
-        self.training_phase = 'autoencoder-training'
 
-    def forward(self, x, skip_transformer=False, skip_decoder=False):
-        """Phase 1: Train autoencoder only (bypass transformer)
-        Input could be [B,S] or [B,P,S]
-        If [B,S], we expect a PaddedTensor or a NormalTensor (for inference), "padding" refers to "internal" padding (per each sequence)
-        If [B,P,S], we expect a PaddedTensor or an Unpadded Tensor (or NormalTensor for inference), where "padding" refers to "external" padding (per each batch). Thus, to reconstruct the internal padding, we need the internal padding mask
-        
-        If input is of shape B,P,S, flatten the patch with the batch => B,P,S => B*P,S but skip computation on "external" padding
-        """
-        """
-        I expect as input a dictionary composed of
-        {
-        "tensor": see comment above
-        "padding_masks_external": True if the entire patch is to be padded, False otherwise [B,P,S]
-        "padding_masks_internal": Contains information about padding of each sequence inside patches (ready to be flattened) [B,P,S]
-        }
-        """
-        tensor = x["tensor"]  # [B,P,S]
-        padding_masks_external = x["padding_masks_external"]  # [B,P,S]
-        padding_masks_internal = x["padding_masks_internal"]  # [B,P,S]
-        
-        # Step 1: Encoder - Filter valid patches
-        valid_patch_mask = ~padding_masks_external.all(dim=-1)  # [B,P]
-        valid_tensor = tensor[valid_patch_mask]  # [B*P_valid, S]
-        valid_internal_masks = padding_masks_internal[valid_patch_mask]  # [B*P_valid, S]
-        
-        padded_tensor = PaddedTensor(
-            tensor=valid_tensor,
-            padding_mask=valid_internal_masks
-        )
-        z = self.encoder(padded_tensor)  # [B*P_valid, S] -> [B*P_valid, D]
-        
-        if not skip_transformer:
-            # Step 2: Reshape for transformer
-            B, P = valid_patch_mask.shape
-            D = z.tensor.size(-1)
-            z_full = torch.zeros(B, D, device=z.device, dtype=z.dtype)
-            z_full[valid_patch_mask] = z.tensor  # [B, P]
-            
-            external_padding_mask = ~valid_patch_mask  # [B, P]
-            z_padded = PaddedTensor(tensor=z_full, padding_mask=external_padding_mask)
-            
-            # Step 3: Transformer
-            z = self.projection_in(z_padded)
-            z = self.transformer(z)  # [B, P, D]
-            z = self.projection_out(z)
-            
-            # Step 4: Back to decoder format
-            z_valid = z.tensor[valid_patch_mask]  # [B*P_valid, D]
-            z_valid_wrapped = replace(z, tensor=z_valid)
-        else:
-            # Skip transformer - encoder directly connected to decoder
-            z_valid_wrapped = z
-        
-        # Early return for encoder-only phase
-        if skip_decoder:
-            return z_valid_wrapped  # [B*P_valid, D]
-        
-        # Step 5: Decoder
-        logits, _ = self.decoder(z_valid_wrapped)  # [B*P_valid, D] -> [B*P_valid, S, vocab_size]
-        
-        # Step 6: Restore final output
-        B, P = valid_patch_mask.shape
-        S = tensor.size(-1)
-        vocab_size = logits.tensor.size(-1)
-        output_logits = torch.zeros(B, P, S, vocab_size, device=tensor.device, dtype=logits.tensor.dtype)
-        output_logits[valid_patch_mask] = logits.tensor
-        
-        return output_logits
-
-    def set_training_phase(self, phase: str):
-        """Set training phase and configure module gradients"""
-        self.training_phase = phase
-        
-        phase_configs = {
-            'autoencoder-training': {'encoder': True, 'transformer': False, 'decoder': True},
-            'patch-training': {'encoder': True, 'transformer': True, 'decoder': False},
-            'autoencoder-final-annealing': {'encoder': False, 'transformer': True, 'decoder': True}
-        }
-        
-        if phase not in phase_configs:
-            raise ValueError(f"Unknown phase: {phase}")
-        
-        config = phase_configs[phase]
-        self.encoder.requires_grad_(config['encoder'])
-        self.transformer.requires_grad_(config['transformer'])
-        self.decoder.requires_grad_(config['decoder'])
-
-    def training_step(self, batch, phase=None, log=None):
-        """Simplified training step dispatcher"""
-        phase = phase or self.training_phase
-        
-        if phase == 'autoencoder-training':
-            return self._autoencoder_loss(batch, log=log)
-        elif phase == 'patch-training':
-            return self._patch_loss(batch)
-        elif phase == 'autoencoder-final-annealing':
-            return self._fine_tuning_loss(batch)
-        else:
-            raise ValueError(f"Unknown training phase: {phase}")
-
-    def _autoencoder_loss(self, batch, log):
-        """Phase 1: Autoencoder reconstruction loss"""
-        x = batch['input_ids'] 
-        
-        # Forward with autoencoder only (skip transformer)
-        logits = self.forward(x, skip_transformer=True)  # [B, P, S, vocab_size]
-        
-        # Get target tensor
-        targets = x["tensor"]  # [B, P, S]
-        valid_mask = ~x["padding_masks_external"].all(dim=-1)  # [B, P]
-        
-        # Compute loss only on valid patches
-        loss = 0
-        count = 0
-        for b in range(targets.size(0)):
-            for p in range(targets.size(1)):
-                if valid_mask[b, p]:
-                    patch_logits = logits[b, p]  # [S, vocab_size]
-                    patch_targets = targets[b, p]  # [S]
-                    
-                    # Mask internal padding
-                    internal_mask = ~x["padding_masks_internal"][b, p]
-                    if internal_mask.any():
-                        valid_logits = patch_logits[internal_mask]
-                        valid_targets = patch_targets[internal_mask]
-                        loss += F.cross_entropy(valid_logits, valid_targets)
-                        count += 1
-        loss=loss / max(count, 1)
-        log('train/autoencoder_loss', loss, prog_bar=True)
-        return loss
-
-    def _patch_loss(self, batch):
-        """Phase 2: Patch-level autoregressive prediction"""
-        x = batch['input_ids']
-        
-        # Get patch embeddings (skip decoder)
-        z = self.forward(x, skip_decoder=True)  # [B*P_valid, D]
-        
-        # Reshape to get batch structure back
-        valid_mask = ~x["padding_masks_external"].all(dim=-1)  # [B, P]
-        B, P = valid_mask.shape
-        D = z.tensor.size(-1)
-        
-        z_full = torch.zeros(B, P, D, device=z.tensor.device, dtype=z.tensor.dtype)
-        z_full[valid_mask] = z.tensor
-        
-        # Autoregressive loss: predict next patch from previous patches
-        if P <= 1:
-            return torch.tensor(0.0, device=z.tensor.device, requires_grad=True)
-        
-        # Input: patches 0 to P-2, Target: patches 1 to P-1
-        input_patches = z_full[:, :-1]  # [B, P-1, D]
-        target_patches = z_full[:, 1:]  # [B, P-1, D]
-        
-        # Only compute loss where both input and target are valid
-        input_valid = valid_mask[:, :-1]
-        target_valid = valid_mask[:, 1:]
-        both_valid = input_valid & target_valid
-        
-        if both_valid.any():
-            return F.mse_loss(input_patches[both_valid], target_patches[both_valid])
-        else:
-            return torch.tensor(0.0, device=z.tensor.device, requires_grad=True)
-
-    def _fine_tuning_loss(self, batch):
-        """Phase 3"""
-        x = batch['input_ids']
-        
-        # Full forward pass
-        logits = self.forward(x)  # [B, P, S, vocab_size]
-        targets = x["tensor"]  # [B, P, S]
-        
-        # Compute loss on all valid positions
-        loss = 0
-        count = 0
-        
-        valid_patch_mask = ~x["padding_masks_external"].all(dim=-1)
-        
-        for b in range(targets.size(0)):
-            for p in range(targets.size(1)):
-                if valid_patch_mask[b, p]:
-                    patch_logits = logits[b, p]  # [S, vocab_size]
-                    patch_targets = targets[b, p]  # [S]
-                    
-                    # Use internal padding mask
-                    internal_mask = ~x["padding_masks_internal"][b, p]
-                    if internal_mask.any():
-                        valid_logits = patch_logits[internal_mask]
-                        valid_targets = patch_targets[internal_mask]
-                        loss += F.cross_entropy(valid_logits, valid_targets)
-                        count += 1
-        
-        return loss / max(count, 1)
 class TransformerWithLMHead(nn.Module):
     """
     Adding an LM Head to TransformerWithEmbeddingHead. This is enough for Bert-like/GPT-like models.
@@ -726,3 +519,211 @@ class EntropyModel(Autoregressive_Model):
             
             else:
                 raise ValueError("text must be either a string or a list of strings")
+class TransformerWithCharAutoencoder(nn.Module):
+    def __init__(self, config, device=None, tokenizer=None, log=None):
+        super().__init__()
+        from char_autoencoder.autoencoders import TransCharAutoencoder_Encoder, TransCharAutoencoder_Decoder
+        self.log=log
+        self.encoder = TransCharAutoencoder_Encoder(config=config.encoder)
+        self.decoder = TransCharAutoencoder_Decoder(config=config.decoder)
+        self.transformer = NakedTransformer(config)
+        self.projection_in = ModuleWrapper(nn.Linear(config.encoder.hidden_size, config.hidden_size))
+        self.projection_out = ModuleWrapper(nn.Linear(config.hidden_size, config.decoder.hidden_size))
+        self.config = config
+        
+        # Training phase state
+        self.training_phase = 'autoencoder-training'
+
+    def forward(self, x, skip_transformer=False, skip_decoder=False):
+        """Phase 1: Train autoencoder only (bypass transformer)
+        Input could be [B,S] or [B,P,S]
+        If [B,S], we expect a PaddedTensor or a NormalTensor (for inference), "padding" refers to "internal" padding (per each sequence)
+        If [B,P,S], we expect a PaddedTensor or an Unpadded Tensor (or NormalTensor for inference), where "padding" refers to "external" padding (per each batch). Thus, to reconstruct the internal padding, we need the internal padding mask
+        
+        If input is of shape B,P,S, flatten the patch with the batch => B,P,S => B*P,S but skip computation on "external" padding
+        """
+        """
+        I expect as input a dictionary composed of
+        {
+        "tensor": see comment above
+        "padding_masks_external": True if the entire patch is to be padded, False otherwise [B,P,S]
+        "padding_masks_internal": Contains information about padding of each sequence inside patches (ready to be flattened) [B,P,S]
+        }
+        """
+        tensor = x["tensor"]  # [B,P,S]
+        padding_masks_external = x["padding_masks_external"]  # [B,P,S]
+        padding_masks_internal = x["padding_masks_internal"]  # [B,P,S]
+        
+        # Step 1: Encoder - Filter valid patches
+        valid_patch_mask = ~padding_masks_external.all(dim=-1)  # [B,P]
+        valid_tensor = tensor[valid_patch_mask]  # [B*P_valid, S]
+        valid_internal_masks = padding_masks_internal[valid_patch_mask]  # [B*P_valid, S]
+        
+        padded_tensor = PaddedTensor(
+            tensor=valid_tensor,
+            padding_mask=valid_internal_masks
+        )
+        z = self.encoder(padded_tensor)  # [B*P_valid, S] -> [B*P_valid, D]
+        
+        if not skip_transformer:
+            # Step 2: Reshape for transformer
+            B, P = valid_patch_mask.shape
+            D = z.tensor.size(-1)
+            z_full = torch.zeros(B, D, device=z.device, dtype=z.dtype)
+            z_full[valid_patch_mask] = z.tensor  # [B, P]
+            
+            external_padding_mask = ~valid_patch_mask  # [B, P]
+            z_padded = PaddedTensor(tensor=z_full, padding_mask=external_padding_mask)
+            
+            # Step 3: Transformer
+            z = self.projection_in(z_padded)
+            z = self.transformer(z)  # [B, P, D]
+            z = self.projection_out(z)
+            
+            # Step 4: Back to decoder format
+            z_valid = z.tensor[valid_patch_mask]  # [B*P_valid, D]
+            z_valid_wrapped = replace(z, tensor=z_valid)
+        else:
+            # Skip transformer - encoder directly connected to decoder
+            z_valid_wrapped = z
+        
+        # Early return for encoder-only phase
+        if skip_decoder:
+            return z_valid_wrapped  # [B*P_valid, D]
+        
+        # Step 5: Decoder
+        logits, _ = self.decoder(z_valid_wrapped)  # [B*P_valid, D] -> [B*P_valid, S, vocab_size]
+        
+        # Step 6: Restore final output
+        B, P = valid_patch_mask.shape
+        S = tensor.size(-1)
+        vocab_size = logits.tensor.size(-1)
+        output_logits = torch.zeros(B, P, S, vocab_size, device=tensor.device, dtype=logits.tensor.dtype)
+        output_logits[valid_patch_mask] = logits.tensor
+        
+        return output_logits
+
+    def set_training_phase(self, phase: str):
+        """Set training phase and configure module gradients"""
+        self.training_phase = phase
+        
+        phase_configs = {
+            'autoencoder-training': {'encoder': True, 'transformer': False, 'decoder': True},
+            'patch-training': {'encoder': True, 'transformer': True, 'decoder': False},
+            'autoencoder-final-annealing': {'encoder': False, 'transformer': True, 'decoder': True}
+        }
+        
+        if phase not in phase_configs:
+            raise ValueError(f"Unknown phase: {phase}")
+        
+        config = phase_configs[phase]
+        self.encoder.requires_grad_(config['encoder'])
+        self.transformer.requires_grad_(config['transformer'])
+        self.decoder.requires_grad_(config['decoder'])
+
+    def training_step(self, batch, phase=None, log=None):
+        """Simplified training step dispatcher"""
+        phase = phase or self.training_phase
+        
+        if phase == 'autoencoder-training':
+            return self._autoencoder_loss(batch, log=log)
+        elif phase == 'patch-training':
+            return self._patch_loss(batch)
+        elif phase == 'autoencoder-final-annealing':
+            return self._fine_tuning_loss(batch)
+        else:
+            raise ValueError(f"Unknown training phase: {phase}")
+
+    def _autoencoder_loss(self, batch, log):
+        """Phase 1: Autoencoder reconstruction loss"""
+        x = batch['input_ids'] 
+        
+        # Forward with autoencoder only (skip transformer)
+        logits = self.forward(x, skip_transformer=True)  # [B, P, S, vocab_size]
+        
+        # Get target tensor
+        targets = x["tensor"]  # [B, P, S]
+        valid_mask = ~x["padding_masks_external"].all(dim=-1)  # [B, P]
+        
+        # Compute loss only on valid patches
+        loss = 0
+        count = 0
+        for b in range(targets.size(0)):
+            for p in range(targets.size(1)):
+                if valid_mask[b, p]:
+                    patch_logits = logits[b, p]  # [S, vocab_size]
+                    patch_targets = targets[b, p]  # [S]
+                    
+                    # Mask internal padding
+                    internal_mask = ~x["padding_masks_internal"][b, p]
+                    if internal_mask.any():
+                        valid_logits = patch_logits[internal_mask]
+                        valid_targets = patch_targets[internal_mask]
+                        loss += F.cross_entropy(valid_logits, valid_targets)
+                        count += 1
+        loss=loss / max(count, 1)
+        log('train/autoencoder_loss', loss, prog_bar=True)
+        return loss
+
+    def _patch_loss(self, batch):
+        """Phase 2: Patch-level autoregressive prediction"""
+        x = batch['input_ids']
+        
+        # Get patch embeddings (skip decoder)
+        z = self.forward(x, skip_decoder=True)  # [B*P_valid, D]
+        
+        # Reshape to get batch structure back
+        valid_mask = ~x["padding_masks_external"].all(dim=-1)  # [B, P]
+        B, P = valid_mask.shape
+        D = z.tensor.size(-1)
+        
+        z_full = torch.zeros(B, P, D, device=z.tensor.device, dtype=z.tensor.dtype)
+        z_full[valid_mask] = z.tensor
+        
+        # Autoregressive loss: predict next patch from previous patches
+        if P <= 1:
+            return torch.tensor(0.0, device=z.tensor.device, requires_grad=True)
+        
+        # Input: patches 0 to P-2, Target: patches 1 to P-1
+        input_patches = z_full[:, :-1]  # [B, P-1, D]
+        target_patches = z_full[:, 1:]  # [B, P-1, D]
+        
+        # Only compute loss where both input and target are valid
+        input_valid = valid_mask[:, :-1]
+        target_valid = valid_mask[:, 1:]
+        both_valid = input_valid & target_valid
+        
+        if both_valid.any():
+            return F.mse_loss(input_patches[both_valid], target_patches[both_valid])
+        else:
+            return torch.tensor(0.0, device=z.tensor.device, requires_grad=True)
+
+    def _fine_tuning_loss(self, batch):
+        """Phase 3"""
+        x = batch['input_ids']
+        
+        # Full forward pass
+        logits = self.forward(x)  # [B, P, S, vocab_size]
+        targets = x["tensor"]  # [B, P, S]
+        
+        # Compute loss on all valid positions
+        loss = 0
+        count = 0
+        
+        valid_patch_mask = ~x["padding_masks_external"].all(dim=-1)
+        
+        for b in range(targets.size(0)):
+            for p in range(targets.size(1)):
+                if valid_patch_mask[b, p]:
+                    patch_logits = logits[b, p]  # [S, vocab_size]
+                    patch_targets = targets[b, p]  # [S]
+                    
+                    # Use internal padding mask
+                    internal_mask = ~x["padding_masks_internal"][b, p]
+                    if internal_mask.any():
+                        valid_logits = patch_logits[internal_mask]
+                        valid_targets = patch_targets[internal_mask]
+                        loss += F.cross_entropy(valid_logits, valid_targets)
+                        count += 1
+        
+        return loss / max(count, 1)
