@@ -1211,9 +1211,9 @@ def JSONIterator(json_path,logger,dataset_args={},progress_bar=True):
                pbar.update(len(row.encode('utf-8')))
                yield data
 
-def AtlasIterator(lmdb_path,logger,dataset_args={},progress_bar=True):
+def AtlasIterator(path,logger,dataset_args={},progress_bar=True):
    from torch_atlas_ds import AtlasDataset
-   db = AtlasDataset(lmdb_path) 
+   db = AtlasDataset(path) 
    ProgressBar = tqdm if progress_bar else lambda *args, **kwargs: ToBeFixed() 
    for i in ProgressBar(range(len(db))):
        try:
