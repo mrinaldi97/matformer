@@ -900,13 +900,13 @@ class SubMdat:
                     if progress_bar:
                         from tqdm import tqdm
                         batch_results = list(tqdm(
-                            pool.starmap(_worker_process_docs,
+                            pool.starmap(self._worker_process_docs,
                                         [(batch, strategy_state) for batch in doc_batches]),
                             total=len(doc_batches)
                         ))
                     else:
                         batch_results = pool.starmap(
-                            _worker_process_docs,
+                            self._worker_process_docs,
                             [(batch, strategy_state) for batch in doc_batches]
                         )
                 
