@@ -899,26 +899,25 @@ class SubMdat:
                             for sub_batch in sub_batches
                         ])
                         
-                        # Collect all results by database type - accumulate, don't write yet
+                        # Flatten results and process efficiently
                         for result_batch in results:
                             for key, result in result_batch:
                                 if result is not None:
-                                    for db_name in strategy.returns:
-                                        if db_name in result:
-                                            batch_collectors[db_name].append((key, result[db_name]))
+                                    # Direct dictionary access instead of loops
+                                    for db_name, data in result.items():
+                                        if db_name in batch_collectors:  # Only collect what we need
+                                            batch_collectors[db_name].append((key, data))
                                     
-                                    # Update stats
-                                    if 'tokens' in result:
-                                        num_tokens = result.get('token_count', 0)
+                                    # Update stats with direct access
+                                    stats['processed_docs'] += 1
+                                    if 'token_count' in result:
+                                        num_tokens = result['token_count']
                                         stats['total_tokens'] += num_tokens
                                         stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
-                                    
-                                    if 'chunks' in result:
-                                        chunk_count = result.get('chunk_count', 0)
+                                    if 'chunk_count' in result:
+                                        chunk_count = result['chunk_count']
                                         stats['total_chunks'] += chunk_count
                                         stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
-                                    
-                                    stats['processed_docs'] += 1
                         
                         # Perform batch writes for each database type (writes go to internal buffer)
                         for db_name, collected_data in batch_collectors.items():
@@ -1284,7 +1283,7 @@ class LMDBDataset:
             
             if len(self.batch_buffer) >= self.batch_size:
                 self._flush_batch()
-        def write_batch_with_keys(self, key_data_pairs):
+    def write_batch_with_keys(self, key_data_pairs):
             """
             Write multiple (key, data) pairs using the existing batch buffer mechanism.
             This leverages the existing batching and auto-flushing logic.
@@ -1307,7 +1306,7 @@ class LMDBDataset:
                 
                 if len(self.batch_buffer) >= self.batch_size:
                     self._flush_batch()     
-        def _flush_batch(self):
+    def _flush_batch(self):
             if not self.batch_buffer:
                 return
             with self.env.begin(write=True) as txn:
@@ -1315,7 +1314,7 @@ class LMDBDataset:
                     txn.put(key, data)
             self.batch_buffer.clear()
 
-        def close(self):
+    def close(self):
             self._flush_batch()  # Flush remaining items
             if self.readonly == False:
                 with self.env.begin(write=True) as txn:
