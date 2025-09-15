@@ -1625,31 +1625,28 @@ class PretokenizationStrategy:
             chunked_tokens.append(tokens[start:end])
         return chunked_tokens
     def __getstate__(self):
-        """Make strategy pickle-able so that it can be used in multiprocessing"""
+        """Make strategy pickable so that it can be used in multiprocessing"""
         return {
-            'mdat': self.mdat,
             'strategy_name': self.strategy_name,
             'tokenizer_type': self.tokenizer_type,
             'tokenizer_name': self.tokenizer_name,
-            'tokenizer_args': self.tokenizer_args,
+            'tokenizer_args': getattr(self, 'tokenizer_args', {}),
             'splitter_class': self.splitter_class,
             'splitter_init': self.splitter_init,
-            'splitter_arguments': self.splitter_arguments,
             'chunk_size': self.chunk_size,
             'modality': self.modality,
             'wants_from_db': self.wants_from_db,
             'wants_raw': self.wants_raw,
             'returns': self.returns,
-            'mdat_pretok_path': self.mdat_pretok_path,
-            'functions_path': self.functions_path
+            'functions_path': self.functions_path, 
+            'tokens_datatype': getattr(self, 'tokens_datatype', 'uint32'),
+            'chunks_datatype': getattr(self, 'chunks_datatype', 'uint32')
         }
 
     def __setstate__(self, state):
-        """Restore strategy from pickle"""
-        for key, value in state.items():
-            setattr(self, key, value)
-        
-        # Reinitialize the unpickleable components
+        """Restore strategy for worker process"""
+        self.__dict__.update(state)
+        self.mdat = None  # Not needed in workers
         self.on_the_fly_warning = False
         self.on_the_fly_mode = True
         self._initialize_components()
