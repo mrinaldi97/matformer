@@ -868,73 +868,53 @@ class SubMdat:
                 
                 stats['processed_docs'] += 1    
         else:
-            if num_processes is None:
-                num_processes = mp.cpu_count()
+                # PARALLEL VERSION
+                if num_processes is None:
+                    num_processes = mp.cpu_count()
 
-            with mp.Pool(processes=num_processes) as pool:
-                batch = []
-                batch_collectors = {db_name: [] for db_name in strategy.returns}
-                write_threshold = batch_size * num_processes * 4
-
-                for key, doc in enumerate(generator):
-                    batch.append((key, doc))
-                    if len(batch) >= batch_size * num_processes:
-                        sub_batches = [batch[i:i+batch_size] for i in range(0, len(batch), batch_size)]
-                        
-                        # Parallel execution (results already serialized/compressed)
-                        results = pool.starmap(process_documents_batch, [
-                            (sub_batch, self.mdat.pretok_path, self.mdat.functions_path,
-                             strategy_name, chunking_strict_checks, strategy.chunk_size,
-                             self.pretok_db[db_name].compressed, self.pretok_db[db_name].compression_level)
-                            for sub_batch in sub_batches
-                            for db_name in strategy.returns
-                        ])
-
-                        # Flatten and collect
-                        for worker_output in results:
-                            for db_name, key, data, record in worker_output:
-                                batch_collectors[db_name].append((key, data))
-                                stats['processed_docs'] += 1
-                                if 'token_count' in record:
-                                    stats['total_tokens'] += record['token_count']
-                                    stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], record['token_count'])
-                                if 'chunk_count' in record:
-                                    stats['total_chunks'] += record['chunk_count']
-                                    stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], record['chunk_count'])
-
-                        # Perform batch writes with optimized putmulti
-                        for db_name, collected_data in batch_collectors.items():
-                            if collected_data:
-                                self.pretok_db[db_name].write_batch_fast(collected_data)
-                                collected_data.clear()
-                        batch = []
-
-                # Handle leftovers
-                if batch:
-                    sub_batches = [batch[i:i+batch_size] for i in range(0, len(batch), batch_size)]
+                def process_batch_and_write(batch_data):
+                    """Process a batch and write results to databases."""
+                    sub_batches = [batch_data[i:i+batch_size] for i in range(0, len(batch_data), batch_size)]
+                    
                     results = pool.starmap(process_documents_batch, [
-                        (sub_batch, self.mdat.pretok_path, self.mdat.functions_path,
-                         strategy_name, chunking_strict_checks, strategy.chunk_size,
-                         self.pretok_db[db_name].compressed, self.pretok_db[db_name].compression_level)
+                        (sub_batch, self.mdat.pretok_path, self.mdat.functions_path, strategy_name, 
+                         chunking_strict_checks, strategy.chunk_size, strategy.returns)
                         for sub_batch in sub_batches
-                        for db_name in strategy.returns
                     ])
+                    
+                    # Collect results by database and merge stats
+                    db_batches = {db_name: [] for db_name in strategy.returns}
+                    
+                    for worker_db_data, worker_stats in results:
+                        # Merge stats
+                        global_stats['total_tokens'] += worker_stats['total_tokens']
+                        global_stats['total_chunks'] += worker_stats['total_chunks']
+                        global_stats['processed_docs'] += worker_stats['processed_docs']
+                        global_stats['max_tokens_per_doc'] = max(global_stats['max_tokens_per_doc'], worker_stats['max_tokens_per_doc'])
+                        global_stats['max_chunks_per_doc'] = max(global_stats['max_chunks_per_doc'], worker_stats['max_chunks_per_doc'])
+                        
+                        # Collect database writes
+                        for db_name in strategy.returns:
+                            if db_name in worker_db_data:
+                                db_batches[db_name].extend(worker_db_data[db_name])
+                    
+                    for db_name, key_data_pairs in db_batches.items():
+                        if key_data_pairs:
+                            self.pretok_db[db_name].write_batch_with_keys(key_data_pairs)
 
-                    for worker_output in results:
-                        for db_name, key, data, record in worker_output:
-                            batch_collectors[db_name].append((key, data))
-                            stats['processed_docs'] += 1
-                            if 'token_count' in record:
-                                stats['total_tokens'] += record['token_count']
-                                stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], record['token_count'])
-                            if 'chunk_count' in record:
-                                stats['total_chunks'] += record['chunk_count']
-                                stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], record['chunk_count'])
-
-                for db_name, collected_data in batch_collectors.items():
-                    if collected_data:
-                        self.pretok_db[db_name].write_batch_fast(collected_data)
-
+                with mp.Pool(processes=num_processes) as pool:
+                    batch = []
+                    
+                    for key, doc in enumerate(generator):
+                        batch.append((key, doc))
+                        
+                        if len(batch) >= batch_size * num_processes:
+                            process_batch_and_write(batch)
+                            batch = []
+                    
+                    # Process remaining items
+                    if batch:
+                        process_batch_and_write(batch)
         # E. Close the DB and update the manifest
         self.add_strategy_end(strategy_name=strategy_name,stats=stats)
             
@@ -1112,43 +1092,57 @@ class RandomPermutator:
         else:
             raise Exception("Index out of range")       
 def process_documents_batch(sub_batch, pretoken_path, functions_path, strategy_name,
-                            chunking_strict_checks, chunk_size, compressed=False, compression_level=0):
+                           chunking_strict_checks, chunk_size, strategy_returns):
     """
-    Each worker processes its documents and returns ready-to-store (key, bytes) pairs.
+    Worker function that processes documents and returns organized data by database type.
     """
     strategy = PretokenizationStrategy(strategy_name=strategy_name, pretok_path=pretoken_path, functions_path=functions_path)
     
-    output = []
+    # Organize results by database type
+    db_data = {db_name: [] for db_name in strategy_returns}
+    
+    # Local stats for this worker
+    local_stats = {
+        'total_tokens': 0,
+        'max_tokens_per_doc': 0,
+        'total_chunks': 0,
+        'max_chunks_per_doc': 0,
+        'processed_docs': 0
+    }
+    
     for key, doc in sub_batch:
         split_result = strategy.pretokenize_document(document=doc)
-        record = {}
+        local_stats['processed_docs'] += 1
         
-        if 'tokens' in split_result:
-            token_bytes = strategy.prepare_tokens_for_storage(split_result['tokens'])
-            record['token_count'] = len(split_result['tokens'])
-            record['tokens'] = token_bytes
-        
-        if 'chunks' in split_result:
-            tokens_length = len(split_result.get('tokens', [])) if chunking_strict_checks else None
-            chunk_bytes = strategy.prepare_chunks_for_storage(
-                split_result['chunks'],
-                max_tokens_per_chunk=chunk_size,
-                tokens_length=tokens_length,
-                strict_checks=chunking_strict_checks
-            )
-            record['chunk_count'] = len(split_result['chunks'])
-            record['chunks'] = chunk_bytes
-        
-        for db_name, data in record.items():
-            if db_name in ('tokens', 'chunks'):
-                # Ensure bytes, compress if needed
-                if not isinstance(data, bytes):
-                    data = orjson.dumps(data)
-                if compressed:
-                    data = zlib.compress(data, compression_level)
-                output.append((db_name, key, data, record))
+        for db_name in strategy_returns:
+            if db_name not in split_result:
+                continue
+                
+            if db_name == 'tokens':
+                token_bytes = strategy.prepare_tokens_for_storage(split_result['tokens'])
+                token_count = len(split_result['tokens'])
+                local_stats['total_tokens'] += token_count
+                local_stats['max_tokens_per_doc'] = max(local_stats['max_tokens_per_doc'], token_count)
+                db_data[db_name].append((key, token_bytes))
+                
+            elif db_name == 'chunks':
+                tokens_length = len(split_result.get('tokens', [])) if chunking_strict_checks else None
+                chunk_bytes = strategy.prepare_chunks_for_storage(
+                    split_result['chunks'],
+                    max_tokens_per_chunk=chunk_size,
+                    tokens_length=tokens_length,
+                    strict_checks=chunking_strict_checks
+                )
+                chunk_count = len(split_result['chunks'])
+                local_stats['total_chunks'] += chunk_count
+                local_stats['max_chunks_per_doc'] = max(local_stats['max_chunks_per_doc'], chunk_count)
+                db_data[db_name].append((key, chunk_bytes))
+                
+            else:
+                obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
+                db_data[db_name].append((key, obj_bytes))
     
-    return output
+    return db_data, local_stats
 
 # Exceptions
 if True:
@@ -1219,18 +1213,7 @@ class LMDBDataset:
         self.txn=self.env.begin(write=True)
     def close_transaction(self):
         pass
-    def write_batch_fast(self, key_data_pairs):
-        """
-        Efficient batch write using lmdb putmulti.
-        Expects (key, data) where data is already bytes (and optionally compressed).
-        """
-        if not key_data_pairs:
-            return
-        
-        # Keys must be bytes
-        kv = [(str(key).encode(), data) for key, data in key_data_pairs]
-        with self.env.begin(write=True) as txn:
-            txn.putmulti(kv)
+
             
     def write(self, obj, key=None, batched=False):
         """
