@@ -1116,8 +1116,7 @@ def process_documents_batch(sub_batch, pretoken_path, functions_path, strategy_n
     """
     Each worker processes its documents and returns ready-to-store (key, bytes) pairs.
     """
-    # Load strategy (assuming you have a loader utility)
-    strategy = load_strategy(strategy_name, pretoken_path, functions_path)
+    strategy = PretokenizationStrategy(strategy_name=strategy_name, pretok_path=pretoken_path, functions_path=functions_path)
     
     output = []
     for key, doc in sub_batch:
