@@ -779,14 +779,13 @@ class SubMdat:
         pass
     def _worker_process_docs(docs_batch, strategy_state):
         strategy = PretokenizationStrategy.__new__(PretokenizationStrategy)
-        strategy.__setstate__(strategy_state)  
-        
+        strategy.__setstate__(strategy_state)
+
         results = []
         for key, doc in docs_batch:
             split_result = strategy.pretokenize_document(document=doc)
             results.append((key, split_result))
-        return results                     
-
+        return results
     def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
                            progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
 
@@ -895,16 +894,21 @@ class SubMdat:
                     doc_batches.append(current_batch)
                 
                 # Process batches in parallel
-                worker_func = partial(self._worker_process_docs, strategy_state=strategy.__getstate__())                
+                strategy_state = strategy.__getstate__()
+
                 with mp.Pool(processes=num_processes) as pool:
                     if progress_bar:
                         from tqdm import tqdm
                         batch_results = list(tqdm(
-                            pool.map(worker_func, doc_batches), 
+                            pool.starmap(_worker_process_docs,
+                                        [(batch, strategy_state) for batch in doc_batches]),
                             total=len(doc_batches)
                         ))
                     else:
-                        batch_results = pool.map(worker_func, doc_batches)
+                        batch_results = pool.starmap(
+                            _worker_process_docs,
+                            [(batch, strategy_state) for batch in doc_batches]
+                        )
                 
                 # Write results sequentially (can be improved, LMDB suppors batched writing...)
                 for batch in batch_results:
