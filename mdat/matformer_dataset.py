@@ -785,7 +785,7 @@ class SubMdat:
             results.append((key, split_result))
         return results
     def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
-                           progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None):
+                           progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
         if self.readonly:
             raise MdatIsReadOnly
         
