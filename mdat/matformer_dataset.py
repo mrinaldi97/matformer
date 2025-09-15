@@ -879,7 +879,6 @@ class SubMdat:
         else:
                 if num_processes is None:
                         num_processes = mp.cpu_count()
-                
                 # Collect documents into batches
                 doc_batches = []
                 current_batch = []
