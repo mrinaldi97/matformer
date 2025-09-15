@@ -777,10 +777,7 @@ class SubMdat:
                 print(f"ERROR: The Splitter/Tokenizer returned {type(chunks)} as chunks instead of a list. This is unrecoverable")
         
         pass
-
-    def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
-                           progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
-        def _worker_process_docs(docs_batch, strategy):
+    def _worker_process_docs(docs_batch, strategy):
             """Partial function to be used for tokenization multiprocessing"""
             results = []
             for key, doc in docs_batch:
@@ -789,6 +786,9 @@ class SubMdat:
             return results                             
         if self.readonly:
             raise MdatIsReadOnly
+    def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
+                           progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
+
         
         # 1. Check if the strategy is registered in the parent mdat
         try:
@@ -893,7 +893,7 @@ class SubMdat:
                     doc_batches.append(current_batch)
                 
                 # Process batches in parallel
-                worker_func = partial(_worker_process_docs, strategy=strategy)
+                worker_func = partial(self._worker_process_docs, strategy=strategy)
                 
                 with mp.Pool(processes=num_processes) as pool:
                     if progress_bar:
@@ -1624,7 +1624,35 @@ class PretokenizationStrategy:
         for start, end in chunks:
             chunked_tokens.append(tokens[start:end])
         return chunked_tokens
+    def __getstate__(self):
+        """Make strategy pickle-able so that it can be used in multiprocessing"""
+        return {
+            'mdat': self.mdat,
+            'strategy_name': self.strategy_name,
+            'tokenizer_type': self.tokenizer_type,
+            'tokenizer_name': self.tokenizer_name,
+            'tokenizer_args': self.tokenizer_args,
+            'splitter_class': self.splitter_class,
+            'splitter_init': self.splitter_init,
+            'splitter_arguments': self.splitter_arguments,
+            'chunk_size': self.chunk_size,
+            'modality': self.modality,
+            'wants_from_db': self.wants_from_db,
+            'wants_raw': self.wants_raw,
+            'returns': self.returns,
+            'mdat_pretok_path': self.mdat_pretok_path,
+            'functions_path': self.functions_path
+        }
 
+    def __setstate__(self, state):
+        """Restore strategy from pickle"""
+        for key, value in state.items():
+            setattr(self, key, value)
+        
+        # Reinitialize the unpickleable components
+        self.on_the_fly_warning = False
+        self.on_the_fly_mode = True
+        self._initialize_components()
 
 
 # Exception classes
