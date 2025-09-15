@@ -869,7 +869,6 @@ class SubMdat:
                 stats['processed_docs'] += 1
         
         else:
-    
             # Determine number of processes
             if num_processes is None:
                 num_processes = mp.cpu_count()
@@ -878,6 +877,10 @@ class SubMdat:
             with mp.Pool(processes=num_processes) as pool:
                 # Process documents in batches
                 batch = []
+                
+                # Pre-allocate batch collectors for each database type
+                batch_collectors = {db_name: [] for db_name in strategy.returns}
+                
                 for key, doc in enumerate(generator):
                     batch.append((key, doc))
                     
@@ -893,13 +896,13 @@ class SubMdat:
                             for sub_batch in sub_batches
                         ])
                         
-                        # Process results and update databases
+                        # Collect all results by database type before writing
                         for result_batch in results:
                             for key, result in result_batch:
                                 if result is not None:
                                     for db_name in strategy.returns:
                                         if db_name in result:
-                                            self.pretok_db[db_name].write(key=key, obj=result[db_name])
+                                            batch_collectors[db_name].append((key, result[db_name]))
                                     
                                     # Update stats
                                     if 'tokens' in result:
@@ -914,6 +917,12 @@ class SubMdat:
                                     
                                     stats['processed_docs'] += 1
                         
+                        # Perform batch writes for each database type
+                        for db_name, collected_data in batch_collectors.items():
+                            if collected_data:
+                                self.pretok_db[db_name].write_batch_with_keys(collected_data)
+                                collected_data.clear()  # Clear for next batch
+                        
                         # Reset batch
                         batch = []
                 
@@ -926,12 +935,13 @@ class SubMdat:
                         for sub_batch in sub_batches
                     ])
                     
+                    # Collect remaining results
                     for result_batch in results:
                         for key, result in result_batch:
                             if result is not None:
                                 for db_name in strategy.returns:
                                     if db_name in result:
-                                        self.pretok_db[db_name].write(key=key, obj=result[db_name])
+                                        batch_collectors[db_name].append((key, result[db_name]))
                                 
                                 # Update stats
                                 if 'tokens' in result:
@@ -945,9 +955,12 @@ class SubMdat:
                                     stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
                                 
                                 stats['processed_docs'] += 1
-
-
-        
+                    
+                    # Write any remaining collected data
+                    for db_name, collected_data in batch_collectors.items():
+                        if collected_data:
+                            self.pretok_db[db_name].write_batch_with_keys(collected_data)
+                
         # E. Close the DB and update the manifest
         self.add_strategy_end(strategy_name=strategy_name,stats=stats)
             
@@ -1232,6 +1245,8 @@ class LMDBDataset:
                 self.length = int(txn.get(b"__len__").decode())
             except:
                 self.length=0
+    def set_batch_size(self,batch_size):
+        self.batch_size=batch_size
     def __len__(self):
         return self.length
     def start_transaction(self):
@@ -1267,22 +1282,44 @@ class LMDBDataset:
             
             if len(self.batch_buffer) >= self.batch_size:
                 self._flush_batch()
+    def write_batch_with_keys(self, key_data_pairs):
+        """
+        Write multiple (key, data) pairs in a single transaction.
         
-    def _flush_batch(self):
-        if not self.batch_buffer:
+        Args:
+            key_data_pairs: list of (key, data) tuples where key is the document index
+                           and data is the object to store
+        """
+        if not key_data_pairs:
             return
+        
+        processed_pairs = []
+        for key, data in key_data_pairs:
+            if not isinstance(data, bytes):
+                data = orjson.dumps(data)
+            if self.compressed:
+                data = zlib.compress(data, self.compression_level)
+            processed_pairs.append((str(key).encode(), data))
+        
+        # Write all pairs in a single transaction for maximum efficiency
         with self.env.begin(write=True) as txn:
-            for key, data in self.batch_buffer:
-                txn.put(key, data)
-        self.batch_buffer.clear()
-
-    def close(self):
-        self._flush_batch()  # Flush remaining items
-        if self.readonly == False:
+            for key_bytes, data in processed_pairs:
+                txn.put(key_bytes, data)        
+        def _flush_batch(self):
+            if not self.batch_buffer:
+                return
             with self.env.begin(write=True) as txn:
-                txn.put(b"__len__", str(self.length).encode())  # Synchronizing correct length
-            self.env.sync()
-        self.env.close()
+                for key, data in self.batch_buffer:
+                    txn.put(key, data)
+            self.batch_buffer.clear()
+
+        def close(self):
+            self._flush_batch()  # Flush remaining items
+            if self.readonly == False:
+                with self.env.begin(write=True) as txn:
+                    txn.put(b"__len__", str(self.length).encode())  # Synchronizing correct length
+                self.env.sync()
+            self.env.close()
                 
             
         
