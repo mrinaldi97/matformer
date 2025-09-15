@@ -889,8 +889,8 @@ class SubMdat:
                         stats['total_tokens'] += worker_stats['total_tokens']
                         stats['total_chunks'] += worker_stats['total_chunks']
                         stats['processed_docs'] += worker_stats['processed_docs']
-                        stats['max_tokens_per_doc'] = max(global_stats['max_tokens_per_doc'], worker_stats['max_tokens_per_doc'])
-                        stats['max_chunks_per_doc'] = max(global_stats['max_chunks_per_doc'], worker_stats['max_chunks_per_doc'])
+                        stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], worker_stats['max_tokens_per_doc'])
+                        stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], worker_stats['max_chunks_per_doc'])
                         
                         # Collect database writes
                         for db_name in strategy.returns:
@@ -909,12 +909,12 @@ class SubMdat:
                         batch.append((key, doc))
                         
                         if len(batch) >= batch_size * num_processes:
-                            stats=process_batch_and_write(batch)
+                            stats=process_batch_and_write(batch,stats)
                             batch = []
                     
                     # Process remaining items
                     if batch:
-                        stats=process_batch_and_write(batch)
+                        stats=process_batch_and_write(batch,stats)
         # E. Close the DB and update the manifest
         self.add_strategy_end(strategy_name=strategy_name,stats=stats)
             
