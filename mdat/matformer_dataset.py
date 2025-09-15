@@ -12,7 +12,8 @@ try:
 except:
     orjson=None
 from typing import Optional, Dict, Any, Union, List, Set
-
+import multiprocessing as mp
+from functools import partial
 
 class MatformerDataset:
     MANIFEST_FILENAME = 'manifest.json'
@@ -718,10 +719,10 @@ class SubMdat:
                 compressed=compression_level > 0, 
                 readonly=readonly,
                 compression_level=compression_level, 
-                map_size=map_size or (1<<31), 
+                map_size=map_size or (1<<44), 
                 batch_size=batch_size or 50000
             )       
-    def add_strategy_start(self, strategy_name:str, compression_level:int =0, map_size:int=1<<31, batch_size:int=50000):
+    def add_strategy_start(self, strategy_name:str, compression_level:int =0, map_size:int=1<<44, batch_size:int=50000):
         """
         Begin of the process of adding a strategy.
         It's important to call add_strategy_end after the Pretokenization process to be sure databases are closed, stats and manifest saved
@@ -776,8 +777,15 @@ class SubMdat:
                 print(f"ERROR: The Splitter/Tokenizer returned {type(chunks)} as chunks instead of a list. This is unrecoverable")
         
         pass
+    def _worker_process_docs(docs_batch, strategy):
+        """Process a batch of documents using strategy clone"""
+        results = []
+        for key, doc in docs_batch:
+            split_result = strategy.pretokenize_document(document=doc)
+            results.append((key, split_result))
+        return results
     def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
-                           progress_bar=True, chunking_strict_checks=False):
+                           progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None):
         if self.readonly:
             raise MdatIsReadOnly
         
@@ -810,6 +818,8 @@ class SubMdat:
         # 4. Initialize the splitter
         # 5. What does the splitter wants from Submdats'databases? [Default: raw_data]
         # 6. Initialize the generator
+        if parallel: 
+            progress_bar=False
         generator = self.get_generator(
             progress_bar=progress_bar,
             wanted_from_dbs=strategy.wants_from_db,
@@ -833,38 +843,98 @@ class SubMdat:
                Byte objects are required, if a string is returned, it is converted to utf-8, if other stuff, we try to serialize with orjson or
                raise exception (is responsibility of the splitter to return the correct datatype)
         """
+        if not parallel:
+            for key, doc in enumerate(generator):
+                # Process document through strategy
+                split_result = strategy.pretokenize_document(document=doc)
+                
+                for db_name in strategy.returns:
+                    if db_name in split_result:
+                        if db_name == 'tokens':
+                            token_bytes = strategy.prepare_tokens_for_storage(split_result['tokens'])
+                            num_tokens = len(split_result['tokens'])
+                            stats['total_tokens'] += num_tokens
+                            stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
+                            self.pretok_db[db_name].write(key=key, obj=token_bytes)
+                            
+                        elif db_name == 'chunks':
+                            tokens_length = len(split_result.get('tokens', [])) if chunking_strict_checks else None
+                            chunk_bytes = strategy.prepare_chunks_for_storage(
+                                split_result['chunks'],
+                                max_tokens_per_chunk=strategy.chunk_size,
+                                tokens_length=tokens_length,
+                                strict_checks=chunking_strict_checks
+                            )
+                            chunk_count = len(split_result['chunks'])
+                            stats['total_chunks'] += chunk_count
+                            stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
+                            self.pretok_db[db_name].write(obj=chunk_bytes, key=key)
+                            
+                        else:
+                            obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
+                            self.pretok_db[db_name].write(obj=obj_bytes, key=key)
+                
+                stats['processed_docs'] += 1
         
-        for key, doc in enumerate(generator):
-            # Process document through strategy
-            split_result = strategy.pretokenize_document(document=doc)
-            
-            for db_name in strategy.returns:
-                if db_name in split_result:
-                    if db_name == 'tokens':
-                        token_bytes = strategy.prepare_tokens_for_storage(split_result['tokens'])
-                        num_tokens = len(split_result['tokens'])
-                        stats['total_tokens'] += num_tokens
-                        stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
-                        self.pretok_db[db_name].write(key=key, obj=token_bytes)
-                        
-                    elif db_name == 'chunks':
-                        tokens_length = len(split_result.get('tokens', [])) if chunking_strict_checks else None
-                        chunk_bytes = strategy.prepare_chunks_for_storage(
-                            split_result['chunks'],
-                            max_tokens_per_chunk=strategy.chunk_size,
-                            tokens_length=tokens_length,
-                            strict_checks=chunking_strict_checks
-                        )
-                        chunk_count = len(split_result['chunks'])
-                        stats['total_chunks'] += chunk_count
-                        stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
-                        self.pretok_db[db_name].write(obj=chunk_bytes, key=key)
-                        
+        else:
+             if num_processes is None:
+                    num_processes = mp.cpu_count()
+                
+                # Collect documents into batches
+                doc_batches = []
+                current_batch = []
+                
+                for key, doc in enumerate(generator):
+                    current_batch.append((key, doc))
+                    if len(current_batch) >= batch_size:
+                        doc_batches.append(current_batch)
+                        current_batch = []
+                if current_batch:
+                    doc_batches.append(current_batch)
+                
+                # Process batches in parallel
+                worker_func = partial(_worker_process_docs, strategy=strategy)
+                
+                with mp.Pool(processes=num_processes) as pool:
+                    if progress_bar:
+                        from tqdm import tqdm
+                        batch_results = list(tqdm(
+                            pool.map(worker_func, doc_batches), 
+                            total=len(doc_batches)
+                        ))
                     else:
-                        obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
-                        self.pretok_db[db_name].write(obj=obj_bytes, key=key)
-            
-            stats['processed_docs'] += 1
+                        batch_results = pool.map(worker_func, doc_batches)
+                
+                # Write results sequentially (can be improved, LMDB suppors batched writing...)
+                for batch in batch_results:
+                    for key, split_result in batch:
+                        for db_name in strategy.returns:
+                            if db_name in split_result:
+                                if db_name == 'tokens':
+                                    token_bytes = strategy.prepare_tokens_for_storage(split_result['tokens'])
+                                    num_tokens = len(split_result['tokens'])
+                                    stats['total_tokens'] += num_tokens
+                                    stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
+                                    self.pretok_db[db_name].write(key=key, obj=token_bytes)
+                                    
+                                elif db_name == 'chunks':
+                                    tokens_length = len(split_result.get('tokens', [])) if chunking_strict_checks else None
+                                    chunk_bytes = strategy.prepare_chunks_for_storage(
+                                        split_result['chunks'],
+                                        max_tokens_per_chunk=strategy.chunk_size,
+                                        tokens_length=tokens_length,
+                                        strict_checks=chunking_strict_checks
+                                    )
+                                    chunk_count = len(split_result['chunks'])
+                                    stats['total_chunks'] += chunk_count
+                                    stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
+                                    self.pretok_db[db_name].write(obj=chunk_bytes, key=key)
+                                    
+                                else:
+                                    obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
+                                    self.pretok_db[db_name].write(obj=obj_bytes, key=key)
+                        
+                        stats['processed_docs'] += 1            
         
         # E. Close the DB and update the manifest
         self.add_strategy_end(strategy_name=strategy_name,stats=stats)
@@ -1080,7 +1150,7 @@ import pickle
 import os
 
 class LMDBDataset:
-    def __init__(self, path, readonly=True, lock=False, compressed=False, compression_level=0,map_size=1<<40,batch_size=50000):
+    def __init__(self, path, readonly=True, lock=False, compressed=False, compression_level=0,map_size=1<<44,batch_size=50000):
         self.env = lmdb.open(
             path,
             subdir=os.path.isdir(path),
