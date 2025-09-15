@@ -777,7 +777,7 @@ class SubMdat:
                 print(f"ERROR: The Splitter/Tokenizer returned {type(chunks)} as chunks instead of a list. This is unrecoverable")
 
     def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
-                           progress_bar=True, chunking_strict_checks=False, parallel=False, num_processes=None, batch_size=5000):
+                           progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
 
                 
         if self.readonly:
@@ -869,7 +869,82 @@ class SubMdat:
                 stats['processed_docs'] += 1
         
         else:
-            raise NotImplementedError
+    
+            # Determine number of processes
+            if num_processes is None:
+                num_processes = mp.cpu_count()
+            
+            # Create a process pool
+            with mp.Pool(processes=num_processes) as pool:
+                # Process documents in batches
+                batch = []
+                for key, doc in enumerate(generator):
+                    batch.append((key, doc))
+                    
+                    # When we have a full batch, process it
+                    if len(batch) >= batch_size * num_processes:
+                        # Split batch into sub-batches for each process
+                        sub_batches = [batch[i:i+batch_size] for i in range(0, len(batch), batch_size)]
+                        
+                        # Process sub-batches in parallel
+                        results = pool.starmap(process_documents_batch, [
+                            (sub_batch, self.mdat.pretok_path, self.mdat.functions_path, strategy_name, 
+                             chunking_strict_checks, strategy.chunk_size) 
+                            for sub_batch in sub_batches
+                        ])
+                        
+                        # Process results and update databases
+                        for result_batch in results:
+                            for key, result in result_batch:
+                                if result is not None:
+                                    for db_name in strategy.returns:
+                                        if db_name in result:
+                                            self.pretok_db[db_name].write(key=key, obj=result[db_name])
+                                    
+                                    # Update stats
+                                    if 'tokens' in result:
+                                        num_tokens = result.get('token_count', 0)
+                                        stats['total_tokens'] += num_tokens
+                                        stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
+                                    
+                                    if 'chunks' in result:
+                                        chunk_count = result.get('chunk_count', 0)
+                                        stats['total_chunks'] += chunk_count
+                                        stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
+                                    
+                                    stats['processed_docs'] += 1
+                        
+                        # Reset batch
+                        batch = []
+                
+                # Process any remaining documents
+                if batch:
+                    sub_batches = [batch[i:i+batch_size] for i in range(0, len(batch), batch_size)]
+                    results = pool.starmap(process_documents_batch, [
+                        (sub_batch, self.mdat.pretok_path, self.mdat.functions_path, strategy_name, 
+                         chunking_strict_checks, strategy.chunk_size) 
+                        for sub_batch in sub_batches
+                    ])
+                    
+                    for result_batch in results:
+                        for key, result in result_batch:
+                            if result is not None:
+                                for db_name in strategy.returns:
+                                    if db_name in result:
+                                        self.pretok_db[db_name].write(key=key, obj=result[db_name])
+                                
+                                # Update stats
+                                if 'tokens' in result:
+                                    num_tokens = result.get('token_count', 0)
+                                    stats['total_tokens'] += num_tokens
+                                    stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
+                                
+                                if 'chunks' in result:
+                                    chunk_count = result.get('chunk_count', 0)
+                                    stats['total_chunks'] += chunk_count
+                                    stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
+                                
+                                stats['processed_docs'] += 1
 
 
         
@@ -1049,7 +1124,53 @@ class RandomPermutator:
             return (self.a*i+self.b)%self.max_len
         else:
             raise Exception("Index out of range")       
-
+def process_documents_batch(batch, pretok_path, functions_path, strategy_name, 
+                           chunking_strict_checks, chunk_size):
+    """
+    Process a batch of documents in a separate process.
+    Returns a list of (key, result_dict) tuples where result_dict contains:
+    - The processed data for each database (tokens, chunks, etc.)
+    - Additional metadata like token_count and chunk_count for statistics
+    """
+    # Create a new strategy instance in this process
+    strategy = PretokenizationStrategy(pretok_path, functions_path, strategy_name)
+    results = []
+    
+    for key, doc in batch:
+        try:
+            # Process document through strategy
+            split_result = strategy.pretokenize_document(document=doc)
+            processed_result = {}
+            
+            for db_name in strategy.returns:
+                if db_name in split_result:
+                    if db_name == 'tokens':
+                        token_bytes = strategy.prepare_tokens_for_storage(split_result['tokens'])
+                        processed_result['tokens'] = token_bytes
+                        processed_result['token_count'] = len(split_result['tokens'])
+                        
+                    elif db_name == 'chunks':
+                        tokens_length = len(split_result.get('tokens', [])) if chunking_strict_checks else None
+                        chunk_bytes = strategy.prepare_chunks_for_storage(
+                            split_result['chunks'],
+                            max_tokens_per_chunk=chunk_size,
+                            tokens_length=tokens_length,
+                            strict_checks=chunking_strict_checks
+                        )
+                        processed_result['chunks'] = chunk_bytes
+                        processed_result['chunk_count'] = len(split_result['chunks'])
+                        
+                    else:
+                        obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
+                        processed_result[db_name] = obj_bytes
+            
+            results.append((key, processed_result))
+            
+        except Exception as e:
+            print(f"Error processing document {key}: {e}")
+            results.append((key, None))
+    
+    return results
 # Exceptions
 if True:
     class NameAlreadyUsed(Exception):
