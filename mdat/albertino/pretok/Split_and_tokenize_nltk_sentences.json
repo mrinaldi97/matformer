@@ -1,0 +1,22 @@
+{
+  "strategy_name": "Split_and_tokenize_nltk_sentences",
+  "tokenizer_type": "huggingface",
+  "tokenizer_name": "sapienzanlp/Minerva-350M-base-v1.0",
+  "tokenizer_args": {},
+  "splitter_class": "split_and_tokenize_by_nltk_sentences",
+  "splitter_init": {
+    "language": "italian",
+    "max_tokens": 1024
+  },
+  "splitter_arguments": null,
+  "modality": "text",
+  "chunk_size": 1024,
+  "wants_from_db": [
+    "data"
+  ],
+  "wants_raw": true,
+  "returns": [
+    "tokens",
+    "chunks"
+  ]
+}

@@ -453,7 +453,7 @@ class MatformerDataset:
         strategy_name = sanify_name(strategy_name)
         if strategy_name in self._get_manifest_attr('pretok_strategies', []):
             raise NameAlreadyUsed(f"Strategy '{strategy_name}' already registered")
-        strategy=PretokenizationStrategy.from_dict(self,strategy_name,strategy_dict)
+        strategy=PretokenizationStrategy.from_dict(self.pretok_path,self.functions_path,strategy_name,strategy_dict)
         if strategy:
             strategy.save()
             strategies = self._get_manifest_attr('pretok_strategies', [])
@@ -468,7 +468,7 @@ class MatformerDataset:
     def _populate_strategies(self) -> None:
         """Populate pretok strategies."""
         for strategy_name in self._get_manifest_attr('pretok_strategies', []):
-            self.pretok_strategies[strategy_name]=PretokenizationStrategy(self,strategy_name)
+            self.pretok_strategies[strategy_name]=PretokenizationStrategy(self.pretok_path,self.functions_path,strategy_name)
     
     def get_strategy(self, strategy_name: str) -> Any:
         """
@@ -775,20 +775,11 @@ class SubMdat:
                 return sizes.astype(chunks_dtype).tobytes(order='C')
         else:
                 print(f"ERROR: The Splitter/Tokenizer returned {type(chunks)} as chunks instead of a list. This is unrecoverable")
-        
-        pass
-    def _worker_process_docs(docs_batch, strategy_state):
-        strategy = PretokenizationStrategy.__new__(PretokenizationStrategy)
-        strategy.__setstate__(strategy_state)
 
-        results = []
-        for key, doc in docs_batch:
-            split_result = strategy.pretokenize_document(document=doc)
-            results.append((key, split_result))
-        return results
     def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
                            progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
 
+                
         if self.readonly:
             raise MdatIsReadOnly       
         # 1. Check if the strategy is registered in the parent mdat
@@ -820,8 +811,7 @@ class SubMdat:
         # 4. Initialize the splitter
         # 5. What does the splitter wants from Submdats'databases? [Default: raw_data]
         # 6. Initialize the generator
-        if parallel: 
-            progress_bar=False
+
         generator = self.get_generator(
             progress_bar=progress_bar,
             wanted_from_dbs=strategy.wants_from_db,
@@ -879,67 +869,50 @@ class SubMdat:
                 stats['processed_docs'] += 1
         
         else:
-                if num_processes is None:
-                        num_processes = mp.cpu_count()
-                # Collect documents into batches
-                doc_batches = []
-                current_batch = []
-                
-                for key, doc in enumerate(generator):
-                    current_batch.append((key, doc))
-                    if len(current_batch) >= batch_size:
-                        doc_batches.append(current_batch)
-                        current_batch = []
-                if current_batch:
-                    doc_batches.append(current_batch)
-                
-                # Process batches in parallel
-                strategy_state = strategy.__getstate__()
+            from concurrent.futures import ThreadPoolExecutor, as_completed
 
-                with mp.Pool(processes=num_processes) as pool:
-                    if progress_bar:
-                        from tqdm import tqdm
-                        batch_results = list(tqdm(
-                            pool.starmap(self._worker_process_docs,
-                                        [(batch, strategy_state) for batch in doc_batches]),
-                            total=len(doc_batches)
-                        ))
-                    else:
-                        batch_results = pool.starmap(
-                            self._worker_process_docs,
-                            [(batch, strategy_state) for batch in doc_batches]
-                        )
-                
-                # Write results sequentially (can be improved, LMDB suppors batched writing...)
-                for batch in batch_results:
-                    for key, split_result in batch:
-                        for db_name in strategy.returns:
-                            if db_name in split_result:
-                                if db_name == 'tokens':
-                                    token_bytes = strategy.prepare_tokens_for_storage(split_result['tokens'])
-                                    num_tokens = len(split_result['tokens'])
-                                    stats['total_tokens'] += num_tokens
-                                    stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
-                                    self.pretok_db[db_name].write(key=key, obj=token_bytes)
-                                    
-                                elif db_name == 'chunks':
-                                    tokens_length = len(split_result.get('tokens', [])) if chunking_strict_checks else None
-                                    chunk_bytes = strategy.prepare_chunks_for_storage(
-                                        split_result['chunks'],
-                                        max_tokens_per_chunk=strategy.chunk_size,
-                                        tokens_length=tokens_length,
-                                        strict_checks=chunking_strict_checks
-                                    )
-                                    chunk_count = len(split_result['chunks'])
-                                    stats['total_chunks'] += chunk_count
-                                    stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
-                                    self.pretok_db[db_name].write(obj=chunk_bytes, key=key)
-                                    
-                                else:
-                                    obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
-                                    self.pretok_db[db_name].write(obj=obj_bytes, key=key)
-                        
-                        stats['processed_docs'] += 1            
+            num_threads = 32  
+            futures = {}
+
+            with ThreadPoolExecutor(max_workers=num_threads) as executor:
+                for key, doc in enumerate(generator):
+                    futures[executor.submit(lambda k, d: (k, strategy.pretokenize_document(d)), key, doc)] = key
+
+                for f in tqdm(as_completed(futures), total=len(futures), disable=not progress_bar):
+                    key, result = f.result()  # result is the dict returned by splitter
+
+                    for db_name in strategy.returns:
+                        if db_name not in result:
+                            continue
+
+                        if db_name == 'tokens':
+                            tokens = result['tokens']
+                            token_bytes = strategy.prepare_tokens_for_storage(tokens)
+                            self.pretok_db[db_name].write(key=key, obj=token_bytes)
+                            num_tokens = len(tokens)
+                            stats['total_tokens'] += num_tokens
+                            stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
+
+                        elif db_name == 'chunks':
+                            tokens_length = len(result.get('tokens', [])) if chunking_strict_checks else None
+                            chunk_bytes = strategy.prepare_chunks_for_storage(
+                                result['chunks'],
+                                max_tokens_per_chunk=strategy.chunk_size,
+                                tokens_length=tokens_length,
+                                strict_checks=chunking_strict_checks
+                            )
+                            self.pretok_db[db_name].write(key=key, obj=chunk_bytes)
+                            num_chunks = len(result['chunks'])
+                            stats['total_chunks'] += num_chunks
+                            stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], num_chunks)
+
+                        else:
+                            obj_bytes = strategy.prepare_extra_data_for_storage(result[db_name])
+                            self.pretok_db[db_name].write(key=key, obj=obj_bytes)
+
+                    stats['processed_docs'] += 1
+
+
         
         # E. Close the DB and update the manifest
         self.add_strategy_end(strategy_name=strategy_name,stats=stats)
@@ -1313,7 +1286,7 @@ import sys
 sys.path.append('../') #DIRTY stuff to load matformertokenizer
 from matformer.tokenizers import MatformerTokenizer
 class PretokenizationStrategy:
-    def __init__(self, mdat, strategy_name: str):
+    def __init__(self, pretok_path,functions_path, strategy_name: str):
         """
         Initialize a PretokenizationStrategy by loading from existing configuration.
         A strategy can be used:
@@ -1321,10 +1294,11 @@ class PretokenizationStrategy:
             2) To retrieve the chunked/pretokenized data from the pretokenization databases
             3) To perform an on_the_fly tokenization/chunking
         """
-        self.mdat = mdat
+        #self.mdat = mdat
         self.strategy_name = strategy_name
-        self.mdat_pretok_path = mdat.pretok_path
-        self.functions_path = mdat.functions_path
+        self.mdat_pretok_path = pretok_path
+        self.functions_path = functions_path
+        #self.mdat=None #We don't need mdat anymore
         self.on_the_fly_warning = False
         self.on_the_fly_mode = True
         
@@ -1333,15 +1307,16 @@ class PretokenizationStrategy:
         self._initialize_components()
 
     @classmethod
-    def from_dict(cls, mdat, strategy_name: str, strategy_dict: Dict[str, Any]) -> 'PretokenizationStrategy':
+    def from_dict(cls, pretok_path,functions_path, strategy_name: str, strategy_dict: Dict[str, Any]) -> 'PretokenizationStrategy':
         """
         Create a new PretokenizationStrategy from a dictionary configuration.
         """
         instance = cls.__new__(cls)
-        instance.mdat = mdat
+        #instance.mdat = mdat
         instance.strategy_name = strategy_name
-        instance.mdat_pretok_path = mdat.pretok_path
-        instance.functions_path = mdat.functions_path
+        instance.mdat_pretok_path = pretok_path
+        instance.functions_path = functions_path
+        #instance.mdat=None #We don't need mdat anymore
         instance.on_the_fly_warning = False
         instance.on_the_fly_mode = True
         
@@ -1629,32 +1604,7 @@ class PretokenizationStrategy:
         for start, end in chunks:
             chunked_tokens.append(tokens[start:end])
         return chunked_tokens
-    def __getstate__(self):
-        """Make strategy pickable so that it can be used in multiprocessing"""
-        return {
-            'strategy_name': self.strategy_name,
-            'tokenizer_type': self.tokenizer_type,
-            'tokenizer_name': self.tokenizer_name,
-            'tokenizer_args': getattr(self, 'tokenizer_args', {}),
-            'splitter_class': self.splitter_class,
-            'splitter_init': self.splitter_init,
-            'chunk_size': self.chunk_size,
-            'modality': self.modality,
-            'wants_from_db': self.wants_from_db,
-            'wants_raw': self.wants_raw,
-            'returns': self.returns,
-            'functions_path': self.functions_path, 
-            'tokens_datatype': getattr(self, 'tokens_datatype', 'uint32'),
-            'chunks_datatype': getattr(self, 'chunks_datatype', 'uint32')
-        }
 
-    def __setstate__(self, state):
-        """Restore strategy for worker process"""
-        self.__dict__.update(state)
-        self.mdat = None  # Not needed in workers
-        self.on_the_fly_warning = False
-        self.on_the_fly_mode = True
-        self._initialize_components()
 
 
 # Exception classes
