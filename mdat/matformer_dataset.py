@@ -777,7 +777,7 @@ class SubMdat:
                 print(f"ERROR: The Splitter/Tokenizer returned {type(chunks)} as chunks instead of a list. This is unrecoverable")
 
     def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
-                           progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
+                           progress_bar=True, chunking_strict_checks=False, parallel=False, num_processes=None, batch_size=5000):
 
                 
         if self.readonly:
