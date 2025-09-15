@@ -784,12 +784,12 @@ class SubMdat:
                 split_result = strategy.pretokenize_document(document=doc)
                 results.append((key, split_result))
             return results                             
-        if self.readonly:
-            raise MdatIsReadOnly
+
     def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
                            progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
 
-        
+        if self.readonly:
+            raise MdatIsReadOnly       
         # 1. Check if the strategy is registered in the parent mdat
         try:
             strategy = self.mdat.get_strategy(strategy_name)
