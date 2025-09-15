@@ -872,7 +872,7 @@ class SubMdat:
                 if num_processes is None:
                     num_processes = mp.cpu_count()
 
-                def process_batch_and_write(batch_data):
+                def process_batch_and_write(batch_data,stats):
                     """Process a batch and write results to databases."""
                     sub_batches = [batch_data[i:i+batch_size] for i in range(0, len(batch_data), batch_size)]
                     
@@ -886,12 +886,11 @@ class SubMdat:
                     db_batches = {db_name: [] for db_name in strategy.returns}
                     
                     for worker_db_data, worker_stats in results:
-                        # Merge stats
-                        global_stats['total_tokens'] += worker_stats['total_tokens']
-                        global_stats['total_chunks'] += worker_stats['total_chunks']
-                        global_stats['processed_docs'] += worker_stats['processed_docs']
-                        global_stats['max_tokens_per_doc'] = max(global_stats['max_tokens_per_doc'], worker_stats['max_tokens_per_doc'])
-                        global_stats['max_chunks_per_doc'] = max(global_stats['max_chunks_per_doc'], worker_stats['max_chunks_per_doc'])
+                        stats['total_tokens'] += worker_stats['total_tokens']
+                        stats['total_chunks'] += worker_stats['total_chunks']
+                        stats['processed_docs'] += worker_stats['processed_docs']
+                        stats['max_tokens_per_doc'] = max(global_stats['max_tokens_per_doc'], worker_stats['max_tokens_per_doc'])
+                        stats['max_chunks_per_doc'] = max(global_stats['max_chunks_per_doc'], worker_stats['max_chunks_per_doc'])
                         
                         # Collect database writes
                         for db_name in strategy.returns:
@@ -901,6 +900,7 @@ class SubMdat:
                     for db_name, key_data_pairs in db_batches.items():
                         if key_data_pairs:
                             self.pretok_db[db_name].write_batch_with_keys(key_data_pairs)
+                    return stats
 
                 with mp.Pool(processes=num_processes) as pool:
                     batch = []
@@ -909,12 +909,12 @@ class SubMdat:
                         batch.append((key, doc))
                         
                         if len(batch) >= batch_size * num_processes:
-                            process_batch_and_write(batch)
+                            stats=process_batch_and_write(batch)
                             batch = []
                     
                     # Process remaining items
                     if batch:
-                        process_batch_and_write(batch)
+                        stats=process_batch_and_write(batch)
         # E. Close the DB and update the manifest
         self.add_strategy_end(strategy_name=strategy_name,stats=stats)
             
