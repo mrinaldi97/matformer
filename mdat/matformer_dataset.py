@@ -869,48 +869,7 @@ class SubMdat:
                 stats['processed_docs'] += 1
         
         else:
-            from concurrent.futures import ThreadPoolExecutor, as_completed
-
-            num_threads = 32  
-            futures = {}
-
-            with ThreadPoolExecutor(max_workers=num_threads) as executor:
-                for key, doc in enumerate(generator):
-                    futures[executor.submit(lambda k, d: (k, strategy.pretokenize_document(d)), key, doc)] = key
-
-                for f in tqdm(as_completed(futures), total=len(futures), disable=not progress_bar):
-                    key, result = f.result()  # result is the dict returned by splitter
-
-                    for db_name in strategy.returns:
-                        if db_name not in result:
-                            continue
-
-                        if db_name == 'tokens':
-                            tokens = result['tokens']
-                            token_bytes = strategy.prepare_tokens_for_storage(tokens)
-                            self.pretok_db[db_name].write(key=key, obj=token_bytes)
-                            num_tokens = len(tokens)
-                            stats['total_tokens'] += num_tokens
-                            stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
-
-                        elif db_name == 'chunks':
-                            tokens_length = len(result.get('tokens', [])) if chunking_strict_checks else None
-                            chunk_bytes = strategy.prepare_chunks_for_storage(
-                                result['chunks'],
-                                max_tokens_per_chunk=strategy.chunk_size,
-                                tokens_length=tokens_length,
-                                strict_checks=chunking_strict_checks
-                            )
-                            self.pretok_db[db_name].write(key=key, obj=chunk_bytes)
-                            num_chunks = len(result['chunks'])
-                            stats['total_chunks'] += num_chunks
-                            stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], num_chunks)
-
-                        else:
-                            obj_bytes = strategy.prepare_extra_data_for_storage(result[db_name])
-                            self.pretok_db[db_name].write(key=key, obj=obj_bytes)
-
-                    stats['processed_docs'] += 1
+            raise NotImplementedError
 
 
         
