@@ -866,75 +866,74 @@ class SubMdat:
                             obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
                             self.pretok_db[db_name].write(obj=obj_bytes, key=key)
                 
-                stats['processed_docs'] += 1
-        
-		else:
-			if num_processes is None:
-				num_processes = mp.cpu_count()
+                stats['processed_docs'] += 1    
+        else:
+            if num_processes is None:
+                num_processes = mp.cpu_count()
 
-			with mp.Pool(processes=num_processes) as pool:
-				batch = []
-				batch_collectors = {db_name: [] for db_name in strategy.returns}
-				write_threshold = batch_size * num_processes * 4
+            with mp.Pool(processes=num_processes) as pool:
+                batch = []
+                batch_collectors = {db_name: [] for db_name in strategy.returns}
+                write_threshold = batch_size * num_processes * 4
 
-				for key, doc in enumerate(generator):
-					batch.append((key, doc))
-					if len(batch) >= batch_size * num_processes:
-						sub_batches = [batch[i:i+batch_size] for i in range(0, len(batch), batch_size)]
-						
-						# Parallel execution (results already serialized/compressed)
-						results = pool.starmap(process_documents_batch, [
-							(sub_batch, self.mdat.pretok_path, self.mdat.functions_path,
-							 strategy_name, chunking_strict_checks, strategy.chunk_size,
-							 self.pretok_db[db_name].compressed, self.pretok_db[db_name].compression_level)
-							for sub_batch in sub_batches
-							for db_name in strategy.returns
-						])
+                for key, doc in enumerate(generator):
+                    batch.append((key, doc))
+                    if len(batch) >= batch_size * num_processes:
+                        sub_batches = [batch[i:i+batch_size] for i in range(0, len(batch), batch_size)]
+                        
+                        # Parallel execution (results already serialized/compressed)
+                        results = pool.starmap(process_documents_batch, [
+                            (sub_batch, self.mdat.pretok_path, self.mdat.functions_path,
+                             strategy_name, chunking_strict_checks, strategy.chunk_size,
+                             self.pretok_db[db_name].compressed, self.pretok_db[db_name].compression_level)
+                            for sub_batch in sub_batches
+                            for db_name in strategy.returns
+                        ])
 
-						# Flatten and collect
-						for worker_output in results:
-							for db_name, key, data, record in worker_output:
-								batch_collectors[db_name].append((key, data))
-								stats['processed_docs'] += 1
-								if 'token_count' in record:
-									stats['total_tokens'] += record['token_count']
-									stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], record['token_count'])
-								if 'chunk_count' in record:
-									stats['total_chunks'] += record['chunk_count']
-									stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], record['chunk_count'])
+                        # Flatten and collect
+                        for worker_output in results:
+                            for db_name, key, data, record in worker_output:
+                                batch_collectors[db_name].append((key, data))
+                                stats['processed_docs'] += 1
+                                if 'token_count' in record:
+                                    stats['total_tokens'] += record['token_count']
+                                    stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], record['token_count'])
+                                if 'chunk_count' in record:
+                                    stats['total_chunks'] += record['chunk_count']
+                                    stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], record['chunk_count'])
 
-						# Perform batch writes with optimized putmulti
-						for db_name, collected_data in batch_collectors.items():
-							if collected_data:
-								self.pretok_db[db_name].write_batch_fast(collected_data)
-								collected_data.clear()
-						batch = []
+                        # Perform batch writes with optimized putmulti
+                        for db_name, collected_data in batch_collectors.items():
+                            if collected_data:
+                                self.pretok_db[db_name].write_batch_fast(collected_data)
+                                collected_data.clear()
+                        batch = []
 
-				# Handle leftovers
-				if batch:
-					sub_batches = [batch[i:i+batch_size] for i in range(0, len(batch), batch_size)]
-					results = pool.starmap(process_documents_batch, [
-						(sub_batch, self.mdat.pretok_path, self.mdat.functions_path,
-						 strategy_name, chunking_strict_checks, strategy.chunk_size,
-						 self.pretok_db[db_name].compressed, self.pretok_db[db_name].compression_level)
-						for sub_batch in sub_batches
-						for db_name in strategy.returns
-					])
+                # Handle leftovers
+                if batch:
+                    sub_batches = [batch[i:i+batch_size] for i in range(0, len(batch), batch_size)]
+                    results = pool.starmap(process_documents_batch, [
+                        (sub_batch, self.mdat.pretok_path, self.mdat.functions_path,
+                         strategy_name, chunking_strict_checks, strategy.chunk_size,
+                         self.pretok_db[db_name].compressed, self.pretok_db[db_name].compression_level)
+                        for sub_batch in sub_batches
+                        for db_name in strategy.returns
+                    ])
 
-					for worker_output in results:
-						for db_name, key, data, record in worker_output:
-							batch_collectors[db_name].append((key, data))
-							stats['processed_docs'] += 1
-							if 'token_count' in record:
-								stats['total_tokens'] += record['token_count']
-								stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], record['token_count'])
-							if 'chunk_count' in record:
-								stats['total_chunks'] += record['chunk_count']
-								stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], record['chunk_count'])
+                    for worker_output in results:
+                        for db_name, key, data, record in worker_output:
+                            batch_collectors[db_name].append((key, data))
+                            stats['processed_docs'] += 1
+                            if 'token_count' in record:
+                                stats['total_tokens'] += record['token_count']
+                                stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], record['token_count'])
+                            if 'chunk_count' in record:
+                                stats['total_chunks'] += record['chunk_count']
+                                stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], record['chunk_count'])
 
-				for db_name, collected_data in batch_collectors.items():
-					if collected_data:
-						self.pretok_db[db_name].write_batch_fast(collected_data)
+                for db_name, collected_data in batch_collectors.items():
+                    if collected_data:
+                        self.pretok_db[db_name].write_batch_fast(collected_data)
 
         # E. Close the DB and update the manifest
         self.add_strategy_end(strategy_name=strategy_name,stats=stats)
