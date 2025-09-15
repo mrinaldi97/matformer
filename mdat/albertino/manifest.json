@@ -1,1 +1,0 @@
-{"type": "mdat", "version": "1.0", "dsmap_bits": 8, "datasets_map": {"1": "blogs"}, "views": [], "pretok_strategies": ["Split_and_tokenize_nltk_sentences"], "shuffled": false, "isMultimodal": false, "dataset_map": {"1": "blogs"}}
