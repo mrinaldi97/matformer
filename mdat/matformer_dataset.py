@@ -777,13 +777,15 @@ class SubMdat:
                 print(f"ERROR: The Splitter/Tokenizer returned {type(chunks)} as chunks instead of a list. This is unrecoverable")
         
         pass
-    def _worker_process_docs(docs_batch, strategy):
-            """Partial function to be used for tokenization multiprocessing"""
-            results = []
-            for key, doc in docs_batch:
-                split_result = strategy.pretokenize_document(document=doc)
-                results.append((key, split_result))
-            return results                             
+    def _worker_process_docs(docs_batch, strategy_state):
+        strategy = PretokenizationStrategy.__new__(PretokenizationStrategy)
+        strategy.__setstate__(strategy_state)  
+        
+        results = []
+        for key, doc in docs_batch:
+            split_result = strategy.pretokenize_document(document=doc)
+            results.append((key, split_result))
+        return results                     
 
     def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
                            progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
@@ -893,8 +895,7 @@ class SubMdat:
                     doc_batches.append(current_batch)
                 
                 # Process batches in parallel
-                worker_func = partial(self._worker_process_docs, strategy=strategy)
-                
+                worker_func = partial(self._worker_process_docs, strategy_state=strategy.__getstate__())                
                 with mp.Pool(processes=num_processes) as pool:
                     if progress_bar:
                         from tqdm import tqdm
