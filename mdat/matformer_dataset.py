@@ -877,8 +877,8 @@ class SubMdat:
                 stats['processed_docs'] += 1
         
         else:
-             if num_processes is None:
-                    num_processes = mp.cpu_count()
+                if num_processes is None:
+                        num_processes = mp.cpu_count()
                 
                 # Collect documents into batches
                 doc_batches = []
