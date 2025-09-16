@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 import os
 import json
 import struct
@@ -40,6 +42,12 @@ class MatformerDataset:
         self.pretok_strategies: Dict[str, Any] = {}
         self.skipped_submats: List = []
         self.readonly: bool = False
+        self.current_strategy=None
+        self.total_documents=0
+        self.total_tokens=None #This will be populated when a strategy is loaded
+        self.total_chunks=None
+        self.total_divided_chunks=None
+        self.chunk_multiplier=1 # Standard chunk multiplier: 1
         
     def _get_manifest_attr(self, key: str, default: Any = None) -> Any:
         """Get manifest attribute (possible to set a default)"""
@@ -82,6 +90,7 @@ class MatformerDataset:
             instance.set_view(ds_view)
             instance._populate_submdat()
             instance._populate_strategies()
+            instance.set_iteration_modality('document',with_meta=True) #Default: get a non-tokenized document with metadata
         else:
             if create_if_not_existent:
                 # Create and then load the dataset
@@ -213,9 +222,28 @@ class MatformerDataset:
                 f.write(struct.pack(struct_format, ds_id, doc_id))
         
         self._set_manifest_attr('shuffled', True, save=True)
+    def delete_shuffle(self):
+        self._set_manifest_attr('shuffled', False, save=True)
+    def _init_shuffle_file(self):
+        """Initialize shuffle file"""
+        if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
+            self._shuffle_struct_format = self._get_manifest_attr('shuffle_struct_format')
+            self._shuffle_struct_size = struct.calcsize(self._shuffle_struct_format)
+            shuffle_file_path = os.path.join(self.shuffling_path, 'default.mdat') #Will be modified with more shuffle
+            self._shuffle_file = open(shuffle_file_path, 'rb')
+
+    def _reset_document_pointer(self):
+        """Reset document index and file pointer"""
+        self._seek_document_pointer(0)
+
+    def _seek_document_pointer(self, index):
+        """Go to document index."""
+        self.document_index = index
+        if hasattr(self, '_shuffle_file') and self._shuffle_file:
+            self._shuffle_file.seek(index * self._shuffle_struct_size)
 
     def load_next_document(self, shuffled=True) -> None:
-        """Load next document."""
+        """Load next document"""
         if shuffled and not self._get_manifest_attr('shuffled', False):
             raise MDatNotShuffled("Dataset is not shuffled. Call shuffle() first or set shuffled=False")
         
@@ -229,25 +257,19 @@ class MatformerDataset:
                 return self.load_next_document(shuffled)
         
         if shuffled:
-            struct_format = self._get_manifest_attr('shuffle_struct_format')
-            struct_size = struct.calcsize(struct_format)
-            shuffle_file = os.path.join(self.shuffling_path, 'default.mdat')
+            # Initialize shuffle file
+            if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
+                self._init_shuffle_file()
             
-            with open(shuffle_file, 'rb') as f:
-                f.seek(self.document_index * struct_size)
-                data = f.read(struct_size)
-                if not data:  # End of dataset
-                    self.document_index = 0
-                    f.seek(0)
-                    data = f.read(struct_size)
-                
-                if data:
-                    submdat_id, doc_id = struct.unpack(struct_format, data)
-                    ds_map = self._get_manifest_attr('datasets_map', {})
-                    submdat_name = ds_map[str(submdat_id + 1)]  # Map is 1-indexed
-                    self.current_document = self.loaded_submdats[submdat_name][doc_id]
-                else:
-                    self.current_document = None
+            # Read from current position
+            data = self._shuffle_file.read(self._shuffle_struct_size)
+            if not data: 
+                raise StopIteration
+            
+            submdat_id, doc_id = struct.unpack(self._shuffle_struct_format, data)
+            ds_map = self._get_manifest_attr('datasets_map', {})
+            submdat_name = ds_map[str(submdat_id + 1)]  # Map is 1-indexed
+            self.current_document = self.loaded_submdats[submdat_name][doc_id]
         else:
             # Sequential access
             ds_map = self._get_manifest_attr('datasets_map', {})
@@ -263,10 +285,7 @@ class MatformerDataset:
                         break
                     current_pos += submdat_len
             else:
-                # Reset to beginning
-                self.document_index = 0
-                first_submdat = ds_map[str(min(int(k) for k in ds_map.keys()))]
-                self.current_document = self.loaded_submdats[first_submdat][0]
+               raise StopIteration
         
         self.document_index += 1
     
@@ -297,12 +316,14 @@ class MatformerDataset:
         if not ds_map:
             return
         max_key = max(int(k) for k in ds_map.keys())
+        self.documents_number=0
         for i in range(1, max_key + 1):
            submdat_name = ds_map.get(str(i))
            if submdat_name is None or submdat_name in self.skipped_submats:
                continue
            # Always construct SubMdat with parent reference so SubMdat can inherit things such as pretok strategies,readonly...
            self.loaded_submdats[submdat_name] = SubMdat.load_submdat(self, submdat_name)
+           self.total_documents+=len(self.loaded_submdats[submdat_name])
             
     def set_view(self, ds_view: Optional[Union[str, Dict[str, Any]]]) -> None:
         """
@@ -384,8 +405,8 @@ class MatformerDataset:
                 self.round_robin_insert(new)
             if reshuffle_at_the_end:
                 pass
-            else:
-                raise MDatAlreadyShuffled
+        else:
+                self.delete_shuffle()
         # 3. If until now there were no exception, time to update the manifest
         
         if not reshuffle_at_the_end:
@@ -479,6 +500,114 @@ class MatformerDataset:
         if strategy_name not in self.pretok_strategies.keys():
             raise StrategyNotRegistered(f"Strategy '{strategy_name}' not registered")    
         return self.pretok_strategies[strategy_name]
+    def strategies(self):
+        return self.list_strategies(self) #a shortcut
+    def set_multiplier(self,chunk_multiplier):
+        if isinstance(chunk_multiplier,int):
+            if chunk_multiplier>100:
+                raise Exception
+            self.chunk_multiplier=chunk_multiplier
+            if self.current_strategy is not None:
+                self.set_strategy(self.current_strategy.strategy_name)
+            if self.current_iteration_modality is not None:
+                self.set_iteration_modality(self.current_iteration_modality)
+        else:
+            raise TypeError
+    def __iter__(self):
+        return self
+    def __next__(self):
+        if self.current_iteration_modality=='document':
+            self.load_next_document()
+            return self.current_document
+        elif self.current_iteration_modality=='tokens':
+            self.load_next_document()
+            return self.current_document
+        elif self.current_iteration_modality=='chunked_tokens':
+            # current chunk step contains the chunk we are taking in the current document
+            if not hasattr(self, 'current_chunk_step'):
+                self.current_chunk_step = 0
+                self.current_document = None
+            
+            while True:
+                # Load document if exhausted
+                if (self.current_document is None or 
+                    'chunked_tokens' not in self.current_document or
+                    self.current_chunk_step >= len(self.current_document['chunked_tokens'])):
+                    self.load_next_document()
+                    self.current_chunk_step = 0
+                
+                chunks = self.current_document['chunked_tokens']
+                end_step = min(self.current_chunk_step + self.chunk_multiplier, len(chunks))
+                if end_step > self.current_chunk_step:
+                    selected_chunks = chunks[self.current_chunk_step:end_step]
+                    self.current_chunk_step = end_step
+                    return np.concatenate(selected_chunks).tolist()
+
+    def set_iteration_modality(self,modality,with_meta=False):
+        supported_modalities=['document','tokens','chunked_tokens']
+        if modality in supported_modalities:
+            self.current_iteration_modality=modality
+        else:
+            print(f"{modality} not in {supported_modalities}")
+        if modality=='document':
+            wanted_from_strategy=[]
+            wanted_from_dbs=['data']
+            self.len=self.total_documents
+        elif modality=='tokens':
+            wanted_from_strategy=['tokens']
+            wanted_from_dbs=[]
+            self.len=self.total_documents
+        elif modality=='chunked_tokens':
+            wanted_from_strategy=['chunked_tokens']
+            wanted_from_dbs=[]
+            self.len=self.total_divided_chunks
+        else:
+            raise Exception
+        if with_meta:
+            wanted_from_dbs.append('meta')
+        # Set the iteration modality in each submdat
+        for sbm in self.loaded_submdats.values():
+            sbm.set_default_wanted(from_dbs=wanted_from_dbs,from_strategy=wanted_from_strategy)
+        
+    def get_iteration_modality(self):
+        return self.current_iteration_modality
+    def set_strategy(self,strategy):
+        self.current_strategy=self.get_strategy(strategy)
+        self.total_chunks=0
+        self.total_tokens=0    
+        self.total_divided_chunks=0    
+        for sbm in self.loaded_submdats.values():
+            try:
+                sbm.set_strategy(strategy)
+                self.total_chunks+=sbm.strategy_stats['total_chunks']
+                self.total_tokens+=sbm.strategy_stats['total_tokens']
+                self.total_divided_chunks+=sbm.strategy_stats['precomputed_lengths'][self.chunk_multiplier]
+            except SubMdatMissesStrategy:
+                print(f"Submdat {sbm.submdat_name} is not pretokenized with strategy {strategy}.")
+                total_chunks=0
+                total_tokens=0    
+                total_divided_chunks=0   
+                self.current_strategy=None 
+            except Exception as e:
+               print(e)
+        # Get the stats from each submdat
+
+        # Decide the len of the mdat according to the requested modality
+    def __str__(self):
+        stringa=""
+        stringa+=("\n---- Matformer Dataset ----")
+        for k in self.manifest.keys():
+            stringa+=(f"\n{k}: {self.manifest[k]}")
+        stringa+=(f"\n Current strategy: {self.current_strategy}")
+        stringa+=(f"\n Total documents: {self.documents_number}")
+        stringa+=(f"\n Total tokens: {self.total_tokens}")
+        stringa+=(f"\n Total chunks: {self.total_chunks}")
+        stringa+=(f"\n Total divided chunks: {self.total_divided_chunks}")
+        stringa+=(f"\n Current iteration modality: {self.current_iteration_modality}")
+        stringa+=("\n Loaded sumbdats: ")
+        #for sbm in self.loaded_submdats.values():
+        #    stringa+=(sbm.__str__())
+        return stringa
     def list_strategies(self):
         """
         List registered strategies
@@ -491,7 +620,7 @@ class MatformerDataset:
         2) If a view is specified, it computes the length according to the view
         3) If a pretokenization strategy is set, it returns the number of chunks according to max_seq_len (necessary for model training)
         """
-        return 0
+        return self.len
 # Exceptions
 if True:
      #This "if True" is just to easily collapse the exceptions in my editor, will be removed
@@ -505,6 +634,8 @@ if True:
 
     class SubmDatNotFound(Exception):
         """Raised when sub-dataset is not found."""
+        pass
+    class SubMdatMissesStrategy(Exception):
         pass
 
     class MDatIsReadOnly(Exception):
@@ -537,6 +668,8 @@ class SubMdat:
         self.default_wanted_from_strategy = None
         self.db = dict()
     
+    def __str__(self):
+        return self.submdat_name
     def common_initialization(self, parent_mdat: 'MatformerDataset', submdat_name: str) -> None:
         """Common initialization for both load and create."""
         if not isinstance(parent_mdat, MatformerDataset):
@@ -682,7 +815,11 @@ class SubMdat:
 
     def __len__(self):
         return self.len
-
+    
+    def __str__(self):
+        print(f"Submdat: {self.manifest['name']}, Documents: {self.manifest['documents_number']}")
+        if self.current_strategy is not None:
+            print(f"Tokens: {self.strategy_stats['total_tokens']} Chunks: {self.strategy_stats['total_chunks']}")
     def get_manifest(self):  
         return self.manifest
     
@@ -701,6 +838,7 @@ class SubMdat:
             raise SubMdatMissesStrategy
         self.current_strategy=self.mdat.get_strategy(strategy_name)            
         self._load_strategy_dbs(strategy_name, readonly=readonly)
+        self._load_strategy_stats(strategy_name)
         
     def _load_strategy_dbs(self, strategy_name, readonly=True, compression_level=None, map_size=None, batch_size=None):
         pretok_path = os.path.join(self.mdat.pretok_path, strategy_name, self.submdat_name)
@@ -742,7 +880,9 @@ class SubMdat:
         self._load_strategy_dbs(strategy_name, readonly=False, 
                                compression_level=compression_level, 
                                map_size=map_size, batch_size=batch_size)  
-
+    def _load_strategy_stats(self,strategy_name):
+        with open(os.path.join(self.mdat.pretok_path, strategy_name, self.submdat_name,'stats.json'), "r") as f:
+            self.strategy_stats=json.load(f)
     def add_strategy_end(self,strategy_name,stats:dict[str,Any]):
         if self.readonly:
             raise MdatIsReadOnly
@@ -751,7 +891,7 @@ class SubMdat:
         with open(os.path.join(self.mdat.pretok_path, strategy_name, self.submdat_name,'stats.json'), "w") as f:
             f.write(json.dumps(stats))
         self.write_manifest()   
-        
+      
     def get_current_strategy(self):
         return self.current_strategy
         
@@ -777,9 +917,9 @@ class SubMdat:
                 print(f"ERROR: The Splitter/Tokenizer returned {type(chunks)} as chunks instead of a list. This is unrecoverable")
 
     def pretokenize_submdat(self, strategy_name, strategy_dict=None, register_in_parent_mdat=True, 
-                           progress_bar=True, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
+                           progress_bar=True, compression_level=0,chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
 
-                
+        max_multiplier=100     #Precompute 100 times the base sequence length   
         if self.readonly:
             raise MdatIsReadOnly       
         # 1. Check if the strategy is registered in the parent mdat
@@ -805,7 +945,9 @@ class SubMdat:
             'max_tokens_per_doc': 0,
             'total_chunks': 0,
             'max_chunks_per_doc': 0,
-            'processed_docs': 0
+            'processed_docs': 0,
+            'precomputed_lengths': [0] * max_multiplier,
+            'base_chunk_size': strategy.chunk_size
         }
         
         # 4. Initialize the splitter
@@ -836,6 +978,7 @@ class SubMdat:
                raise exception (is responsibility of the splitter to return the correct datatype)
         """
         if not parallel:
+             
             for key, doc in enumerate(generator):
                 # Process document through strategy
                 split_result = strategy.pretokenize_document(document=doc)
@@ -860,6 +1003,9 @@ class SubMdat:
                             chunk_count = len(split_result['chunks'])
                             stats['total_chunks'] += chunk_count
                             stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
+                            stats['precomputed_lengths'][0]=0
+                            for j in range(1, max_multiplier + 1):
+                                stats['precomputed_lengths'][j] += math.ceil(chunk_count / j)                            
                             self.pretok_db[db_name].write(obj=chunk_bytes, key=key)
                             
                         else:
@@ -878,7 +1024,7 @@ class SubMdat:
                     
                     results = pool.starmap(process_documents_batch, [
                         (sub_batch, self.mdat.pretok_path, self.mdat.functions_path, strategy_name, 
-                         chunking_strict_checks, strategy.chunk_size, strategy.returns)
+                         chunking_strict_checks, strategy.chunk_size, strategy.returns, max_multiplier)
                         for sub_batch in sub_batches
                     ])
                     
@@ -891,7 +1037,7 @@ class SubMdat:
                         stats['processed_docs'] += worker_stats['processed_docs']
                         stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], worker_stats['max_tokens_per_doc'])
                         stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], worker_stats['max_chunks_per_doc'])
-                        
+                        stats['precomputed_lengths'] = (np.array(stats['precomputed_lengths']) + np.array(worker_stats['precomputed_lengths'])).tolist()
                         # Collect database writes
                         for db_name in strategy.returns:
                             if db_name in worker_db_data:
@@ -1092,7 +1238,7 @@ class RandomPermutator:
         else:
             raise Exception("Index out of range")       
 def process_documents_batch(sub_batch, pretoken_path, functions_path, strategy_name,
-                           chunking_strict_checks, chunk_size, strategy_returns):
+                           chunking_strict_checks, chunk_size, strategy_returns, max_multiplier):
     """
     Worker function that processes documents and returns organized data by database type.
     """
@@ -1107,7 +1253,9 @@ def process_documents_batch(sub_batch, pretoken_path, functions_path, strategy_n
         'max_tokens_per_doc': 0,
         'total_chunks': 0,
         'max_chunks_per_doc': 0,
-        'processed_docs': 0
+        'processed_docs': 0,
+        'precomputed_lengths':[0] * max_multiplier,
+        'base_chunk_size':strategy.chunk_size
     }
     
     for key, doc in sub_batch:
@@ -1136,6 +1284,8 @@ def process_documents_batch(sub_batch, pretoken_path, functions_path, strategy_n
                 chunk_count = len(split_result['chunks'])
                 local_stats['total_chunks'] += chunk_count
                 local_stats['max_chunks_per_doc'] = max(local_stats['max_chunks_per_doc'], chunk_count)
+                for j in range(1, max_multiplier + 1):
+                                local_stats['precomputed_lengths'][j-1] += math.ceil(chunk_count / j)    
                 db_data[db_name].append((key, chunk_bytes))
                 
             else:
@@ -1362,8 +1512,7 @@ def LMDBIterator(lmdb_path,logger,dataset_args={},progress_bar=True):
 import random
 
 import sys
-sys.path.append('../') #DIRTY stuff to load matformertokenizer
-from matformer.tokenizers import MatformerTokenizer
+
 class PretokenizationStrategy:
     def __init__(self, pretok_path,functions_path, strategy_name: str):
         """
@@ -1383,7 +1532,8 @@ class PretokenizationStrategy:
         
         # Load strategy configuration
         self._load_configuration()
-        self._initialize_components()
+        self.initialized=False
+        #self._initialize_components()
 
     @classmethod
     def from_dict(cls, pretok_path,functions_path, strategy_name: str, strategy_dict: Dict[str, Any]) -> 'PretokenizationStrategy':
@@ -1400,7 +1550,8 @@ class PretokenizationStrategy:
         instance.on_the_fly_mode = True
         
         instance._create_from_dict(strategy_dict)
-        instance._initialize_components()
+        instance.initialized=False
+        #instance._initialize_components()
         return instance
 
     def _create_from_dict(self, strategy_dict: Dict[str, Any]):
@@ -1439,6 +1590,8 @@ class PretokenizationStrategy:
 
     def _initialize_components(self):
         """Initialize tokenizer and splitter components."""
+        sys.path.append('../') #DIRTY stuff to load matformertokenizer
+        from matformer.tokenizers import MatformerTokenizer
         # Initialize tokenizer
         from matformer.tokenizers import MatformerTokenizer
         self.tokenizer = MatformerTokenizer(
@@ -1550,6 +1703,8 @@ class PretokenizationStrategy:
         This function can be called either from the extern, in order to perform a pretokenization
         and cache the values, or from the intern, in order to perform an on-the-fly tokenization
         """
+        if not self.initialized():
+            self._initialize_components()
         # Check if the data dict is compatible with what the splitter wants
         if not self.wants_raw:      
             for required_key in self.wants_from_db:
@@ -1687,32 +1842,34 @@ class PretokenizationStrategy:
 
 
 # Exception classes
-class MissingStrategyKey(Exception):
-    pass
+if True:
+    class MissingStrategyKey(Exception):
+        pass
 
-class StrategyNotFound(Exception):
-    pass
+    class StrategyNotFound(Exception):
+        pass
 
-class SplitterClassNotFound(Exception):
-    pass
+    class SplitterClassNotFound(Exception):
+        pass
 
-class MissingDataKey(Exception):
-    pass
+    class MissingDataKey(Exception):
+        pass
 
-class MissingSplitterOutput(Exception):
-    pass
+    class MissingSplitterOutput(Exception):
+        pass
 
-class InvalidChunksFormat(Exception):
-    pass
-from typing import List, Tuple
-import time
-import difflib
-import re
-from tqdm import tqdm
-import math
-from nltk.tokenize import PunktTokenizer
+    class InvalidChunksFormat(Exception):
+        pass
+
 class split_and_tokenize_by_nltk_sentences:
     def __init__(self,language,max_tokens, tokenizer):
+        from typing import List, Tuple
+        import time
+        import difflib
+        import re
+        from tqdm import tqdm
+        import math
+        from nltk.tokenize import PunktTokenizer        
         self.punkt_tokenizer = PunktTokenizer(language) 
         self.tokenizer=tokenizer
         self.language=language
@@ -1803,3 +1960,181 @@ class split_and_tokenize_by_nltk_sentences:
     def _batched():
         raise NotImplementedError
 
+####### COMMAND LINE INTERFACE ##########
+
+import sys
+import os
+import json
+import csv
+import shutil
+import logging
+import argparse
+from concurrent.futures import ThreadPoolExecutor
+from tqdm import tqdm
+#from matformer_dataset import MatformerDataset
+try:
+    import orjson
+except Exception:
+    orjson = None
+
+def load_mdat(path, create=False):
+    return MatformerDataset.load_dataset(path, create_if_not_existent=create)
+
+def setup_logging(mdat_path, name, suppress_warnings=False):
+    log_dir = os.path.join(mdat_path, "logs")
+    os.makedirs(log_dir, exist_ok=True)
+    logger = logging.getLogger(f"mdat:{name}")
+    logger.setLevel(logging.DEBUG)
+    logger.handlers.clear()
+    fmt = logging.Formatter("%(asctime)s - %(levelname)s - %(message)s")
+    ch = logging.StreamHandler()
+    ch.setLevel(logging.ERROR if suppress_warnings else logging.INFO)
+    ch.setFormatter(fmt)
+    fh = logging.FileHandler(os.path.join(log_dir, f"{name}.log"))
+    fh.setLevel(logging.DEBUG)
+    fh.setFormatter(fmt)
+    logger.addHandler(ch); logger.addHandler(fh)
+    return logger
+
+def cmd_add_strategy(args):
+    mdat = load_mdat(args.mdat_path, create=False)
+    with open(args.strategy_file, "r") as f:
+        content = json.load(f) if orjson is None else orjson.loads(f.read())
+    mdat.register_strategy(content)
+    shutil.copy(args.strategy_function, mdat.functions_path)
+
+def cmd_remove_strategy(args):
+    mdat = load_mdat(args.mdat_path, create=False)
+    mdat.deregister_strategy(args.strategy_name)
+
+def cmd_list_strategies(args):
+    mdat = load_mdat(args.mdat_path, create=False)
+    for s in mdat.list_strategies():
+        print(s)
+
+def cmd_info(args):
+    mdat = load_mdat(args.mdat_path, create_if_not_existent:=False)
+    print(mdat)
+
+def cmd_sub_info(args):
+    mdat = load_mdat(args.mdat_path, create=False)
+    print(mdat[args.submdat_name])
+
+def cmd_pretokenize(args):
+    mdat = load_mdat(args.mdat_path, create=False)
+    if args.submdat_name == "*":
+        for sb in mdat.list_submdat():
+            mdat[sb].pretokenize_submdat(strategy_name=args.strategy_name, parallel=args.parallel, batch_size=args.batch_size)
+    else:
+        mdat[args.submdat_name].pretokenize_submdat(strategy_name=args.strategy_name, parallel=args.parallel, batch_size=args.batch_size, compression_level=args.compression_level)
+
+def cmd_shuffle(args):
+    mdat = load_mdat(args.mdat_path, create=False)
+    mdat.delete_shuffle()
+    mdat.shuffle()
+
+def cmd_create(args):
+    MatformerDataset.create_new(args.mdat_path)
+
+def _create_submdat_once(input_path, output_path, name, dataset_type, compress_data, compress_meta, data_key, map_size, do_transform, do_filtering, custom_path, logger):
+    mdat = MatformerDataset.load_dataset(path=output_path, create_if_not_existent=True)
+    submdat = mdat.add_submdat(submdat_name=name,
+                              compression_levels={"data": compress_data, "meta": compress_meta},
+                              map_sizes={"data": map_size, "meta": map_size},
+                              data_type="text", db_types=["meta", "data"])
+    dataset_args = {}
+    # dataset_type 'jsonl','csv','atlas','huggingface','sqlite','custom','lmdb'
+    result = submdat.convert_to_submdat(dataset_type=dataset_type, dataset_path=input_path, dataset_args=dataset_args, data_key=data_key,
+                                       modality="text", do_transform=do_transform, do_filtering=do_filtering, logger=logger, progress_bar=True)
+    logger.info(f"Sub-MDAT {name} created in {output_path}")
+    for k, v in result.items():
+        if isinstance(v, dict):
+            for k2, v2 in v.items():
+                logger.info(f"({k}) {k2}={v2}")
+        else:
+            logger.info(f"{k} = {v}")
+
+def cmd_create_submdat(args):
+    output_path = args.mdat_path  
+    logger = setup_logging(output_path, args.name or "batch_create_submdat", suppress_warnings=args.suppress_warnings)
+    if args.batch_csv:
+        logger.info(f"Starting batch from {args.batch_csv}")
+        with open(args.batch_csv, "r") as batch_file:
+            reader = csv.reader(batch_file)
+            def process_row(row):
+                if len(row) >= 4:
+                    input_p, output_p, name, dtype = row[:4]
+                    logger.info(f"Processing {name}")
+                    _create_submdat_once(input_p, output_p, name, dtype, args.compress_data, args.compress_meta, args.data_key, args.map_size, args.do_transform, args.do_filtering, args.custom, logger)
+            with ThreadPoolExecutor(max_workers=4) as ex:
+                list(ex.map(process_row, reader))
+    else:
+        if not args.input_path:
+            raise SystemExit("INPUT_PATH is required unless --batch_csv is provided")
+        _create_submdat_once(args.input_path, output_path, args.name, args.type, args.compress_data, args.compress_meta, args.data_key, args.map_size, args.do_transform, args.do_filtering, args.custom, logger)
+    logger.info("create_submdat completed")
+
+def build_parser():
+    p = argparse.ArgumentParser(prog="mdat.py", description="MDAT management CLI")
+    p.add_argument("mdat_path", help="Path to MDAT dataset (always required)")
+
+    sp = p.add_subparsers(dest="command", required=True)
+
+    s = sp.add_parser("add_strategy", help="add_strategy strategy_file.json strategy_function.py")
+    s.add_argument("strategy_file")
+    s.add_argument("strategy_function")
+    s.set_defaults(func=cmd_add_strategy)
+
+    s = sp.add_parser("remove_strategy", help="remove_strategy strategy_name")
+    s.add_argument("strategy_name")
+    s.set_defaults(func=cmd_remove_strategy)
+
+    s = sp.add_parser("list_strategies", help="list_strategies")
+    s.set_defaults(func=cmd_list_strategies)
+
+    s = sp.add_parser("info", help="print mdat info")
+    s.set_defaults(func=cmd_info)
+
+    s = sp.add_parser("sub", help="print submdat info")
+    s.add_argument("submdat_name")
+    s.set_defaults(func=cmd_sub_info)
+
+    s = sp.add_parser("pretokenize", help="pretokenize strategy_name submdat_name_or_*")
+    s.add_argument("strategy_name")
+    s.add_argument("submdat_name")
+    s.add_argument("--parallel", type=int, default=1)
+    s.add_argument("--batch_size", type=int, default=32)
+    s.add_argument("--compression_level", type=int, default=0)
+    s.set_defaults(func=cmd_pretokenize)
+
+    s = sp.add_parser("shuffle", help="shuffle")
+    s.set_defaults(func=cmd_shuffle)
+
+    s = sp.add_parser("create", help="create empty MDAT")
+    s.set_defaults(func=cmd_create)
+
+    s = sp.add_parser("create_submdat", help="create_submdat INPUT_PATH --type TYPE --name NAME [--batch_csv CSV]")
+    s.add_argument("input_path", nargs="?", help="Input dataset path (omit if using --batch_csv)")
+    s.add_argument("--type", required=False, choices=['jsonl', 'csv', 'atlas', 'huggingface', 'sqlite', 'custom', 'lmdb'], dest="type", help="Type of input dataset")
+    s.add_argument("--name", required=False, help="Name for the sub-MDAT dataset")
+    s.add_argument("--compress_data", type=int, default=0)
+    s.add_argument("--compress_meta", type=int, default=0)
+    s.add_argument("--data_key", default="text")
+    s.add_argument("--batch_csv", dest="batch_csv")
+    s.add_argument("--suppress_warnings", action="store_true")
+    s.add_argument("--custom", help="Path to custom iterator script")
+    s.add_argument("--map_size", type=int, default=1 << 40)
+    s.add_argument("--do_transform", action="store_true")
+    s.add_argument("--do_filtering", action="store_true")
+    s.set_defaults(func=cmd_create_submdat)
+
+    return p
+
+def main(argv):
+    parser = build_parser()
+    args = parser.parse_args(argv[1:])
+    args.mdat_path = args.mdat_path
+    args.func(args)
+
+if __name__ == "__main__":
+    main(sys.argv)
