@@ -102,7 +102,7 @@ class TransformerBlock(nn.Module):
         return self.resolved_hooks[hook_name](x, *args, **kwargs) if hook_name in self.resolved_hooks else x
     
     def forward(self, x, block_mask=None, sliding=False):
-        if self.layer_config['positional_encoding']=='wersa':
+        if self.layer_config['attn_impl']=='wersa':
             original_x=x #Required for WERSA
         else:
             original_x=None

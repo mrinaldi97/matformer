@@ -237,8 +237,8 @@ class MultiHeadAttention(nn.Module):
          
         # Apply RoPe
         if self.positional_encoding == 'rope':
-            q, k = self.rotary_emb(q, k) 
-         
+            q = self.rotary_emb.rotate_queries_or_keys(q)
+            k = self.rotary_emb.rotate_queries_or_keys(k)
         # Generate (or get from cache) the attention mask for the attn. impl that requires it
         if self.attn_impl in ['sdpa', 'xformers', 'wersa']:
             attn_mask = self.cache.get_attention_mask(
@@ -279,7 +279,7 @@ class MultiHeadAttention(nn.Module):
                     decomp_levels=2, random_features=1024
                 ).to(q.device)
             original_x=original_x.tensor if hasattr(original_x,'tensor') else original_x
-            attn_output = self.wersa_core(q, k, v, original_x, self.is_causal)
+            attn_output = self.wersa_class(q, k, v, original_x, self.is_causal)
             attn_output = attn_output.transpose(1, 2)  
         else:
             raise ValueError(f"Unknown attention implementation: {self.attn_impl}")
