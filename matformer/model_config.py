@@ -1,14 +1,14 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Literal, Union, Dict
+from typing import List, Optional, Literal, Union, Dict, Callable
 import torch.nn as nn
 import importlib
 
 @dataclass
 class LayerConfig:
     """Configuration for a single transformer layer"""
-    attn_impl: str = Optional[Literal['flash','sdpa','flex','xformers','wersa']] = "flash"
+    attn_impl: Optional[Literal['flash','sdpa','flex','xformers','wersa']] = "flash"
     sliding_window_size: Optional[int] = None
-    positional_encoding: str = Optional[Literal['alibi','rope','sinusoidal','nope']] = 'alibi'
+    positional_encoding: Optional[Literal['alibi','rope','sinusoidal','nope']] = 'alibi'
     hooks: Dict[str, Union[str, nn.Module]] = field(default_factory=dict)
 
 def resolve_hook(hook_spec: Union[str, nn.Module, Callable], config: 'ModelConfig') -> Union[nn.Module, Callable]:

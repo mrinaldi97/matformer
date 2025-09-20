@@ -106,7 +106,7 @@
     "batch_size_phase_1":256,
     "batch_size_phase_2":2,
     "batch_size_phase_3":16,
-    "num_workers": 0
+    "num_workers": 23
   },
   "save_dir": "./checkpoints",
   "wandb_project": "matformer",

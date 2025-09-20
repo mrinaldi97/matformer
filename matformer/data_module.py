@@ -2,10 +2,10 @@ import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from matformer.model_config import ModelConfig  
 import os
-from mdat import MatformerDataset
+from matformer.mdat import MatformerDataset
 import torch
 import torch.distributed as dist
-from matformer.padded_tensor import PaddedTensor
+from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
 
 
 class MatformerDataModule(pl.LightningDataModule):

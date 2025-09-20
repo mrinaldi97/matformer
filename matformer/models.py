@@ -4,9 +4,9 @@ import torch.nn.functional as F
 import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from tqdm import tqdm
-from matformer.tokenizers import ByteLevelTokenizer,MatformerTokenizer
+from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
 from matformer.metrics import BitsPerByte  
-from matformer.training_functions import MatformerDataModule,Muon
+from matformer.training_functions import Muon
 from matformer.model_config import ModelConfig  
 from matformer.masked_models import maskerator
 from matformer.initialization import init_transformer_weights_
@@ -42,7 +42,7 @@ class PL_ModelWrapper(pl.LightningModule):
         self.tokenizer=tokenizer #Un MatformerTokenizer
         self.batch_size=batch_size # Utile per il learning rate scheduling
     def forward(self, _input):
-        return self.model(_input.to(self.device),inference_fix=self.inference_fix)
+        return self.model(_input.to(self.device))
     def on_load_checkpoint(self, checkpoint):
         self._restored_from_ckpt = True        
     def training_step(self, batch, batch_idx):
@@ -54,7 +54,7 @@ class PL_ModelWrapper(pl.LightningModule):
             #Not implemented yet! Wrong code below (won't work with tok.zers different than Bytes)
             sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
         else:
-            sequence = batch['input_ids'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
+            sequence = batch # Arriva la sequenza già tokenizzata dal MatformerDataModule
         masked=True if self.config.training_objective=='masked' else False
 
         input_sequence=sequence
@@ -286,7 +286,7 @@ class PL_ModelWrapper(pl.LightningModule):
                 self.log(f"grad_max/{name}", param.grad.abs().max().item(), on_step=True)
                 self.log(f"grad_min/{name}", param.grad.abs().min().item(), on_step=True)
     @staticmethod
-    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, map_location=None, inference_fix=False, tokenizer=None, varlen_strategy='padding'):
+    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, map_location=None, tokenizer=None, varlen_strategy='padding'):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
 
         if config is None:
@@ -307,7 +307,7 @@ class PL_ModelWrapper(pl.LightningModule):
             varlen_strategy=varlen_strategy
         )     
 
-        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, tokenizer=tokenizer, device=map_location, inference_fix=inference_fix, train_config=None)  
+        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, tokenizer=tokenizer, device=map_location, train_config=None)  
         model.load_state_dict(checkpoint['state_dict'])
         return model,config   
         

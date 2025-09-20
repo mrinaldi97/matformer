@@ -17,7 +17,7 @@ try:
     _is_flash_attn_available=True
 except:
     _is_flash_attn_available=False
-
+from matformer.cached_stuff import CachedStuff
 """
 Matformer implementation of self-attention
 We need to support:

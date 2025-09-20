@@ -19,7 +19,7 @@ from torch.nn.attention.flex_attention import (
     noop_mask
 )
 from matformer.masked_models import maskerator
-from matformer.tokenizers import ByteLevelTokenizer,MatformerTokenizer
+from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
 import torch.nn.functional as F
 from tqdm import tqdm
 from datetime import datetime
@@ -28,6 +28,9 @@ sys.path.append('../')
 from dataclasses import replace
 from copy import deepcopy
 #flex_attention = torch.compile(flex_attention) # Chiarire questione compilazione (dove? di che tipo? migliora o peggiora? in che casi farla?)
+from typing import Any
+from matformer.cached_stuff import CachedStuff
+
 
 class TransformerBlock(nn.Module):
     """ A transformer self-attention block
@@ -67,10 +70,10 @@ class TransformerBlock(nn.Module):
             q_dim=config.hidden_size, 
             nheads=config.num_attention_heads, 
             cache=cache, 
-            attn_impl=layer_config.attn_impl,
-            positional_encoding=layer_config.positional_encoding,
+            attn_impl=layer_config['attn_impl'],
+            positional_encoding=layer_config['positional_encoding'],
             is_causal=config.is_causal,
-            sliding_window=config.sliding_window_size
+            sliding_window=layer_config['sliding_window_size']
         )
         
         self.post_attention_layernorm = ModuleWrapper(RMSNorm(
@@ -84,12 +87,12 @@ class TransformerBlock(nn.Module):
         self.layer_config = layer_config
         
         # Hook system 
-        self.has_hooks = bool(layer_config.hooks)
+        self.has_hooks = bool(layer_config['hooks'])
         self.resolved_hooks = {}
         
         # Initialize hooks
         if self.has_hooks:
-            for name, hook_spec in layer_config.hooks.items():
+            for name, hook_spec in layer_config['hooks'].items():
                 resolved = resolve_hook(hook_spec, config)
                 if isinstance(resolved, nn.Module):
                     self.add_module(f"hook_{name}", resolved)
@@ -99,11 +102,11 @@ class TransformerBlock(nn.Module):
         return self.resolved_hooks[hook_name](x, *args, **kwargs) if hook_name in self.resolved_hooks else x
     
     def forward(self, x, block_mask=None, sliding=False):
-		if self.layer_config.positional_encoding=='wersa':
-			original_x=x #Required for WERSA
-		else:
-			original_x=None
-			
+        if self.layer_config['positional_encoding']=='wersa':
+            original_x=x #Required for WERSA
+        else:
+            original_x=None
+            
         x = self._apply_hook("pre_attn", x) if self.has_hooks else x # HOOK: Pre-attention hooks  
         x = self.input_layernorm(x) # NORMAL: 1. Input layernorm    
         x = self._apply_hook("post_norm_pre_attn", x) if self.has_hooks else x # HOOK: Post-norm, pre-attention hook  
@@ -138,9 +141,9 @@ class NakedTransformer(nn.Module):
         for layer_idx in range(config.num_hidden_layers):
             self.layers.append(TransformerBlock(config=config,layer_idx=layer_idx)) 
 
-    def forward(self, x, y_cross=None, document_mask=None, inference=False):         
+    def forward(self, x, document_mask=None, inference=False):         
         for layer_idx, layer in enumerate(self.layers):
-                x = layer(x, y_cross=y_cross)
+                x = layer(x)
         x = self.norm(x)
 
         return x

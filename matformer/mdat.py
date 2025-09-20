@@ -16,8 +16,8 @@ except:
 from typing import Optional, Dict, Any, Union, List, Set
 import multiprocessing as mp
 from functools import partial
-
-class MatformerDataset:
+from torch.utils.data import IterableDataset
+class MatformerDataset(IterableDataset):
     MANIFEST_FILENAME = 'manifest.json'
     MANIFEST_VERSION = "1.0"
     MANIFEST_TYPE = "mdat"
@@ -62,7 +62,7 @@ class MatformerDataset:
     @classmethod
     def load_dataset(cls, path: str, shuffle: bool = False, 
                       ds_view: Optional[str] = None, distributed: bool = False, 
-                      readonly: bool = False, create_if_not_existent: bool = False) -> 'MatformerDataset':
+                      readonly: bool = False, create_if_not_existent: bool = False, batch_size:Optional[int]=None) -> 'MatformerDataset':
         """
         Load an existing Mdat from a path. The loaded Mdat will have all the submdats, views and pretokenization strategies
         populated and ready to be used.
@@ -1619,7 +1619,7 @@ class PretokenizationStrategy:
     def _initialize_components(self):
         """Initialize tokenizer and splitter components."""
         sys.path.append('../') #DIRTY stuff to load matformertokenizer
-        from matformer.tokenizers import MatformerTokenizer
+        from matformer.matformer_tokenizers import MatformerTokenizer
         self.tokenizer = MatformerTokenizer(
             tokenizer_type=self.tokenizer_type, 
             tokenizer_name=self.tokenizer_name, 

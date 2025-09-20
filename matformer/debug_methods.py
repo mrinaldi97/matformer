@@ -1,4 +1,4 @@
-from matformer.tokenizers import MatformerTokenizer
+from matformer.matformer_tokenizers import MatformerTokenizer
 
 def train_debug_print(_input, output, model_cfg, tokenizer, varlen_strategy):
     """

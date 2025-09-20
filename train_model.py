@@ -8,8 +8,8 @@ import argparse, json, torch, pytorch_lightning as pl, wandb
 from pathlib import Path
 from importlib import import_module
 from transformers import AutoTokenizer
-from matformer.tokenizers import MatformerTokenizer
-from matformer.training_functions import MatformerDataModule
+from matformer.matformer_tokenizers import MatformerTokenizer
+from matformer.data_module import MatformerDataModule
 from matformer.model_config import ModelConfig
 from matformer.models import PL_ModelWrapper
 from pytorch_lightning.loggers import WandbLogger
@@ -60,7 +60,7 @@ def main():
     save_dir = cfg.get('save_dir', './checkpoints')
     
     pl.seed_everything(train_cfg.get('seed', 27))
-    
+    """
     tokenizer = (
         AutoTokenizer.from_pretrained(tok_cfg['pretrained_name'])
         if tok_cfg['type'] == 'huggingface' else str(tok_cfg['type'])
@@ -88,15 +88,15 @@ def main():
             model_cfg.vocab_size = len(tokenizer)
 
     tokenizer = MatformerTokenizer(
-        model_cfg,
+        config=model_cfg,
         tokenizer=tokenizer,
         varlen_strategy=tok_cfg['varlen_strategy']
     )
-    
+    """
     # Create data module with MDAT dataset
     data = MatformerDataModule(
         mdat_path=data_cfg['data_root'],
-        iteration_modality='sequence',  # Default iteration modality
+        iteration_modality='chunked_tokens', 
         pad_token_id=model_cfg.pad_token_id,
         varlen_strategy=tok_cfg['varlen_strategy'],
         mdat_strategy=data_cfg['mdat_strategy'],
@@ -123,7 +123,7 @@ def main():
     model = PL_ModelWrapper(
         ModelClass, 
         config=model_cfg, 
-        tokenizer=tokenizer, 
+        tokenizer=None, 
         train_config=train_cfg, 
         device='cuda', 
         batch_size=data_cfg['batch_size']

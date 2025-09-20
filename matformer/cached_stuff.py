@@ -1,6 +1,7 @@
 import torch
 import math
 from typing import Optional, Tuple, Any, Dict, Callable
+from torch.nn.attention.flex_attention import flex_attention, create_block_mask,create_nested_block_mask
 
 
 class CachedStuff:
@@ -134,8 +135,8 @@ class CachedStuff:
         return self.mask_cache[cache_key]
 
     def _build_block_mask(self, query: torch.Tensor, kv: torch.Tensor, H: int,
-                         causal: bool, B:Optional[int] = None, sliding_window: Optional[int], document_mask: Optional[torch.Tensor],
-                         nested: bool, create_block_mask: Optional[Callable], create_nested_block_mask: Optional[Callable]):
+                         causal: bool,  sliding_window: Optional[int], document_mask: Optional[torch.Tensor],
+                         nested: bool, B:Optional[int] = None):
         """Build block mask with all specified constraints."""
         device = query.device
         
@@ -155,9 +156,9 @@ class CachedStuff:
             L, S = query.shape[-2], kv.shape[-2]
             return create_block_mask(mask_mod=mask_fn, Q_LEN=L, KV_LEN=S, B=B, H=H, device=device)
 
-    def get_flex_blockmask(self, query: torch.Tensor, kv: torch.Tensor, B:Optional[int] = None, nheads: int, *,
+    def get_flex_blockmask(self, query: torch.Tensor, kv: torch.Tensor, nheads: int, *,
                           causal: bool = False, sliding_window: Optional[int] = None,
-                          document_mask: Optional[torch.Tensor] = None, nested: bool = False):
+                          document_mask: Optional[torch.Tensor] = None, nested: bool = False, B:Optional[int] = None):
         """Get cached block mask for custom attention kernels."""
         L, S = query.shape[-2], kv.shape[-2]
         device = query.device

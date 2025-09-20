@@ -32,8 +32,8 @@
       "final_lr":1e-5,
       "weight_decay": 0.01,
       "scheduler": "custom",
-      "warmup_steps": 3500,
-      "hold_steps": 3500,
+      "warmup_steps": 1500,
+      "hold_steps": 500,
       "max_epochs": 1,
       "accumulate_grad_batches": 1,
       "seed": 27,
@@ -45,7 +45,7 @@
   },
   "data": {
     "data_root": "../matformer_norepo/Minerva1024_lmdb",
-    "batch_size": 64,
+    "batch_size": 196,
     "num_workers": 0
   },
   "save_dir": "./checkpoints",

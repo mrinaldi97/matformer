@@ -11,9 +11,9 @@ import torch
 from torch.utils.data import DataLoader, Dataset
 from transformers import get_cosine_schedule_with_warmup
 from matformer.transformer_blocks import EntropyModel
-from matformer.matformer_dataset import MatformerDataset
+#from matformer.matformer_dataset import MatformerDataset
 
-class MatformerDataModule(pl.LightningDataModule):
+class VECCHIOMatformerDataModule(pl.LightningDataModule):
     def __init__(self, data_root, batch_size, tokenizer, config, num_workers=0, autoencoder_experiment=False):
         super().__init__()
         self.data_root = data_root
