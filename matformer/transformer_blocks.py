@@ -37,106 +37,110 @@ class TransformerBlock(nn.Module):
         A post layer norm
         It takes all the necessary configuration from the ModelConfig object
         The block_mask for the attention can be passed either at the init or during the forward
+        
+        Now supports flexible hook system for custom interventions at key points.
     """
     
-    def __init__(self, config: ModelConfig, block_mask=None):
+    def __init__(self, config: ['ModelConfig','LayerConfig'], block_mask=None, layer_idx=None, cache=None):
+        """
+        If the layer_idx corresponds to a custom layer as defined in the config, the layer will follow that specifications
+        otherwise, it will follow the default layer config.
+        If a LayerConfig is given as "config", then it will directly use that config ignoring layer_idx value
+        """
         super().__init__()
-        self.input_layernorm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_size,eps=config.rms_norm_eps,elementwise_affine=True))
-        self.self_attn = MultiHeadAttention(bias=config.bias, q_dim=config.hidden_size, k_dim=config.hidden_size, v_dim=config.hidden_size, hidden_size=config.hidden_size, nheads=config.num_attention_heads, block_mask=block_mask, attn_impl=config.attn_impl, alibi=config.alibi, is_causal=config.is_causal)      
-        self.post_attention_layernorm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_size,eps=config.rms_norm_eps,elementwise_affine=True))
+        self.cache=CachedStuff() if not cache else cache #Initialize the cache of attention masks and positional embeddings   
+        
+        # Get layer-specific configuration
+        if isinstance(config,ModelConfig):
+            layer_config = config.get_layer_config(layer_idx) if layer_idx is not None else config.default_layer
+        else:
+            layer_config=config
+            
+        self.input_layernorm = ModuleWrapper(RMSNorm(
+            normalized_shape=config.hidden_size,
+            eps=config.rms_norm_eps,
+            elementwise_affine=True
+        ))
+        
+        self.self_attn = MultiHeadAttention(
+            bias=config.bias, 
+            q_dim=config.hidden_size, 
+            nheads=config.num_attention_heads, 
+            cache=cache, 
+            attn_impl=layer_config.attn_impl,
+            positional_encoding=layer_config.positional_encoding,
+            is_causal=config.is_causal,
+            sliding_window=config.sliding_window_size
+        )
+        
+        self.post_attention_layernorm = ModuleWrapper(RMSNorm(
+            normalized_shape=config.hidden_size,
+            eps=config.rms_norm_eps,
+            elementwise_affine=True
+        ))
+        
         self.mlp = PackedSwiGLUFFN(config)
-        self.config=config
+        self.config = config
+        self.layer_config = layer_config
+        
+        # Hook system 
+        self.has_hooks = bool(layer_config.hooks)
+        self.resolved_hooks = {}
+        
+        # Initialize hooks
+        if self.has_hooks:
+            for name, hook_spec in layer_config.hooks.items():
+                resolved = resolve_hook(hook_spec, config)
+                if isinstance(resolved, nn.Module):
+                    self.add_module(f"hook_{name}", resolved)
+                self.resolved_hooks[name] = resolved
+    
+    def _apply_hook(self, hook_name: str, x: Any, *args, **kwargs) -> Any:
+        return self.resolved_hooks[hook_name](x, *args, **kwargs) if hook_name in self.resolved_hooks else x
+    
     def forward(self, x, block_mask=None, sliding=False):
-        x = self.input_layernorm(x)
-        x = x + self.self_attn(query_input=x, key_input=x, value_input=x, block_mask=block_mask, sliding=sliding, sliding_window_size=self.config.sliding_window_size)
-        x = x + self.mlp(self.post_attention_layernorm(x))
+		if self.layer_config.positional_encoding=='wersa':
+			original_x=x #Required for WERSA
+		else:
+			original_x=None
+			
+        x = self._apply_hook("pre_attn", x) if self.has_hooks else x # HOOK: Pre-attention hooks  
+        x = self.input_layernorm(x) # NORMAL: 1. Input layernorm    
+        x = self._apply_hook("post_norm_pre_attn", x) if self.has_hooks else x # HOOK: Post-norm, pre-attention hook  
+        attn_out = self.self_attn(x,original_x=original_x)   # NORMAL: Self attention
+        attn_out = self._apply_hook("post_attn", attn_out) if self.has_hooks else attn_out # HOOK: Post-attention hook (before residual)
+        x = x + attn_out # NORMAL: Self attention residual add
+        x = self._apply_hook("pre_mlp", x) if self.has_hooks else x # HOOK: Pre-MLP hook
+        normed = self.post_attention_layernorm(x) # NORMAL: Post attention layer norm
+        normed = self._apply_hook("post_norm_pre_mlp", normed) if self.has_hooks else normed # HOOK: Post-norm, pre-MLP hook      
+        mlp_out = self.mlp(normed)  # NORMAL: MLP
+        mlp_out = self._apply_hook("post_mlp", mlp_out) if self.has_hooks else mlp_out # HOOK: Post-MLP hook (before residual)    
+        x = x + mlp_out # NORMAL: MLP Residual add
+        x = self._apply_hook("output", x) if self.has_hooks else x # HOOK: Final output hook   
         return x
-    def debug_forward(self, x, block_mask=None, sliding=False):
-        x0 = x  
-        x1 = self.input_layernorm(x0)
-        x1.tensor.register_hook(lambda g: print("grad @ input_layernorm:", g.norm().item()))
-        
-        a = self.self_attn(query_input=x1, key_input=x1, value_input=x1, block_mask=block_mask, sliding=sliding, sliding_window_size=self.config.sliding_window_size)
-        a.tensor.register_hook(lambda g: print("grad @ attn_out:", g.norm().item()))
 
-        x2 = x1 + a
-        m = self.post_attention_layernorm(x2)
-        m.tensor.register_hook(lambda g: print("grad @ post_ln:", g.norm().item()))
-        
-        f = self.mlp(m)  
-        f.tensor.register_hook(lambda g: print("grad @ mlp_out:", g.norm().item()))
-        
-        x3 = x2 + f
-        return x3
 
 
 
 
 class NakedTransformer(nn.Module):
     """
-    This transformer implementation purposely misses the embedding
-    as well as the "unembedding" layer.
+    This transformer module misses the embedding as well as the "unembedding" layer.
     The reason is that is a Transformer meant to run only on "patches".
     It applies n transformer blocks as defined in the ModelConfig
-    Still needs some revisions:
-        1) High VRAM consumption with Flex Attention and in particular if nested tensors are used;
-        2) A decision should be made about where to compute block masks
     """
-    def __init__(self, config: ModelConfig):
+    def __init__(self, config: ModelConfig, cache=None):
         super().__init__()
         self.config = config
-        #If attention is not flash, it's a good idea to cache the block mask:
-        if config.attention_type != 'flash':
-            self.mask_builder = MaskBuilder(config)
-            self.block_mask=None
-            self.sliding_mask=None          
+        self.cache=CachedStuff() if not cache else cache #Initialize the cache of attention masks and positional embeddings   
         self.norm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_size, eps=config.rms_norm_eps, elementwise_affine=True))
         self.layers = nn.ModuleList()
-        for _ in range(config.num_hidden_layers):
-            self.layers.append(TransformerBlock(config=config)) 
+        for layer_idx in range(config.num_hidden_layers):
+            self.layers.append(TransformerBlock(config=config,layer_idx=layer_idx)) 
 
-        #self.config.max_position_embeddings=self.config.max_position_embeddings -1 # Da ricordarsi perchè e dove serviva, trovare in caso soluzione più pulita             
-        """
-        # Generate mask templates in __init__ for "simple" cases (batch invariant cases, no document)
-        THIS IS DISABLED AFTER SWITCHING TO NESTED TENSOR LAYOUT, BECAUSE THEY NEED TO BE RECOMPUTED EVERY TIME
-        HOWEVER, THIS COULD SPEED UP THE MODEL, SO LET'S RETHINK ABOUT THIS AND EVENTUALLY PUT SOME CONDITION
-        if 'causal' in self.config.attention_type:
-            self.block_mask=self.mask_builder.build_mask_tensor(self.config.max_position_embeddings, self.config.max_position_embeddings, attention_types=['causal'],device=self.device)
-        if 'sliding' in self.config.attention_type:
-            if 'causal' in self.config.attention_type:
-                self.block_mask=self.mask_builder.build_mask_tensor(self.config.max_position_embeddings, self.config.max_position_embeddings, attention_types=['sliding','causal'], is_sliding=True,device=self.device)
-            else:
-                self.block_mask=self.mask_builder.build_mask_tensor(self.config.max_position_embeddings, self.config.max_position_embeddings, attention_types=['sliding'], is_sliding=True,device=self.device)    
-        """
-    def forward(self, x, y_cross=None, document_mask=None, cloze_mask=None, inference_fix=False):
-        
-        q_len=x.original_seq_len if isinstance(x,UnpaddedTensor) else x.shape[1]
-        kv_len = y_cross.shape[1] if y_cross is not None else q_len  # If we are not in cross-attention settings, we take x for both query and kv
-        """
-         We have to decide in the forward if employing the masks generated during the __init__ (much faster)
-         or if we need to generate new masks in cases such as:
-         1) Document attention type and doc.mask passed;
-         2) The model is used at an higher seq_len
-        """     
-        assert self.config.sliding_type in ['full','disabled','partial'], "Invalid sliding type config."
-        if False: #THIS IS DISABLED AFTER SWITCHING TO NESTED TENSOR LAYOUT, BECAUSE THEY NEED TO BE RECOMPUTED EVERY TIME
-        #if document_mask is not None or cloze_mask is not None or q_len>self.config.max_position_embeddings or inference_fix==True:
-            # In these cases I have to regenerate the masks
-            #with torch.no_grad():
-            #    dummy_query=self.self_attn.dummy_get_query(x=x)
-            if self.config.sliding_type != 'disabled':
-                sliding_mask=self.mask_builder.build_mask_tensor(query=x, kv=y_cross, attention_types=self.config.attention_type, is_sliding=True,nested=x.tensor.is_nested)
-            if self.config.sliding_type != 'full':
-                block_mask=self.mask_builder.build_mask_tensor(query=x, kv=y_cross, attention_types=self.config.attention_type, is_sliding=False,nested=x.tensor.is_nested)             
-        else:
-            block_mask=self.block_mask
-            sliding_mask=self.block_mask
-            
+    def forward(self, x, y_cross=None, document_mask=None, inference=False):         
         for layer_idx, layer in enumerate(self.layers):
-            if layer_idx in self.config.sliding_layers or self.config.sliding_type=='full' :
-                x = layer(x, block_mask=sliding_mask, sliding=True)
-            else:
-                x = layer(x, block_mask=block_mask, sliding=False)
+                x = layer(x, y_cross=y_cross)
         x = self.norm(x)
 
         return x

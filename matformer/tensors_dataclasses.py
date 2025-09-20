@@ -61,7 +61,8 @@ class NormalTensor(TensorDC):
 class PaddedTensor(TensorDC):
     isPadded: ClassVar[bool] = True
     padding_mask: torch.Tensor
-
+    def pad(self):
+        return self
     def unpad(self) -> UnpaddedTensor:
         mask = ~self.padding_mask
         indices = torch.nonzero(mask.flatten()).flatten()
@@ -100,7 +101,8 @@ class UnpaddedTensor(TensorDC):
     original_seq_len: int
     batch_size: int
     isUnpadded: ClassVar[bool] = True
-
+    def unpad(self):
+        return self
     def pad(self, seq_len: Optional[int] = None, pad_token=0) -> PaddedTensor:
         target_seq_len = seq_len if seq_len is not None else self.original_seq_len
         if pad_token==0:

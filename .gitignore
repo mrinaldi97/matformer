@@ -1,6 +1,7 @@
 checkpoints*
 wandb*
 wandb/
+mdat/
 logs/
 entropy_model/
 char_autoencoder/checkpoints/

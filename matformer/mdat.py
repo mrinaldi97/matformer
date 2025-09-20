@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-
+import math
 import os
 import json
 import struct
@@ -316,7 +316,7 @@ class MatformerDataset:
         if not ds_map:
             return
         max_key = max(int(k) for k in ds_map.keys())
-        self.documents_number=0
+        self.total_documents=0
         for i in range(1, max_key + 1):
            submdat_name = ds_map.get(str(i))
            if submdat_name is None or submdat_name in self.skipped_submats:
@@ -502,6 +502,22 @@ class MatformerDataset:
         return self.pretok_strategies[strategy_name]
     def strategies(self):
         return self.list_strategies(self) #a shortcut
+    def set_max_seq_len(self,max_seq_len: int):
+        """
+        A method to set the multiplier based on the max. sequence length required by the model
+        If the required sequence length is not a multiple of strategy's base sequence length,
+        an exception will be thrown.
+        """
+        if self.current_strategy is not None:
+            base_chunk_size=self.current_strategy.chunk_size
+            if base_chunk_size is not None:
+                assert max_seq_len%base_chunk_size==0
+                self.set_multiplier(max_seq_len//base_chunk_size)
+                self.max_seq_len=max_seq_len
+            else:
+                print("MatformerDataset: The strategy {self.current_strategy.strategy_name} doesn't have a base chunk size.")
+        else:
+            print("MatformerDataset: Impossible to set a max sequence length: load a strategy first.")
     def set_multiplier(self,chunk_multiplier):
         if isinstance(chunk_multiplier,int):
             if chunk_multiplier>100:
@@ -541,10 +557,15 @@ class MatformerDataset:
                 if end_step > self.current_chunk_step:
                     selected_chunks = chunks[self.current_chunk_step:end_step]
                     self.current_chunk_step = end_step
-                    return np.concatenate(selected_chunks).tolist()
+                    chunk=np.concatenate(selected_chunks).tolist()
+                    if getattr(self,'max_seq_len',None) is not None:
+                        if len(chunk) > self.max_seq_len:
+                            print(f"WARNING: A sequence is longer than max length ({len(chunk)} > {self.max_seq_len}) and it's truncated")
+                            chunk = chunk[:self.max_seq_len]
+                    return chunk
 
     def set_iteration_modality(self,modality,with_meta=False):
-        supported_modalities=['document','tokens','chunked_tokens']
+        supported_modalities=['document','tokens','chunked_tokens','strategy_default']
         if modality in supported_modalities:
             self.current_iteration_modality=modality
         else:
@@ -561,6 +582,10 @@ class MatformerDataset:
             wanted_from_strategy=['chunked_tokens']
             wanted_from_dbs=[]
             self.len=self.total_divided_chunks
+        elif modality=='strategy_default':
+            wanted_from_strategy=['strategy_default']
+            wanted_from_dbs=[]
+            self.len=0 # To be decided            
         else:
             raise Exception
         if with_meta:
@@ -599,7 +624,7 @@ class MatformerDataset:
         for k in self.manifest.keys():
             stringa+=(f"\n{k}: {self.manifest[k]}")
         stringa+=(f"\n Current strategy: {self.current_strategy}")
-        stringa+=(f"\n Total documents: {self.documents_number}")
+        stringa+=(f"\n Total documents: {self.total_documents}")
         stringa+=(f"\n Total tokens: {self.total_tokens}")
         stringa+=(f"\n Total chunks: {self.total_chunks}")
         stringa+=(f"\n Total divided chunks: {self.total_divided_chunks}")
@@ -936,7 +961,6 @@ class SubMdat:
             raise StrategyIsDifferent
         
         # 3. Start adding the strategy to the submdat
-        compression_level = self.manifest.get("pretokenization_compression", {}).get(strategy_name, 0)
         self.add_strategy_start(strategy_name=strategy_name, compression_level=compression_level)
 
         # Initialize stats
@@ -946,7 +970,7 @@ class SubMdat:
             'total_chunks': 0,
             'max_chunks_per_doc': 0,
             'processed_docs': 0,
-            'precomputed_lengths': [0] * max_multiplier,
+            'precomputed_lengths': [0] * (int(max_multiplier)+1),
             'base_chunk_size': strategy.chunk_size
         }
         
@@ -1004,7 +1028,9 @@ class SubMdat:
                             stats['total_chunks'] += chunk_count
                             stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
                             stats['precomputed_lengths'][0]=0
-                            for j in range(1, max_multiplier + 1):
+                            print("Debug: ",stats['precomputed_lengths'])
+                            for j in range(1, max_multiplier):
+                                print("Debug J:", j)
                                 stats['precomputed_lengths'][j] += math.ceil(chunk_count / j)                            
                             self.pretok_db[db_name].write(obj=chunk_bytes, key=key)
                             
@@ -1254,7 +1280,7 @@ def process_documents_batch(sub_batch, pretoken_path, functions_path, strategy_n
         'total_chunks': 0,
         'max_chunks_per_doc': 0,
         'processed_docs': 0,
-        'precomputed_lengths':[0] * max_multiplier,
+        'precomputed_lengths':[0] * (int(max_multiplier)+1),
         'base_chunk_size':strategy.chunk_size
     }
     
@@ -1284,8 +1310,9 @@ def process_documents_batch(sub_batch, pretoken_path, functions_path, strategy_n
                 chunk_count = len(split_result['chunks'])
                 local_stats['total_chunks'] += chunk_count
                 local_stats['max_chunks_per_doc'] = max(local_stats['max_chunks_per_doc'], chunk_count)
-                for j in range(1, max_multiplier + 1):
-                                local_stats['precomputed_lengths'][j-1] += math.ceil(chunk_count / j)    
+                local_stats['precomputed_lengths'][0]=0
+                for j in range(1, max_multiplier):
+                                local_stats['precomputed_lengths'][j] += math.ceil(chunk_count / j)    
                 db_data[db_name].append((key, chunk_bytes))
                 
             else:
@@ -1576,7 +1603,8 @@ class PretokenizationStrategy:
         self.wants_from_db = strategy_dict['wants_from_db']
         self.wants_raw = strategy_dict['wants_raw']
         self.returns = strategy_dict['returns']
-
+        self.tokens_datatype=strategy_dict.get('tokens_datatype',None)
+        self.chunks_datatype=strategy_dict.get('chunks_datatype',None)
     def _load_configuration(self):
         """Load strategy configuration from saved JSON file."""
         config_path = os.path.join(self.mdat_pretok_path, f'{self.strategy_name}.json')
@@ -1591,8 +1619,6 @@ class PretokenizationStrategy:
     def _initialize_components(self):
         """Initialize tokenizer and splitter components."""
         sys.path.append('../') #DIRTY stuff to load matformertokenizer
-        from matformer.tokenizers import MatformerTokenizer
-        # Initialize tokenizer
         from matformer.tokenizers import MatformerTokenizer
         self.tokenizer = MatformerTokenizer(
             tokenizer_type=self.tokenizer_type, 
@@ -1620,9 +1646,7 @@ class PretokenizationStrategy:
             self.chunks_datatype = 'uint32'
         
         # Initialize splitter
-        self._initialize_splitter()
-
-    def _initialize_splitter(self):
+        
         """Initialize the splitter class with dynamic import capability."""
         splitter_cls = self._find_splitter_class(self.splitter_class)
         
@@ -1632,7 +1656,9 @@ class PretokenizationStrategy:
         
         # Initialize splitter
         self.splitter = splitter_cls(**init_args)
-
+        self.initialized=True
+        self.save() #Saving in order to update token dtype and chunks dtype
+        
     def _find_splitter_class(self, class_name: str):
         """Find splitter class in globals or import from functions directory."""
         # First check if it exists in current globals
@@ -1677,7 +1703,9 @@ class PretokenizationStrategy:
             'chunk_size': self.chunk_size,
             'wants_from_db': self.wants_from_db,
             'wants_raw': self.wants_raw,
-            'returns': self.returns
+            'returns': self.returns,
+            'tokens_datatype':getattr(self,'tokens_datatype',None),
+            'chunks_datatype':getattr(self,'chunks_datatype',None)
         }
         
         os.makedirs(self.mdat_pretok_path, exist_ok=True)
@@ -1703,7 +1731,7 @@ class PretokenizationStrategy:
         This function can be called either from the extern, in order to perform a pretokenization
         and cache the values, or from the intern, in order to perform an on-the-fly tokenization
         """
-        if not self.initialized():
+        if not self.initialized:
             self._initialize_components()
         # Check if the data dict is compatible with what the splitter wants
         if not self.wants_raw:      
@@ -1868,7 +1896,6 @@ class split_and_tokenize_by_nltk_sentences:
         import difflib
         import re
         from tqdm import tqdm
-        import math
         from nltk.tokenize import PunktTokenizer        
         self.punkt_tokenizer = PunktTokenizer(language) 
         self.tokenizer=tokenizer
@@ -1998,10 +2025,13 @@ def setup_logging(mdat_path, name, suppress_warnings=False):
 
 def cmd_add_strategy(args):
     mdat = load_mdat(args.mdat_path, create=False)
+    if args.strategy_function is not None:
+        shutil.copy(args.strategy_function, mdat.functions_path)
     with open(args.strategy_file, "r") as f:
         content = json.load(f) if orjson is None else orjson.loads(f.read())
-    mdat.register_strategy(content)
-    shutil.copy(args.strategy_function, mdat.functions_path)
+    returned=mdat.register_strategy(content)
+    print(f"Correctly added strategy {returned.strategy_name}")
+    
 
 def cmd_remove_strategy(args):
     mdat = load_mdat(args.mdat_path, create=False)
@@ -2022,9 +2052,10 @@ def cmd_sub_info(args):
 
 def cmd_pretokenize(args):
     mdat = load_mdat(args.mdat_path, create=False)
-    if args.submdat_name == "*":
+    if args.submdat is None:
         for sb in mdat.list_submdat():
-            mdat[sb].pretokenize_submdat(strategy_name=args.strategy_name, parallel=args.parallel, batch_size=args.batch_size)
+            print(f"Pretokenizing {sb}...")
+            mdat[sb].pretokenize_submdat(strategy_name=args.strategy_name, parallel=args.parallel, batch_size=args.batch_size,compression_level=args.compression_level)
     else:
         mdat[args.submdat_name].pretokenize_submdat(strategy_name=args.strategy_name, parallel=args.parallel, batch_size=args.batch_size, compression_level=args.compression_level)
 
@@ -2071,7 +2102,12 @@ def cmd_create_submdat(args):
     else:
         if not args.input_path:
             raise SystemExit("INPUT_PATH is required unless --batch_csv is provided")
-        _create_submdat_once(args.input_path, output_path, args.name, args.type, args.compress_data, args.compress_meta, args.data_key, args.map_size, args.do_transform, args.do_filtering, args.custom, logger)
+        if args.name is None:
+            submdat_name=sanify_name(args.input_path.split('.')[-2].strip('/').strip('\\'))
+            print("Submdat name: ",submdat_name)
+        else:
+            submdat_name=args.name
+        _create_submdat_once(args.input_path, output_path, submdat_name, args.type, args.compress_data, args.compress_meta, args.data_key, args.map_size, args.do_transform, args.do_filtering, args.custom, logger)
     logger.info("create_submdat completed")
 
 def build_parser():
@@ -2080,9 +2116,9 @@ def build_parser():
 
     sp = p.add_subparsers(dest="command", required=True)
 
-    s = sp.add_parser("add_strategy", help="add_strategy strategy_file.json strategy_function.py")
+    s = sp.add_parser("add_strategy", help="add_strategy strategy_file.json strategy_function.py (optional)")
     s.add_argument("strategy_file")
-    s.add_argument("strategy_function")
+    s.add_argument("--strategy_function",default=None)
     s.set_defaults(func=cmd_add_strategy)
 
     s = sp.add_parser("remove_strategy", help="remove_strategy strategy_name")
@@ -2096,14 +2132,14 @@ def build_parser():
     s.set_defaults(func=cmd_info)
 
     s = sp.add_parser("sub", help="print submdat info")
-    s.add_argument("submdat_name")
+    s.add_argument("--submdat")
     s.set_defaults(func=cmd_sub_info)
 
-    s = sp.add_parser("pretokenize", help="pretokenize strategy_name submdat_name_or_*")
+    s = sp.add_parser("pretokenize", help="pretokenize strategy_name (optional, if missing pretokenize everything)")
     s.add_argument("strategy_name")
-    s.add_argument("submdat_name")
-    s.add_argument("--parallel", type=int, default=1)
-    s.add_argument("--batch_size", type=int, default=32)
+    s.add_argument("--submdat", type=str, default=None)
+    s.add_argument("--parallel", type=bool, default=True)
+    s.add_argument("--batch_size", type=int, default=500)
     s.add_argument("--compression_level", type=int, default=0)
     s.set_defaults(func=cmd_pretokenize)
 
@@ -2115,11 +2151,12 @@ def build_parser():
 
     s = sp.add_parser("create_submdat", help="create_submdat INPUT_PATH --type TYPE --name NAME [--batch_csv CSV]")
     s.add_argument("input_path", nargs="?", help="Input dataset path (omit if using --batch_csv)")
-    s.add_argument("--type", required=False, choices=['jsonl', 'csv', 'atlas', 'huggingface', 'sqlite', 'custom', 'lmdb'], dest="type", help="Type of input dataset")
+    s.add_argument("--type", default='jsonl',required=False, choices=['jsonl', 'csv', 'atlas', 'huggingface', 'sqlite', 'custom', 'lmdb'], dest="type", help="Type of input dataset")
     s.add_argument("--name", required=False, help="Name for the sub-MDAT dataset")
     s.add_argument("--compress_data", type=int, default=0)
     s.add_argument("--compress_meta", type=int, default=0)
     s.add_argument("--data_key", default="text")
+    s.add_argument("--modality",type=str,default="text")
     s.add_argument("--batch_csv", dest="batch_csv")
     s.add_argument("--suppress_warnings", action="store_true")
     s.add_argument("--custom", help="Path to custom iterator script")
