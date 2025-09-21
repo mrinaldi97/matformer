@@ -221,8 +221,12 @@ class MultiHeadAttention(nn.Module):
         # Apply RoPe
         if self.positional_encoding == 'rope':
             qkv_projected=None
+            q = q.transpose(-1, -2)
+            k = k.transpose(-1, -2)
             q = self.rotary_emb.rotate_queries_or_keys(q)
             k = self.rotary_emb.rotate_queries_or_keys(k)
+            q = q.transpose(-1, -2)
+            k = k.transpose(-1, -2)            
         # Generate (or get from cache) the attention mask for the attn. impl that requires it
         if self.attn_impl in ['sdpa', 'xformers', 'wersa']:
             attn_mask = self.cache.get_attention_mask(
