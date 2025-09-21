@@ -156,7 +156,7 @@ def main():
         if ckpt_arg and os.path.exists(ckpt_arg):
             ckpt_path = ckpt_arg
         else:
-            last_ckpt = Path(save_dir) / "last.ckpt"
+            last_ckpt = Path(save_dir) / f"{checkpoint_name}_last.ckpt"
             if last_ckpt.exists():
                 ckpt_path = str(last_ckpt)
 
