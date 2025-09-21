@@ -564,7 +564,7 @@ class MatformerDataset(IterableDataset):
                             chunk = chunk[:self.max_seq_len]
                     return chunk
 
-    def set_iteration_modality(self,modality,with_meta=False):
+    def set_iteration_modality(self,modality,with_meta=False, return_raw=False):
         supported_modalities=['document','tokens','chunked_tokens','strategy_default']
         if modality in supported_modalities:
             self.current_iteration_modality=modality
@@ -592,7 +592,7 @@ class MatformerDataset(IterableDataset):
             wanted_from_dbs.append('meta')
         # Set the iteration modality in each submdat
         for sbm in self.loaded_submdats.values():
-            sbm.set_default_wanted(from_dbs=wanted_from_dbs,from_strategy=wanted_from_strategy)
+            sbm.set_default_wanted(from_dbs=wanted_from_dbs,from_strategy=wanted_from_strategy,raw=return_raw)
         
     def get_iteration_modality(self):
         return self.current_iteration_modality
@@ -794,7 +794,7 @@ class SubMdat:
         # Now load the created submdat
         return cls.load_submdat(parent_mdat, submdat_name)
                
-    def set_default_wanted(self,from_dbs:list=['full'],from_strategy:list=[]):
+    def set_default_wanted(self,from_dbs:list=['full'],from_strategy:list=[],raw:bool=False):
         """
         Set the default elements returned by the submat when called with __getitem__
         Args:
@@ -803,19 +803,24 @@ class SubMdat:
         """
         self.default_wanted_from_dbs=from_dbs
         self.default_wanted_from_strategy=from_strategy
+        self.default_raw=raw
         
     def __getitem__(self,key):
-        return self._compose_return(key=key,wanted_from_dbs=self.default_wanted_from_dbs,wanted_from_strategy=self.default_wanted_from_strategy)
-    def _compose_return(self,key:int,wanted_from_dbs:list,wanted_from_strategy:list,raw:bool=False,strategy_name=None,on_the_fly_mode=True,max_seq_len=None):
+        return self._compose_return(key=key,wanted_from_dbs=self.default_wanted_from_dbs,wanted_from_strategy=self.default_wanted_from_strategy,raw=self.default_raw)
+    def _compose_return(self,key:int,wanted_from_dbs:list,wanted_from_strategy:list,raw:bool=False,strategy_name=None,on_the_fly_mode=True,max_seq_len=None,decode_strings=True):
         composed={'submdat_name':self.submdat_name,'key':key}
         if wanted_from_dbs=='full':
             composed.update(orjson.loads(self.db['meta'][key]))
             composed.update({'data':self.db['data'][key]})
         if 'data' in wanted_from_dbs:
-            if not raw:
-                composed.update({'data':self.db['data'][key]})
+            if decode_strings:
+                text=self.db['data'][key].decode('utf-8')
             else:
-                return self.db['data'][key]
+                text=self.db['data'][key]
+            if not raw:
+                composed.update({'data':text})
+            else:
+                return(text)
         if 'meta' in wanted_from_dbs:
             composed.update(orjson.loads(self.db['meta'][key]))
         if self.current_strategy is not None:

@@ -4,8 +4,8 @@ File transformer_functions.py
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.nn.attention.flex_attention import flex_attention, create_block_mask
-from typing import Optional, List
+from torch.nn.attention.flex_attention import flex_attention
+from typing import Optional, List, Literal
 from matformer.model_config import ModelConfig
 from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
 from matformer.extra import WERSAAttention
@@ -18,25 +18,7 @@ try:
 except:
     _is_flash_attn_available=False
 from matformer.cached_stuff import CachedStuff
-"""
-Matformer implementation of self-attention
-We need to support:
-    * Attention score modification:
-        * Alibi
-        * Normal-causal mask (GPT-Like)
-        * No mask (Bert-Like)
-        * Sliding window attention
-        * Custom (ex. attention on all the previous text, image also after)
-    * Cross attention
-"""
-import torch
-import torch.nn as nn
-import torch.nn.functional as F
-from typing import Optional, Literal
-from flash_attn import flash_attn_func, flash_attn_varlen_func, flash_attn_qkvpacked_func, flash_attn_varlen_qkvpacked_func
-from torch.nn.functional import scaled_dot_product_attention
-from torch.nn.attention import flex_attention
-from dataclasses import replace
+
 
 
 class MultiHeadAttention(nn.Module):
@@ -61,8 +43,8 @@ class MultiHeadAttention(nn.Module):
         # Assertions
         assert q_dim % nheads == 0, "q_dim is not divisible by nheads"
         if is_cross_attention:
-            assert k_dim is not None 
-            assert v_dim is not None
+            assert k_dim is not None, "You asked for a cross attention, but you haven't provided keys dim"
+            assert v_dim is not None, "You asked for a cross attention, but you haven't provided values dim"
         else:
             k_dim=q_dim
             v_dim=q_dim 
@@ -237,6 +219,7 @@ class MultiHeadAttention(nn.Module):
          
         # Apply RoPe
         if self.positional_encoding == 'rope':
+			qkv_projected=None
             q = self.rotary_emb.rotate_queries_or_keys(q)
             k = self.rotary_emb.rotate_queries_or_keys(k)
         # Generate (or get from cache) the attention mask for the attn. impl that requires it
@@ -249,7 +232,7 @@ class MultiHeadAttention(nn.Module):
         # Attention computation                                     
         if self.attn_impl == 'flash':
             if self.positional_encoding=='rope':
-                qkv=None # Disable qkv packing for RoPe #CONTROLLARE: È NECESSARIO?
+                qkv_projected=None # Disable qkv packing for RoPe #CONTROLLARE: È NECESSARIO?
             attn_output = self._flash_forward(
                 qkv=qkv_projected, q=q, k=k, v=v,
                 sliding=(self.sliding_window is not None),
@@ -273,7 +256,6 @@ class MultiHeadAttention(nn.Module):
             raise NotImplementedError("xformers attention not implemented")
         elif self.attn_impl == 'wersa':
             if not hasattr(self, 'wersa_class'):
-                # Initialize WERSA core on first use
                 self.wersa_class = WERSAAttention(
                     self.q_dim, self.nheads, 
                     decomp_levels=2, random_features=1024
