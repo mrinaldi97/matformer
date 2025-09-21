@@ -198,6 +198,7 @@ class MultiHeadAttention(nn.Module):
             v = None
             if self.attn_impl not in supports_packed_qkv or self.positional_encoding=='rope':
                 q, k, v = torch.chunk(qkv_projected, 3, dim=-1)
+                qkv_projected=None
         elif self.qkv_samedim and self.is_cross_attention:
             qkv_projected = None
             w = torch.chunk(self.packed_proj.weight, 3, dim=0)

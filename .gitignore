@@ -1,6 +1,8 @@
 checkpoints*
 wandb*
 wandb/
+datasets/
+tokenizers/
 mdat/
 logs/
 entropy_model/
