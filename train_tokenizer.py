@@ -112,7 +112,7 @@ def train_tokenizer(
         seed_everything(seed)
         cfg = json.loads(Path(config).read_text())
         
-        ds = MatformerDataset(Path(mdat))
+        ds = MatformerDataset.load_dataset(Path(mdat))
         ds.set_iteration_modality(modality='document', with_meta=False, return_raw=True)
         
         tokenizer = Tokenizer(models.Unigram())
