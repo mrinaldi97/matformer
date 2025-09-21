@@ -52,7 +52,7 @@
     "varlen_strategy": "unpadding"
   },
   "data": {
-    "data_root": "../matformer_norepo/primo_mdat",
+    "data_root": "./datasets/liberwiki",
     "batch_size": 52,
     "num_workers": 1,
     "mdat_strategy":"Split_and_tokenize_nltk_sentences",
