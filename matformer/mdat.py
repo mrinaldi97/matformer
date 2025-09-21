@@ -564,7 +564,7 @@ class MatformerDataset(IterableDataset):
                             chunk = chunk[:self.max_seq_len]
                     return chunk
 
-    def set_iteration_modality(self,modality,with_meta=False, return_raw=False):
+    def set_iteration_modality(self,modality,with_meta=False, return_raw=False, add_special_tokens=True):
         supported_modalities=['document','tokens','chunked_tokens','strategy_default']
         if modality in supported_modalities:
             self.current_iteration_modality=modality
@@ -592,7 +592,7 @@ class MatformerDataset(IterableDataset):
             wanted_from_dbs.append('meta')
         # Set the iteration modality in each submdat
         for sbm in self.loaded_submdats.values():
-            sbm.set_default_wanted(from_dbs=wanted_from_dbs,from_strategy=wanted_from_strategy,raw=return_raw)
+            sbm.set_default_wanted(from_dbs=wanted_from_dbs,from_strategy=wanted_from_strategy,raw=return_raw, add_special_tokens=add_special_tokens)
         
     def get_iteration_modality(self):
         return self.current_iteration_modality
@@ -794,7 +794,7 @@ class SubMdat:
         # Now load the created submdat
         return cls.load_submdat(parent_mdat, submdat_name)
                
-    def set_default_wanted(self,from_dbs:list=['full'],from_strategy:list=[],raw:bool=False):
+    def set_default_wanted(self,from_dbs:list=['full'],from_strategy:list=[],raw:bool=False, add_special_tokens=True):
         """
         Set the default elements returned by the submat when called with __getitem__
         Args:
@@ -804,10 +804,11 @@ class SubMdat:
         self.default_wanted_from_dbs=from_dbs
         self.default_wanted_from_strategy=from_strategy
         self.default_raw=raw
+        self.default_add_special_tokens=add_special_tokens
         
     def __getitem__(self,key):
         return self._compose_return(key=key,wanted_from_dbs=self.default_wanted_from_dbs,wanted_from_strategy=self.default_wanted_from_strategy,raw=self.default_raw)
-    def _compose_return(self,key:int,wanted_from_dbs:list,wanted_from_strategy:list,raw:bool=False,strategy_name=None,on_the_fly_mode=True,max_seq_len=None,decode_strings=True):
+    def _compose_return(self,key:int,wanted_from_dbs:list,wanted_from_strategy:list,raw:bool=False,add_special_tokens:bool=True,strategy_name=None,on_the_fly_mode=True,max_seq_len=None,decode_strings=True):
         composed={'submdat_name':self.submdat_name,'key':key}
         if wanted_from_dbs=='full':
             composed.update(orjson.loads(self.db['meta'][key]))
@@ -825,7 +826,7 @@ class SubMdat:
             composed.update(orjson.loads(self.db['meta'][key]))
         if self.current_strategy is not None:
             if wanted_from_strategy is not None:
-               composed.update(self.current_strategy(key=key,cache_dict=self.pretok_db,max_seq_len=max_seq_len,wanted_from_strategy=wanted_from_strategy))
+               composed.update(self.current_strategy(key=key,cache_dict=self.pretok_db,max_seq_len=max_seq_len,wanted_from_strategy=wanted_from_strategy,add_special_tokens=add_special_tokens))
         return composed
     def get_generator(self, progress_bar=False,wanted_from_dbs='full',wanted_from_strategy=None,raw=False):
         """
@@ -1485,7 +1486,7 @@ class LMDBDataset:
                         try:
                             x=zlib.decompress(data)
                             print(f"It worked at attemp: {i}")
-                            with open("zlib_error_logs_{safe_path}.txt","a") as l:
+                            with open(f"zlib_error_logs_{safe_path}.txt","a") as l:
                                 l.write(f"Zlib error at {i}. Recovered after {i}/{self.zlib_attempts} attempts.\n")
                             return x
                         except:
@@ -1599,6 +1600,9 @@ class PretokenizationStrategy:
         self.strategy_name = strategy_dict['strategy_name']
         self.tokenizer_type = strategy_dict['tokenizer_type']
         self.tokenizer_name = strategy_dict['tokenizer_name']
+        self.bos_token_id = strategy_dict['bos_token_id']
+        self.eos_token_id = strategy_dict['eos_token_id']
+        self.mask_token_id = strategy_dict['mask_token_id']        
         self.tokenizer_args = strategy_dict.get('tokenizer_args', {})
         self.splitter_class = strategy_dict['splitter_class']
         self.splitter_init = strategy_dict['splitter_init']
@@ -1650,6 +1654,11 @@ class PretokenizationStrategy:
         else:
             self.chunks_datatype = 'uint32'
         
+        # Load special tokens IDs Special tokens are not saved into the chunks (to easily allow chunks merging, but added on the fly)
+        self.bos_token_id=self.tokenizer.bos_token_id
+        self.eos_token_id=self.tokenizer.eos_token_id
+        self.mask_token_id=self.tokenizer.mask_token_id
+        
         # Initialize splitter
         
         """Initialize the splitter class with dynamic import capability."""
@@ -1657,6 +1666,7 @@ class PretokenizationStrategy:
         
         # Prepare initialization arguments
         init_args = self.splitter_init.copy() if self.splitter_init else {}
+        init_args['chunk_size']=self.chunk_size - 2 #Reduce the max sequence length by two to allow special tokens
         init_args['tokenizer'] = self.tokenizer
         
         # Initialize splitter
@@ -1701,6 +1711,9 @@ class PretokenizationStrategy:
             'tokenizer_type': self.tokenizer_type,
             'tokenizer_name': self.tokenizer_name,
             'tokenizer_args': self.tokenizer_args,
+            'bos_token_id':getattr(self,'bos_token_id',None),
+            'eos_token_id':getattr(self,'eos_token_id',None),
+            'mask_token_id':getattr(self,'mask_token_id',None),       
             'splitter_class': self.splitter_class,
             'splitter_init': self.splitter_init,
             'splitter_arguments': self.splitter_arguments,
@@ -1799,16 +1812,11 @@ class PretokenizationStrategy:
                 return json.dumps(obj).encode('utf-8')
 
     def __call__(self, key: int, data_dict: Optional[Dict] = None, cache_dict: Optional[Dict] = None, 
-                 max_seq_len: Optional[int] = None, wanted_from_strategy: List = []) -> Dict[str, Any]:
+                 max_seq_len: Optional[int] = None, wanted_from_strategy: List = [], add_special_tokens:bool=True) -> Dict[str, Any]:
         """
         Process a document, either from cache or by pretokenizing.
         """
-        # If a max_seq_len is provided, is it compatible with the max_seq_len set into the strategy? 
-        # Usually, multiples are (ex 1024 is ok for 512 strategy's chunk_size)
-        if max_seq_len is not None:
-            # Placeholder for sequence compatibility check - to be implemented later
-            pass
-           
+
         # Should we perform the pretokenization or use the cached values?
         if cache_dict is not None:
             # Use cached pretokenized data
@@ -1821,8 +1829,7 @@ class PretokenizationStrategy:
             if 'chunked_tokens' in wanted_from_strategy and 'tokens' in cache_dict and 'chunks' in cache_dict:
                 tokens_data = self._retrieve_from_storage(cache_dict['tokens'][key], 'tokens')
                 chunks_data = self._retrieve_from_storage(cache_dict['chunks'][key], 'chunks')
-                return_dict['chunked_tokens'] = self._chunk_tokens(tokens_data, chunks_data)
-            
+                return_dict['chunked_tokens'] = self._chunk_tokens(tokens_data, chunks_data, add_special_tokens)
             return return_dict
         else:
             # We need to call splitter for pretokenization
@@ -1835,7 +1842,7 @@ class PretokenizationStrategy:
                     if db_name in cached:
                         return_dict[db_name] = cached[db_name]
                     elif db_name == 'chunked_tokens' and 'tokens' in cached and 'chunks' in cached:
-                        return_dict['chunked_tokens'] = self._chunk_tokens(cached['tokens'], cached['chunks'])
+                        return_dict['chunked_tokens'] = self._chunk_tokens(cached['tokens'], cached['chunks'], add_special_tokens)
                 return return_dict
             
             return cached
@@ -1865,11 +1872,14 @@ class PretokenizationStrategy:
                 else:
                     return json.loads(stored_bytes.decode('utf-8'))
 
-    def _chunk_tokens(self, tokens: List[int], chunks: List[tuple]) -> List[List[int]]:
+    def _chunk_tokens(self, tokens: List[int], chunks: List[tuple], add_special_tokens: bool = True) -> List[List[int]]:
         """Split tokens into chunks based on chunk boundaries."""
         chunked_tokens = []
         for start, end in chunks:
-            chunked_tokens.append(tokens[start:end])
+            chunk = tokens[start:end]
+            if add_special_tokens:
+                chunk = [self.bos_token_id] + chunk + [self.eos_token_id]
+            chunked_tokens.append(chunk)
         return chunked_tokens
 
 
@@ -1895,7 +1905,7 @@ if True:
         pass
 
 class split_and_tokenize_by_nltk_sentences:
-    def __init__(self,language,max_tokens, tokenizer):
+    def __init__(self,language,chunk_size, tokenizer):
         from typing import List, Tuple
         import time
         import difflib
@@ -1905,7 +1915,7 @@ class split_and_tokenize_by_nltk_sentences:
         self.punkt_tokenizer = PunktTokenizer(language) 
         self.tokenizer=tokenizer
         self.language=language
-        self.max_tokens=max_tokens
+        self.max_tokens=chunk_size
     def __call__(self,document):
         if isinstance(document,bytes):
             document=document.decode('utf-8')
@@ -2062,7 +2072,7 @@ def cmd_pretokenize(args):
             print(f"Pretokenizing {sb}...")
             mdat[sb].pretokenize_submdat(strategy_name=args.strategy_name, parallel=args.parallel, batch_size=args.batch_size,compression_level=args.compression_level)
     else:
-        mdat[args.submdat_name].pretokenize_submdat(strategy_name=args.strategy_name, parallel=args.parallel, batch_size=args.batch_size, compression_level=args.compression_level)
+        mdat[args.submdat].pretokenize_submdat(strategy_name=args.strategy_name, parallel=args.parallel, batch_size=args.batch_size, compression_level=args.compression_level)
 
 def cmd_shuffle(args):
     mdat = load_mdat(args.mdat_path, create=False)

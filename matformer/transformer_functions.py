@@ -219,7 +219,7 @@ class MultiHeadAttention(nn.Module):
          
         # Apply RoPe
         if self.positional_encoding == 'rope':
-			qkv_projected=None
+            qkv_projected=None
             q = self.rotary_emb.rotate_queries_or_keys(q)
             k = self.rotary_emb.rotate_queries_or_keys(k)
         # Generate (or get from cache) the attention mask for the attn. impl that requires it

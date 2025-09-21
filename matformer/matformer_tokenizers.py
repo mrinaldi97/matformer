@@ -30,6 +30,9 @@ class MatformerTokenizer:
             from transformers import AutoTokenizer
             self.tokenizer=AutoTokenizer.from_pretrained(tokenizer_name,**tokenizer_args)
             self.vocab_size=self.tokenizer.vocab_size
+            self.mask_token_id=self.tokenizer.mask_token_id
+            self.bos_token_id=self.tokenizer.bos_token_id
+            self.eos_token_id=self.tokenizer.eos_token_id
             self.return_type=int
         else: #Directly pass an HuggingFace tokenizer [kept for compatibility, deprecated]
             self.tokenizer = tokenizer
