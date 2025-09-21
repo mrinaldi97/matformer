@@ -1600,9 +1600,9 @@ class PretokenizationStrategy:
         self.strategy_name = strategy_dict['strategy_name']
         self.tokenizer_type = strategy_dict['tokenizer_type']
         self.tokenizer_name = strategy_dict['tokenizer_name']
-        self.bos_token_id = strategy_dict['bos_token_id']
-        self.eos_token_id = strategy_dict['eos_token_id']
-        self.mask_token_id = strategy_dict['mask_token_id']        
+        self.bos_token_id = strategy_dict.get('bos_token_id',None)
+        self.eos_token_id = strategy_dict.get('eos_token_id',None)
+        self.mask_token_id = strategy_dict.get('mask_token_id',None) 
         self.tokenizer_args = strategy_dict.get('tokenizer_args', {})
         self.splitter_class = strategy_dict['splitter_class']
         self.splitter_init = strategy_dict['splitter_init']
