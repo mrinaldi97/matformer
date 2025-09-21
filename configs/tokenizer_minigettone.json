@@ -10,7 +10,7 @@
     "email_token": "[EMAIL]",
     
     "unicode_filtering": {
-        "enabled": True,
+        "enabled": true,
         "ranges": [
             "latin",                    
             "greek",                    
@@ -24,19 +24,19 @@
         ],
         "custom_ranges": [
         ],
-        "include_whitespace": True,
-        "include_digits": True,
-        "include_punctuation": True
+        "include_whitespace": true,
+        "include_digits": true,
+        "include_punctuation": true
     },
     
     "normalization": {
-        "nmt": False,                    
-        "nfc": False,                   
-        "nfkc": True,
+        "nmt": false,                    
+        "nfc": false,                   
+        "nfkc": true,
         "case": "preserve",             
-        "normalize_whitespace": True
+        "normalize_whitespace": true
     },
     
-    "replace_url": True,
-    "replace_email": True
+    "replace_url": true,
+    "replace_email": true
 }
