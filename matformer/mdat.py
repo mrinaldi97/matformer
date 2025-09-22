@@ -1948,6 +1948,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         import re
         from tqdm import tqdm
         import numpy as np
+        import concurrent
         import concurrent.futures
         from threading import Lock
         from transformers import AutoTokenizer
