@@ -2019,12 +2019,18 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         else:
             encoding = self.tokenizer(document, return_offsets_mapping=True)
 
+        if hasattr(encoding, "ids"):  # it's a tokenizers.Encoding
+            all_tokens = encoding.ids
+            offset_mapping = encoding.offsets
+        else:  # it's a BatchEncoding
+            all_tokens = encoding["input_ids"]
+            offset_mapping = encoding["offset_mapping"]
+
         spans = self.get_sentence_spans(document)
-        aligned_spans = self.align(spans, encoding)
+        aligned_spans = self.align(spans, {"offset_mapping": offset_mapping})
         aligned_spans = self.trim_long_sequences(aligned_spans, self.max_tokens)
         finalspans = self.create_final_spans(aligned_spans, self.max_tokens)
 
-        all_tokens = encoding["input_ids"]
         chunk_ranges = [(span[0], span[1] - 1) for span in finalspans]
 
         return {
@@ -2032,13 +2038,6 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             "chunks": chunk_ranges,
         }
 
-    def batched(self, batch):
-        batched_encoding = self.tokenizer(batch, return_offsets_mapping=True)
-        results = []
-        for i, document in enumerate(batch):
-            results.append(self(document, batch_idx=i, batched_encoding=batched_encoding))
-        return results
-        
 class split_and_tokenize_by_nltk_sentences:
     def __init__(self,language,chunk_size, tokenizer):
         from typing import List, Tuple
