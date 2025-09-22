@@ -1936,19 +1936,19 @@ if True:
     class InvalidChunksFormat(Exception):
         pass
 
+from transformers import AutoTokenizer
+from nltk.tokenize import PunktTokenizer
+
 class split_and_tokenize_by_nltk_sentences_aligned:
     def __init__(self, language, chunk_size, tokenizer):
-        import numpy as np
-        from concurrent.futures import ThreadPoolExecutor
         from typing import List, Tuple
         import time
         import difflib
         import re
         from tqdm import tqdm
-        from nltk.tokenize import PunktTokenizer        
-
+        import numpy as np
         self.punkt_tokenizer = PunktTokenizer(language) 
-        self.tokenizer = tokenizer.tokenizer
+        self.tokenizer = tokenizer.tokenizer #Accessing the huggingface tokenizer inside MatformerTokenizer
         self.language = language
         self.max_tokens = chunk_size
     
@@ -1959,61 +1959,8 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         spans = list(zip(starts, ends))
         return spans
 
-    def get_sentence_spans_batch(self, documents: List[str]):
-        with ThreadPoolExecutor() as executor:
-            results = list(executor.map(self.get_sentence_spans, documents))
-        return results
-
-    def align_batch_vectorized(self, sentencespans_batch, encodings):
-        all_tokenspans = []
-        
-        for i, sentencespans in enumerate(sentencespans_batch):
-            encoding = encodings[i]
-            if hasattr(encoding, "offsets"):  # it's a tokenizers.Encoding
-                offset_mapping = encoding.offsets
-            else:  # it's a BatchEncoding
-                offset_mapping = encoding["offset_mapping"]
-            
-            mapping = np.array(offset_mapping)
-            if len(mapping) == 0:
-                all_tokenspans.append([])
-                continue
-                
-            starts = mapping[:, 0]
-            ends = mapping[:, 1]
-            
-            sent_starts = np.array([s[0] for s in sentencespans])
-            sent_ends = np.array([s[1] for s in sentencespans])
-            
-            tokenstarts = np.searchsorted(starts, sent_starts, side="right") - 1
-            tokenends = np.searchsorted(ends, sent_ends, side="left") + 1
-            
-            tokenstarts = np.clip(tokenstarts, 0, len(mapping) - 1)
-            tokenends = np.clip(tokenends, 0, len(mapping))
-            
-            tokenspans = list(zip(tokenstarts, tokenends))
-            
-            if tokenspans:
-                starts_arr = [s[0] for s in tokenspans]
-                ends_arr = [s[0] for s in tokenspans[1:]] + [len(mapping)]
-                tokenspans = list(zip(starts_arr, ends_arr))
-                if tokenspans:
-                    tokenspans[-1] = (tokenspans[-1][0], len(mapping))
-            
-            all_tokenspans.append(tokenspans)
-            
-        return all_tokenspans
-
     def align(self, sentencespans, encoding):
-        if hasattr(encoding, "offset_mapping"):  # it's a tokenizers.Encoding
-            offset_mapping = encoding.offset_mapping
-        else:  # it's a BatchEncoding
-            offset_mapping = encoding["offset_mapping"]
-            
-        mapping = np.array(offset_mapping)
-        if len(mapping) == 0:
-            return []
-            
+        mapping = np.array(encoding["offset_mapping"])
         starts = mapping[:, 0]
         ends = mapping[:, 1]
 
@@ -2022,20 +1969,14 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             tokenstart = int(np.searchsorted(starts, sent_start, side="right")-1)
             tokenend = int(np.searchsorted(ends, sent_end, side="left")+1)
             tokenspans.append((max(tokenstart, 0), min(tokenend, len(mapping))))
-        
-        if tokenspans:
-            tokenspans[-1] = (tokenspans[-1][0], len(mapping))
+        if len(tokenspans>0):
+            tokenspans[-1]=(tokenspans[-1][0],len(mapping))
             starts = [s[0] for s in tokenspans]
             ends = [s[0] for s in tokenspans[1:]] + [len(mapping)]
             tokenspans = list(zip(starts, ends))            
-        
+        else:
+            print("WARNING: Empty sequence")
         return tokenspans
-
-    def trim_long_sequences_batch(self, aligned_spans_batch, maxlen):
-        results = []
-        for aligned_spans in aligned_spans_batch:
-            results.append(self.trim_long_sequences(aligned_spans, maxlen))
-        return results
 
     def trim_long_sequences(self, aligned_spans, maxlen):
         flag = False
@@ -2059,12 +2000,6 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             return self.trim_long_sequences(new_aligned_spans, maxlen)
         else:
             return aligned_spans
-
-    def create_final_spans_batch(self, aligned_spans_batch, maxlen):
-        results = []
-        for aligned_spans in aligned_spans_batch:
-            results.append(self.create_final_spans(aligned_spans, maxlen))
-        return results
 
     def lenspan(self, start, end):
         return end[1] - start[0]
@@ -2119,33 +2054,14 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             "chunks": chunk_ranges,
         }
 
+
     def batched(self, batch):
         batched_encoding = self.tokenizer(batch, return_offsets_mapping=True, add_special_tokens=False)
-        
-        sentencespans_batch = self.get_sentence_spans_batch(batch)
-        
-        aligned_spans_batch = self.align_batch_vectorized(sentencespans_batch, batched_encoding)
-        
-        trimmed_spans_batch = self.trim_long_sequences_batch(aligned_spans_batch, self.max_tokens)
-        finalspans_batch = self.create_final_spans_batch(trimmed_spans_batch, self.max_tokens)
-        
         results = []
         for i, document in enumerate(batch):
-            if True or hasattr(batched_encoding[i], "ids"):  # tokenizers.Encoding
-                all_tokens = batched_encoding[i].ids
-            else:  #BatchEncoding
-                all_tokens = batched_encoding[i]["input_ids"]
-                
-            chunk_ranges = [(span[0], span[1]) for span in finalspans_batch[i]]
-            
-            results.append({
-                "tokens": all_tokens,
-                "chunks": chunk_ranges,
-            })
-            
+            results.append(self(document, batch_idx=i, batched_encoding=batched_encoding))
         return results
-
-
+        
 class split_and_tokenize_by_nltk_sentences:
     def __init__(self,language,chunk_size, tokenizer):
         from typing import List, Tuple
