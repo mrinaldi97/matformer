@@ -1948,7 +1948,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         from tqdm import tqdm
         import numpy as np
         self.punkt_tokenizer = PunktTokenizer(language) 
-        self.tokenizer = tokenizer.tokenizer #Accessing the huggingface tokenizer inside MatformerTokenizer
+        self.tokenizer = tokenizer #Accessing the huggingface tokenizer inside MatformerTokenizer
         self.language = language
         self.max_tokens = chunk_size
     
@@ -1966,9 +1966,13 @@ class split_and_tokenize_by_nltk_sentences_aligned:
 
         tokenspans = []
         for sent_start, sent_end in sentencespans:
-            tokenstart = int(np.searchsorted(starts, sent_start, side="right") - 1)
-            tokenend = int(np.searchsorted(ends, sent_end, side="left"))
-            tokenspans.append((max(tokenstart, 0), min(tokenend, len(mapping) - 1)))
+            tokenstart = int(np.searchsorted(starts, sent_start, side="right")-1)
+            tokenend = int(np.searchsorted(ends, sent_end, side="left")+1)
+            tokenspans.append((max(tokenstart, 0), min(tokenend, len(mapping))))
+        tokenspans[-1]=(tokenspans[-1][0],len(mapping))
+        starts = [s[0] for s in tokenspans]
+        ends = [s[0] for s in tokenspans[1:]] + [len(mapping)]
+        tokenspans = list(zip(starts, ends))            
         return tokenspans
 
     def trim_long_sequences(self, aligned_spans, maxlen):
@@ -2026,7 +2030,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         if batch_idx is not None and batched_encoding is not None:
             encoding = batched_encoding[batch_idx]
         else:
-            encoding = self.tokenizer(document, return_offsets_mapping=True)
+            encoding = self.tokenizer(document, return_offsets_mapping=True, add_special_tokens=False)
 
         if hasattr(encoding, "ids"):  # it's a tokenizers.Encoding
             all_tokens = encoding.ids
@@ -2040,7 +2044,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         aligned_spans = self.trim_long_sequences(aligned_spans, self.max_tokens)
         finalspans = self.create_final_spans(aligned_spans, self.max_tokens)
 
-        chunk_ranges = [(span[0], span[1] - 1) for span in finalspans]
+        chunk_ranges = [(span[0], span[1]) for span in finalspans]
 
         return {
             "tokens": all_tokens,
