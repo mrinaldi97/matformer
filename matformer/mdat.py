@@ -1977,7 +1977,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
                 tokenspans = list(zip(starts, ends))            
             else:
                 print("WARNING: Empty sequence")
-        except exception as e:
+        except Exception as e:
             print(f"Error. {e}")
             print(encoding)
         return tokenspans
