@@ -1008,43 +1008,52 @@ class SubMdat:
                raise exception (is responsibility of the splitter to return the correct datatype)
         """
         if not parallel:
-             
+            def process_batch(batch, stats):
+                keys, docs = zip(*batch)
+                batch_results = strategy.pretokenize_batch(list(docs))
+
+                for k, split_result in zip(keys, batch_results):
+                    for db_name in strategy.returns:
+                        if db_name in split_result:
+                            if db_name == 'tokens':
+                                token_bytes = strategy.prepare_tokens_for_storage(split_result['tokens'])
+                                num_tokens = len(split_result['tokens'])
+                                stats['total_tokens'] += num_tokens
+                                stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
+                                self.pretok_db[db_name].write(key=k, obj=token_bytes)
+
+                            elif db_name == 'chunks':
+                                tokens_length = len(split_result.get('tokens', [])) if chunking_strict_checks else None
+                                chunk_bytes = strategy.prepare_chunks_for_storage(
+                                    split_result['chunks'],
+                                    max_tokens_per_chunk=strategy.chunk_size,
+                                    tokens_length=tokens_length,
+                                    strict_checks=chunking_strict_checks
+                                )
+                                chunk_count = len(split_result['chunks'])
+                                stats['total_chunks'] += chunk_count
+                                stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
+                                stats['precomputed_lengths'][0] = 0
+                                for j in range(1, max_multiplier):
+                                    stats['precomputed_lengths'][j] += math.ceil(chunk_count / j)
+                                self.pretok_db[db_name].write(obj=chunk_bytes, key=k)
+
+                            else:
+                                obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
+                                self.pretok_db[db_name].write(obj=obj_bytes, key=k)
+
+                    stats['processed_docs'] += 1
+
+            batch = []
             for key, doc in enumerate(generator):
-                # Process document through strategy
-                split_result = strategy.pretokenize_document(document=doc)
-                
-                for db_name in strategy.returns:
-                    if db_name in split_result:
-                        if db_name == 'tokens':
-                            token_bytes = strategy.prepare_tokens_for_storage(split_result['tokens'])
-                            num_tokens = len(split_result['tokens'])
-                            stats['total_tokens'] += num_tokens
-                            stats['max_tokens_per_doc'] = max(stats['max_tokens_per_doc'], num_tokens)
-                            self.pretok_db[db_name].write(key=key, obj=token_bytes)
-                            
-                        elif db_name == 'chunks':
-                            tokens_length = len(split_result.get('tokens', [])) if chunking_strict_checks else None
-                            chunk_bytes = strategy.prepare_chunks_for_storage(
-                                split_result['chunks'],
-                                max_tokens_per_chunk=strategy.chunk_size,
-                                tokens_length=tokens_length,
-                                strict_checks=chunking_strict_checks
-                            )
-                            chunk_count = len(split_result['chunks'])
-                            stats['total_chunks'] += chunk_count
-                            stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
-                            stats['precomputed_lengths'][0]=0
-                            print("Debug: ",stats['precomputed_lengths'])
-                            for j in range(1, max_multiplier):
-                                print("Debug J:", j)
-                                stats['precomputed_lengths'][j] += math.ceil(chunk_count / j)                            
-                            self.pretok_db[db_name].write(obj=chunk_bytes, key=key)
-                            
-                        else:
-                            obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
-                            self.pretok_db[db_name].write(obj=obj_bytes, key=key)
-                
-                stats['processed_docs'] += 1    
+                batch.append((key, doc))
+                if len(batch) >= batch_size:
+                    process_batch(batch, stats)
+                    batch = []
+
+            # remaining docs
+            if batch:
+                process_batch(batch, stats)
         else:
                 # PARALLEL VERSION
                 if num_processes is None:
