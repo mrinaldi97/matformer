@@ -1936,21 +1936,28 @@ if True:
     class InvalidChunksFormat(Exception):
         pass
 
-from transformers import AutoTokenizer
-from nltk.tokenize import PunktTokenizer
+
+
+
 
 class split_and_tokenize_by_nltk_sentences_aligned:
-    def __init__(self, language, chunk_size, tokenizer):
+    def __init__(self, language, chunk_size, tokenizer, max_workers=None):
         from typing import List, Tuple
         import time
         import difflib
         import re
         from tqdm import tqdm
         import numpy as np
+        import concurrent.futures
+        from threading import Lock
+        from transformers import AutoTokenizer
+        from nltk.tokenize import PunktTokenizer
         self.punkt_tokenizer = PunktTokenizer(language) 
         self.tokenizer = tokenizer.tokenizer #Accessing the huggingface tokenizer inside MatformerTokenizer
         self.language = language
         self.max_tokens = chunk_size
+        self.max_workers = max_workers  
+        self._lock = Lock()  
     
     def get_sentence_spans(self, document: str):
         spans = [x for x in self.punkt_tokenizer.span_tokenize(document)]
@@ -1960,6 +1967,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         return spans
 
     def align(self, sentencespans, encoding):
+        import numpy as np
         mapping = np.array(encoding["offset_mapping"])
         starts = mapping[:, 0]
         ends = mapping[:, 1]
@@ -2017,6 +2025,33 @@ class split_and_tokenize_by_nltk_sentences_aligned:
 
         return finalspans
 
+    def _process_single_document(self, document, batch_idx, batched_encoding):
+        if isinstance(document, bytes):
+            document = document.decode("utf-8")
+        if not isinstance(document, str):
+            raise Exception("Document must be a string or bytes")
+
+        encoding = batched_encoding[batch_idx]
+
+        if hasattr(encoding, "ids"):  # it's a tokenizers.Encoding
+            all_tokens = encoding.ids
+            offset_mapping = encoding.offsets
+        else:  # it's a BatchEncoding
+            all_tokens = encoding["input_ids"]
+            offset_mapping = encoding["offset_mapping"]
+
+        spans = self.get_sentence_spans(document)
+        aligned_spans = self.align(spans, {"offset_mapping": offset_mapping})
+        aligned_spans = self.trim_long_sequences(aligned_spans, self.max_tokens)
+        finalspans = self.create_final_spans(aligned_spans, self.max_tokens)
+
+        chunk_ranges = [(span[0], span[1] - 1) for span in finalspans]
+
+        return {
+            "tokens": all_tokens,
+            "chunks": chunk_ranges,
+        }
+
     def __call__(self, document, batch_idx=None, batched_encoding=None):
         if isinstance(document, bytes):
             document = document.decode("utf-8")
@@ -2047,14 +2082,28 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             "chunks": chunk_ranges,
         }
 
-
     def batched(self, batch):
         batched_encoding = self.tokenizer(batch, return_offsets_mapping=True)
-        results = []
-        for i, document in enumerate(batch):
-            results.append(self(document, batch_idx=i, batched_encoding=batched_encoding))
-        return results
         
+        results = [None] * len(batch)  
+        
+        tasks = [(i, document) for i, document in enumerate(batch)]
+        
+        with concurrent.futures.ThreadPoolExecutor(max_workers=self.max_workers) as executor:
+            future_to_index = {
+                executor.submit(self._process_single_document, document, i, batched_encoding): i
+                for i, document in tasks
+            }
+            
+            for future in concurrent.futures.as_completed(future_to_index):
+                original_index = future_to_index[future]
+                try:
+                    result = future.result()
+                    results[original_index] = result
+                except Exception as exc:
+                    raise Exception(f'Document at index {original_index} generated an exception: {exc}')
+        
+        return results
 class split_and_tokenize_by_nltk_sentences:
     def __init__(self,language,chunk_size, tokenizer):
         from typing import List, Tuple
