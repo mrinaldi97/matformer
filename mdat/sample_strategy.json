@@ -1,8 +1,8 @@
 {
-    "strategy_name":"Split_and_tokenize_nltk_sentences",
+    "strategy_name":"Minerva1024",
     "tokenizer_type":"huggingface",
     "tokenizer_name":"sapienzanlp/Minerva-350M-base-v1.0",
-    "splitter_class":"split_and_tokenize_by_nltk_sentences",
+    "splitter_class":"split_and_tokenize_by_nltk_sentences_aligned",
     "splitter_init":{"language":"italian"},
     "splitter_arguments":null,
     "modality":"text",

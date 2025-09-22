@@ -107,8 +107,8 @@ class MatformerTokenizer:
             sequence = sequence.unpad()
         
         return sequence
-    def encode(self, text: str, truncation=False, add_eos=False, add_bos=False, add_special_tokens=False):
-        input_ids = self.tokenizer(text, add_special_tokens=add_special_tokens)['input_ids']
+    def encode(self, text: str, truncation=False, add_eos=False, add_bos=False, add_special_tokens=False,return_offsets_mapping=False):
+        input_ids = self.tokenizer(text, add_special_tokens=add_special_tokens, return_offsets_mapping=return_offsets_mapping)['input_ids']
         if add_eos:
             pass
         if add_bos:

@@ -75,6 +75,7 @@ class PL_ModelWrapper(pl.LightningModule):
         ### Input al modello ###
         model_input=deepcopy(input_sequence)
         logits = self(deepcopy(model_input))
+        #logits=logits.pad() # Repadding logits
         #print(f"Shape di sequence: {sequence.shape}")
         if self.nested:
             logits_flat = torch.cat(logits.unbind())

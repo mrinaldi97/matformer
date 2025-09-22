@@ -1904,6 +1904,123 @@ if True:
     class InvalidChunksFormat(Exception):
         pass
 
+from transformers import AutoTokenizer
+from nltk.tokenize import PunktTokenizer
+
+class split_and_tokenize_by_nltk_sentences_aligned:
+    def __init__(self, language, chunk_size, tokenizer):
+        from typing import List, Tuple
+        import time
+        import difflib
+        import re
+        from tqdm import tqdm
+        import numpy as np
+        self.punkt_tokenizer = PunktTokenizer(language) 
+        self.tokenizer = tokenizer.tokenizer #Accessing the huggingface tokenizer inside MatformerTokenizer
+        self.language = language
+        self.max_tokens = chunk_size
+    
+    def get_sentence_spans(self, document):
+        spans = [x for x in self.punkt_tokenizer.span_tokenize(document)]
+        starts = [s[0] for s in spans]
+        ends = [s[0] for s in spans[1:]] + [len(document)]
+        spans = list(zip(starts, ends))
+        return spans
+    def align(self, sentencespans, encoding):
+        mapping = np.array(encoding['offset_mapping'])
+        starts = mapping[:,0]
+        ends = mapping[:,1]
+    
+        tokenspans = []
+        for sent_start, sent_end in sentencespans:
+            tokenstart = int(np.searchsorted(starts, sent_start, side="right") - 1)
+            tokenend = int(np.searchsorted(ends, sent_end, side="left"))
+            tokenspans.append((max(tokenstart, 0), min(tokenend, len(mapping)-1)))
+        return tokenspans
+    def align_old(self, sentencespans, encoding):
+        mapping = encoding['offset_mapping']
+        tokenspans = list()
+        tokenstart=0
+        for sentencespan in sentencespans:
+            for i, tokenspan in enumerate(mapping):
+                flag = False
+                if tokenspan[0] <= sentencespan[0]:
+                    tokenstart = i
+                if tokenspan[1] >= sentencespan[1]:
+                    tokenend = i
+                    tokenspans.append((tokenstart, tokenend))
+                    flag = True
+                    break
+            if not flag:
+                tokenspans.append((tokenstart, len(encoding.tokens())))
+        return tokenspans
+    
+    def trim_long_sequences(self, aligned_spans, maxlen):
+        flag = False
+        new_aligned_spans = []
+        
+        for i, x in enumerate(aligned_spans):
+            span_length = x[1] - x[0] 
+            
+            if span_length > maxlen:
+                flag = True
+                print(f"WARNING: A span was exceeding maxlen: {span_length}")
+                new_aligned_spans.extend(aligned_spans[:i])
+                
+                midpoint = x[0] + span_length // 2
+                newspans = [(x[0], midpoint), (midpoint, x[1])]
+                new_aligned_spans.extend(newspans)
+                
+                new_aligned_spans.extend(aligned_spans[i+1:])
+                break 
+        
+        if flag:
+            return self.trim_long_sequences(new_aligned_spans, maxlen)
+        else:
+            return aligned_spans
+    
+    def lenspan(self, start, end):
+        return end[1] - start[0]
+    
+    def create_final_spans(self, aligned_spans, maxlen):
+        span_idx_start = 0
+        span_idx_end = 0
+        finalspans = list()
+        
+        while span_idx_end < len(aligned_spans):
+            if self.lenspan(aligned_spans[span_idx_start], aligned_spans[span_idx_end]) > maxlen:
+                finalspans.append((aligned_spans[span_idx_start][0], aligned_spans[span_idx_end-1][1]))
+                span_idx_start = span_idx_end
+            else:
+                span_idx_end += 1 
+                if span_idx_end >= len(aligned_spans):
+                    finalspans.append((aligned_spans[span_idx_start][0], aligned_spans[span_idx_end-1][1]))
+        
+        return finalspans
+    
+    def __call__(self, document):
+        if isinstance(document, bytes):
+            document = document.decode('utf-8')
+        if not isinstance(document, str):
+            raise Exception
+        
+        encoding = self.tokenizer(document, return_offsets_mapping=True)
+        spans = self.get_sentence_spans(document)
+        aligned_spans = self.align(spans, encoding)
+        aligned_spans = self.trim_long_sequences(aligned_spans, self.max_tokens)
+        finalspans = self.create_final_spans(aligned_spans, self.max_tokens)
+        
+        all_tokens = encoding['input_ids']
+        
+        chunk_ranges = []
+        for span in finalspans:
+            chunk_ranges.append((span[0], span[1] - 1))
+        
+        return {
+            "tokens": all_tokens,
+            "chunks": chunk_ranges
+        }
+
 class split_and_tokenize_by_nltk_sentences:
     def __init__(self,language,chunk_size, tokenizer):
         from typing import List, Tuple

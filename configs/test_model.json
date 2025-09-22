@@ -4,7 +4,7 @@
     "name": "Modello-Di-Prova",
     "hidden_size": 512,
     "ffn_factor": 1.0,
-    "num_hidden_layers": 12,
+    "num_hidden_layers": 10,
     "num_attention_heads": 8,
     "vocab_size": 32769,
     "masked_substitution_rate": 0.25,
@@ -24,7 +24,7 @@
     "is_causal": false,
     "default_layer": {
       "attn_impl": "flash",
-      "sliding_window_size": 1024,
+      "sliding_window_size": null,
       "positional_encoding": "alibi",
       "hooks": {}
     },
@@ -49,11 +49,11 @@
   "tokenizer": {
     "type": "huggingface",
     "pretrained_name": "sapienzanlp/Minerva-350M-base-v1.0",
-    "varlen_strategy": "unpadding"
+    "varlen_strategy": "padding"
   },
   "data": {
     "data_root": "./datasets/liberwiki",
-    "batch_size": 52,
+    "batch_size": 48,
     "num_workers": 1,
     "mdat_strategy":"Split_and_tokenize_nltk_sentences",
     "mdat_view": null

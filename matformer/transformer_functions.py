@@ -91,9 +91,13 @@ class MultiHeadAttention(nn.Module):
     def _flash_forward(
         self, q=None, k=None, v=None, qkv=None,
         query_input=None, key_input=None,
-        sliding=False, alibi=False):
-        sliding_window = (-self.sliding_window, -self.sliding_window) if sliding else (-1, -1)
-        
+        sliding=False, alibi=False):        
+        if sliding:
+            right_window = 0 if self.is_causal else -self.sliding_window
+            sliding_window = (-self.sliding_window, right_window)
+        else:
+            sliding_window = (-1, -1)
+
         if key_input is None:
             key_input = query_input
             
@@ -167,7 +171,7 @@ class MultiHeadAttention(nn.Module):
         """
         
         supports_unpadding = ['flash']
-        supports_packed_qkv = ['flash']
+        supports_packed_qkv = ['DISABLED']
         
         # Set defaults for self-attention
         if key_input is None:
@@ -265,7 +269,7 @@ class MultiHeadAttention(nn.Module):
                     self.q_dim, self.nheads, 
                     decomp_levels=2, random_features=1024
                 ).to(q.device)
-            original_x=original_x.tensor if hasattr(original_x,'tensor') else original_x
+            original_x=original_x.tensor if hasattr(original_x,'tensor') else original_x          
             attn_output = self.wersa_class(q, k, v, original_x, self.is_causal)
             attn_output = attn_output.transpose(1, 2)  
         else:

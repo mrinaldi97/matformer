@@ -81,7 +81,7 @@ class ModelConfig(BaseSubModelConfig):
     
     # Layer configuration system
     default_layer: LayerConfig = field(default_factory=LayerConfig)
-    custom_layers: Dict[Union[int, str], LayerConfig] = field(default_factory=dict)
+    custom_layers: Dict[Union[int, str], LayerConfig] = field(default_factory=LayerConfig)
     
     # optional subconfigs - now accept both dict and dataclass
     encoder: Optional[Union[SubModelConfig, dict]] = None

@@ -67,7 +67,7 @@ class CachedStuff:
         """Get cached ALiBi bias matrix of shape (1, nheads, L, S)."""
         key = (nheads, L, S, device, dtype)
         if key not in self.bias_cache:
-            slopes = self.get_slopes(nheads, device, dtype)
+            slopes = self.get_alibi_slopes(nheads, device, dtype)
             self.bias_cache[key] = self._build_alibi(L, S, nheads, slopes, device).to(dtype)
         return self.bias_cache[key]
 
