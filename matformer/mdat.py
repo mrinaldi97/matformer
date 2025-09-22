@@ -2038,6 +2038,14 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             "chunks": chunk_ranges,
         }
 
+
+    def batched(self, batch):
+        batched_encoding = self.tokenizer(batch, return_offsets_mapping=True)
+        results = []
+        for i, document in enumerate(batch):
+            results.append(self(document, batch_idx=i, batched_encoding=batched_encoding))
+        return results
+        
 class split_and_tokenize_by_nltk_sentences:
     def __init__(self,language,chunk_size, tokenizer):
         from typing import List, Tuple
