@@ -1290,41 +1290,48 @@ def process_documents_batch(sub_batch, pretoken_path, functions_path, strategy_n
         'base_chunk_size':strategy.chunk_size
     }
     
-    for key, doc in sub_batch:
-        split_result = strategy.pretokenize_document(document=doc)
+    # Split sub_batch into keys and documents
+    keys = [key for key, _ in sub_batch]
+    docs = [doc for _, doc in sub_batch]
+
+    # Run batched pretokenization
+    split_results = strategy.pretokenize_batch(docs)
+
+    # Process results in sync with keys
+    for key, split_result in zip(keys, split_results):
         local_stats['processed_docs'] += 1
-        
+
         for db_name in strategy_returns:
             if db_name not in split_result:
                 continue
-                
+
             if db_name == 'tokens':
                 token_bytes = strategy.prepare_tokens_for_storage(split_result['tokens'])
                 token_count = len(split_result['tokens'])
                 local_stats['total_tokens'] += token_count
                 local_stats['max_tokens_per_doc'] = max(local_stats['max_tokens_per_doc'], token_count)
                 db_data[db_name].append((key, token_bytes))
-                
+
             elif db_name == 'chunks':
                 tokens_length = len(split_result.get('tokens', [])) if chunking_strict_checks else None
                 chunk_bytes = strategy.prepare_chunks_for_storage(
                     split_result['chunks'],
                     max_tokens_per_chunk=chunk_size,
                     tokens_length=tokens_length,
-                    strict_checks=chunking_strict_checks
+                    strict_checks=chunking_strict_checks,
                 )
                 chunk_count = len(split_result['chunks'])
                 local_stats['total_chunks'] += chunk_count
                 local_stats['max_chunks_per_doc'] = max(local_stats['max_chunks_per_doc'], chunk_count)
-                local_stats['precomputed_lengths'][0]=0
+                local_stats['precomputed_lengths'][0] = 0
                 for j in range(1, max_multiplier):
-                                local_stats['precomputed_lengths'][j] += math.ceil(chunk_count / j)    
+                    local_stats['precomputed_lengths'][j] += math.ceil(chunk_count / j)
                 db_data[db_name].append((key, chunk_bytes))
-                
+
             else:
                 obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
                 db_data[db_name].append((key, obj_bytes))
-    
+
     return db_data, local_stats
 
 # Exceptions
@@ -1612,6 +1619,7 @@ class PretokenizationStrategy:
         self.wants_from_db = strategy_dict['wants_from_db']
         self.wants_raw = strategy_dict['wants_raw']
         self.returns = strategy_dict['returns']
+        self.supports_batch=strategy_dict.get('supports_batch',False)        
         self.tokens_datatype=strategy_dict.get('tokens_datatype',None)
         self.chunks_datatype=strategy_dict.get('chunks_datatype',None)
     def _load_configuration(self):
@@ -1723,7 +1731,8 @@ class PretokenizationStrategy:
             'wants_raw': self.wants_raw,
             'returns': self.returns,
             'tokens_datatype':getattr(self,'tokens_datatype',None),
-            'chunks_datatype':getattr(self,'chunks_datatype',None)
+            'chunks_datatype':getattr(self,'chunks_datatype',None),
+            'supports_batch':getattr(self,'supports_batch',False)
         }
         
         os.makedirs(self.mdat_pretok_path, exist_ok=True)
@@ -1742,7 +1751,20 @@ class PretokenizationStrategy:
                 return False
         
         return True
+        
+    def pretokenize_batch(self, batch):
+        if not self.initialized:
+            self._initialize_components()
 
+        if self.supports_batch:
+            # Use the splitter's batched implementation
+            return self.splitter.batched(batch)
+        else:
+            # single-document pretokenization
+            results = []
+            for document in batch:
+                results.append(self.pretokenize_document(document))
+            return results
     def pretokenize_document(self, document):
         """
         Pretokenize a single document using the configured splitter.
@@ -1758,6 +1780,7 @@ class PretokenizationStrategy:
                     raise MissingDataKey(f"Required key '{required_key}' not found")
         
         # Call the splitter and return the data to be inserted into the db
+        #Is it batched?
         split_result = self.splitter(document)
         
         # Validate that splitter returned expected outputs
@@ -1920,107 +1943,102 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         self.language = language
         self.max_tokens = chunk_size
     
-    def get_sentence_spans(self, document):
+    def get_sentence_spans(self, document: str):
         spans = [x for x in self.punkt_tokenizer.span_tokenize(document)]
         starts = [s[0] for s in spans]
         ends = [s[0] for s in spans[1:]] + [len(document)]
         spans = list(zip(starts, ends))
         return spans
+
     def align(self, sentencespans, encoding):
-        mapping = np.array(encoding['offset_mapping'])
-        starts = mapping[:,0]
-        ends = mapping[:,1]
-    
+        mapping = np.array(encoding["offset_mapping"])
+        starts = mapping[:, 0]
+        ends = mapping[:, 1]
+
         tokenspans = []
         for sent_start, sent_end in sentencespans:
             tokenstart = int(np.searchsorted(starts, sent_start, side="right") - 1)
             tokenend = int(np.searchsorted(ends, sent_end, side="left"))
-            tokenspans.append((max(tokenstart, 0), min(tokenend, len(mapping)-1)))
+            tokenspans.append((max(tokenstart, 0), min(tokenend, len(mapping) - 1)))
         return tokenspans
-    def align_old(self, sentencespans, encoding):
-        mapping = encoding['offset_mapping']
-        tokenspans = list()
-        tokenstart=0
-        for sentencespan in sentencespans:
-            for i, tokenspan in enumerate(mapping):
-                flag = False
-                if tokenspan[0] <= sentencespan[0]:
-                    tokenstart = i
-                if tokenspan[1] >= sentencespan[1]:
-                    tokenend = i
-                    tokenspans.append((tokenstart, tokenend))
-                    flag = True
-                    break
-            if not flag:
-                tokenspans.append((tokenstart, len(encoding.tokens())))
-        return tokenspans
-    
+
     def trim_long_sequences(self, aligned_spans, maxlen):
         flag = False
         new_aligned_spans = []
-        
+
         for i, x in enumerate(aligned_spans):
-            span_length = x[1] - x[0] 
-            
+            span_length = x[1] - x[0]
+
             if span_length > maxlen:
                 flag = True
-                #print(f"WARNING: A span was exceeding maxlen: {span_length}")
                 new_aligned_spans.extend(aligned_spans[:i])
-                
+
                 midpoint = x[0] + span_length // 2
                 newspans = [(x[0], midpoint), (midpoint, x[1])]
                 new_aligned_spans.extend(newspans)
-                
-                new_aligned_spans.extend(aligned_spans[i+1:])
-                break 
-        
+
+                new_aligned_spans.extend(aligned_spans[i + 1 :])
+                break
+
         if flag:
             return self.trim_long_sequences(new_aligned_spans, maxlen)
         else:
             return aligned_spans
-    
+
     def lenspan(self, start, end):
         return end[1] - start[0]
-    
+
     def create_final_spans(self, aligned_spans, maxlen):
         span_idx_start = 0
         span_idx_end = 0
-        finalspans = list()
-        
+        finalspans = []
+
         while span_idx_end < len(aligned_spans):
             if self.lenspan(aligned_spans[span_idx_start], aligned_spans[span_idx_end]) > maxlen:
-                finalspans.append((aligned_spans[span_idx_start][0], aligned_spans[span_idx_end-1][1]))
+                finalspans.append(
+                    (aligned_spans[span_idx_start][0], aligned_spans[span_idx_end - 1][1])
+                )
                 span_idx_start = span_idx_end
             else:
-                span_idx_end += 1 
+                span_idx_end += 1
                 if span_idx_end >= len(aligned_spans):
-                    finalspans.append((aligned_spans[span_idx_start][0], aligned_spans[span_idx_end-1][1]))
-        
+                    finalspans.append(
+                        (aligned_spans[span_idx_start][0], aligned_spans[span_idx_end - 1][1])
+                    )
+
         return finalspans
-    
-    def __call__(self, document):
+
+    def __call__(self, document, batch_idx=None, batched_encoding=None):
         if isinstance(document, bytes):
-            document = document.decode('utf-8')
+            document = document.decode("utf-8")
         if not isinstance(document, str):
-            raise Exception
-        
-        encoding = self.tokenizer(document, return_offsets_mapping=True)
+            raise Exception("Document must be a string or bytes")
+
+        if batch_idx is not None and batched_encoding is not None:
+            encoding = batched_encoding[batch_idx]
+        else:
+            encoding = self.tokenizer(document, return_offsets_mapping=True)
+
         spans = self.get_sentence_spans(document)
         aligned_spans = self.align(spans, encoding)
         aligned_spans = self.trim_long_sequences(aligned_spans, self.max_tokens)
         finalspans = self.create_final_spans(aligned_spans, self.max_tokens)
-        
-        all_tokens = encoding['input_ids']
-        
-        chunk_ranges = []
-        for span in finalspans:
-            chunk_ranges.append((span[0], span[1] - 1))
-        
+
+        all_tokens = encoding["input_ids"]
+        chunk_ranges = [(span[0], span[1] - 1) for span in finalspans]
+
         return {
             "tokens": all_tokens,
-            "chunks": chunk_ranges
+            "chunks": chunk_ranges,
         }
 
+    def batched(self, batch):
+        batched_encoding = self.tokenizer(batch, return_offsets_mapping=True)
+        results = []
+        for i, document in enumerate(batch):
+            results.append(self(document, batch_idx=i, batched_encoding=batched_encoding))
+        return results
+        
 class split_and_tokenize_by_nltk_sentences:
     def __init__(self,language,chunk_size, tokenizer):
         from typing import List, Tuple
