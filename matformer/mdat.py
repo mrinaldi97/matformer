@@ -1945,6 +1945,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         import difflib
         import re
         from tqdm import tqdm
+        from nltk.tokenize import PunktTokenizer        
 
         self.punkt_tokenizer = PunktTokenizer(language) 
         self.tokenizer = tokenizer.tokenizer
@@ -1968,8 +1969,8 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         
         for i, sentencespans in enumerate(sentencespans_batch):
             encoding = encodings[i]
-            if hasattr(encoding, "offset_mapping"):  # it's a tokenizers.Encoding
-                offset_mapping = encoding.offset_mapping
+            if hasattr(encoding, "offsets"):  # it's a tokenizers.Encoding
+                offset_mapping = encoding.offsets
             else:  # it's a BatchEncoding
                 offset_mapping = encoding["offset_mapping"]
             
