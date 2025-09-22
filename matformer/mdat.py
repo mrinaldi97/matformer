@@ -1942,8 +1942,12 @@ import concurrent
 import numpy as np
 from typing import List, Tuple, Dict, Any
 
+import numpy as np
+from typing import List, Tuple, Dict, Any
+
 class split_and_tokenize_by_nltk_sentences_aligned:
     def __init__(self, language, chunk_size, tokenizer):
+        from nltk.tokenize import PunktTokenizer   
         from typing import List, Tuple
         import time
         import difflib
@@ -2037,11 +2041,8 @@ class split_and_tokenize_by_nltk_sentences_aligned:
                 results.append([])
                 continue
                 
-            # Convert to numpy array for faster processing
-            spans_array = np.array(aligned_spans)
-            
             # Keep trimming until no spans are too long
-            current_spans = spans_array.tolist()
+            current_spans = list(aligned_spans)  # Make a copy
             
             while True:
                 span_lengths = np.array([x[1] - x[0] for x in current_spans])
@@ -2166,13 +2167,32 @@ class split_and_tokenize_by_nltk_sentences_aligned:
                 document = document.decode("utf-8")
             sentencespans_batch.append(self.get_sentence_spans(document))
         
-        # Step 3: Extract offset mappings from batched encoding
-        if hasattr(batched_encoding[0], "offsets"):  # tokenizers.Encoding
-            offset_mappings_batch = [enc.offsets for enc in batched_encoding]
-            all_tokens_batch = [enc.ids for enc in batched_encoding]
-        else:  # BatchEncoding
-            offset_mappings_batch = batched_encoding["offset_mapping"]
-            all_tokens_batch = batched_encoding["input_ids"]
+        # Step 3: Handle different types of batched encoding properly
+        offset_mappings_batch = []
+        all_tokens_batch = []
+        
+        # Check if batched_encoding is a list/tuple or a BatchEncoding dict
+        if isinstance(batched_encoding, (list, tuple)):
+            # It's a list of individual encodings
+            for i, encoding in enumerate(batched_encoding):
+                if hasattr(encoding, "ids"):  # tokenizers.Encoding
+                    all_tokens_batch.append(encoding.ids)
+                    offset_mappings_batch.append(encoding.offsets)
+                elif hasattr(encoding, "input_ids"):  # dict-like
+                    all_tokens_batch.append(encoding["input_ids"])
+                    offset_mappings_batch.append(encoding["offset_mapping"])
+                else:
+                    # Handle string or other unexpected types
+                    raise ValueError(f"Unexpected encoding type at index {i}: {type(encoding)}")
+        else:
+            # It's a BatchEncoding dict with lists
+            if "input_ids" in batched_encoding:
+                all_tokens_batch = batched_encoding["input_ids"]
+                offset_mappings_batch = batched_encoding["offset_mapping"]
+            else:
+                # Try to access as attributes
+                all_tokens_batch = batched_encoding.input_ids
+                offset_mappings_batch = batched_encoding.offset_mapping
         
         # Step 4: Vectorized processing
         aligned_spans_batch = self.align_vectorized(sentencespans_batch, offset_mappings_batch)
