@@ -1964,7 +1964,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             
             if span_length > maxlen:
                 flag = True
-                print(f"WARNING: A span was exceeding maxlen: {span_length}")
+                #print(f"WARNING: A span was exceeding maxlen: {span_length}")
                 new_aligned_spans.extend(aligned_spans[:i])
                 
                 midpoint = x[0] + span_length // 2
