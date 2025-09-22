@@ -1960,22 +1960,26 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         return spans
 
     def align(self, sentencespans, encoding):
-        mapping = np.array(encoding["offset_mapping"])
-        starts = mapping[:, 0]
-        ends = mapping[:, 1]
-
         tokenspans = []
-        for sent_start, sent_end in sentencespans:
-            tokenstart = int(np.searchsorted(starts, sent_start, side="right")-1)
-            tokenend = int(np.searchsorted(ends, sent_end, side="left")+1)
-            tokenspans.append((max(tokenstart, 0), min(tokenend, len(mapping))))
-        if len(tokenspans)>0:
-            tokenspans[-1]=(tokenspans[-1][0],len(mapping))
-            starts = [s[0] for s in tokenspans]
-            ends = [s[0] for s in tokenspans[1:]] + [len(mapping)]
-            tokenspans = list(zip(starts, ends))            
-        else:
-            print("WARNING: Empty sequence")
+        try:
+            mapping = np.array(encoding["offset_mapping"])
+            starts = mapping[:, 0]
+            ends = mapping[:, 1]
+
+            for sent_start, sent_end in sentencespans:
+                tokenstart = int(np.searchsorted(starts, sent_start, side="right")-1)
+                tokenend = int(np.searchsorted(ends, sent_end, side="left")+1)
+                tokenspans.append((max(tokenstart, 0), min(tokenend, len(mapping))))
+            if len(tokenspans)>0:
+                tokenspans[-1]=(tokenspans[-1][0],len(mapping))
+                starts = [s[0] for s in tokenspans]
+                ends = [s[0] for s in tokenspans[1:]] + [len(mapping)]
+                tokenspans = list(zip(starts, ends))            
+            else:
+                print("WARNING: Empty sequence")
+        except exception as e:
+            print(f"Error. {e}")
+            print(encoding)
         return tokenspans
 
     def trim_long_sequences(self, aligned_spans, maxlen):
