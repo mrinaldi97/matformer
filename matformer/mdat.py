@@ -1936,18 +1936,11 @@ if True:
     class InvalidChunksFormat(Exception):
         pass
 
-
-
-import concurrent
-import numpy as np
-from typing import List, Tuple, Dict, Any
-
-import numpy as np
-from typing import List, Tuple, Dict, Any
+from transformers import AutoTokenizer
+from nltk.tokenize import PunktTokenizer
 
 class split_and_tokenize_by_nltk_sentences_aligned:
     def __init__(self, language, chunk_size, tokenizer):
-        from nltk.tokenize import PunktTokenizer   
         from typing import List, Tuple
         import time
         import difflib
@@ -1978,37 +1971,6 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             tokenspans.append((max(tokenstart, 0), min(tokenend, len(mapping) - 1)))
         return tokenspans
 
-    def align_vectorized(self, sentencespans_batch, offset_mappings_batch):
-        """Vectorized version of align for batch processing"""
-        results = []
-        
-        for doc_idx, (sentencespans, offset_mapping) in enumerate(zip(sentencespans_batch, offset_mappings_batch)):
-            if len(sentencespans) == 0:
-                results.append([])
-                continue
-                
-            # Convert to numpy arrays for vectorized operations
-            sent_starts = np.array([s[0] for s in sentencespans])
-            sent_ends = np.array([s[1] for s in sentencespans])
-            
-            mapping = np.array(offset_mapping)
-            token_starts = mapping[:, 0]
-            token_ends = mapping[:, 1]
-            
-            # Vectorized searchsorted operations
-            tokenstart_indices = np.searchsorted(token_starts, sent_starts, side="right") - 1
-            tokenend_indices = np.searchsorted(token_ends, sent_ends, side="left")
-            
-            # Apply bounds checking vectorized
-            tokenstart_indices = np.maximum(tokenstart_indices, 0)
-            tokenend_indices = np.minimum(tokenend_indices, len(mapping) - 1)
-            
-            # Create aligned spans
-            aligned_spans = list(zip(tokenstart_indices.tolist(), tokenend_indices.tolist()))
-            results.append(aligned_spans)
-            
-        return results
-
     def trim_long_sequences(self, aligned_spans, maxlen):
         flag = False
         new_aligned_spans = []
@@ -2032,41 +1994,6 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         else:
             return aligned_spans
 
-    def trim_long_sequences_vectorized(self, aligned_spans_batch, maxlen):
-        """Vectorized version of trim_long_sequences for batch processing"""
-        results = []
-        
-        for aligned_spans in aligned_spans_batch:
-            if len(aligned_spans) == 0:
-                results.append([])
-                continue
-                
-            # Keep trimming until no spans are too long
-            current_spans = list(aligned_spans)  # Make a copy
-            
-            while True:
-                span_lengths = np.array([x[1] - x[0] for x in current_spans])
-                long_span_indices = np.where(span_lengths > maxlen)[0]
-                
-                if len(long_span_indices) == 0:
-                    break
-                    
-                # Take the first long span and split it
-                split_idx = long_span_indices[0]
-                span_to_split = current_spans[split_idx]
-                span_length = span_to_split[1] - span_to_split[0]
-                midpoint = span_to_split[0] + span_length // 2
-                
-                # Create new spans list with the split
-                new_spans = (current_spans[:split_idx] + 
-                           [(span_to_split[0], midpoint), (midpoint, span_to_split[1])] + 
-                           current_spans[split_idx + 1:])
-                current_spans = new_spans
-                
-            results.append(current_spans)
-            
-        return results
-
     def lenspan(self, start, end):
         return end[1] - start[0]
 
@@ -2089,42 +2016,6 @@ class split_and_tokenize_by_nltk_sentences_aligned:
                     )
 
         return finalspans
-
-    def create_final_spans_vectorized(self, aligned_spans_batch, maxlen):
-        """Vectorized version of create_final_spans for batch processing"""
-        results = []
-        
-        for aligned_spans in aligned_spans_batch:
-            if len(aligned_spans) == 0:
-                results.append([])
-                continue
-                
-            finalspans = []
-            span_idx_start = 0
-            span_idx_end = 0
-            
-            # Convert to numpy array for faster length calculations
-            spans_array = np.array(aligned_spans)
-            
-            while span_idx_end < len(aligned_spans):
-                # Calculate span length from start to current end
-                current_length = spans_array[span_idx_end][1] - spans_array[span_idx_start][0]
-                
-                if current_length > maxlen:
-                    finalspans.append(
-                        (spans_array[span_idx_start][0], spans_array[span_idx_end - 1][1])
-                    )
-                    span_idx_start = span_idx_end
-                else:
-                    span_idx_end += 1
-                    if span_idx_end >= len(aligned_spans):
-                        finalspans.append(
-                            (spans_array[span_idx_start][0], spans_array[span_idx_end - 1][1])
-                        )
-            
-            results.append(finalspans)
-            
-        return results
 
     def __call__(self, document, batch_idx=None, batched_encoding=None):
         if isinstance(document, bytes):
@@ -2156,67 +2047,14 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             "chunks": chunk_ranges,
         }
 
+
     def batched(self, batch):
-        # Step 1: Batch tokenization (unchanged - still the most efficient part)
         batched_encoding = self.tokenizer(batch, return_offsets_mapping=True)
-        with mp.Pool(mp.cpu_count()) as pool:
-            sentencespans_batch = pool.map(partial(_punkt_worker, self.punkt_tokenizer), batch)        
-        """
-        sentencespans_batch = []
-        for document in batch:
-            if isinstance(document, bytes):
-                document = document.decode("utf-8")
-            sentencespans_batch.append(self.get_sentence_spans(document))
-        """
-        # Step 3: Handle different types of batched encoding properly
-        offset_mappings_batch = []
-        all_tokens_batch = []
-        
-        # Check if batched_encoding is a list/tuple or a BatchEncoding dict
-        if isinstance(batched_encoding, (list, tuple)):
-            # It's a list of individual encodings
-            for i, encoding in enumerate(batched_encoding):
-                if hasattr(encoding, "ids"):  # tokenizers.Encoding
-                    all_tokens_batch.append(encoding.ids)
-                    offset_mappings_batch.append(encoding.offsets)
-                elif hasattr(encoding, "input_ids"):  # dict-like
-                    all_tokens_batch.append(encoding["input_ids"])
-                    offset_mappings_batch.append(encoding["offset_mapping"])
-                else:
-                    # Handle string or other unexpected types
-                    raise ValueError(f"Unexpected encoding type at index {i}: {type(encoding)}")
-        else:
-            # It's a BatchEncoding dict with lists
-            if "input_ids" in batched_encoding:
-                all_tokens_batch = batched_encoding["input_ids"]
-                offset_mappings_batch = batched_encoding["offset_mapping"]
-            else:
-                # Try to access as attributes
-                all_tokens_batch = batched_encoding.input_ids
-                offset_mappings_batch = batched_encoding.offset_mapping
-        
-        # Step 4: Vectorized processing
-        aligned_spans_batch = self.align_vectorized(sentencespans_batch, offset_mappings_batch)
-        trimmed_spans_batch = self.trim_long_sequences_vectorized(aligned_spans_batch, self.max_tokens)
-        finalspans_batch = self.create_final_spans_vectorized(trimmed_spans_batch, self.max_tokens)
-        
-        # Step 5: Create final results
         results = []
-        for i, (all_tokens, finalspans) in enumerate(zip(all_tokens_batch, finalspans_batch)):
-            chunk_ranges = [(span[0], span[1] - 1) for span in finalspans]
-            results.append({
-                "tokens": all_tokens,
-                "chunks": chunk_ranges,
-            })
-        
+        for i, document in enumerate(batch):
+            results.append(self(document, batch_idx=i, batched_encoding=batched_encoding))
         return results
-def _punkt_worker(punkt_tokenizer, document):
-    if isinstance(document, bytes):
-        document = document.decode("utf-8")
-    spans = [x for x in punkt_tokenizer.span_tokenize(document)]
-    starts = [s[0] for s in spans]
-    ends = [s[0] for s in spans[1:]] + [len(document)]
-    return list(zip(starts, ends))        
+        
 class split_and_tokenize_by_nltk_sentences:
     def __init__(self,language,chunk_size, tokenizer):
         from typing import List, Tuple
