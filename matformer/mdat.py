@@ -2159,14 +2159,15 @@ class split_and_tokenize_by_nltk_sentences_aligned:
     def batched(self, batch):
         # Step 1: Batch tokenization (unchanged - still the most efficient part)
         batched_encoding = self.tokenizer(batch, return_offsets_mapping=True)
-        
-        # Step 2: Extract all sentence spans for the batch
+        with mp.Pool(mp.cpu_count()) as pool:
+            sentencespans_batch = pool.map(partial(_punkt_worker, self.punkt_tokenizer), batch)        
+        """
         sentencespans_batch = []
         for document in batch:
             if isinstance(document, bytes):
                 document = document.decode("utf-8")
             sentencespans_batch.append(self.get_sentence_spans(document))
-        
+        """
         # Step 3: Handle different types of batched encoding properly
         offset_mappings_batch = []
         all_tokens_batch = []
@@ -2209,6 +2210,13 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             })
         
         return results
+def _punkt_worker(punkt_tokenizer, document):
+    if isinstance(document, bytes):
+        document = document.decode("utf-8")
+    spans = [x for x in punkt_tokenizer.span_tokenize(document)]
+    starts = [s[0] for s in spans]
+    ends = [s[0] for s in spans[1:]] + [len(document)]
+    return list(zip(starts, ends))        
 class split_and_tokenize_by_nltk_sentences:
     def __init__(self,language,chunk_size, tokenizer):
         from typing import List, Tuple
