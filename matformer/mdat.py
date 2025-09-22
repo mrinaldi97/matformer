@@ -1948,7 +1948,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         from tqdm import tqdm
         import numpy as np
         self.punkt_tokenizer = PunktTokenizer(language) 
-        self.tokenizer = tokenizer #Accessing the huggingface tokenizer inside MatformerTokenizer
+        self.tokenizer = tokenizer.tokenizer #Accessing the huggingface tokenizer inside MatformerTokenizer
         self.language = language
         self.max_tokens = chunk_size
     
