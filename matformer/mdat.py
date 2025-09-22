@@ -1969,10 +1969,13 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             tokenstart = int(np.searchsorted(starts, sent_start, side="right")-1)
             tokenend = int(np.searchsorted(ends, sent_end, side="left")+1)
             tokenspans.append((max(tokenstart, 0), min(tokenend, len(mapping))))
-        tokenspans[-1]=(tokenspans[-1][0],len(mapping))
-        starts = [s[0] for s in tokenspans]
-        ends = [s[0] for s in tokenspans[1:]] + [len(mapping)]
-        tokenspans = list(zip(starts, ends))            
+        if len(tokenspans>0):
+            tokenspans[-1]=(tokenspans[-1][0],len(mapping))
+            starts = [s[0] for s in tokenspans]
+            ends = [s[0] for s in tokenspans[1:]] + [len(mapping)]
+            tokenspans = list(zip(starts, ends))            
+        else:
+            print("WARNING: Empty sequence")
         return tokenspans
 
     def trim_long_sequences(self, aligned_spans, maxlen):
@@ -2053,7 +2056,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
 
 
     def batched(self, batch):
-        batched_encoding = self.tokenizer(batch, return_offsets_mapping=True)
+        batched_encoding = self.tokenizer(batch, return_offsets_mapping=True, add_special_tokens=False)
         results = []
         for i, document in enumerate(batch):
             results.append(self(document, batch_idx=i, batched_encoding=batched_encoding))
