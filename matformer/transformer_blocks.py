@@ -7,7 +7,6 @@ from matformer.transformer_functions import MultiHeadAttention, PackedSwiGLUFFN
 from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor, ModuleWrapper
 from torch.nn import RMSNorm
 from matformer.model_config import ModelConfig  
-from matformer.utils import LpPooling, MaskBuilder
 from functools import partial, reduce
 from torch.nn.attention.flex_attention import (
     _DEFAULT_SPARSE_BLOCK_SIZE,

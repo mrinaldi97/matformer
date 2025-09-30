@@ -2,11 +2,9 @@ import argparse
 import torch
 import torch.nn.functional as F
 import pytorch_lightning as pl
-from torch.utils.data import DataLoader
 from tqdm import tqdm
 from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
-from matformer.metrics import BitsPerByte  
-from matformer.training_functions import Muon
+from matformer.extra.muon import Muon
 from matformer.model_config import ModelConfig  
 from matformer.masked_models import maskerator
 from matformer.initialization import init_transformer_weights_
@@ -18,65 +16,39 @@ from transformers import get_scheduler
 import math
 import torch.distributed as dist
 import numpy as np
-try:
-    from transformers import AutoTokenizer
-except:
-    print("Hugginface's tokenizer is not available on this system. Please pip install transformers")
 from dataclasses import replace
 from copy import deepcopy
 
 
 class PL_ModelWrapper(pl.LightningModule):
-    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference_fix=False,nested=False,autoencoder_experiment=None,autoencoder_experiment_training_phase=None):
+    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False):
         super().__init__()
         self.config=config
         self.train_config=train_config
-        self.nested=nested # Poco elegante, temporaneo ma in genere rivedere l'implementazione Nested, per ora WIP
         self.save_hyperparameters()  
-        self.inference_fix=inference_fix #Temporaneo
-        self.model = ModelClass(config,tokenizer=tokenizer,device=device)
-        self.is_autoencoder = hasattr(self.model, 'set_training_phase')         # Check if this is an autoencoder model
-        
+        self.model = ModelClass(config,tokenizer=tokenizer,device=device)        
         if not getattr(self, "_restored_from_ckpt", False): 
             self.model.apply(init_transformer_weights_)
-        self.tokenizer=tokenizer #Un MatformerTokenizer
+            
         self.batch_size=batch_size # Utile per il learning rate scheduling
+        self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=self.config.masked_substitution_rate)
     def forward(self, _input):
         return self.model(_input.to(self.device))
     def on_load_checkpoint(self, checkpoint):
         self._restored_from_ckpt = True        
     def training_step(self, batch, batch_idx):
-        # Delegate to autoencoder training if applicable
-        if self.is_autoencoder and hasattr(self.model, 'training_phase'):
-            return self.model.training_step(batch, self.model.training_phase, log=self.log)
-            
-        if self.nested:
-            #Not implemented yet! Wrong code below (won't work with tok.zers different than Bytes)
-            sequence = self.tokenizer.batch_encode(batch['text'], nested=True)
-        else:
-            sequence = batch # Arriva la sequenza già tokenizzata dal MatformerDataModule
+        sequence = batch # Arriva la sequenza già tokenizzata dal MatformerDataModule
         masked=True if self.config.training_objective=='masked' else False
-
         input_sequence=sequence
-
         if masked:
-            if self.nested:
-                masked_sequences, cloze_masks = zip(*[maskerator(seq, mask_token=self.config.mask_token_id, substitution_rate=self.config.masked_substitution_rate) 
-                                                      for seq in sequence.unbind()])
-                sequence = torch.stack(masked_sequences)
-                cloze_mask = torch.stack(cloze_masks)
-            else:
-                masked_list, cloze_list = maskerator(sequence.tensor, mask_token=self.config.mask_token_id, substitution_rate=self.config.masked_substitution_rate)
-                masked_sequence=deepcopy(sequence)
-                masked_sequence = replace(masked_sequence,tensor=masked_list)
-                cloze_mask = cloze_list
-                input_sequence=masked_sequence
-
+            masked_tokens,cloze_mask=self.maskerator(sequence.tensor)
+            masked_sequence=deepcopy(sequence)
+            masked_sequence=replace(masked_sequence,tensor=masked_tokens)
+            input_sequence=masked_sequence
+        
         ### Input al modello ###
         model_input=deepcopy(input_sequence)
         logits = self(deepcopy(model_input))
-        #logits=logits.pad() # Repadding logits
-        #print(f"Shape di sequence: {sequence.shape}")
         if self.nested:
             logits_flat = torch.cat(logits.unbind())
             targets_flat = torch.cat(sequence.unbind()).to(logits_flat.device)
@@ -89,13 +61,13 @@ class PL_ModelWrapper(pl.LightningModule):
             #print(f"Logits flat shape: {logits_flat.shape}")
             #print(f"Targets flat shape: {targets_flat.shape}")
             base_mask = (targets_flat != self.config.pad_token_id)
+            """
             autoencoders_experimental=False
-
             if autoencoders_experimental:
                 base_mask = (targets_flat.to(logits.tensor.device) != 259)   
                 fake_mask = ~logits.padding_mask.reshape(-1).to(logits.tensor.device )
                 base_mask = base_mask & fake_mask               
-
+            """
             cloze_mask_flat = cloze_mask.reshape(-1) if masked else None
         else:
             logits_flat = logits.tensor
@@ -164,6 +136,7 @@ class PL_ModelWrapper(pl.LightningModule):
                min_param = min(param_norms.values()) if param_norms else 0
                self.log("diagnostics/param_norm_spread", max_param - min_param, on_step=True, batch_size=self.batch_size)            
         return loss
+        
     def on_before_optimizer_step(self, optimizer):
         # This runs after gradient clipping but before optimizer step
         if self.global_step % 100 == 0:
@@ -174,6 +147,7 @@ class PL_ModelWrapper(pl.LightningModule):
             if clipped_grads:
                 post_clip_norm = torch.norm(torch.cat(clipped_grads)).item()
                 self.log("diagnostics/post_clip_grad_norm", post_clip_norm, on_step=True, batch_size=self.batch_size)
+                
     def configure_optimizers(self):
         use_muon = self.train_config["optimizer"].lower() == "muon"
         if use_muon:
@@ -286,6 +260,7 @@ class PL_ModelWrapper(pl.LightningModule):
                 self.logger.experiment.log({f"grad/{name}": grad_norm})
                 self.log(f"grad_max/{name}", param.grad.abs().max().item(), on_step=True)
                 self.log(f"grad_min/{name}", param.grad.abs().min().item(), on_step=True)
+
     @staticmethod
     def load_from_checkpoint(checkpoint_path, ModelClass, config=None, map_location=None, tokenizer=None, varlen_strategy='padding'):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)

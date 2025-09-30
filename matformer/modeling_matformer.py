@@ -11,7 +11,6 @@ import torch.nn as nn
 import sys
 sys.path.append('../') #temporary
 from matformer.model_config import ModelConfig
-from matformer.utils import dataclass_from_dict
 from matformer.transformer_blocks import (
     NakedTransformer,
     TransformerWithEmbeddingHead, 
@@ -304,6 +303,21 @@ def load_checkpoint_file(
     model = model_cls(hf_cfg)
     model.load_state_dict(ckpt["state_dict"], strict=True)
     return model
+
+
+from dataclasses import is_dataclass, fields
+from typing import TypeVar
+
+T = TypeVar("T")
+def dataclass_from_dict(d: dict, ty: type[T]) -> T:
+#https://gist.github.com/paxbun/3eb7d762a013f915fce69d4daecfab37    
+    assert is_dataclass(ty)
+    for field in fields(ty):
+        if field.name in d:
+            if is_dataclass(field.type):
+                assert isinstance(d[field.name], dict)
+                d[field.name] = fromdict(d[field.name], field.type)
+    return ty(**d)
 
 # TODO: Model registration for AutoModel classes
 # from transformers import (
