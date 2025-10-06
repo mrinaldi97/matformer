@@ -12,15 +12,22 @@
     "unicode_filtering": {
         "enabled": true,
         "ranges": [
-            "latin",                    
-            "greek",                    
-            "general_punctuation",      
-            "currency_symbols",         
-            "letterlike_symbols",       
-            "number_forms",            
-            "arrows",                   
-            "math_operators",            
-            "emoticons"
+            "basic_latin",
+            "latin",
+            "greek",
+            "greek_extended",
+            "cyrillic",
+            "cyrillic_supplement",
+            "armenian",
+            "general_punctuation",
+            "currency_symbols",
+            "letterlike_symbols",
+            "number_forms",
+            "arrows",
+            "math_operators",
+            "emoticons",
+            "misc_symbols_pictographs",
+            "transport_symbols"
         ],
         "custom_ranges": [
         ],
@@ -31,8 +38,8 @@
     
     "normalization": {
         "nmt": false,                    
-        "nfc": false,                   
-        "nfkc": true,
+        "nfc": true,                   
+        "nfkc": false,
         "case": "preserve",             
         "normalize_whitespace": true
     },
