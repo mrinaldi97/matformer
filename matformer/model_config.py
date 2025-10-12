@@ -8,7 +8,12 @@ class LayerConfig:
     """Configuration for a single transformer layer"""
     attn_impl: Optional[Literal['flash','sdpa','flex','xformers','wersa']] = "flash"
     sliding_window_size: Optional[int] = None
-    positional_encoding: Optional[Literal['alibi','rope','sinusoidal','nope']] = 'alibi'
+    positional_encoding: Optional[Literal['alibi','rope','sinusoidal','nope', 'learnable']] = 'alibi'
+    
+    normalization: Optional[Literal['layernorm','rmsnorm']] = 'rmsnorm'
+    normalization_position: Optional[Literal['pre','post']] = 'post'
+    ffn_activation: Optional[Literal['gelu','swiglu']] = 'swiglu'
+    
     hooks: Dict[str, Union[str, nn.Module]] = field(default_factory=dict)
 
 def resolve_hook(hook_spec: Union[str, nn.Module, Callable], config: 'ModelConfig') -> Union[nn.Module, Callable]:
@@ -44,7 +49,7 @@ class BaseSubModelConfig:
     eos_token_id: Optional[int] = None
     tie_word_embeddings: Optional[bool] = None
     # normalization
-    rms_norm_eps: Optional[float] = None
+    rms_norm_eps: Optional[float] = None 
     # attention & masking
     attention_type: Optional[List[str]] = field(default_factory=list)
     sliding_type: Optional[Literal['full','disabled','partial']] = None

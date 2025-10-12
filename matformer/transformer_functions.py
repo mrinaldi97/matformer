@@ -8,7 +8,8 @@ from torch.nn.attention.flex_attention import flex_attention
 from typing import Optional, List, Literal
 from matformer.model_config import ModelConfig
 from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
-from matformer.extra import WERSAAttention
+#from matformer.extra import WERSAAttention
+from matformer.extra.wersa_attention import WERSAAttention
 from dataclasses import replace
 from torch.nn.functional import scaled_dot_product_attention
 try:
@@ -30,7 +31,7 @@ class MultiHeadAttention(nn.Module):
         is_cross_attention: bool = False,
         nheads: int = 8,
         bias: bool = False,
-        positional_encoding: Literal['alibi', 'rope', 'nope', 'sinusoidal'] = 'nope',
+        positional_encoding: Literal['alibi', 'rope', 'nope', 'sinusoidal'] = 'rope',
         #dropout: float = 0.0, # Not supported by FlexAttention yet
         cache: Optional['CachedStuff'] = None,
         attn_impl: Literal['flash', 'sdpa', 'xformers', 'flex', 'wersa'] = 'flash',
@@ -304,10 +305,10 @@ class PackedSwiGLUFFN(nn.Module):
             ffn_factor = config.ffn_factor
 
         # Fail hard if still None
-        hidden_size = int(hidden_size * ffn_factor)
+        ffn_internal_dim = int(hidden_size * ffn_factor)
 
-        self.w13 = nn.Linear(hidden_size, 2 * hidden_size, bias=False)
-        self.w2 = nn.Linear(hidden_size, hidden_size, bias=False)
+        self.w13 = nn.Linear(hidden_size, 2 * ffn_internal_dim, bias=False)
+        self.w2 = nn.Linear(ffn_internal_dim, hidden_size, bias=False)
 
     def forward(self, _input: TensorDC) -> TensorDC:
         x1, x3 = torch.chunk(self.w13(_input.tensor), 2, -1)
@@ -315,7 +316,28 @@ class PackedSwiGLUFFN(nn.Module):
         return replace(_input, tensor=out)
 
 
-        
+class PackedGELUFFN(nn.Module):
+    def __init__(
+        self,
+        config: Optional[ModelConfig] = None,
+        hidden_size: Optional[int] = None,
+        ffn_factor: Optional[float] = None
+    ):
+        super().__init__()
+
+        if config is not None:
+            hidden_size = config.hidden_size
+            ffn_factor = config.ffn_factor
+
+        # Fail hard if still None
+        ffn_internal_dim = int(hidden_size * ffn_factor)
+
+        self.w1 = nn.Linear(hidden_size, ffn_internal_dim, bias=False)
+        self.w2 = nn.Linear(ffn_internal_dim, hidden_size, bias=False)
+
+    def forward(self, _input: TensorDC) -> TensorDC:
+        out = self.w2(F.gelu(self.w1(_input.tensor)))
+        return replace(_input, tensor=out)
 
 """
 class RMSNorm(nn.Module):
