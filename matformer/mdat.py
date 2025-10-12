@@ -205,15 +205,13 @@ class MatformerDataset(IterableDataset):
         ds_lengths = [len(self[ds_map[str(i)]]) for i in range(1, len(ds_map) + 1)] #Lenghts, indexed by the ID present in the manifest's map
         # Default: use all subdatasets
         if selected_submdats is None:
-            selected_ids = list(range(1, len(ds_map) + 1))
+            selected_ids = list(range(len(ds_map)))  # 0-based: [0, 1, 2, ...]
         else:
             # Convert submdat's names to manifest's map's ID
-            selected_ids = [
-                int(i) for i, name in ds_map.items() if name in selected_submdats
-            ]
+            selected_ids = [int(i) - 1 for i, name in ds_map.items() if name in selected_submdats]
             selected_ids.sort()       
             
-        selected_lengths = [ds_lengths[i - 1] for i in selected_ids]
+        selected_lengths = [ds_lengths[i] for i in selected_ids]
         cu_dslens = [0]
         s = 0
         for L in selected_lengths:
