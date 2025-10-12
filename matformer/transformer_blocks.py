@@ -3,9 +3,9 @@ File: matformer/transformer_blocks.py
 """
 import torch
 import torch.nn as nn
-from matformer.transformer_functions import MultiHeadAttention, PackedSwiGLUFFN
+from matformer.transformer_functions import MultiHeadAttention, PackedSwiGLUFFN, PackedGELUFFN
 from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor, ModuleWrapper
-from torch.nn import RMSNorm
+from torch.nn import RMSNorm, LayerNorm
 from matformer.model_config import ModelConfig  
 from functools import partial, reduce
 from torch.nn.attention.flex_attention import (
@@ -17,7 +17,7 @@ from torch.nn.attention.flex_attention import (
     or_masks,
     noop_mask
 )
-from matformer.masked_models import maskerator
+from matformer.masked_models import Maskerator
 from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
 import torch.nn.functional as F
 from tqdm import tqdm
@@ -57,13 +57,32 @@ class TransformerBlock(nn.Module):
             layer_config = config.get_layer_config(layer_idx) if layer_idx is not None else config.default_layer
         else:
             layer_config=config
-            
-        self.input_layernorm = ModuleWrapper(RMSNorm(
-            normalized_shape=config.hidden_size,
-            eps=config.rms_norm_eps,
-            elementwise_affine=True
-        ))
+         
+        self.norm_position = layer_config['normalization_position']
+        normalization = RMSNorm if layer_config['normalization'] == 'rmsnorm' else LayerNorm
+
+        # self.input_layernorm = ModuleWrapper(RMSNorm(
+        #     normalized_shape=config.hidden_size,
+        #     eps=config.rms_norm_eps,
+        #     elementwise_affine=True
+        # ))
         
+        norm_kwargs = {
+            'normalized_shape': config.hidden_size,
+            'eps': config.rms_norm_eps,
+            'elementwise_affine': True
+        }
+        self.attn_norm = ModuleWrapper(normalization(**norm_kwargs))
+        self.mlp_norm = ModuleWrapper(normalization(**norm_kwargs))
+        
+        # jerik. al momento device lo ricaviamo cosi, valutare se averlo come parametro
+        if torch.cuda.is_available():
+            device = torch.device("cuda")
+        elif torch.backends.mps.is_available():
+            device = torch.device("mps")
+        else:
+            device = torch.device("cpu")      
+              
         self.self_attn = MultiHeadAttention(
             bias=config.bias, 
             q_dim=config.hidden_size, 
@@ -72,16 +91,20 @@ class TransformerBlock(nn.Module):
             attn_impl=layer_config['attn_impl'],
             positional_encoding=layer_config['positional_encoding'],
             is_causal=config.is_causal,
-            sliding_window=layer_config['sliding_window_size']
+            sliding_window=layer_config['sliding_window_size'],
+            device=device,
         )
         
-        self.post_attention_layernorm = ModuleWrapper(RMSNorm(
-            normalized_shape=config.hidden_size,
-            eps=config.rms_norm_eps,
-            elementwise_affine=True
-        ))
+        # self.post_attention_layernorm = ModuleWrapper(RMSNorm(
+        #     normalized_shape=config.hidden_size,
+        #     eps=config.rms_norm_eps,
+        #     elementwise_affine=True
+        # ))
         
-        self.mlp = PackedSwiGLUFFN(config)
+        
+        self.mlp = PackedSwiGLUFFN(config) if layer_config["ffn_activation"]== "swiglu" else PackedGELUFFN(config)
+        
+        
         self.config = config
         self.layer_config = layer_config
         
@@ -106,19 +129,52 @@ class TransformerBlock(nn.Module):
         else:
             original_x=None
             
-        x = self._apply_hook("pre_attn", x) if self.has_hooks else x # HOOK: Pre-attention hooks  
-        x = self.input_layernorm(x) # NORMAL: 1. Input layernorm    
-        x = self._apply_hook("post_norm_pre_attn", x) if self.has_hooks else x # HOOK: Post-norm, pre-attention hook  
-        attn_out = self.self_attn(x,original_x=original_x)   # NORMAL: Self attention
-        attn_out = self._apply_hook("post_attn", attn_out) if self.has_hooks else attn_out # HOOK: Post-attention hook (before residual)
-        x = x + attn_out # NORMAL: Self attention residual add
-        x = self._apply_hook("pre_mlp", x) if self.has_hooks else x # HOOK: Pre-MLP hook
-        normed = self.post_attention_layernorm(x) # NORMAL: Post attention layer norm
-        normed = self._apply_hook("post_norm_pre_mlp", normed) if self.has_hooks else normed # HOOK: Post-norm, pre-MLP hook      
-        mlp_out = self.mlp(normed)  # NORMAL: MLP
-        mlp_out = self._apply_hook("post_mlp", mlp_out) if self.has_hooks else mlp_out # HOOK: Post-MLP hook (before residual)    
-        x = x + mlp_out # NORMAL: MLP Residual add
-        x = self._apply_hook("output", x) if self.has_hooks else x # HOOK: Final output hook   
+        # x = self._apply_hook("pre_attn", x) if self.has_hooks else x # HOOK: Pre-attention hooks  
+        # x = self.input_layernorm(x) # NORMAL: 1. Input layernorm    
+        # x = self._apply_hook("post_norm_pre_attn", x) if self.has_hooks else x # HOOK: Post-norm, pre-attention hook  
+        # attn_out = self.self_attn(x,original_x=original_x)   # NORMAL: Self attention
+        # attn_out = self._apply_hook("post_attn", attn_out) if self.has_hooks else attn_out # HOOK: Post-attention hook (before residual)
+        # x = x + attn_out # NORMAL: Self attention residual add
+        # x = self._apply_hook("pre_mlp", x) if self.has_hooks else x # HOOK: Pre-MLP hook
+        # normed = self.post_attention_layernorm(x) # NORMAL: Post attention layer norm
+        # normed = self._apply_hook("post_norm_pre_mlp", normed) if self.has_hooks else normed # HOOK: Post-norm, pre-MLP hook      
+        # mlp_out = self.mlp(normed)  # NORMAL: MLP
+        # mlp_out = self._apply_hook("post_mlp", mlp_out) if self.has_hooks else mlp_out # HOOK: Post-MLP hook (before residual)    
+        # x = x + mlp_out # NORMAL: MLP Residual add
+        # x = self._apply_hook("output", x) if self.has_hooks else x # HOOK: Final output hook  
+        
+        # TODO @Matteo: da ricontrollare gli hook
+        # Attention block
+        x = self._apply_hook("pre_attn", x) if self.has_hooks else x
+        if self.norm_position == 'pre':
+            normed = self.attn_norm(x)
+            normed = self._apply_hook("post_norm_pre_attn", normed) if self.has_hooks else normed
+            attn_out = self.self_attn(normed, original_x=original_x)
+            attn_out = self._apply_hook("post_attn", attn_out) if self.has_hooks else attn_out
+            x = x + attn_out
+        else:  # post
+            attn_out = self.self_attn(x, original_x=original_x)
+            attn_out = self._apply_hook("post_attn", attn_out) if self.has_hooks else attn_out
+            x = x + attn_out
+            x = self.attn_norm(x)
+            x = self._apply_hook("post_attn_norm", x) if self.has_hooks else x
+        
+        # MLP block
+        x = self._apply_hook("pre_mlp", x) if self.has_hooks else x
+        if self.norm_position == 'pre':
+            normed = self.mlp_norm(x)
+            normed = self._apply_hook("post_norm_pre_mlp", normed) if self.has_hooks else normed
+            mlp_out = self.mlp(normed)
+            mlp_out = self._apply_hook("post_mlp", mlp_out) if self.has_hooks else mlp_out
+            x = x + mlp_out
+        else:  # post
+            mlp_out = self.mlp(x)
+            mlp_out = self._apply_hook("post_mlp", mlp_out) if self.has_hooks else mlp_out
+            x = x + mlp_out
+            x = self.mlp_norm(x)
+            x = self._apply_hook("post_mlp_norm", x) if self.has_hooks else x
+        
+        x = self._apply_hook("output", x) if self.has_hooks else x
         return x
 
 
@@ -135,7 +191,18 @@ class NakedTransformer(nn.Module):
         super().__init__()
         self.config = config
         self.cache=CachedStuff() if not cache else cache #Initialize the cache of attention masks and positional embeddings   
-        self.norm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_size, eps=config.rms_norm_eps, elementwise_affine=True))
+        
+        #self.norm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_size, eps=config.rms_norm_eps, elementwise_affine=True))
+        
+        normalization = RMSNorm if config.default_layer['normalization'] == 'rmsnorm' else LayerNorm
+        
+        self.norm = ModuleWrapper(normalization(
+            normalized_shape=config.hidden_size,
+            eps=config.rms_norm_eps,
+            elementwise_affine=True
+        ))
+
+        
         self.layers = nn.ModuleList()
         for layer_idx in range(config.num_hidden_layers):
             self.layers.append(TransformerBlock(config=config,layer_idx=layer_idx)) 
