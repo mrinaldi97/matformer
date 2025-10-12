@@ -1,0 +1,14 @@
+Disattivando in assoluto LMDB (solo logica shuffling di Mdat e puntatori):
+  8%|██████▊                                                                                   | 4727356/62318133 [00:18<03:44, 256822.24it/s]
+Disattivando la compressione:
+	circa 100 ore
+Lettura sequenziale dell'MDAT, no compressione:
+	circa 50 ore(!)
+Solo forum, sequenziale, tramite Mdat (25576538)
+	circa 7 ore
+Solo forum, lettura random, tramite Mdat:
+	circa 40 ore!!! (bottleneck trovata?)
+Solo forum lettura random, direttamente LMDB:
+	circa lo stesso tempo (il wrapper che fa Mdat su LMDB non è un collo di bottiglia)
+
+Problema: le pessime prestazioni di LMDB in caso di letture casuali! (che novità...)

@@ -196,32 +196,65 @@ class MatformerDataset(IterableDataset):
         if self.readonly:
             raise MDatIsReadOnly
         
+        # 
+        ds_map = self._get_manifest_attr('datasets_map', {})
+        if not ds_map:
+            raise RuntimeError("No subdatasets found in manifest")        
+            
         # Calculate lengths and determine datatypes
-        ds_lengths = [len(ds) for ds in self.loaded_submdats.values()]
-        totlen = sum(ds_lengths)
-        maxlen = max(ds_lengths) if ds_lengths else 0
+        ds_lengths = [len(self[ds_map[str(i)]]) for i in range(1, len(ds_map) + 1)] #Lenghts, indexed by the ID present in the manifest's map
+        # Default: use all subdatasets
+        if selected_submdats is None:
+            selected_ids = list(range(1, len(ds_map) + 1))
+        else:
+            # Convert submdat's names to manifest's map's ID
+            selected_ids = [
+                int(i) for i, name in ds_map.items() if name in selected_submdats
+            ]
+            selected_ids.sort()       
+            
+        selected_lengths = [ds_lengths[i - 1] for i in selected_ids]
+        cu_dslens = [0]
+        s = 0
+        for L in selected_lengths:
+            s += L
+            cu_dslens.append(s)
+
+        totlen = cu_dslens[-1]
+        maxlen = max(selected_lengths) if selected_lengths else 0
         
         doc_id_type = 'B' if maxlen <= 255 else 'H' if maxlen <= 65535 else 'I' if maxlen <= 4294967295 else 'Q'
         submdat_id_type = 'B' if self._get_manifest_attr('dsmap_bits', 8) == 8 else 'H'
         struct_format = submdat_id_type + doc_id_type
         
-        self._set_manifest_attr('shuffle_struct_format', struct_format)
-        self._set_manifest_attr('total_documents', totlen)
-        
+        if view_name is None:
+            # If the shuffle is over the entire dataset, these attributes are put in the manifest
+            self._set_manifest_attr('shuffle_struct_format', struct_format)
+            self._set_manifest_attr('total_documents', totlen)
+        else:
+            pass
         # Create cumulative lengths and shuffle file
-        cu_dslens = [0] + [sum(ds_lengths[:i+1]) for i in range(len(ds_lengths))]
+        #cu_dslens = [0] + [sum(ds_lengths[:i+1]) for i in range(len(ds_lengths))]
+        
+        # Output path
+        view_name = view_name or 'default'
         os.makedirs(self.shuffling_path, exist_ok=True)
+        shuffle_path = os.path.join(self.shuffling_path, f'{view_name}.mdat')      
         
+          
         permutator = RandomPermutator(totlen)
-        
-        with open(os.path.join(self.shuffling_path, 'default.mdat'), 'wb') as f:
+        with open(shuffle_path, 'wb') as f:
             for idx in tqdm(range(totlen)):
                 permuted_idx = permutator(idx)
-                ds_id = bisect_right(cu_dslens, permuted_idx) - 1
-                doc_id = permuted_idx - cu_dslens[ds_id]
-                f.write(struct.pack(struct_format, ds_id, doc_id))
+                loc_id = bisect_right(cu_dslens, permuted_idx) - 1
+                global_id = selected_ids[loc_id]
+                doc_id = permuted_idx - cu_dslens[loc_id]
+                f.write(struct.pack(struct_format, global_id, doc_id))
         
-        self._set_manifest_attr('shuffled', True, save=True)
+        if view_name is None:
+            self._set_manifest_attr('shuffled', True, save=True)
+        else:
+            return struct_format,totlen
     def delete_shuffle(self):
         self._set_manifest_attr('shuffled', False, save=True)
     def _init_shuffle_file(self):
@@ -324,7 +357,81 @@ class MatformerDataset(IterableDataset):
            # Always construct SubMdat with parent reference so SubMdat can inherit things such as pretok strategies,readonly...
            self.loaded_submdats[submdat_name] = SubMdat.load_submdat(self, submdat_name)
            self.total_documents+=len(self.loaded_submdats[submdat_name])
+
+    def register_new_view(self,view_dict):
+        """
+        How views work in Mdat.
+        Each view must be initialized from a view descriptor, a python dictionary with the following fields:
+        {
+        "view_name":'example',
+        "selection_criteria":['bytes'],['doc_numbers'],['doc_percentage'],
+        "skipped_submdats":[... ex 'dataset_3'],
+        "selection":{
+            "dataset_1":2G, #2 Gigabytes
+            "dataset_2":800M, #800 Megabytes
+            "dataset_4":8G,
+            }
+        }
+        
+        
+        """
+        
+        # 1. Check if the name is available
+        if view_name in self._get_manifest_attr('ds_views', []):
+            raise NameAlreadyUsed(f"View with name '{view_name}' already registered")
             
+        # 2. Check if all the submdats are included in the view, either as skipped or as selected
+        all_submdats=list(self.list_submdat())
+        submdats_includes=list(selection.keys()).extend(skipped_submdats)
+        assert all_submdats==submdats_includes # To be fixed logic and syntax
+
+        # 3. Compute the number of documents in selected datasets to perform the new shuffling
+        selected_submdats = list(selection.keys())
+        total_docs_selected = sum(len(self[name]) for name in selected_submdats)        
+        # 4. Initialize the accumulators to check when the target is reached
+        accumulators=dict()
+        for s in selection.keys():
+            accumulators[s]=0
+            
+        # 5. Set the target to be reached for each dataset
+        targets = {}
+        for k, v in selection.items():
+            if selection_criteria == 'bytes':
+                suffix = v[-1].upper()
+                num = float(v[:-1])
+                if suffix == 'K':
+                    mult = 1024
+                elif suffix == 'M':
+                    mult = 1024**2
+                elif suffix == 'G':
+                    mult = 1024**3
+                elif suffix == 'T':
+                    mult = 1024**4
+                else:
+                    raise ValueError(f"Invalid size suffix in {v}")
+                targets[k] = int(num * mult)
+            elif selection_criteria == 'doc_numbers':
+                targets[k] = int(v)
+            elif selection_criteria == 'doc_percentage':
+                targets[k] = int(float(v) * len(self[k]))
+            else:
+                raise ValueError(f"Invalid selection_criteria: {selection_criteria}")
+
+        
+        # 6. Iterates the shuffle keeping pointers only until they fit into the target
+        
+        # 7. Save the shuffle
+        
+        # 8. Sync with the pretokenization strategies
+        
+        
+        
+
+        # Success, saving the manifest
+            views_list = self._get_manifest_attr('ds_views', [])
+            views_list.append(view_name)
+            self._set_manifest_attr('ds_views', views_list)
+            self.update_manifest()      
     def set_view(self, ds_view: Optional[Union[str, Dict[str, Any]]]) -> None:
         """
         Set dataset view.
@@ -2246,6 +2353,11 @@ def cmd_create(args):
 
 def _create_submdat_once(input_path, output_path, name, dataset_type, compress_data, compress_meta, data_key, map_size, do_transform, do_filtering, custom_path, logger):
     mdat = MatformerDataset.load_dataset(path=output_path, create_if_not_existent=True)
+    try:
+        map_size=1 << (os.path.getsize(input_path) - 1).bit_length() # Optimal file size
+        print(f"Auto determined optimal map size: {map_size}")
+    except Exception as e:
+        print(e)
     submdat = mdat.add_submdat(submdat_name=name,
                               compression_levels={"data": compress_data, "meta": compress_meta},
                               map_sizes={"data": map_size, "meta": map_size},
