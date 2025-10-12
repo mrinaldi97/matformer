@@ -181,7 +181,7 @@ class MatformerDataset(IterableDataset):
             return self.loaded_submdats[submdat_name]
         raise SubmDatNotFound(f"Sub-dataset '{submdat_name}' not found")
     
-    def shuffle(self):
+    def shuffle(self, view_name=None, selected_submdats=None):
         """
         This function will create a shuffled version of the dataset.
         Instead of actually shuffling the data, this function will create a file with pointers
@@ -237,9 +237,9 @@ class MatformerDataset(IterableDataset):
         #cu_dslens = [0] + [sum(ds_lengths[:i+1]) for i in range(len(ds_lengths))]
         
         # Output path
-        view_name = view_name or 'default'
+        file_name = view_name or 'default'
         os.makedirs(self.shuffling_path, exist_ok=True)
-        shuffle_path = os.path.join(self.shuffling_path, f'{view_name}.mdat')      
+        shuffle_path = os.path.join(self.shuffling_path, f'{file_name}.mdat')      
         
           
         permutator = RandomPermutator(totlen)
@@ -504,7 +504,7 @@ class MatformerDataset(IterableDataset):
             raise NameAlreadyUsed
         self.loaded_submdats[submdat_name]=None # A placeholder to allow creation of submdat
         new = SubMdat.create_submdat(self, submdat_name=submdat_name, compression_levels=compression_levels,map_sizes=map_sizes,db_types=db_types,data_type=data_type,hybrid_data=hybrid_data)
-        self._set_manifest_attr('dataset_map',ds_map)
+        self._set_manifest_attr('datasets_map',ds_map)
         if self._get_manifest_attr('shuffled', False):
             if reshuffle:
                 self.shuffle_mdat()

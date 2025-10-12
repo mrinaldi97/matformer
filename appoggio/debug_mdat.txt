@@ -1,3 +1,5 @@
+--- Esperimenti con map size settata a 1<<44 ---
+
 Disattivando in assoluto LMDB (solo logica shuffling di Mdat e puntatori):
   8%|██████▊                                                                                   | 4727356/62318133 [00:18<03:44, 256822.24it/s]
 Disattivando la compressione:
@@ -12,3 +14,6 @@ Solo forum lettura random, direttamente LMDB:
 	circa lo stesso tempo (il wrapper che fa Mdat su LMDB non è un collo di bottiglia)
 
 Problema: le pessime prestazioni di LMDB in caso di letture casuali! (che novità...)
+
+
+--- Esperimenti con map size ridotta (settata automaticamente al minimo necessario per il dataset) ---
