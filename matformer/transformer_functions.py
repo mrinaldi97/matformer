@@ -31,7 +31,7 @@ class MultiHeadAttention(nn.Module):
         is_cross_attention: bool = False,
         nheads: int = 8,
         bias: bool = False,
-        positional_encoding: Literal['alibi', 'rope', 'nope', 'sinusoidal'] = 'rope',
+        positional_encoding: Literal['alibi', 'rope', 'nope', 'sinusoidal', 'learnable'] = 'rope',
         #dropout: float = 0.0, # Not supported by FlexAttention yet
         cache: Optional['CachedStuff'] = None,
         attn_impl: Literal['flash', 'sdpa', 'xformers', 'flex', 'wersa'] = 'flash',
@@ -75,10 +75,11 @@ class MultiHeadAttention(nn.Module):
         else:
             self.alibi = False
             self.register_buffer('alibi_slopes', None) 
+        
         # RoPE initialization
         if self.positional_encoding == 'rope':
             self.rotary_emb = self.cache.get_rotary_emb(self.head_dim)
-            
+                        
         # Packed qkv projection for efficiency  
         if not is_cross_attention or self.qkv_samedim:
             self.packed_proj = nn.Linear(self.q_dim, 3 * q_dim, bias=bias)

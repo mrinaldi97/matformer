@@ -60,12 +60,6 @@ class TransformerBlock(nn.Module):
          
         self.norm_position = layer_config['normalization_position']
         normalization = RMSNorm if layer_config['normalization'] == 'rmsnorm' else LayerNorm
-
-        # self.input_layernorm = ModuleWrapper(RMSNorm(
-        #     normalized_shape=config.hidden_size,
-        #     eps=config.rms_norm_eps,
-        #     elementwise_affine=True
-        # ))
         
         norm_kwargs = {
             'normalized_shape': config.hidden_size,
@@ -220,10 +214,28 @@ class TransformerWithEmbeddingHead(nn.Module):
     """
     def __init__(self,config: ModelConfig):
         super().__init__()
+        
         self.embed_tokens = ModuleWrapper(nn.Embedding(num_embeddings=config.vocab_size,embedding_dim=config.hidden_size,padding_idx=config.pad_token_id))
         self.transformer = NakedTransformer(config)
+        
+        # added learnable positional embeddings
+        if (config.default_layer['positional_encoding'] == "learnable"):
+            self.embed_positions = ModuleWrapper(nn.Embedding(config.max_position_embeddings, config.hidden_size))
+        else:
+            self.embed_positions = None
+        
     def forward(self,x, **kwargs): 
         embeddings=self.embed_tokens(x)
+        
+        # added learnable positional embeddings
+        if self.embed_positions is not None:
+            batch_size, seq_len = x.tensor.shape
+            position_ids = torch.arange(seq_len, dtype=torch.long, device=x.tensor.device)
+            position_ids = position_ids.unsqueeze(0).expand(batch_size, -1)
+            position_ids_wrapped = replace(x, tensor=position_ids)
+            position_embeds = self.embed_positions(position_ids_wrapped)
+            embeddings = replace(embeddings, tensor=embeddings.tensor + position_embeds.tensor)
+        
         return self.transformer(embeddings,**kwargs)
 
 
