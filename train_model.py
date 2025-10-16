@@ -60,6 +60,18 @@ def main():
     save_dir = cfg.get('save_dir', './checkpoints')
     
     pl.seed_everything(train_cfg.get('seed', 27))
+    
+    # Detect device
+    if torch.cuda.is_available():
+        device = 'gpu'
+        precision = '16-mixed'
+    elif torch.backends.mps.is_available():
+        device = 'mps'
+        precision = '32'  # controllare se MPS supporta 16
+        device_count = 1
+    else:
+        device = 'cpu'
+        precision = '32'
     """
     tokenizer = (
         AutoTokenizer.from_pretrained(tok_cfg['pretrained_name'])
@@ -125,13 +137,14 @@ def main():
         config=model_cfg, 
         tokenizer=None, 
         train_config=train_cfg, 
-        device='cuda', 
+        device=device, 
         batch_size=data_cfg['batch_size']
     )
 
+    config_filename = Path(config_path).stem  # e.g., "a_prova_j" from "configs/a_prova_j.json"
     # Setup logging
     wandb_logger = WandbLogger(
-        name=cfg.get('wandb_run_name', 'training-run'),
+        name=config_filename,
         project=cfg.get('wandb_project', 'matformer'),
         config=cfg
     )
@@ -164,9 +177,9 @@ def main():
     trainer = pl.Trainer(
         logger=wandb_logger,
         callbacks=[checkpoint],
-        precision='16-mixed',
+        precision=precision,  # jerik
         gradient_clip_val=train_cfg.get('gradient_clip_val', 1),
-        accelerator='gpu',
+        accelerator=device,  # jerik
         devices=device_count,
         log_every_n_steps=10,
         accumulate_grad_batches=train_cfg.get('accumulate_grad_batches', 1),
