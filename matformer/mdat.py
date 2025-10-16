@@ -181,7 +181,7 @@ class MatformerDataset(IterableDataset):
             return self.loaded_submdats[submdat_name]
         raise SubmDatNotFound(f"Sub-dataset '{submdat_name}' not found")
     
-    def shuffle(self, view_name=None, selected_submdats=None):
+    def shuffle(self, view_name=None, selected_submdats=None, terminate_early=False, termination_criteria=None, termination_dict=None):
         """
         This function will create a shuffled version of the dataset.
         Instead of actually shuffling the data, this function will create a file with pointers
@@ -192,6 +192,10 @@ class MatformerDataset(IterableDataset):
         The datatype of submdat_id can either be 8 bit or 16 bit uint depending on the number of submdat (dsmap_bits)
         The datatype of doc_id depends from the largest number of documents in the submdats
         """
+        if terminate_early:
+            assert termination_criteria in ['bytes','documents_number']
+            assert isistance(termination_dict,dict)
+            accumulation_dict=dict()
         from bisect import bisect_right
         if self.readonly:
             raise MDatIsReadOnly
@@ -247,7 +251,21 @@ class MatformerDataset(IterableDataset):
                 loc_id = bisect_right(cu_dslens, permuted_idx) - 1
                 global_id = selected_ids[loc_id]
                 doc_id = permuted_idx - cu_dslens[loc_id]
-                f.write(struct.pack(struct_format, global_id, doc_id))
+                # Logic for early termination in case of view creation
+                if terminate_early:
+                    if accumulators_equal_terminators():
+                        raise IterationEnd
+                    if accumulators[ds_map[global_id]]>=terminators[ds_map[global_id]]:
+                        continue
+                    else:
+                        if termination_criteria=='documents_number':
+                            accumulators[ds_map[global_id]]+=1                      
+                        else: #bytes
+                            accumulators[ds_map[global_id]]+=len(self[ds_map[global_id]].db['data'][doc_id])
+                        f.write(struct.pack(struct_format, global_id, doc_id))
+                else:
+                    # Write everything
+                    f.write(struct.pack(struct_format, global_id, doc_id))
         
         if view_name is None:
             self._set_manifest_attr('shuffled', True, save=True)
@@ -933,7 +951,7 @@ class SubMdat:
             if wanted_from_strategy is not None:
                composed.update(self.current_strategy(key=key,cache_dict=self.pretok_db,max_seq_len=max_seq_len,wanted_from_strategy=wanted_from_strategy,add_special_tokens=add_special_tokens))
         return composed
-    def get_generator(self, progress_bar=False,wanted_from_dbs='full',wanted_from_strategy=None,raw=False):
+    def get_generator(self, progress_bar=False,wanted_from_dbs='full',wanted_from_strategy=None,raw=False,randomize=False,seed=27):
         """
         Returns a generator over submdat elements. 
         Args:
@@ -941,12 +959,18 @@ class SubMdat:
             from_dbs: the names of the db to be returned. "meta" is reserved for dictionaries, all the others are returned raw. The special key "full" will return all the databases.
             from_strategy: the names of the strategy's items to be returned, for example 'tokens' or 'chunks'. The special key "full" will return all the items produced by the pretokenization strategy.
         """
+        if randomize:
+            permutator=RandomPermutator(max_len=self.len,seed=seed)
         if progress_bar:
             from tqdm import tqdm
             for key in tqdm(range(self.len)):
+                if randomize:
+                    key=permutator(key)
                 yield self._compose_return(key=key,wanted_from_dbs=wanted_from_dbs,wanted_from_strategy=wanted_from_strategy,raw=raw)
         else:
             for key in (range(self.len)):
+                if randomize:
+                    key=permutator(key)
                 yield self._compose_return(key=key,wanted_from_dbs=wanted_from_dbs,wanted_from_strategy=wanted_from_strategy,raw=raw)                           
 
     def __len__(self):
