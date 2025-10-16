@@ -6,12 +6,12 @@ from tqdm import tqdm
 from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
 from matformer.extra.muon import Muon
 from matformer.model_config import ModelConfig  
-from matformer.masked_models import maskerator
+from matformer.masked_models import Maskerator
 from matformer.initialization import init_transformer_weights_
 #import matformer.transformer_blocks
 from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor,NormalTensor
-from matformer.debug_methods import train_debug_print
-from torch.optim import AdamW
+#from matformer.debug_methods import train_debug_print
+from torch.optim import AdamW, Adam
 from transformers import get_scheduler
 import math
 import torch.distributed as dist
@@ -26,7 +26,8 @@ class PL_ModelWrapper(pl.LightningModule):
         self.config=config
         self.train_config=train_config
         self.save_hyperparameters()  
-        self.model = ModelClass(config,tokenizer=tokenizer,device=device)        
+        self.model = ModelClass(config,tokenizer=tokenizer,device=device)    
+        self.nested = None    
         if not getattr(self, "_restored_from_ckpt", False): 
             self.model.apply(init_transformer_weights_)
             
@@ -149,8 +150,9 @@ class PL_ModelWrapper(pl.LightningModule):
                 self.log("diagnostics/post_clip_grad_norm", post_clip_norm, on_step=True, batch_size=self.batch_size)
                 
     def configure_optimizers(self):
-        use_muon = self.train_config["optimizer"].lower() == "muon"
-        if use_muon:
+        #use_muon = self.train_config["optimizer"].lower() == "muon"
+        
+        if self.train_config["optimizer"] == "muon":
             muon_params = []
             adamw_params = []
             for name, param in self.named_parameters():
@@ -178,12 +180,21 @@ class PL_ModelWrapper(pl.LightningModule):
                 adamw_betas=self.train_config.get("betas", (0.9, 0.95)),
                 adamw_eps=self.train_config.get("eps", 1e-10),
             )
-        else:
+            
+        elif self.train_config["optimizer"] == "adamw":
             optimizer = AdamW(
                 self.parameters(),
                 lr=self.train_config["lr"],
                 weight_decay=self.train_config.get("weight_decay", 0.01),
             )
+        elif self.train_config["optimizer"] == "adam":
+            optimizer = Adam(
+                self.parameters(),
+                lr=self.train_config["lr"],
+                weight_decay=self.train_config.get("weight_decay", 0.01),
+            )
+
+
 
         # === Scheduler ===
         if not self.train_config.get("lr_scheduling", False):
