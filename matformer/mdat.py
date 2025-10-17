@@ -2378,6 +2378,7 @@ def _create_submdat_once(input_path, output_path, name, dataset_type, compress_d
     try:
         map_size=1 << (os.path.getsize(input_path) - 1).bit_length() # Optimal file size
         print(f"Auto determined optimal map size: {map_size}")
+        map_size=1<<41
     except Exception as e:
         print(e)
     submdat = mdat.add_submdat(submdat_name=name,
