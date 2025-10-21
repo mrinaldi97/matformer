@@ -11,7 +11,6 @@ def load_inference_model(checkpoint_path,ModelClass,map_location,tokenizer):
         checkpoint_path=checkpoint_path,
         ModelClass=ModelClass,
         map_location=map_location,
-        inference_fix=True,
         tokenizer=tokenizer
     )
 
