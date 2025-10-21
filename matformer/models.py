@@ -18,6 +18,7 @@ import torch.distributed as dist
 import numpy as np
 from dataclasses import replace
 from copy import deepcopy
+from transformers import AutoTokenizer
 
 
 class PL_ModelWrapper(pl.LightningModule):
