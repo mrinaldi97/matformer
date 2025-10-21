@@ -1017,7 +1017,7 @@ class SubMdat:
                 compressed=compression_level > 0, 
                 readonly=readonly,
                 compression_level=compression_level, 
-                map_size=map_size or (1<<44), 
+                map_size=map_size or (1<<40), 
                 batch_size=batch_size or 50000
             )       
     def add_strategy_start(self, strategy_name:str, compression_level:int =0, map_size:int=1<<44, batch_size:int=50000):

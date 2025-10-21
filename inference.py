@@ -1,6 +1,6 @@
 import argparse, torch, sys, re
 from matformer.models import PL_ModelWrapper
-from matformer.tokenizers import MatformerTokenizer
+from matformer.matformer_tokenizers import MatformerTokenizer
 from transformers import AutoTokenizer
 from matformer.transformer_blocks import Autoregressive_Model, BERTModel, EntropyModel
 
