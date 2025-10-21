@@ -284,14 +284,18 @@ class PL_ModelWrapper(pl.LightningModule):
                 print(config)
 
             else:
-                raise ValueError("Config not found in checkpoint and not provided. Please provide a config.")    
+                raise ValueError("Config not found in checkpoint and not provided. Please provide a config.")  
+                
+        """  
         tokenizer = (
             AutoTokenizer.from_pretrained(tokenizer) 
             if tokenizer != 'bytes' else 'bytes'
         )
+        """
         tokenizer = MatformerTokenizer(
-            config,
-            tokenizer=tokenizer,
+            config=config,
+            tokenizer_type='huggingface',
+            tokenizer_name=tokenizer,
             varlen_strategy=varlen_strategy
         )     
 
