@@ -653,6 +653,9 @@ class MatformerDataset(IterableDataset):
         else:
             raise TypeError
     def __iter__(self):
+        # Reset the iteration (ex. for a new epoch)
+        self.current_document = None
+        self.current_chunk_step = 0
         return self
     def __next__(self):
         if self.current_iteration_modality=='document':
