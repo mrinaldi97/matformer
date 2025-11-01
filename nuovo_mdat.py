@@ -557,7 +557,7 @@ class MatformerDataset(IterableDataset):
         """
         from tqdm import tqdm 
         
-        strategies = self.db.connect().cursor().execute("SELECT strategy_name FROM pretok_strategy").fetchall() 
+        strategies = self.db.connect(check_same_thread=False).cursor().execute("SELECT strategy_name FROM pretok_strategy").fetchall() 
         
         for (strategy_name,) in strategies: 
             strategy_info = self.db.get_manifest(strategy=strategy_name) 
@@ -571,7 +571,7 @@ class MatformerDataset(IterableDataset):
                 if not strategy_submdat_info: 
                     continue 
                 
-                view_submdat = self.db.connect().cursor().execute( 
+                view_submdat = self.db.connect(check_same_thread=False).cursor().execute( 
                     "SELECT document_number FROM view_submdat WHERE view_name = ? AND submdat_id = ?", 
                     (view_name, submdat_id) 
                 ).fetchone() 
@@ -703,7 +703,7 @@ class MatformerDataset(IterableDataset):
         """
         if self.readonly:
             raise MDatIsReadOnly
-        c = self.db.connect().cursor() 
+        c = self.db.connect(check_same_thread=False).cursor() 
         c.execute("DELETE FROM pretok_strategy WHERE strategy_name = ?", (strategy_name,)) 
         
     def register_strategy(self, strategy_name: str, strategy_dict: Dict[str, Any]) -> Optional[Any]: 
@@ -717,7 +717,7 @@ class MatformerDataset(IterableDataset):
             raise MDatIsReadOnly
         strategy_name = sanify_name(strategy_name)
         
-        existing = self.db.connect().cursor().execute("SELECT strategy_name FROM pretok_strategy WHERE strategy_name = ?", (strategy_name,)).fetchone() 
+        existing = self.db.connect(check_same_thread=False).cursor().execute("SELECT strategy_name FROM pretok_strategy WHERE strategy_name = ?", (strategy_name,)).fetchone() 
         if existing: 
             raise NameAlreadyUsed(f"Strategy '{strategy_name}' already registered")
         
@@ -731,7 +731,7 @@ class MatformerDataset(IterableDataset):
 
     def _populate_strategies(self) -> None:
         """Populate pretok strategies."""
-        c = self.db.connect().cursor() 
+        c = self.db.connect(check_same_thread=False).cursor() 
         strategies = c.execute("SELECT strategy_name FROM pretok_strategy").fetchall() 
         for (strategy_name,) in strategies: 
             self.pretok_strategies[strategy_name] = PretokenizationStrategy(self.db, self.pretok_path, self.functions_path, strategy_name) 
@@ -956,7 +956,7 @@ class DatabaseManager:
 
     def connect(self):
         if self.conn is None:
-            self.conn = sqlite3.connect(self.db_path, isolation_level=None, detect_types=sqlite3.PARSE_DECLTYPES)
+            self.conn = sqlite3.connect(self.db_path, isolation_level=None, detect_types=sqlite3.PARSE_DECLTYPES,check_same_thread=False)
             self.conn.execute("PRAGMA foreign_keys = ON;")
         return self.conn
 
@@ -2659,7 +2659,7 @@ class PretokenizationStrategy:
 
     def save(self):
         """Save strategy configuration to JSON file.""" 
-        c = self.db.connect().cursor() 
+        c = self.db.connect(check_same_thread=False).cursor() 
         c.execute(""" 
             INSERT OR REPLACE INTO pretok_strategy( 
                 strategy_name, modality, tokenizer_type, tokenizer_name, tokenizer_args, 
