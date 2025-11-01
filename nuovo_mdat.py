@@ -1417,7 +1417,6 @@ class DatabaseManager:
             q += " AND sd.database_id = ?"
             params.append(database_id)
         result = self._fetchall(q, tuple(params))
-        print(result)
         if database_type=='data':
             for r in result:
                 if r['is_data']==1:
@@ -3158,9 +3157,9 @@ def cmd_add_submdat(
     path: str,
     name: str,
     data_compress: int = 9,
-    meta_compress: int = 9,
-    data_mapsize: str = "10G",
-    meta_mapsize: str = "1G",
+    meta_compress: int = 0,
+    data_mapsize: str = "350G",
+    meta_mapsize: str = "350G",
     modality: str = "text",
     ds: Optional[MatformerDataset] = None, 
 ):
@@ -3179,9 +3178,9 @@ def cmd_batch_import(
     folder: str,
     data_key: str = "text",
     data_compress: int = 9,
-    meta_compress: int = 9,
-    data_mapsize: str = "10G",
-    meta_mapsize: str = "1G",
+    meta_compress: int = 0,
+    data_mapsize: str = "500G",
+    meta_mapsize: str = "500G",
     pattern: str = "*.jsonl",
     recursive: bool = False,
     modality: str = "text",
