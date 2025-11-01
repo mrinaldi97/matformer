@@ -1,0 +1,112 @@
+
+Tabella "MANIFEST" (in realtà, sono semplicemente attributi... come potremmo rappresentarli in modo elegante in SQLite?)
+    dsmap_bits //SHORTINT (8,16 or 32), it indicates with how many bits the id of the subdataset should be represented. If 8 is chosen, it will be much more efficient, but the subdatasets must be limited to 255
+    modalities //JSON ex {"text"} or {"text","audio","image"}...
+
+Tabella "SUBMDAT"
+* A Mdat doesn't directly contain data. Data is contained in the sub-mdat objects, subclasses of the parent dataset. In this way, it is possible to easily separe logically different dataset to be used to train a model
+
+    name //STR
+    ds_map_id //PROGRESSIVE-ID
+    data_type //JSON ex {"text"} or {"text","audio","image"}
+    document_number //LONG-UNSIGNED-INT how many documents in the dataset
+    modality //JSON ex {"text"} or {"text","audio","image"}...
+    data_key //Short string, the original key of the data (ex. 'text')
+    errors_counters //JSON
+    finalized_at //DATETIME
+
+Tabella "DATABASE"
+* Actually, not even the Submdat holds the data. Data is contained in highly efficient KV stores, such as LMDB. This table contains all the useful references to directly call a database. It is used also by other parts of the mdat, for example, the pretok strategy manager.
+    
+    ID //PROGRESSIVE-ID
+    Type //STRING ex LMDB
+    Compression_level //SHORTINT (0-9), level of compression
+    map_size //LONGINT lmdb requires a "map_size" parameter
+    disk_size //LONGINT the actual size on disk
+    extra_data //JSON (for further expansions)
+
+Tabella "SUBMDAT-DATABASE"
+*This table maps the relevant databases of the submdat. Usually, we will just have one dataset with raw data (data) and one with metadata (meta). However, for further expansion (classification, multimodality...) it is possible to map an arbitrary amount of datasets
+    submdat_id //linked to submdat
+    database_id //linked to database
+    raw_data_bytes // LONGINT the amount of bytes of the original data (for example, chars in case of documents)
+    is_data //BOOL (mututally exclusive)
+    is_meta //BOOL (mututally exclusive)
+    is_extra //JSON or NULL (mututally exclusive)
+
+
+Tabella "PRETOK_STRATEGY"
+* The MDAT can store, alongside with the data, many different "pretokenizations" of the data, for faster retrieval during model training.
+* Each pretok strategy can call a "splitter" (either built-in or user-defined) that handles the data processing, ex, splitting in chunks
+
+    strategy_name //STR
+    modality  //JSON ex {"text"} or {"text","audio","image"}...
+    tokenizer_type //STR ex "huggingface"
+    tokenizer_name //STR ex "sapienzanlp/Minerva-350M-base-v1.0"
+    tokenizer_args //JSON, extra arguments for the tokenizer
+    bos_token_id //SINGLE INT
+    eos_token_id //SINGLE INT
+    mask_token_id //SINGLE INT
+    splitter_class //STR ex "split_and_tokenize_by_nltk_sentences"
+    splitter_init //JSON, arguments for the splitter's init
+    splitter_arguments //JSON, arguments for the splitter's call
+    chunk_size //INT, ex 1024 if the base chunk are 1024tok long
+    wants_from_db //JSON, a list of required databases from the SUMBDAT to process the data, example, a text pretokenization strategy would just require "data" that contains raw text, thus ["data"]
+    returns //JSON ex {"tokens","chunked_tokens"}
+    required_databases //JSON ex {"tokens","chunks"}
+
+Tabella "PRETOK_STRATEGY-SUBMDAT"
+The table that maps each pretokenization strategy to a submdat
+
+    strategy_name //linked to strategy
+    submdat_id //linked to submdat
+    finalized_at //DATETIME
+    total_tokens //LONGINT
+    max_tokens_per_doc //LONGINT
+    total_chunks //LONGINT
+    max_chunks_per_doc //LONGINT
+    processed_docs //LONGINT
+
+Tabella "PRETOK_STRATEGY-SUBMDAT-PRECOMPUTED-LENGTH"
+* In case of chunked tokens, it is useful to precompute the length of iteration in case a multiplier of base_chunk_size is set. These data are used when entire subdatasets are selected.
+    strategy_name //linked to strategy
+    submdat_id //linked to submdat
+    multiplier //SHORT
+    precomputed_length //LONGINT 
+     
+Tabella "PRETOK_STRATEGY-DB"
+The table that maps each pretokenization strategy to a submdat through one or more db
+    strategy_name //linked to strategy
+    submdat_id //linked to submdat  
+    id //PROGRESSIVE ID
+    is_complete //BOOL
+    datatype //str ex. 'uint16', 'uint32, 'float', 'tensor'...
+    is_tokens //BOOL (mututally exclusive)
+    is_chunks //BOOL (mututally exclusive)
+    is_extra //JSON or NULL   (mututally exclusive)   
+
+Tabella "PRETOK_STRATEGY-VIEW-SUBMDAT-PRECOMPUTED-LENGTH"
+* In case of chunked tokens, it is useful to precompute the length of iteration in case a multiplier of base_chunk_size is set. These data are used when a partial submdat is included in a view.
+    strategy_name //linked to strategy
+    view_id //linked to view
+    submdat_id //linked to submdat
+    multiplier //SHORT
+    precomputed_length //LONGINT 
+
+Tabella "VIEW"
+* In a Mdat, it is possible to build a "view" over a dataset, for example choosing only some example to build a smaller set for ablation studies
+    view_name //STR (KEY)
+    total_documents //LONGINT
+    shuffle_struct_format //STRING 
+
+Tabella "VIEW-SUMBDAT"
+* For each view-submdat couple, how it is considered in the view
+    view_name KEY
+    sumbdat_id KEY
+    is_skipped BOOL (mututally exclusive) //in case the submdat is skipped in this view
+    is_preserved BOOL (mututally exclusive) //in case the submdat is entirely taken
+    is_partial BOOL (mututally exclusive) //in case only a part of the submdat is taken
+    document_number //NULL if skipped or preserved, or the number of selected documents
+    bytes_criteria //LONGINT if the criteria to choose the view was data size, that number is shown here for reference
+
+ 
