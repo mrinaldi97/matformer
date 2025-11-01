@@ -1,0 +1,48 @@
+{
+    "vocab_size": 32768,
+    "special_tokens": ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]", "[BOS]", "[EOS]"],
+    "pad_token": "[PAD]",
+    "unk_token": "[UNK]", 
+    "cls_token": "[CLS]",
+    "sep_token": "[SEP]",
+    "mask_token": "[MASK]",
+    "url_token": "[URL]",
+    "email_token": "[EMAIL]",
+    
+    "unicode_filtering": {
+        "enabled": true,
+        "ranges": [
+            "basic_latin",
+            "latin",
+            "greek",
+            "greek_extended",
+            "cyrillic",
+            "cyrillic_supplement",
+            "general_punctuation",
+            "currency_symbols",
+            "letterlike_symbols",
+            "number_forms",
+            "arrows",
+            "math_operators",
+            "emoticons",
+            "misc_symbols_pictographs",
+            "transport_symbols"
+        ],
+        "custom_ranges": [
+        ],
+        "include_whitespace": true,
+        "include_digits": true,
+        "include_punctuation": true
+    },
+    
+    "normalization": {
+        "nmt": false,                    
+        "nfc": true,                   
+        "nfkc": false,
+        "case": "preserve",             
+        "normalize_whitespace": true
+    },
+    
+    "replace_url": true,
+    "replace_email": true
+}

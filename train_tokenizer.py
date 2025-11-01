@@ -140,6 +140,9 @@ def train_tokenizer(
                 return
 
         ds = MatformerDataset.load_dataset(Path(mdat))
+        if mdat_view:
+            ds.set_view('gettone_train_view')
+            print(f"View {mdat_view} set.")
         ds.set_iteration_modality(modality='document', with_meta=False, return_raw=True)
         
         tokenizer = Tokenizer(models.Unigram())
