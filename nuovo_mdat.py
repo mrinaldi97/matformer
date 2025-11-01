@@ -731,7 +731,7 @@ class MatformerDataset(IterableDataset):
 
     def _populate_strategies(self) -> None:
         """Populate pretok strategies."""
-        c = self.db.connect(check_same_thread=False).cursor() 
+        c = self.db.connect().cursor() 
         strategies = c.execute("SELECT strategy_name FROM pretok_strategy").fetchall() 
         for (strategy_name,) in strategies: 
             self.pretok_strategies[strategy_name] = PretokenizationStrategy(self.db, self.pretok_path, self.functions_path, strategy_name) 
