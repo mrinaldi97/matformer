@@ -2148,7 +2148,7 @@ class SubMdat:
             if dbs['is_data']:
                 self.db.update_submdat_database(submdat_id=self.submdat_id, database_id=dbs['id'], data={'raw_data_bytes': raw_data_bytes, 'disk_size': db_data_bytes}) 
             elif dbs['is_meta']:
-                self.db.update_submdat_database(submdat_id=self.submdat_id, database_id=dbs['id'], data={'raw_data_bytes': raw_meta_bytes, 'disk_size': db_data_bytes}) 
+                self.db.update_submdat_database(submdat_id=self.submdat_id, database_id=dbs['id'], data={'raw_data_bytes': raw_meta_bytes, 'disk_size': db_meta_bytes}) 
             else:
                 raise NotImplementedError       
         
