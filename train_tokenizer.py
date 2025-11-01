@@ -45,7 +45,7 @@ class UnicodeRangeHelper:
         'katakana': r'\u30A0-\u30FF',
         'cjk_unified': r'\u4E00-\u9FFF',
         'private_use': r'\uE000-\uF8FF',
-        'emoji': (
+        'emoticons': (
             r'\U0001F300-\U0001F5FF'
             r'\U0001F600-\U0001F64F'
             r'\U0001F680-\U0001F6FF'
