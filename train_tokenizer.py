@@ -187,7 +187,24 @@ def train_tokenizer(
             email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
             repl_email = normalizers.Replace(Regex(email_pattern), cfg.get('email_token', '[EMAIL]'))
             normalizer_list.append(repl_email)
-        
+        # special token isolation ===
+        specials = cfg.get("special_tokens", [])
+        if specials:
+            escaped_specials = [re.escape(tok) for tok in specials]
+            pattern = "(" + "|".join(escaped_specials) + ")"
+
+            for tok in specials:
+                normalizer_list.insert(0, normalizers.Replace(Regex(re.escape(tok)), tok))
+
+            tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
+                pre_tokenizers.Split(Regex(pattern), behavior="isolated"),
+                pre_tokenizers.Metaspace(replacement="▁", prepend_scheme="always")
+            ])
+            for t in specials:
+                normalizer_list.insert(0, normalizers.Replace(Regex(re.escape(t)), t))
+        else:
+            tokenizer.pre_tokenizer = pre_tokenizers.Metaspace(replacement='▁', prepend_scheme='always')
+            
         tokenizer.normalizer = normalizers.Sequence(normalizer_list)
         
         tokenizer.pre_tokenizer = pre_tokenizers.Metaspace(replacement='▁', prepend_scheme='always')

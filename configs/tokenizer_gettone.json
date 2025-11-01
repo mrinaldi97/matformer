@@ -1,6 +1,6 @@
 {
     "vocab_size": 32768,
-    "special_tokens": ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]", "[BOS]", "[EOS]"],
+    "special_tokens": ["[PAD]", "[UNK]", "[CLS]", "[SEP]", "[MASK]", "[BOS]", "[EOS]","[P]", "[T]", "[/T]"],
     "pad_token": "[PAD]",
     "unk_token": "[UNK]", 
     "cls_token": "[CLS]",
@@ -40,9 +40,9 @@
         "nfc": true,                   
         "nfkc": false,
         "case": "preserve",             
-        "normalize_whitespace": true
+        "normalize_whitespace": false
     },
     
-    "replace_url": true,
-    "replace_email": true
+    "replace_url": false,
+    "replace_email": false
 }

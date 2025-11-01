@@ -102,7 +102,7 @@ class MatformerDataset(IterableDataset):
             else:
                 instance.set_view('default')
             #instance._populate_submdat() moved to view
-            instance._populate_strategies()
+            #instance._populate_strategies() changed to on-demand
             instance.set_iteration_modality('document', with_meta=True) #Default: get a non-tokenized document with metadata
         else:
             if create_if_not_existent:
@@ -716,35 +716,12 @@ class MatformerDataset(IterableDataset):
         if self.readonly:
             raise MDatIsReadOnly
         strategy_name = sanify_name(strategy_name)
-        
-        existing = self.db.connect(check_same_thread=False).cursor().execute("SELECT strategy_name FROM pretok_strategy WHERE strategy_name = ?", (strategy_name,)).fetchone() 
-        if existing: 
+        if strategy_name in self.list_strategies(): 
             raise NameAlreadyUsed(f"Strategy '{strategy_name}' already registered")
         
         strategy = PretokenizationStrategy.from_dict(self.db, self.pretok_path, self.functions_path, strategy_name, strategy_dict) 
         if strategy:
             strategy.save()
-            self.pretok_strategies[strategy_name] = strategy
-            return self.get_strategy(strategy_name)
-        else:
-            return None
-
-    def _populate_strategies(self) -> None:
-        """Populate pretok strategies."""
-        c = self.db.connect().cursor() 
-        strategies = c.execute("SELECT strategy_name FROM pretok_strategy").fetchall() 
-        for (strategy_name,) in strategies: 
-            self.pretok_strategies[strategy_name] = PretokenizationStrategy(self.db, self.pretok_path, self.functions_path, strategy_name) 
-    
-    def get_strategy(self, strategy_name: str) -> Any:
-        """
-        Get strategy by name.
-        Args:
-            strategy_name: Strategy name
-        """
-        if strategy_name not in self.pretok_strategies.keys():
-            raise StrategyNotRegistered(f"Strategy {strategy_name} not registered")    
-        return self.pretok_strategies[strategy_name]
 
     def strategies(self):
         return self.list_strategies() #a shortcut 
@@ -851,8 +828,8 @@ class MatformerDataset(IterableDataset):
     def get_iteration_modality(self):
         return self.current_iteration_modality
 
-    def set_strategy(self, strategy):
-        self.current_strategy = self.get_strategy(strategy)
+    def set_strategy(self, strategy_name):
+        self.current_strategy = PretokenizationStrategy(strategy_name)
         self.total_chunks = 0
         self.total_tokens = 0    
         self.total_divided_chunks = 0    
@@ -893,7 +870,7 @@ class MatformerDataset(IterableDataset):
         """
         List registered strategies
         """
-        return list(self.pretok_strategies.keys())
+        return list(self.db.list_strategies())
 
     def __len__(self):
         """
@@ -1537,7 +1514,9 @@ class DatabaseManager:
     def list_views(self):
         rows = self._fetchall("SELECT view_name FROM view")
         return [row['view_name'] for row in rows]
-
+    def list_strategies(self):
+        rows = self._fetchall("SELECT strategy_name FROM pretok_strategy")
+        return [row['strategy_name'] for row in rows]
 
     def get_submdat_info(self, submdat_id):
         submdat_id=int(submdat_id)
