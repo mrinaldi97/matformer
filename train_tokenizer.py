@@ -169,12 +169,6 @@ def train_hf_tokenizer(cfg: dict, dataset: MatformerDataset, save_path: Path, in
 def train_sentencepiece(cfg: dict, dataset: MatformerDataset, save_path: Path):
     tokenizer_type = cfg['tokenizer_type'].lower()
     model_type = 'bpe' if tokenizer_type == 'bpe' else 'unigram'
-    input_file = save_path / "sp_input.txt"
-
-    with open(input_file, "w", encoding="utf-8") as f:
-        for doc in dataset:
-            text = doc if isinstance(doc, str) else str(doc)
-            f.write(text.replace("\n", " ") + "\n")
 
     spm.SentencePieceTrainer.Train(
         sentence_iterator=(
