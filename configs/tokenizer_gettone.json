@@ -45,5 +45,7 @@
     },
     
     "replace_url": false,
-    "replace_email": false
+    "replace_email": false,
+    "tokenizer_type": "Unigram",
+    "tokenizer_backend": "sentencepiece"
 }
