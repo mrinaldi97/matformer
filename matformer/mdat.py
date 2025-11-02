@@ -344,19 +344,24 @@ class MatformerDataset(IterableDataset):
             # Terminator:
             # "ID": (accumulator_L,accumulator_B,terminator,criteria) #criteria L for lengths B for bytes
             for sbm_id in all_selected_ids:
+                # sel_info is a dict containing at least keys 'bytes_criteria' and 'document_number' (None when not set)
+                sel_info = self.db.get_view_submdat(view_name=view_name, submdat_id=sbm_id)  
                 if sbm_id in preserved_ids:
                     criteria='L'
                     terminator=len(self[ds_map[sbm_id]])
                 else:
-                    #Partial selection
-                    sel_info = self.db.get_view_submdat(view_name=view_name, submdat_id=sbm_id)  
-                    # sel_info is a dict containing at least keys 'bytes_criteria' and 'document_number' (None when not set)
-                    if sel_info.get('bytes_criteria') is not None:
-                        criteria='B'  
-                        terminator=int(sel_info['bytes_criteria'])  
+                    bc = sel_info.get('bytes_criteria')
+                    dn = sel_info.get('document_number')
+
+                    if bc is not None and bc > 0:
+                        criteria = 'B'
+                        terminator = int(bc)
+                    elif dn is not None and dn > 0:
+                        criteria = 'L'
+                        terminator = int(dn)
                     else:
-                        criteria='L'  
-                        terminator=int(sel_info['document_number'] or 0)  
+                        print("terminator is set to 0. It may be a bug")
+                        continue
                 terminators[sbm_id]=(0,0,terminator,criteria)
                 
                 
@@ -1104,7 +1109,8 @@ class DatabaseManager:
             chunk_size INTEGER CHECK (chunk_size >= 0),
             wants_from_db TEXT,        -- JSON stored as TEXT (list of required db names)
             returns TEXT,              -- JSON stored as TEXT
-            chunks_datatype TEXT,              
+            chunks_datatype TEXT, 
+            vocab_size INT,                           
             tokens_datatype TEXT,              
             required_databases TEXT    -- JSON stored as TEXT
         );
@@ -1167,7 +1173,7 @@ class DatabaseManager:
         #     is_extra //JSON or NULL   (mututally exclusive)   
         cur.execute("""
         CREATE TABLE IF NOT EXISTS pretok_strategy_db (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            db_id INTEGER NOT NULL,
             strategy_name TEXT NOT NULL,
             submdat_id INTEGER NOT NULL,
             is_complete INTEGER DEFAULT 0 CHECK (is_complete IN (0,1)),
@@ -1176,6 +1182,7 @@ class DatabaseManager:
             is_chunks INTEGER DEFAULT 0 CHECK (is_chunks IN (0,1)),
             is_extra TEXT, -- JSON stored as TEXT (nullable)
             FOREIGN KEY (strategy_name) REFERENCES pretok_strategy(strategy_name) ON DELETE CASCADE,
+            FOREIGN KEY (db_id) REFERENCES database_ref(id) ON DELETE CASCADE,
             FOREIGN KEY (submdat_id) REFERENCES submdat(ds_map_id) ON DELETE CASCADE,
             CHECK (
                 (COALESCE(is_tokens,0) + COALESCE(is_chunks,0) + CASE WHEN is_extra IS NOT NULL THEN 1 ELSE 0 END) = 1
@@ -1492,7 +1499,7 @@ class DatabaseManager:
 
     def get_strategy_dbs(self, strategy_name, submdat_id, db_id=None):
         q = """SELECT psd.*, dr.* FROM pretok_strategy_db psd
-               JOIN database_ref dr ON psd.id = dr.id
+               JOIN database_ref dr ON psd.db_id = dr.id
                WHERE psd.strategy_name=? AND psd.submdat_id=?"""
         params = [strategy_name, submdat_id]
         if db_id is not None:
@@ -1501,19 +1508,23 @@ class DatabaseManager:
         rows = self._fetchall(q, tuple(params))
         return rows[0] if db_id is not None and rows else rows
 
-    def update_strategy_db(self, db_id, data):
-        psd_allowed = {'is_complete','datatype','is_tokens','is_chunks','is_extra'}
-        dr_allowed = {'type','compression_level','map_size','disk_size','extra_data'}
+    def update_strategy_db(self, database_id, data):
+        psd_allowed = {'is_complete', 'datatype', 'is_tokens', 'is_chunks', 'is_extra'}
+        dr_allowed = {'type', 'compression_level', 'map_size', 'disk_size', 'extra_data'}
+
         psd_fields = {k: v for k, v in data.items() if k in psd_allowed}
         dr_fields = {k: v for k, v in data.items() if k in dr_allowed}
-        if psd_fields:
-            self._update_table('pretok_strategy_db', psd_fields, 'id=?', (db_id,))
-        if dr_fields:
-            self._update_table('database_ref', dr_fields, 'id=?', (db_id,))
 
-    def add_strategy_db(self, strategy_name, submdat_id, datatype, is_tokens,is_chunks,is_extra,is_complete=1):
+        if psd_fields:
+            self._update_table('pretok_strategy_db', psd_fields, 'db_id=?', (database_id,))
+
+        if dr_fields:
+            self._update_table('database_ref', dr_fields, 'id=?', (database_id,))
+
+
+    def add_strategy_db(self, database_id, strategy_name, submdat_id, datatype, is_tokens,is_chunks,is_extra,is_complete=1):
         c = self.connect().cursor()
-        c.execute("INSERT INTO pretok_strategy_db(strategy_name,submdat_id,datatype,is_tokens,is_chunks,is_extra,is_complete) VALUES(?,?,?,?,?,?,?)", (strategy_name, submdat_id,datatype,is_tokens,is_chunks,is_extra,is_complete))
+        c.execute("INSERT INTO pretok_strategy_db(db_id,strategy_name,submdat_id,datatype,is_tokens,is_chunks,is_extra,is_complete) VALUES(?,?,?,?,?,?,?,?)", (database_id,strategy_name, submdat_id,datatype,is_tokens,is_chunks,is_extra,is_complete))
         db_id = c.lastrowid
         self.connect().commit()
         return db_id
@@ -1716,13 +1727,14 @@ class SubMdat:
                 db_type = 'data' if dbs['is_data'] else 'meta' if dbs['is_meta'] else (json.loads(dbs['is_extra']) if dbs['is_extra'] else 'extra')
                 db_path = os.path.join(self.submdat_path, db_type) + '.dat'
                 self.storage_db[db_type] = _create_lmdb(db_path, dbs['compression_level'], _get_map_size(dbs))
-        else:
+        else: #type=='pretok'
+            assert map_size is not None,"Map size should be specified when creating a new strategy's storage DB"
             pretok_path = os.path.join(self.mdat.pretok_path, strategy, self.submdat_name)
             os.makedirs(pretok_path, exist_ok=True)
             self.pretok_db = {}
             
             db_names = json.loads(self.db.get_manifest(strategy=strategy)['required_databases']) if create else []
-            db_configs = [(name, compression_level, self.default_map_size) for name in db_names] if create else [
+            db_configs = [(name, compression_level, map_size) for name in db_names] if create else [
                 (
                     'tokens' if db['is_tokens']==1 else 'chunks' if db['is_chunks']==1 else (json.loads(db['is_extra']) if db['is_extra']!=0 else 'extra'),
                     db['compression_level'],
@@ -1731,17 +1743,16 @@ class SubMdat:
                 for db in self.db.get_strategy_dbs(strategy, _id)
             ]
             
-            for db_name, comp_level, map_size in db_configs:
+            for db_name, comp_level, _map_size in db_configs:
                 db_path = os.path.join(pretok_path, db_name + '.dat')
                 db_pointer = _create_lmdb(db_path, comp_level, map_size, batch_size or 50000)
                 
                 if create:
-                    print(f"creating {db_name}")
-                    db_id = self.db.add_database(_type='LMDB', compression_level=comp_level, map_size=map_size, disk_size=disk_size, extra_data=extra_data)
+                    db_id = self.db.add_database(_type='LMDB', compression_level=comp_level, map_size=_map_size, disk_size=disk_size, extra_data=extra_data)
                     is_tokens = 1 if db_name == 'tokens' else 0
                     is_chunks = 1 if db_name == 'chunks' else 0
                     is_extra = json.dumps(db_name) if db_name not in ['tokens', 'chunks'] else None
-                    self.db.add_strategy_db(strategy_name=strategy, submdat_id=self.submdat_id, datatype=None, is_tokens=is_tokens,is_chunks=is_chunks,is_extra=is_extra,is_complete=0)
+                    self.db.add_strategy_db(database_id=db_id,strategy_name=strategy, submdat_id=self.submdat_id, datatype=None, is_tokens=is_tokens,is_chunks=is_chunks,is_extra=is_extra,is_complete=0)
                 
                 self.pretok_db[db_name] = db_pointer
 
@@ -1922,8 +1933,29 @@ class SubMdat:
         for i, precomp_len in enumerate(stats.get('precomputed_lengths', [])): 
             if precomp_len > 0: 
                 self.db.set_strategy_submdat_precomp(strategy_name, self.submdat_id, i, precomp_len) 
+                
+        
         # Update database's disk size in database_ref
-        print("ADD Update database's disk size in database_ref, STILL MISSING (EASY), FOR NOW, EDIT THE SQLITE AND ADD THE DISK SIZE")
+        pretok_path = os.path.join(self.mdat.pretok_path, strategy_name, self.submdat_name)
+        strategy_dbs = self.db.get_strategy_dbs(strategy_name, self.submdat_id)
+        print(pretok_path)
+        print(strategy_dbs)
+        for db in strategy_dbs:
+            if db['is_tokens'] == 1:
+                db_name = 'tokens'
+            elif db['is_chunks'] == 1:
+                db_name = 'chunks'
+            else:
+                db_name = json.loads(db['is_extra']) if db['is_extra'] else 'extra'
+            
+            db_file = os.path.join(pretok_path, f"{db_name}.dat")
+            if os.path.exists(db_file):
+                
+                disk_size = os.path.getsize(db_file)
+                self.db.update_strategy_db(database_id=db['db_id'], data={'disk_size': disk_size})
+            else:
+                print(f"Non trovo {db_file}")
+                
     def get_current_strategy(self):
         return self.current_strategy
 
@@ -1935,8 +1967,7 @@ class SubMdat:
         data_disk_size=self.db.get_submdat_info(submdat_id=self.submdat_id)['raw_data_bytes']
         inferred_map_size=data_disk_size*disk_size_multiplier
         print(f"Original data size is f{data_disk_size}. A multiplier of {disk_size_multiplier} is set to initialize the pretokenization storage dataset(s). If this value ({inferred_map_size}) is too large, you'll get memory errors, if too small, pretokenization will not fit the database. Adjust this value in case of problems.")
-        map_size=inferred_map_size
-        self.set_strategy(strategy_name=strategy_name, compression_level=compression_level, add=True, map_size=map_size)
+        self.set_strategy(strategy_name=strategy_name, compression_level=compression_level, add=True, map_size=inferred_map_size)
         strategy=self.current_strategy
         # Initialize stats
         stats = {
@@ -2580,23 +2611,22 @@ class PretokenizationStrategy:
         instance._create_from_dict(strategy_dict)
         instance.initialized = False
         return instance
-
     def _create_from_dict(self, strategy_dict: Dict[str, Any]):
         """Create configuration from dictionary."""
-        required_keys = ['strategy_name', 'tokenizer_type', 'tokenizer_name', 
-                        'splitter_class', 'splitter_init', 'modality',
-                        'chunk_size', 'wants_from_db', 'returns','required_databases']
-        
+        required_keys = ['strategy_name', 'tokenizer_type', 'tokenizer_name',
+                         'splitter_class', 'splitter_init', 'modality',
+                         'chunk_size', 'wants_from_db', 'returns', 'required_databases']
+
         for k in required_keys:
             if k not in strategy_dict.keys():
                 raise MissingStrategyKey(f"Missing required key: {k}")
-                
+
         self.strategy_name = strategy_dict['strategy_name']
         self.tokenizer_type = strategy_dict['tokenizer_type']
         self.tokenizer_name = strategy_dict['tokenizer_name']
-        self.bos_token_id = strategy_dict.get('bos_token_id', None)
-        self.eos_token_id = strategy_dict.get('eos_token_id', None)
-        self.mask_token_id = strategy_dict.get('mask_token_id', None) 
+        self.bos_token_id = strategy_dict.get('bos_token_id')
+        self.eos_token_id = strategy_dict.get('eos_token_id')
+        self.mask_token_id = strategy_dict.get('mask_token_id')
         self.tokenizer_args = strategy_dict.get('tokenizer_args', {})
         self.splitter_class = strategy_dict['splitter_class']
         self.splitter_init = strategy_dict['splitter_init']
@@ -2604,13 +2634,51 @@ class PretokenizationStrategy:
         self.chunk_size = strategy_dict['chunk_size']
         self.modality = strategy_dict['modality']
         self.wants_from_db = strategy_dict['wants_from_db']
-        self.wants_raw = strategy_dict['wants_raw']
+        self.wants_raw = strategy_dict.get('wants_raw', False)
         self.returns = strategy_dict['returns']
-        self.supports_batch = strategy_dict.get('supports_batch', False)        
-        self.tokens_datatype = strategy_dict.get('tokens_datatype', None)
-        self.chunks_datatype = strategy_dict.get('chunks_datatype', None)
-        self.required_databases=strategy_dict['required_databases']
-        self.manifest=strategy_dict
+        self.supports_batch = strategy_dict.get('supports_batch', False)
+        self.required_databases = strategy_dict['required_databases']
+
+        def dict_or_tokenizer(param):
+            """Load parameter from dict if present, otherwise from tokenizer after initialization."""
+            if param in strategy_dict:  # Respect explicit None in config
+                if strategy_dict[param] is None:
+                    print(f"Parameter {param} is set as None in the config. Check if this is intended.")
+                setattr(self, param, strategy_dict[param])
+            else:
+                print(f"You haven't specified {param} in the config. Trying to load from tokenizer...")
+                self._initialize_components()
+                val = getattr(self.tokenizer, param, None)
+                setattr(self, param, val)
+                strategy_dict[param] = val
+
+
+        # Load special tokens IDs Special tokens are not saved into the chunks (to easily allow chunks merging, but added on the fly)
+        dict_or_tokenizer('bos_token_id')
+        dict_or_tokenizer('eos_token_id')
+        dict_or_tokenizer('mask_token_id')
+
+        # Determine tokens datatype based on vocabulary size
+        dict_or_tokenizer('vocab_size')
+        if self.vocab_size <= 255:
+            self.tokens_datatype = 'uint8'
+        elif self.vocab_size <= 65535:
+            self.tokens_datatype = 'uint16'
+        else:
+            self.tokens_datatype = 'uint32'
+        strategy_dict['tokens_datatype'] = self.tokens_datatype
+
+        # Determine chunks datatype based on chunk size
+        if self.chunk_size <= 255:
+            self.chunks_datatype = 'uint8'
+        elif self.chunk_size <= 65535:
+            self.chunks_datatype = 'uint16'
+        else:
+            self.chunks_datatype = 'uint32'
+        strategy_dict['chunks_datatype'] = self.chunks_datatype
+
+        self.manifest = strategy_dict
+
     def _load_configuration(self):
         """Load strategy configuration from JSON fields in DB."""
         manifest = self.db.get_manifest(strategy=self.strategy_name)
@@ -2643,51 +2711,38 @@ class PretokenizationStrategy:
     def _initialize_components(self):
         """Initialize tokenizer and splitter components."""
         sys.path.append('../') #DIRTY stuff to load matformertokenizer
-        from matformer.matformer_tokenizers import MatformerTokenizer
-        self.tokenizer = MatformerTokenizer(
-            tokenizer_type=self.tokenizer_type, 
-            tokenizer_name=self.tokenizer_name, 
-            tokenizer_args=self.tokenizer_args
-        )
-        
-        # Determine token datatype based on vocab size
-        if hasattr(self.tokenizer, 'vocab_size') and self.tokenizer.vocab_size is not None:
-            if self.tokenizer.vocab_size <= 255:
-                self.tokens_datatype = 'uint8'
-            elif self.tokenizer.vocab_size <= 65535:
-                self.tokens_datatype = 'uint16'
-            else:
-                self.tokens_datatype = 'uint32'
-        else:
-            self.tokens_datatype = getattr(self.tokenizer, 'return_type', 'uint32')
-        
-        # Determine chunks datatype based on chunk size
-        if self.chunk_size <= 255:
-            self.chunks_datatype = 'uint8'
-        elif self.chunk_size <= 65535:
-            self.chunks_datatype = 'uint16'
-        else:
-            self.chunks_datatype = 'uint32'
-        
-        # Load special tokens IDs Special tokens are not saved into the chunks (to easily allow chunks merging, but added on the fly)
-        self.bos_token_id = self.tokenizer.bos_token_id
-        self.eos_token_id = self.tokenizer.eos_token_id
-        self.mask_token_id = self.tokenizer.mask_token_id
-        
-        # Initialize splitter
-        
-        """Initialize the splitter class with dynamic import capability."""
-        splitter_cls = self._find_splitter_class(self.splitter_class)
-        
-        # Prepare initialization arguments
-        init_args = self.splitter_init.copy() if self.splitter_init else {}
-        init_args['chunk_size'] = self.chunk_size - 2 #Reduce the max sequence length by two to allow special tokens
-        init_args['tokenizer'] = self.tokenizer
-        
-        # Initialize splitter
-        self.splitter = splitter_cls(**init_args)
-        self.initialized = True
-        self.save() #Saving in order to update token dtype and chunks dtype
+        if not self.initialized:
+            from matformer.matformer_tokenizers import MatformerTokenizer
+            self.tokenizer = MatformerTokenizer(
+                tokenizer_type=self.tokenizer_type, 
+                tokenizer_name=self.tokenizer_name, 
+                tokenizer_args=self.tokenizer_args
+            )
+
+            def tokenizer_if_minus_one(self, parameter, tokenizer):
+                """If parameter is -1, try to fetch it from tokenizer; otherwise leave unchanged."""
+                if getattr(self, parameter) == -1:
+                    try:
+                        setattr(self, parameter, getattr(tokenizer, parameter, None))
+                    except Exception:
+                        print(f"Cannot find parameter {parameter} in the tokenizer. It stays to None")
+
+            for p in ('bos_token_id', 'eos_token_id', 'mask_token_id', 'vocab_size'):
+                tokenizer_if_minus_one(self, p, self.tokenizer)
+
+            """Initialize the splitter class with dynamic import capability."""
+            splitter_cls = self._find_splitter_class(self.splitter_class)
+
+            # Prepare initialization arguments
+            init_args = self.splitter_init.copy() if self.splitter_init else {}
+            init_args['chunk_size'] = self.chunk_size - 2 #Reduce the max sequence length by two to allow special tokens
+            init_args['tokenizer'] = self.tokenizer
+
+            # Initialize splitter
+            self.splitter = splitter_cls(**init_args)
+            self.initialized = True
+            self.save() #Saving in order to update token dtype and chunks dtype
+
         
     def _find_splitter_class(self, class_name: str):
         """Find splitter class in globals or import from functions directory."""
