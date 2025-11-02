@@ -1756,7 +1756,7 @@ class SubMdat:
             
             for db_name, comp_level, _map_size in db_configs:
                 db_path = os.path.join(pretok_path, db_name + '.dat')
-                db_pointer = _create_lmdb(db_path, comp_level, map_size, batch_size or 50000)
+                db_pointer = _create_lmdb(db_path, comp_level, _map_size, batch_size or 50000)
                 
                 if create:
                     assert map_size is not None,"Map size should be specified when creating a new strategy's storage DB"
