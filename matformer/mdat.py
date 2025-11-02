@@ -2730,7 +2730,7 @@ class PretokenizationStrategy:
 
             def tokenizer_if_minus_one(self, parameter, tokenizer):
                 """If parameter is -1, try to fetch it from tokenizer; otherwise leave unchanged."""
-                if getattr(self, parameter) == -1:
+                if getattr(self, parameter, None) == -1:
                     try:
                         setattr(self, parameter, getattr(tokenizer, parameter, None))
                     except Exception:
