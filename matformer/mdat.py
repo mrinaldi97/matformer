@@ -670,28 +670,32 @@ class MatformerDataset(IterableDataset):
     def load_next_document(self, shuffled=True) -> None:
         """Load next document."""
         if shuffled and not getattr(self, '_active_view_shuffled', None):
-            raise MDatNotShuffled(f"You requested shuffled data, but active view {self._active_view} is not shuffled. Either load data sequentially or call the shuffling functions ")
-
+            raise MDatNotShuffled(...)
+        
         if not hasattr(self, 'document_index'):
             self.document_index = 0
-
-        if hasattr(self, 'dist') and self.dist:
-            if self.document_index % self.world_size != self.rank_size:
-                self.document_index += 1
-                return self.load_next_document(shuffled)
         
-        ds_map = self.db.get_dsmap(key='id') 
+        ds_map = self.db.get_dsmap(key='id')
         
         if shuffled:
             if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
                 self._init_shuffle_file()
-
-            data = self._shuffle_file.read(self._shuffle_struct_size)
-            if not data:
-                raise StopIteration
-
-            submdat_id, doc_id = struct.unpack(self._shuffle_struct_format, data)
-            self.current_document = self.loaded_submdats[ds_map[submdat_id]][doc_id]
+            
+            # skip until we find a document good for this worker
+            while True:
+                data = self._shuffle_file.read(self._shuffle_struct_size)
+                if not data:
+                    raise StopIteration
+                
+                if self.dist:
+                    if self.document_index % self.world_size != self.rank_size:
+                        self.document_index += 1
+                        continue  # Skip this shuffle entry
+                
+                submdat_id, doc_id = struct.unpack(self._shuffle_struct_format, data)
+                self.current_document = self.loaded_submdats[ds_map[submdat_id]][doc_id]
+                self.document_index += 1
+                break
         else:
             current_pos = 0
             for submdat_id in sorted(ds_map.keys()): 
@@ -701,12 +705,10 @@ class MatformerDataset(IterableDataset):
                     if self.document_index < current_pos + submdat_len:
                         doc_id = self.document_index - current_pos
                         self.current_document = self.loaded_submdats[submdat_name][doc_id]
-                        break
+                        self.document_index += 1
+                        return
                     current_pos += submdat_len
-            else:
-                raise StopIteration
-
-        self.document_index += 1
+            raise StopIteration
         
     # Methods for the pretokenization-registry:
     # In the manifest, names of pretokenizations strategies should be saved
@@ -745,11 +747,18 @@ class MatformerDataset(IterableDataset):
         return self.list_strategies() #a shortcut 
     def list_views(self):
         return self.db.list_views()
+        
     def __iter__(self):
         # Reset the iteration (ex. for a new epoch)
         self.current_document = None
         self.current_chunk_step = 0
-        return self
+        self.document_index = 0 
+        
+        # Reset shuffle file
+        if hasattr(self, '_shuffle_file') and self._shuffle_file is not None:
+            self._shuffle_file.seek(0)  
+    
+    return self
 
     def __next__(self):
         if self.current_iteration_modality == 'document':
@@ -3029,29 +3038,24 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             print(f"Error. {e}")
             print(encoding)
         return tokenspans
-
     def trim_long_sequences(self, aligned_spans, maxlen):
-        flag = False
         new_aligned_spans = []
-
-        for i, x in enumerate(aligned_spans):
+        
+        for x in aligned_spans:
             span_length = x[1] - x[0]
-
+            
             if span_length > maxlen:
-                flag = True
-                new_aligned_spans.extend(aligned_spans[:i])
+                # Split the long span into multiple chunks of maxlen
+                start = x[0]
+                while start < x[1]:
+                    end = min(start + maxlen, x[1])
+                    new_aligned_spans.append((start, end))
+                    start = end
+            else:
+                new_aligned_spans.append(x)
+        
+        return new_aligned_spans
 
-                midpoint = x[0] + span_length // 2
-                newspans = [(x[0], midpoint), (midpoint, x[1])]
-                new_aligned_spans.extend(newspans)
-
-                new_aligned_spans.extend(aligned_spans[i + 1 :])
-                break
-
-        if flag:
-            return self.trim_long_sequences(new_aligned_spans, maxlen)
-        else:
-            return aligned_spans
 
     def lenspan(self, start, end):
         return end[1] - start[0]
