@@ -37,6 +37,11 @@ class MatformerDataModule(pl.LightningDataModule):
             self.mdat.set_view(self.mdat_view)        
         if self.mdat_strategy is not None:
             self.mdat.set_strategy(self.mdat_strategy,max_seq_len=self.max_seq_len) 
+            
+        self.mdat.current_strategy.bos_token_id=4 #TEMPORANEO gettone
+        self.mdat.current_strategy.eos_token_id=6 #TEMPORANEO gettone
+        self.mdat.current_strategy.mask_token_id='uint16' #TEMPORANEO
+        
         self.mdat.current_strategy.chunks_datatype='uint16' #TEMPORANEO
         self.mdat.current_strategy.tokens_datatype='uint16' #TEMPORANEO
 
