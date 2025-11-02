@@ -2951,13 +2951,13 @@ class PretokenizationStrategy:
         elif db_name == 'chunks':
             chunks_dtype = get_datatype_for_numpy(self.chunks_datatype)
             chunk_sizes = np.frombuffer(stored_bytes, dtype=chunks_dtype)
-            # Convert sizes back to tuples
             chunks = []
-            start = 0
+            start = 0  # Python int to avoid overflow
             for size in chunk_sizes:
+                size = int(size) 
                 chunks.append((start, start + size))
                 start += size
-            return chunks
+            return chunks            
         else:
             # For extra data, try to decode as string first, then JSON
             try:
