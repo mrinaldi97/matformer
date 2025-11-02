@@ -9,6 +9,7 @@ from transformers import PreTrainedTokenizerFast
 from matformer.mdat import MatformerDataset
 import sentencepiece as spm
 import re
+from tqdm import tqdm
 
 
 class UnicodeRangeHelper:
@@ -176,13 +177,24 @@ def train_sentencepiece(cfg: dict, dataset: MatformerDataset, save_path: Path):
             f.write(text.replace("\n", " ") + "\n")
 
     spm.SentencePieceTrainer.Train(
-        f"--input={input_file} --model_prefix={save_path / 'spm'} "
-        f"--vocab_size={cfg['vocab_size']} --model_type={model_type} "
-        f"--character_coverage={cfg.get('character_coverage', 0.9995)} "
-        f"--user_defined_symbols={','.join(cfg.get('special_extra_tokens', []))} "
-        f"--unk_id=0 --pad_id=1 --bos_id=2 --eos_id=3 --verbose"
+        sentence_iterator=(
+            doc if isinstance(doc, str) else str(doc)
+            for doc in tqdm(dataset, desc="Training SentencePiece", total=len(dataset))
+        ),
+        model_prefix=str(save_path / "spm"),
+        vocab_size=cfg["vocab_size"],
+        model_type=model_type,
+        character_coverage=cfg.get("character_coverage", 0.9995),
+        user_defined_symbols=cfg.get("special_extra_tokens", []),
+        unk_id=0,
+        pad_id=1,
+        bos_id=2,
+        eos_id=3,
+        train_extremely_large_corpus=True,
+        input_sentence_size=cfg.get("input_sentence_size", 10000000),
+        shuffle_input_sentence=True,
+        verbose=True
     )
-
 
     fast_tok = PreTrainedTokenizerFast(tokenizer_file=str(save_path / "spm.model"))
     fast_tok.save_pretrained(save_path)
