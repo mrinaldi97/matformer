@@ -1,3 +1,4 @@
+import re
 import torch
 import json
 import random
@@ -141,7 +142,7 @@ def train_tokenizer(
 
         ds = MatformerDataset.load_dataset(Path(mdat))
         if mdat_view:
-            ds.set_view('gettone_train_view')
+            ds.set_view(mdat_view)
             print(f"View {mdat_view} set.")
         ds.set_iteration_modality(modality='document', with_meta=False, return_raw=True)
         
@@ -187,8 +188,8 @@ def train_tokenizer(
             email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
             repl_email = normalizers.Replace(Regex(email_pattern), cfg.get('email_token', '[EMAIL]'))
             normalizer_list.append(repl_email)
-        # special token isolation ===
-        specials = cfg.get("special_tokens", [])
+        # special token isolation
+        specials = cfg.get("special_extra_tokens", [])
         if specials:
             escaped_specials = [re.escape(tok) for tok in specials]
             pattern = "(" + "|".join(escaped_specials) + ")"
@@ -202,6 +203,7 @@ def train_tokenizer(
             ])
             for t in specials:
                 normalizer_list.insert(0, normalizers.Replace(Regex(re.escape(t)), t))
+            
         else:
             tokenizer.pre_tokenizer = pre_tokenizers.Metaspace(replacement='▁', prepend_scheme='always')
             
@@ -209,7 +211,7 @@ def train_tokenizer(
         
         tokenizer.pre_tokenizer = pre_tokenizers.Metaspace(replacement='▁', prepend_scheme='always')
         tokenizer.decoder = decoders.Metaspace(replacement='▁', prepend_scheme='always')
-        
+        special_tokens=cfg['special_tokens']+cfg.get("special_extra_tokens", [])
         trainer = trainers.UnigramTrainer(
             vocab_size=cfg['vocab_size'],
             show_progress=True,

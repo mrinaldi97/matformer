@@ -718,7 +718,6 @@ class MatformerDataset(IterableDataset):
         strategy_name = sanify_name(strategy_name)
         if strategy_name in self.list_strategies(): 
             raise NameAlreadyUsed(f"Strategy '{strategy_name}' already registered")
-        
         strategy = PretokenizationStrategy.from_dict(self.db, self.pretok_path, self.functions_path, strategy_name, strategy_dict) 
         if strategy:
             strategy.save()
@@ -727,35 +726,6 @@ class MatformerDataset(IterableDataset):
         return self.list_strategies() #a shortcut 
     def list_views(self):
         return self.db.list_views()
-    def set_max_seq_len(self, max_seq_len: int):
-        """
-        A method to set the multiplier based on the max. sequence length required by the model
-        If the required sequence length is not a multiple of strategy's base sequence length,
-        an exception will be thrown.
-        """
-        if self.current_strategy is not None:
-            base_chunk_size = self.current_strategy.chunk_size
-            if base_chunk_size is not None:
-                assert max_seq_len % base_chunk_size == 0
-                self.set_multiplier(max_seq_len // base_chunk_size)
-                self.max_seq_len = max_seq_len
-            else:
-                print(f"MatformerDataset: The strategy {self.current_strategy.strategy_name} doesn't have a base chunk size.")
-        else:
-            print("MatformerDataset: Impossible to set a max sequence length: load a strategy first.")
-
-    def set_multiplier(self, chunk_multiplier):
-        if isinstance(chunk_multiplier, int):
-            if chunk_multiplier > 100:
-                raise Exception
-            self.chunk_multiplier = chunk_multiplier
-            if self.current_strategy is not None:
-                self.set_strategy(self.current_strategy.strategy_name)
-            if self.current_iteration_modality is not None:
-                self.set_iteration_modality(self.current_iteration_modality)
-        else:
-            raise TypeError
-
     def __iter__(self):
         # Reset the iteration (ex. for a new epoch)
         self.current_document = None
@@ -828,19 +798,48 @@ class MatformerDataset(IterableDataset):
     def get_iteration_modality(self):
         return self.current_iteration_modality
 
-    def set_strategy(self, strategy_name):
-        self.current_strategy = PretokenizationStrategy(strategy_name)
+    def set_strategy(self, strategy_name, max_seq_len=None):
+        #1. Load the strategy object
+        self.current_strategy = PretokenizationStrategy(db=self.db,strategy_name=strategy_name,pretok_path=self.pretok_path,functions_path=self.functions_path)
+        #2. Set the chunk multiplier
+        """
+        A method to set the multiplier based on the max. sequence length required by the model
+        If the required sequence length is not a multiple of strategy's base sequence length,
+        an exception will be thrown.
+        """
+        if max_seq_len is not None:
+            base_chunk_size = self.current_strategy.chunk_size
+            if base_chunk_size is not None:
+               assert max_seq_len % base_chunk_size == 0
+               self.chunk_multiplier=(max_seq_len // base_chunk_size)
+               self.max_seq_len = max_seq_len
+        else:
+            self.max_seq_len=self.current_strategy.chunk_size
+            self.chunk_multiplier=1        
+        #3. Initialize counters
         self.total_chunks = 0
         self.total_tokens = 0    
         self.total_divided_chunks = 0    
-        for sbm in self.loaded_submdats.values():
+        #4. Select datasets from the current view. If datasets are 'partial' in the view, use precomputed chunks from partial datasets
+        asking_view=dict() #Sporco
+        asking_view['partial_submdats']=self.db.ask_view(view=self.current_view, keys='partial_submdats')  #Sporco
+        asking_view['preserved_submdats']=self.db.ask_view(view=self.current_view, keys='preserved_submdats')  #Sporco
+        used_submdats=asking_view['preserved_submdats']+asking_view['partial_submdats']
+        ds_map=self.db.get_dsmap(key='id')
+        strategy=strategy_name #Sporco
+        for sbm_id in used_submdats:
             try:
-                sbm.set_strategy(strategy)
-                strategy_stats = self.db.get_strategy_submdats(strategy, sbm.submdat_id) 
+                sbm=self[ds_map[sbm_id]]
+                sbm.set_strategy(strategy_name)
+                strategy_stats = self.db.get_strategy_submdats(strategy_name, sbm_id) 
                 self.total_chunks += strategy_stats.get('total_chunks', 0) 
                 self.total_tokens += strategy_stats.get('total_tokens', 0) 
-                
-                precomp = self.db.get_strategy_submdat_precomp(strategy, sbm.submdat_id, self.chunk_multiplier) 
+                if 'chunks' in self.current_strategy.returns:
+                    #This strategy has token chunks, need precomputation to get actual length dependent on max_seq_len
+                    if sbm_id in asking_view['preserved_submdats']:
+                        precomp = self.db.get_strategy_precomp(strategy_name=strategy, submdat_id=sbm_id, multiplier=self.chunk_multiplier) 
+                    else:
+                        precomp = self.db.get_strategy_precomp(strategy_name=strategy, submdat_id=sbm_id, view=self.current_view,multiplier=self.chunk_multiplier)   
                 if precomp: 
                     self.total_divided_chunks += precomp[0].get('precomputed_length', 0) 
             except SubMdatMissesStrategy:
@@ -1057,6 +1056,8 @@ class DatabaseManager:
             chunk_size INTEGER CHECK (chunk_size >= 0),
             wants_from_db TEXT,        -- JSON stored as TEXT (list of required db names)
             returns TEXT,              -- JSON stored as TEXT
+            chunks_datatype TEXT,              
+            tokens_datatype TEXT,              
             required_databases TEXT    -- JSON stored as TEXT
         );
         """)
@@ -1317,9 +1318,9 @@ class DatabaseManager:
             res[k] = [r[0] for r in rows]
         return res if len(keys) > 1 else res[keys[0]]
 
-    def add_database(self, type, compression_level, map_size, disk_size, extra_data):
+    def add_database(self, _type, compression_level, map_size, disk_size, extra_data):
         return self._insert('database_ref', {
-            'type': type,
+            'type': _type,
             'compression_level': compression_level,
             'map_size': map_size,
             'disk_size': disk_size,
@@ -1381,7 +1382,11 @@ class DatabaseManager:
         c = self.connect().cursor()
         c.execute("DELETE FROM submdat WHERE ds_map_id=?", (submdat_id,))
         self.connect().commit()
+    def get_storage_db_info(self,database_id):
+        q="SELECT * FROM database_ref WHERE database_ref.id = ?"
+        return self._fetchone(q,(int(database_id),))
 
+        
     def get_submdat_databases(self, submdat_id, database_id=None, database_type=None):
         q = """
             SELECT dr.*, sd.raw_data_bytes, sd.is_data, sd.is_meta, sd.is_extra
@@ -1458,44 +1463,35 @@ class DatabaseManager:
         if dr_fields:
             self._update_table('database_ref', dr_fields, 'id=?', (db_id,))
 
-    def add_strategy_db(self, strategy_name, submdat_id, data):
+    def add_strategy_db(self, strategy_name, submdat_id, datatype, is_tokens,is_chunks,is_extra,is_complete=1):
         c = self.connect().cursor()
-        c.execute("INSERT INTO pretok_strategy_db(strategy_name,submdat_id) VALUES(?,?)", (strategy_name, submdat_id))
+        c.execute("INSERT INTO pretok_strategy_db(strategy_name,submdat_id,datatype,is_tokens,is_chunks,is_extra,is_complete) VALUES(?,?,?,?,?,?,?)", (strategy_name, submdat_id,datatype,is_tokens,is_chunks,is_extra,is_complete))
         db_id = c.lastrowid
         self.connect().commit()
-        if data:
-            self.update_strategy_db(db_id, data)
         return db_id
 
     def remove_strategy_db(self, db_id):
         c = self.connect().cursor()
         c.execute("DELETE FROM pretok_strategy_db WHERE id=?", (db_id,))
         self.connect().commit()
-
-    def get_strategy_view_precomp(self, strategy_name, view_name=None, submdat_id=None, multiplier=None):
-        q = "SELECT * FROM pretok_strategy_view_submdat_precomputed_length WHERE strategy_name=?"
-        params = [strategy_name]
-        if view_name:
-            q += " AND view_name=?"
-            params.append(view_name)
-        if submdat_id:
-            q += " AND submdat_id=?"
-            params.append(submdat_id)
-        if multiplier:
-            q += " AND multiplier=?"
-            params.append(multiplier)
-        return self._fetchall(q, tuple(params))
-
+        
     def set_strategy_view_precomp(self, strategy_name, view_name, submdat_id, multiplier, precomputed_length):
         c = self.connect().cursor()
         c.execute("""INSERT OR REPLACE INTO pretok_strategy_view_submdat_precomputed_length
                      (strategy_name,view_name,submdat_id,multiplier,precomputed_length) VALUES(?,?,?,?,?)""",
                   (strategy_name, view_name, submdat_id, multiplier, precomputed_length))
         self.connect().commit()
-
-    def get_strategy_submdat_precomp(self, strategy_name, submdat_id=None, multiplier=None):
-        q = "SELECT * FROM pretok_strategy_submdat_precomputed_length WHERE strategy_name=?"
+        
+    def get_strategy_precomp(self, strategy_name, view_name=None, submdat_id=None, multiplier=None):
+        if view_name:
+            table='pretok_strategy_view_submdat_precomputed_length'
+        else:
+            table='pretok_strategy_submdat_precomputed_length'
+        q = f"SELECT * FROM {table} WHERE strategy_name=?"
         params = [strategy_name]
+        if view_name:
+            q += " AND view_name=?"
+            params.append(view_name)
         if submdat_id:
             q += " AND submdat_id=?"
             params.append(submdat_id)
@@ -1575,7 +1571,7 @@ class SubMdat:
         self.default_wanted_from_dbs = None
         self.default_wanted_from_strategy = None
         self.storage_db = dict() #Dictionary containing the pointers to the databases with the actual storage
-    
+        self.default_map_size=1<<33 #WARNING
     def __str__(self):
         return self.submdat_name
 
@@ -1611,70 +1607,97 @@ class SubMdat:
         # Initialize the storage DB; it could be considered to make this part 'lazy', i.e. load the DBs only when actually required (for example, avoid loading 'data' if only 'meta' is required), low priority
         instance._load_storage_db(_id=instance.submdat_id,load_all=True)
         return instance
-        
-    def _create_storage_db(self, compression_level, map_size, disk_size=None, extra_data=None, _type='LMDB', db_type='data',strategy=None): 
-        """
-        An helper function that creates a storage DB, add into the database and returns pointer and ID in the meta_database
-        Now only LMDB is implemented
-            #def add_database(self, type, compression_level, map_size, disk_size, extra_data)
-        """  
-        if not strategy:
-            path=os.path.join(self.submdat_path, db_type) + '.dat'
+    def _close_storage_dbs(self,_type='storage'):
+        if _type=='storage':
+            for name,db in self.storage_db.items():
+                print("Closed db: ",name)
+                db.close()
+                del db
+            del self.storage_db
+            self.storage_db={}
         else:
-            path=os.path.join()
-        # 1. Create the LMDB storage database
-        
-        db_pointer = LMDBDataset(path, readonly=False, compression_level=compression_level, map_size=map_size)
-        # 2. Link into the meta-database, get its ID
-        db_id = self.db.add_database(type=_type, compression_level=compression_level, map_size=map_size, disk_size=disk_size, extra_data=extra_data) 
-        return db_pointer, db_id
-        
-    def _load_storage_db(self, _id=None, _type='storage', load_all=False, strategy=None): 
+            pass
+    def _load_storage_db(self, _id=None, _type='storage', load_all=False, strategy=None, create=False, compression_level=None, disk_size=None, extra_data=None, db_type=None, batch_size=None, map_size=None): 
         """
-        An helper function that loads a storage DB by getting its path from the meta-database and returns its pointer
+        An helper function that loads or creates a storage DB by getting its path from the meta-database and returns its pointer
         
+        Args:
+            _id: Database ID for loading existing DB (or submdat_id for pretok)
+            _type: Type of DB ('storage' or 'pretok'/'strategy')
+            load_all: Load all databases for the submdat
+            strategy: Strategy name for pretok DBs
+            create: If True, create new DB instead of loading
+            compression_level: Compression level for new DB
+            map_size: Map size for new DB (default: 1<<40)
+            disk_size: Disk size for new DB
+            extra_data: Extra data for new DB
+            db_type: Type of DB to create ('data', 'meta', etc.)
+            batch_size: Batch size for pretok DBs
         """
-        def _load_storage(dbs):
-            def _determine_db_type(dbs):
-                if dbs['is_data']:
-                    return 'data'
-                elif dbs['is_meta']:
-                    return 'meta'
-                else:
-                    return json.loads(dbs['is_extra']) if dbs['is_extra'] else 'extra' 
-            db_type = _determine_db_type(dbs)
-            db_path = os.path.join(self.submdat_path, db_type) + '.dat'
-            self.storage_db[db_type] = LMDBDataset(db_path, readonly=self.readonly, compression_level=dbs['compression_level'], map_size=dbs['map_size'])           
-        if _type == 'storage':
-            if load_all:
-                for dbs in self.db.get_submdat_databases(self.submdat_id): 
-                    _load_storage(dbs) 
+        def _create_lmdb(path, comp_level, map_size, b_size=None):
+            params = {
+                'compressed': comp_level > 0,
+                'readonly': False if create else self.readonly,
+                'compression_level': comp_level,
+                'map_size': math.ceil(map_size)
+            }
+            if b_size:
+                params['batch_size'] = b_size
+            return LMDBDataset(path, **params)
+        
+        def _get_map_size(db_info):
+            if create:
+                return self.default_map_size
             else:
-                dbs = self.db.get_submdat_databases(submdat_id=self.submdat_id, database_id=_id) 
-                _load_storage(dbs) 
-        else: #Type is pretok
+                disk_size=self.db.get_storage_db_info(db_info['id'])['disk_size']
+                if not isinstance(disk_size,int) or disk_size<=1:
+                    return self.default_map_size
+                else:
+                    return disk_size*1.2 #Map size 20% larger than db size for safety
+        
+        if _type == 'storage':
+            if create:
+                path = os.path.join(self.submdat_path, db_type) + '.dat' if not strategy else os.path.join()
+                db_pointer = _create_lmdb(path, compression_level,map_size=self.default_map_size)
+                db_id = self.db.add_database(_type='LMDB', compression_level=compression_level, map_size=self.default_map_size, disk_size=disk_size, extra_data=extra_data) 
+                return db_pointer, db_id
+            
+            dbs_list = self.db.get_submdat_databases(self.submdat_id) if load_all else [self.db.get_submdat_databases(submdat_id=self.submdat_id, database_id=_id)]
+            for dbs in dbs_list:
+                db_type = 'data' if dbs['is_data'] else 'meta' if dbs['is_meta'] else (json.loads(dbs['is_extra']) if dbs['is_extra'] else 'extra')
+                db_path = os.path.join(self.submdat_path, db_type) + '.dat'
+                self.storage_db[db_type] = _create_lmdb(db_path, dbs['compression_level'], _get_map_size(dbs))
+        else:
             pretok_path = os.path.join(self.mdat.pretok_path, strategy, self.submdat_name)
             os.makedirs(pretok_path, exist_ok=True)
             self.pretok_db = {}
-            strategy_dbs = self.db.get_strategy_dbs(strategy, self.submdat_id) 
-            for db_info in strategy_dbs: 
-                if db_info['is_tokens']: 
-                    db_name = 'tokens' 
-                elif db_info['is_chunks']: 
-                    db_name = 'chunks' 
-                else: 
-                    db_name = json.loads(db_info['is_extra']) if db_info['is_extra'] else 'extra' 
-                
-                db_path = os.path.join(pretok_path, db_name + '.dat')
-                batch_size=None
-                self.pretok_db[db_name] = LMDBDataset(
-                    db_path, 
-                    compressed=db_info['compression_level']>0, 
-                    readonly=False,
-                    compression_level=db_info['compression_level'], 
-                    map_size=(1<<21), 
-                    batch_size=batch_size or 50000
+            
+            db_names = json.loads(self.db.get_manifest(strategy=strategy)['required_databases']) if create else []
+            db_configs = [(name, compression_level, self.default_map_size) for name in db_names] if create else [
+                (
+                    'tokens' if db['is_tokens']==1 else 'chunks' if db['is_chunks']==1 else (json.loads(db['is_extra']) if db['is_extra']!=0 else 'extra'),
+                    db['compression_level'],
+                    _get_map_size(db)
                 )
+                for db in self.db.get_strategy_dbs(strategy, _id)
+            ]
+            
+            for db_name, comp_level, map_size in db_configs:
+                db_path = os.path.join(pretok_path, db_name + '.dat')
+                db_pointer = _create_lmdb(db_path, comp_level, map_size, batch_size or 50000)
+                
+                if create:
+                    print(f"creating {db_name}")
+                    db_id = self.db.add_database(_type='LMDB', compression_level=comp_level, map_size=map_size, disk_size=disk_size, extra_data=extra_data)
+                    is_tokens = 1 if db_name == 'tokens' else 0
+                    is_chunks = 1 if db_name == 'chunks' else 0
+                    is_extra = json.dumps(db_name) if db_name not in ['tokens', 'chunks'] else None
+                    self.db.add_strategy_db(strategy_name=strategy, submdat_id=self.submdat_id, datatype=None, is_tokens=is_tokens,is_chunks=is_chunks,is_extra=is_extra,is_complete=0)
+                
+                self.pretok_db[db_name] = db_pointer
+
+        
+
     @classmethod
     def create_submdat(cls, parent_mdat: 'MatformerDataset', submdat_name: str, 
                       compression_levels: Dict[str, int], map_sizes: Dict[str, int], 
@@ -1705,21 +1728,20 @@ class SubMdat:
                 raise SubMdatAlreadyExists
         if os.path.isdir(instance.submdat_path):
             raise FileExistsError("SubMdat not registered in Mdat, but folder is present")
-        submdat_id = instance.db.add_submdat(submdat_name) # Add a placeholder submdat in the meta-database
+        instance.submdat_id = instance.db.add_submdat(submdat_name) # Add a placeholder submdat in the meta-database
                              
         # Create submdat directory
-        os.makedirs(instance.submdat_path, exist_ok=True)
-        
+        os.makedirs(instance.submdat_path, exist_ok=True)        
         for db_type in db_types:        
             try:
-                db_pointer, db_id = instance._create_storage_db(compression_level=compression_levels[db_type], map_size=map_sizes[db_type], disk_size=None, extra_data=None, _type='LMDB', db_type=db_type) 
+                db_pointer, db_id = instance._load_storage_db(_type='storage',compression_level=compression_levels[db_type], disk_size=None, extra_data=None,db_type=db_type,create=True) 
                 is_data = 1 if db_type == 'data' else 0 
                 is_meta = 1 if db_type == 'meta' else 0 
                 is_extra = json.dumps(db_type) if db_type not in ['data', 'meta'] else None 
-                instance.db.link_submdat_database(submdat_id, db_id, raw_data_bytes=0, is_data=is_data, is_meta=is_meta, is_extra=is_extra) 
+                instance.db.link_submdat_database(instance.submdat_id, db_id, raw_data_bytes=0, is_data=is_data, is_meta=is_meta, is_extra=is_extra) 
                 instance.storage_db[db_type] = db_pointer 
             except Exception as e:
-                instance.db.remove_submdat(submdat_id)
+                instance.db.remove_submdat(instance.submdat_id)
                 raise e
                 
         # A basic manifest, without data stats yet     
@@ -1731,9 +1753,9 @@ class SubMdat:
             "errors_counters": json.dumps({}), 
             "data_type": json.dumps(data_type) 
         }       
-        instance.db.update_manifest(submdat=submdat_id, data=manifest) 
+        instance.db.update_manifest(submdat=instance.submdat_id, data=manifest) 
         #Update the default view
-        instance.mdat._update_default_view(submdat_id) 
+        instance.mdat._update_default_view(instance.submdat_id) 
 
         # Now load the created submdat
         return cls.load_submdat(parent_mdat, submdat_name)
@@ -1808,34 +1830,31 @@ class SubMdat:
     def get_manifest(self):  
         return self.db.get_manifest(submdat=self.submdat_name)
     
-    def set_strategy(self, strategy_name: str, readonly: bool = True):
+    def set_strategy(self, strategy_name: str, add: bool = False,compression_level: int = 0, map_size: int = 1<<41, batch_size: int = 50000):
         """
         Set the Pretokenization Strategy to be used in the Submdat
         """
-        compressed = False #Temporary
-        strategies = json.loads(self.manifest.get('pretokenization_strategies', '[]')) if isinstance(self.manifest.get('pretokenization_strategies'), str) else self.manifest.get('pretokenization_strategies', []) 
-        if strategy_name not in strategies: 
-            raise SubMdatMissesStrategy
-        self.current_strategy = self.mdat.get_strategy(strategy_name)            
-        self._load_storage_db(_id=self.submdat_id,_type='strategy',strategy=strategy_name)
-        
-
-
-    def add_strategy_start(self, strategy_name: str, compression_level: int = 0, map_size: int = 1<<44, batch_size: int = 50000):
-        """
-        Begin of the process of adding a strategy.
-        It's important to call add_strategy_end after the Pretokenization process to be sure databases are closed, stats and manifest saved
-        """
-        if self.readonly:
-            raise MdatIsReadOnly 
-        self.current_strategy = self.mdat.get_strategy(strategy_name)
-        pretok_path = os.path.join(self.mdat.pretok_path, strategy_name, self.submdat_name)
-        os.makedirs(pretok_path, exist_ok=True)
-        
-        self.db.add_strategy_submdat(strategy_name, self.submdat_id) 
-        
-        self._load_storage_db(_id=self.submdat_id,_type='strategy',strategy=strategy_name)
-
+        #1. Check if the requested strategy is associated with the submdat
+        if len(self.db.get_strategy_submdats(strategy_name=strategy_name,submdat_id=self.submdat_id))==0:
+            if add:
+                """
+                Begin of the process of adding a strategy.
+                It's important to call add_strategy_end after the Pretokenization process to be sure databases are closed, stats and manifest saved
+                """
+                print(f"Adding {strategy_name} to {self.submdat_name}")
+                self.db.add_strategy_submdat(strategy_name, self.submdat_id)
+                pretok_path = os.path.join(self.mdat.pretok_path, strategy_name, self.submdat_name)
+                os.makedirs(pretok_path, exist_ok=True)
+                self.current_strategy=PretokenizationStrategy(db=self.db,strategy_name=strategy_name,pretok_path=self.mdat.pretok_path,functions_path=self.mdat.functions_path)
+                self._load_storage_db(_id=self.submdat_id,_type='strategy',strategy=strategy_name,create=True,compression_level=compression_level,map_size=map_size,batch_size=batch_size)
+            else:
+                raise SubMdatMissesStrategy
+        else:
+            #2. Load the strategy
+            self.current_strategy = self.mdat.current_strategy
+            #3. Load the strategy's storage db(s)
+            self._load_storage_db(_id=self.submdat_id,_type='strategy',strategy=strategy_name,create=False)
+     
     def add_strategy_end(self, strategy_name, stats: dict[str, Any]):
         if self.readonly:
             raise MdatIsReadOnly
@@ -1854,26 +1873,31 @@ class SubMdat:
         for i, precomp_len in enumerate(stats.get('precomputed_lengths', [])): 
             if precomp_len > 0: 
                 self.db.set_strategy_submdat_precomp(strategy_name, self.submdat_id, i, precomp_len) 
-      
+        # Update database's disk size in database_ref
+        print("ADD Update database's disk size in database_ref, STILL MISSING (EASY), FOR NOW, EDIT THE SQLITE AND ADD THE DISK SIZE")
     def get_current_strategy(self):
         return self.current_strategy
 
-    def pretokenize_submdat(self, strategy_name,progress_bar=True, compression_level=0, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000):
+    def pretokenize_submdat(self, strategy_name,progress_bar=True, compression_level=0, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000, map_size=1<<40,disk_size_multiplier=4):
 
-        max_multiplier = 100     #Precompute 100 times the base sequence length   
-        
+        max_multiplier = 100     #Precompute 100 times the base sequence length     
         # 1. Start adding the strategy to the submdat
-        self.add_strategy_start(strategy_name=strategy_name, compression_level=compression_level)
-        strategy=self.mdat.get_strategy(strategy_name)
+        # Inferred map_size = 4 times the data db size
+        data_disk_size=self.db.get_submdat_info(submdat_id=self.submdat_id)['raw_data_bytes']
+        inferred_map_size=data_disk_size*disk_size_multiplier
+        print(f"Original data size is f{data_disk_size}. A multiplier of {disk_size_multiplier} is set to initialize the pretokenization storage dataset(s). If this value ({inferred_map_size}) is too large, you'll get memory errors, if too small, pretokenization will not fit the database. Adjust this value in case of problems.")
+        map_size=inferred_map_size
+        self.set_strategy(strategy_name=strategy_name, compression_level=compression_level, add=True, map_size=map_size)
+        strategy=self.current_strategy
         # Initialize stats
         stats = {
             'total_tokens': 0,
             'max_tokens_per_doc': 0,
             'total_chunks': 0,
             'max_chunks_per_doc': 0,
-            'processed_docs': 0
+            'processed_docs': 0,
+            'precomputed_lengths':[0] * (int(max_multiplier)+1),
         }
-        
         # 4. Initialize the splitter
         # 5. What does the splitter wants from Submdats'databases? [Default: raw_data]
         # 6. Initialize the generator
@@ -1951,13 +1975,13 @@ class SubMdat:
             # PARALLEL VERSION
             if num_processes is None:
                 num_processes = mp.cpu_count()
-
+            self.current_strategy._initialize_components()
             def process_batch_and_write(batch_data, stats):
                 """Process a batch and write results to databases."""
                 sub_batches = [batch_data[i:i+batch_size] for i in range(0, len(batch_data), batch_size)]
                 
                 results = pool.starmap(process_documents_batch, [
-                    (sub_batch, self.mdat.pretok_path, self.mdat.functions_path, strategy_name, 
+                    (sub_batch,self.current_strategy.manifest, self.mdat.pretok_path, self.mdat.functions_path, strategy_name, 
                      chunking_strict_checks, strategy.chunk_size, strategy.returns, max_multiplier)
                     for sub_batch in sub_batches
                 ])
@@ -2028,9 +2052,12 @@ class SubMdat:
                               files_metadata_type='multiple_json', csv_has_header=False, csv_data_field=0,
                               hf_split='train', hf_subdataset=None,
         """
+        inferred_map_size=None
         if dataset_type == 'jsonl':
             #from datasets_iterators import JSONIterator
             generator_fn = JSONIterator(json_path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger)
+            file_size=os.path.getsize(dataset_path)
+            inferred_map_size=file_size*1.2
         elif dataset_type == 'lmdb':
             #from datasets_iterators import LMDBIterator
             generator_fn = LMDBIterator(dataset_path, dataset_args, data_key, progress_bar=progress_bar, logger=logger)
@@ -2048,7 +2075,12 @@ class SubMdat:
             error = f"Unsupported dataset type: {dataset_type}"
             logger_fn.error(error)
             return error
-            
+        
+        print(f"Inferred size of the input file: {inferred_map_size}. Reloading the DB with the appropriate size. ")
+        if inferred_map_size:
+            self.default_map_size=inferred_map_size
+            self._close_storage_dbs(_type='storage')
+            self._load_storage_db(_id=self.submdat_id,load_all=True)
         # Initialize stats (error stats and raw size stats)
         errors_counters = dict()  
         errors_counters['hasDataError'] = 0 
@@ -2141,6 +2173,7 @@ class SubMdat:
         return partial_manifest
        
 def get_datatype_for_numpy(datatype):
+	    print("DEBUG", datatype)
         if isinstance(datatype,int):
             datatype=str(datatype)
         if datatype=='8' or datatype=='uint8':
@@ -2178,12 +2211,12 @@ class RandomPermutator:
             return (self.a*i+self.b)%self.max_len
         else:
             raise Exception("Index out of range")       
-def process_documents_batch(sub_batch, pretoken_path, functions_path, strategy_name,
+def process_documents_batch(sub_batch,strategy_manifest, pretoken_path, functions_path, strategy_name,
                            chunking_strict_checks, chunk_size, strategy_returns, max_multiplier):
     """
     Worker function that processes documents and returns organized data by database type.
     """
-    strategy = PretokenizationStrategy(strategy_name=strategy_name, pretok_path=pretoken_path, functions_path=functions_path)
+    strategy = PretokenizationStrategy.from_dict(db=None,strategy_name=strategy_name, pretok_path=pretoken_path, functions_path=functions_path,strategy_dict=strategy_manifest)
     
     # Organize results by database type
     db_data = {db_name: [] for db_name in strategy_returns}
@@ -2503,7 +2536,7 @@ class PretokenizationStrategy:
         """Create configuration from dictionary."""
         required_keys = ['strategy_name', 'tokenizer_type', 'tokenizer_name', 
                         'splitter_class', 'splitter_init', 'modality',
-                        'chunk_size', 'wants_from_db', 'returns']
+                        'chunk_size', 'wants_from_db', 'returns','required_databases']
         
         for k in required_keys:
             if k not in strategy_dict.keys():
@@ -2527,35 +2560,36 @@ class PretokenizationStrategy:
         self.supports_batch = strategy_dict.get('supports_batch', False)        
         self.tokens_datatype = strategy_dict.get('tokens_datatype', None)
         self.chunks_datatype = strategy_dict.get('chunks_datatype', None)
-
+        self.required_databases=strategy_dict['required_databases']
+        self.manifest=strategy_dict
     def _load_configuration(self):
-        """Load strategy configuration from saved JSON file.""" 
-        manifest = self.db.get_manifest(strategy=self.strategy_name) 
-        if not manifest: 
-            raise StrategyNotFound(f"Strategy configuration not found: {self.strategy_name}") 
-        
-        strategy_dict = { 
-            'strategy_name': self.strategy_name, 
-            'tokenizer_type': manifest['tokenizer_type'], 
-            'tokenizer_name': manifest['tokenizer_name'], 
-            'tokenizer_args': json.loads(manifest['tokenizer_args']) if manifest.get('tokenizer_args') else {}, 
-            'bos_token_id': manifest.get('bos_token_id'), 
-            'eos_token_id': manifest.get('eos_token_id'), 
-            'mask_token_id': manifest.get('mask_token_id'), 
-            'splitter_class': manifest['splitter_class'], 
-            'splitter_init': json.loads(manifest['splitter_init']) if manifest.get('splitter_init') else {}, 
-            'splitter_arguments': json.loads(manifest['splitter_arguments']) if manifest.get('splitter_arguments') else None, 
-            'chunk_size': manifest['chunk_size'], 
-            'modality': json.loads(manifest['modality']) if manifest.get('modality') else 'text', 
-            'wants_from_db': json.loads(manifest['wants_from_db']) if manifest.get('wants_from_db') else [], 
-            'wants_raw': manifest.get('wants_raw', False), 
-            'returns': json.loads(manifest['returns']) if manifest.get('returns') else [], 
-            'tokens_datatype': manifest.get('tokens_datatype'), 
-            'chunks_datatype': manifest.get('chunks_datatype'), 
-            'supports_batch': manifest.get('supports_batch', False) 
-        } 
-        
-        self._create_from_dict(strategy_dict)
+        """Load strategy configuration from JSON fields in DB."""
+        manifest = self.db.get_manifest(strategy=self.strategy_name)
+        if not manifest:
+            raise StrategyNotFound(f"Strategy configuration not found: {self.strategy_name}")
+
+        json_defaults = {
+            'tokenizer_args': {},
+            'splitter_init': {},
+            'splitter_arguments': None,
+            'modality': "text",
+            'wants_from_db': [],
+            'returns': [],
+            'required_databases': []
+        }
+
+        for field, default in json_defaults.items():
+            value = manifest.get(field)
+            if value is None or not isinstance(value, str):
+                manifest[field] = default
+            else:
+                try:
+                    manifest[field] = json.loads(value)
+                except json.JSONDecodeError:
+                    manifest[field] = default
+
+        self._create_from_dict(manifest)
+
 
     def _initialize_components(self):
         """Initialize tokenizer and splitter components."""
@@ -2637,31 +2671,27 @@ class PretokenizationStrategy:
         raise SplitterClassNotFound(f"Splitter class '{class_name}' not found")
 
     def save(self):
-        """Save strategy configuration to JSON file.""" 
-        c = self.db.connect(check_same_thread=False).cursor() 
-        c.execute(""" 
-            INSERT OR REPLACE INTO pretok_strategy( 
-                strategy_name, modality, tokenizer_type, tokenizer_name, tokenizer_args, 
-                bos_token_id, eos_token_id, mask_token_id, splitter_class, splitter_init, 
-                splitter_arguments, chunk_size, wants_from_db, returns, required_databases 
-            ) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?) 
-        """, ( 
-            self.strategy_name, 
-            json.dumps(self.modality), 
-            self.tokenizer_type, 
-            self.tokenizer_name, 
-            json.dumps(self.tokenizer_args), 
-            getattr(self, 'bos_token_id', None), 
-            getattr(self, 'eos_token_id', None), 
-            getattr(self, 'mask_token_id', None), 
-            self.splitter_class, 
-            json.dumps(self.splitter_init), 
-            json.dumps(self.splitter_arguments) if self.splitter_arguments else None, 
-            self.chunk_size, 
-            json.dumps(self.wants_from_db), 
-            json.dumps(self.returns), 
-            json.dumps(self.returns) 
-        )) 
+        """Insert or update strategy configuration in the database."""
+        if self.db is not None:
+            manifest = self.manifest.copy()
+            manifest['strategy_name'] = self.strategy_name
+
+            for k, v in manifest.items():
+                # serialize dicts, lists, and tuples
+                if isinstance(v, (dict, list, tuple)):
+                    manifest[k] = json.dumps(v)
+                # bool to int
+                elif isinstance(v, bool):
+                    manifest[k] = int(v)
+
+            existing = self.db.get_manifest(strategy=self.strategy_name)
+            if existing:
+                self.db.update_manifest(manifest, strategy=self.strategy_name)
+            else:
+                self.db._insert("pretok_strategy", manifest)
+        else:
+            pass #This situation should happen only in multiprocessing mode
+
 
     def check_data_compatibility(self, db_names: List[str], modality: str) -> bool:
         """Check if strategy is compatible with given data characteristics."""
@@ -3585,7 +3615,7 @@ class InteractiveShell:
                             path=self.dataset_path,
                             submdat=name,
                             strategy=st,
-                            parallel=False, # Default to parallel for TUI
+                            parallel=True, # Default to parallel for TUI
                         )
                     else:
                         pause = False

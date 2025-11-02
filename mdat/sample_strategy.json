@@ -9,6 +9,7 @@
     "chunk_size":1024,
     "wants_from_db":["data"],
     "wants_raw":true,
-    "returns":["tokens","chunks"]
+    "returns":["tokens","chunks"],
+    "required_databases":["tokens","chunks"]
 }
 
