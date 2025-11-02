@@ -186,9 +186,7 @@ def train_sentencepiece(cfg: dict, dataset: MatformerDataset, save_path: Path):
         eos_id=3,
         train_extremely_large_corpus=True,
         input_sentence_size=cfg.get("input_sentence_size", 10000000),
-        shuffle_input_sentence=True,
-        verbose=True
-    )
+        shuffle_input_sentence=False)
 
     fast_tok = PreTrainedTokenizerFast(tokenizer_file=str(save_path / "spm.model"))
     fast_tok.save_pretrained(save_path)
