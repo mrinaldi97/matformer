@@ -171,10 +171,7 @@ def train_sentencepiece(cfg: dict, dataset: MatformerDataset, save_path: Path):
     model_type = 'bpe' if tokenizer_type == 'bpe' else 'unigram'
 
     spm.SentencePieceTrainer.Train(
-        sentence_iterator=(
-            doc if isinstance(doc, str) else str(doc)
-            for doc in tqdm(dataset, desc="Training SentencePiece", total=len(dataset))
-        ),
+        sentence_iterator=tq_it,
         model_prefix=str(save_path / "spm"),
         vocab_size=cfg["vocab_size"],
         model_type=model_type,
@@ -185,8 +182,10 @@ def train_sentencepiece(cfg: dict, dataset: MatformerDataset, save_path: Path):
         bos_id=2,
         eos_id=3,
         train_extremely_large_corpus=True,
-        input_sentence_size=cfg.get("input_sentence_size", 10000000),
-        shuffle_input_sentence=False)
+        input_sentence_size=0,
+        shuffle_input_sentence=False,
+        max_sentence_length=0,
+    )
 
     fast_tok = PreTrainedTokenizerFast(tokenizer_file=str(save_path / "spm.model"))
     fast_tok.save_pretrained(save_path)
