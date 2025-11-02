@@ -383,7 +383,8 @@ class MatformerDataset(IterableDataset):
                 
         # 8. Shuffling datasets' pointers
         with open(shuffle_path, 'wb') as f:
-            for idx in tqdm(range(totlen)):
+            pbar = tqdm(range(totlen))
+            for idx in pbar:
                 permuted_idx = permutator(idx)
                 loc_id = bisect_right(cu_dslens, permuted_idx) - 1
                 global_id = mapping[loc_id]
@@ -405,6 +406,19 @@ class MatformerDataset(IterableDataset):
                         accL+=1 
                         accB += len(self[ds_map[global_id]][doc_id]['data'])  
                         terminators[global_id] = (accL, accB, term, crit)  
+                    # Update progress bar with partial selection info
+                    has_byte_criteria = any(t[3]=='B' for t in terminators.values())
+                    has_doc_criteria = any(t[3]=='L' for t in terminators.values())
+                    postfix = {}
+                    if has_doc_criteria:
+                        total_docs = sum(t[0] for t in terminators.values() if t[3]=='L')
+                        target_docs = sum(t[2] for t in terminators.values() if t[3]=='L')
+                        postfix['docs'] = f'{total_docs}/{target_docs}'
+                    if has_byte_criteria:
+                        total_bytes = sum(t[1] for t in terminators.values() if t[3]=='B')
+                        target_bytes = sum(t[2] for t in terminators.values() if t[3]=='B')
+                        postfix['MB'] = f'{total_bytes/(1024**2):.1f}/{target_bytes/(1024**2):.1f}'
+                    pbar.set_postfix(postfix)
                     f.write(struct.pack(struct_format, global_id, doc_id))
                 else:
                     # Write everything
