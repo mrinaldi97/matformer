@@ -171,7 +171,10 @@ def train_sentencepiece(cfg: dict, dataset: MatformerDataset, save_path: Path):
     model_type = 'bpe' if tokenizer_type == 'bpe' else 'unigram'
 
     spm.SentencePieceTrainer.Train(
-        sentence_iterator=tq_it,
+        sentence_iterator=(
+            doc if isinstance(doc, str) else str(doc)
+            for doc in tqdm(dataset, desc="Training SentencePiece", total=len(dataset))
+        ),
         model_prefix=str(save_path / "spm"),
         vocab_size=cfg["vocab_size"],
         model_type=model_type,
