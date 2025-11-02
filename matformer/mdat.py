@@ -676,8 +676,8 @@ class MatformerDataset(IterableDataset):
         Args:
             num_workers: Number of workers to precompute for (should be highly composite)
         """
-        if 'chunked_tokens' not in self.current_strategy.returns:
-            raise ValueError(f"Current strategy '{self.current_strategy.strategy_name}' does not return chunked_tokens")
+        #if 'chunked_tokens' not in self.current_strategy.returns:
+        #    raise ValueError(f"Current strategy '{self.current_strategy.strategy_name}' does not return chunked_tokens")
         
         original_modality = self.current_iteration_modality
         self.set_iteration_modality('chunks')
