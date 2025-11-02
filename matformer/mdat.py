@@ -2619,10 +2619,11 @@ class PretokenizationStrategy:
         instance.functions_path = functions_path
         instance.on_the_fly_warning = False
         instance.on_the_fly_mode = True
-        if db==None:
-            instance._create_from_dict(strategy_dict)
+        # This part should be more elegant
+        if strategy_dict is not None:
+            instance._create_from_dict(strategy_dict) #Used for creation of a strategy and for parallel processing
         else:
-            instance._load_configuration()
+            instance._load_configuration() # Normal use. Config taken from the database
         instance.initialized = False
         return instance
     def _create_from_dict(self, strategy_dict: Dict[str, Any]):
