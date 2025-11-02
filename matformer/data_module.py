@@ -33,10 +33,11 @@ class MatformerDataModule(pl.LightningDataModule):
             ds_view=self.mdat_view,
             batch_size=self.batch_size
         )
+		if self.mdat_view is not None:
+			self.mdat.set_view(self.mdat_view)        
         if self.mdat_strategy is not None:
-            self.mdat.set_strategy(self.mdat_strategy) 
-        if self.max_seq_len is not None:
-            self.mdat.set_max_seq_len(self.max_seq_len)
+            self.mdat.set_strategy(self.mdat_strategy,max_seq_len=self.max_seq_len) 
+
         self.mdat.set_iteration_modality(self.iteration_modality, with_meta=self.with_meta)
         
     def collate_fn(self, batch):        
