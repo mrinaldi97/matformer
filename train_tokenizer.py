@@ -176,17 +176,13 @@ def train_sentencepiece(cfg: dict, dataset: MatformerDataset, save_path: Path):
             f.write(text.replace("\n", " ") + "\n")
 
     spm.SentencePieceTrainer.Train(
-        input=str(input_file),
-        model_prefix=str(save_path / "spm"),
-        vocab_size=cfg['vocab_size'],
-        model_type=model_type,
-        unk_id=0,
-        pad_id=1,
-        bos_id=2,
-        eos_id=3,
-        user_defined_symbols=cfg.get("special_extra_tokens", []),
-        character_coverage=cfg.get("character_coverage", 0.9995),
+        f"--input={input_file} --model_prefix={save_path / 'spm'} "
+        f"--vocab_size={cfg['vocab_size']} --model_type={model_type} "
+        f"--character_coverage={cfg.get('character_coverage', 0.9995)} "
+        f"--user_defined_symbols={','.join(cfg.get('special_extra_tokens', []))} "
+        f"--unk_id=0 --pad_id=1 --bos_id=2 --eos_id=3 --verbose"
     )
+
 
     fast_tok = PreTrainedTokenizerFast(tokenizer_file=str(save_path / "spm.model"))
     fast_tok.save_pretrained(save_path)
