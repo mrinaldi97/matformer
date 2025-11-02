@@ -669,6 +669,49 @@ class MatformerDataset(IterableDataset):
         self._active_view_shuffled = view_meta.get('shuffle_struct_format') is not None 
         # Load the actual submdats
         self._populate_submdat()
+    def precompute_chunks_distributed(self, num_workers=60):
+        """
+        Precompute chunk counts for distributed training.
+        
+        Args:
+            num_workers: Number of workers to precompute for (should be highly composite)
+        """
+        if 'chunked_tokens' not in self.current_strategy.returns:
+            raise ValueError(f"Current strategy '{self.current_strategy.strategy_name}' does not return chunked_tokens")
+        
+        original_modality = self.current_iteration_modality
+        self.set_iteration_modality('chunks')
+        
+        worker_chunk_counts = [0] * num_workers
+        self.__iter__()
+        doc_index = 0
+        
+        try:
+            while True:
+                doc = next(self)
+                worker_id = doc_index % num_workers
+                num_chunks = len(doc['chunks'])
+                chunks_yielded = num_chunks // self.chunk_multiplier
+                worker_chunk_counts[worker_id] += chunks_yielded
+                doc_index += 1
+        except StopIteration:
+            pass
+        
+        self.set_iteration_modality(original_modality)
+        
+        self._store_distributed_precomputed_length(
+            view_name=self.current_view,
+            strategy_name=self.current_strategy.strategy_name,
+            num_workers=num_workers,
+            worker_chunk_counts=worker_chunk_counts
+        )
+        
+        return {
+            'num_workers': num_workers,
+            'total_chunks': sum(worker_chunk_counts),
+            'min_chunks': min(worker_chunk_counts),
+            'max_chunks': max(worker_chunk_counts)
+        }        
     def load_next_document(self, shuffled=True) -> None:
         """Load next document."""
         if shuffled and not getattr(self, '_active_view_shuffled', None):
@@ -761,36 +804,77 @@ class MatformerDataset(IterableDataset):
             self._shuffle_file.seek(0)
         
         return self
-
     def __next__(self):
-        if self.current_iteration_modality in ['document','tokens','chunks']:
-            self.load_next_document()
-            return self.current_document         
-        elif self.current_iteration_modality == 'chunked_tokens':
-            # current chunk step contains the chunk we are taking in the current document
-            if not hasattr(self, 'current_chunk_step'):
-                self.current_chunk_step = 0
-                self.current_document = None
-            
-            while True:
-                # Load document if exhausted
-                if (self.current_document is None or 
-                    'chunked_tokens' not in self.current_document or
-                    self.current_chunk_step >= len(self.current_document['chunked_tokens'])):
-                    self.load_next_document()
+        if self.dist:
+            if not hasattr(self, '_iteration_count'):
+                self._iteration_count = 0
+            if self._iteration_count >= len(self):
+                raise StopIteration
+        try:
+            if self.current_iteration_modality in ['document','tokens','chunks']:
+                self.load_next_document()
+                return self.current_document         
+            elif self.current_iteration_modality == 'chunked_tokens':
+                if not hasattr(self, 'current_chunk_step'):
                     self.current_chunk_step = 0
+                    self.current_document = None
                 
-                chunks = self.current_document['chunked_tokens']
-                end_step = min(self.current_chunk_step + self.chunk_multiplier, len(chunks))
-                if end_step > self.current_chunk_step:
-                    selected_chunks = chunks[self.current_chunk_step:end_step]
-                    self.current_chunk_step = end_step
-                    chunk = np.concatenate(selected_chunks).tolist()
-                    if getattr(self, 'max_seq_len', None) is not None:
-                        if len(chunk) > self.max_seq_len:
-                            print(f"WARNING: A sequence is longer than max length ({len(chunk)} > {self.max_seq_len}) and it's truncated")
-                            chunk = chunk[:self.max_seq_len]
-                    return chunk
+                while True:
+                    if (self.current_document is None or 
+                        'chunked_tokens' not in self.current_document or
+                        self.current_chunk_step >= len(self.current_document['chunked_tokens'])):
+                        self.load_next_document()
+                        self.current_chunk_step = 0
+                    
+                    chunks = self.current_document['chunked_tokens']
+                    end_step = min(self.current_chunk_step + self.chunk_multiplier, len(chunks))
+                    if end_step > self.current_chunk_step:
+                        selected_chunks = chunks[self.current_chunk_step:end_step]
+                        self.current_chunk_step = end_step
+                        chunk = np.concatenate(selected_chunks).tolist()
+                        if getattr(self, 'max_seq_len', None) is not None:
+                            if len(chunk) > self.max_seq_len:
+                                print(f"WARNING: A sequence is longer than max length ({len(chunk)} > {self.max_seq_len}) and it's truncated")
+                                chunk = chunk[:self.max_seq_len]
+                        result = chunk
+                        break
+            
+            if self.dist:
+                self._iteration_count += 1
+                self._last_item = result
+            return result
+        
+        except StopIteration:
+            if self.dist:
+                self._iteration_count += 1
+                
+                # Check padding mode flag (default to recycle last item)
+                use_pad_token = getattr(self, 'padding_use_pad_token', False)
+                
+                if use_pad_token:
+                    # Create padding item on first use
+                    if not hasattr(self, '_padding_item'):
+                        if self.current_iteration_modality == 'chunked_tokens':
+                            pad_len = getattr(self, 'max_seq_len', 512)
+                            self._padding_item = [self.current.strategy.pad_token_id] * pad_len
+                        else:
+                            # For document/tokens mode, create empty padding
+                            self._padding_item = {'padding': True}
+                    return self._padding_item
+                else:
+                    # Use last real item
+                    if hasattr(self, '_last_item'):
+                        return self._last_item
+                    else:
+                        # Fallback if no last item cached
+                        if self.current_iteration_modality == 'chunked_tokens':
+                            pad_len = getattr(self, 'max_seq_len', 512)
+                            return [self.current.strategy.pad_token_id] * pad_len
+                        else:
+                            return {'padding': True}
+            else:
+                raise
+
 
     def set_iteration_modality(self, modality, with_meta=False, return_raw=False, add_special_tokens=True):
         supported_modalities = ['document', 'tokens', 'chunked_tokens', 'strategy_default','chunks']
@@ -943,7 +1027,25 @@ class MatformerDataset(IterableDataset):
         2) If a view is specified, it computes the length according to the view
         3) If a pretokenization strategy is set, it returns the number of chunks according to max_seq_len (necessary for model training)
         """
-        return self.len
+        if self.dist and self.current_iteration_modality == 'chunked_tokens':
+            try:
+                # Get this worker's actual length
+                this_worker_length = self.get_worker_length_distributed(self.world_size, self.rank_size)
+                
+                # Broadcast maximum across all workers so everyone agrees
+                import torch.distributed as dist
+                length_tensor = torch.tensor([this_worker_length], dtype=torch.long).cuda()
+                dist.all_reduce(length_tensor, op=dist.ReduceOp.MAX)
+                max_length = length_tensor.item()
+                
+                return max_length
+            except ValueError:
+                # Precompute
+                print("I need to precompute lengths for an incompatible workers set up")
+                self.precompute_chunks_distributed(self.world_size)
+                return self.__len__() 
+        else:
+            return self.len
 # Exceptions
 if True:
      #This "if True" is just to easily collapse the exceptions in my editor, will be removed
@@ -1255,7 +1357,32 @@ class DatabaseManager:
             PRIMARY KEY (view_name, submdat_id)      
         );
         """)
+        # Table "PRETOK_STRATEGY-VIEW-DISTRIBUTED-LENGTH"
+        # * Precomputed chunk counts for distributed training configurations
+        #     strategy_name //linked to strategy
+        #     view_name //linked to view
+        #     num_workers //INT number of workers this was precomputed for
+        #     worker_id //INT the worker rank (0 to num_workers-1)
+        #     chunk_count //LONGINT number of chunks this worker processes
+        cur.execute("""
+        CREATE TABLE IF NOT EXISTS pretok_strategy_view_distributed_length (
+            strategy_name TEXT NOT NULL,
+            view_name TEXT NOT NULL,
+            num_workers INTEGER NOT NULL CHECK (num_workers > 0),
+            worker_id INTEGER NOT NULL CHECK (worker_id >= 0),
+            chunk_count INTEGER NOT NULL CHECK (chunk_count >= 0),
+            PRIMARY KEY (strategy_name, view_name, num_workers, worker_id),
+            FOREIGN KEY (strategy_name) REFERENCES pretok_strategy(strategy_name) ON DELETE CASCADE,
+            FOREIGN KEY (view_name) REFERENCES view(view_name) ON DELETE CASCADE,
+            CHECK (worker_id < num_workers)
+        );
+        """)
 
+        # Add index
+        cur.execute("""
+        CREATE INDEX IF NOT EXISTS idx_pretok_distributed_lookup 
+        ON pretok_strategy_view_distributed_length(view_name, strategy_name, num_workers);
+        """)
         # Indexes to speed up common access patterns
         cur.execute("CREATE INDEX IF NOT EXISTS idx_submdat_dsmap ON submdat(ds_map_id);")
         cur.execute("CREATE INDEX IF NOT EXISTS idx_submdat_name ON submdat(name);")
@@ -1633,7 +1760,97 @@ class DatabaseManager:
         if not r:
             return {'document_number': 0, 'bytes_criteria': 0}
         return {'document_number': int(r[0] or 0), 'bytes_criteria': int(r[1] or 0)}
+    def _store_distributed_precomputed_length(self, view_name, strategy_name, num_workers, worker_chunk_counts):
+        """
+        Store precomputed chunk counts for distributed training.
+        
+        Args:
+            view_name: Name of the view
+            strategy_name: Name of the pretokenization strategy
+            num_workers: Number of workers this was precomputed for
+            worker_chunk_counts: List of chunk counts, one per worker
+        """
+        conn = self.db.connect()
+        cur = conn.cursor()
+        
+        # Delete existing entries
+        cur.execute("""
+            DELETE FROM pretok_strategy_view_distributed_length 
+            WHERE view_name = ? AND strategy_name = ? AND num_workers = ?
+        """, (view_name, strategy_name, num_workers))
+        
+        # Insert new entries
+        for worker_id, chunk_count in enumerate(worker_chunk_counts):
+            cur.execute("""
+                INSERT INTO pretok_strategy_view_distributed_length 
+                (view_name, strategy_name, num_workers, worker_id, chunk_count)
+                VALUES (?, ?, ?, ?, ?)
+            """, (view_name, strategy_name, num_workers, worker_id, chunk_count))
+        
+        conn.commit()
+        print(f"Stored precomputed lengths for {num_workers} workers in database")
 
+
+    def get_worker_length_distributed(self, target_num_workers, target_worker_id):
+        """
+        Get the precomputed chunk count for a specific worker.
+        If exact match exists, return it. If precomputed for a multiple, calculate from that.
+        
+        Args:
+            target_num_workers: Number of workers in current training setup
+            target_worker_id: ID of this worker (rank)
+        
+        Returns:
+            int: Number of chunks this worker should process
+        """
+        view_name = self.current_view
+        strategy_name = self.current_strategy.strategy_name
+        
+        conn = self.db.connect()
+        cur = conn.cursor()
+        
+        # Try exact match first
+        result = cur.execute("""
+            SELECT chunk_count FROM pretok_strategy_view_distributed_length
+            WHERE view_name = ? AND strategy_name = ? 
+            AND num_workers = ? AND worker_id = ?
+        """, (view_name, strategy_name, target_num_workers, target_worker_id)).fetchone()
+        
+        if result:
+            return result[0]
+        
+        # No exact match - try to find a precomputed multiple
+        available = cur.execute("""
+            SELECT DISTINCT num_workers FROM pretok_strategy_view_distributed_length
+            WHERE view_name = ? AND strategy_name = ?
+            ORDER BY num_workers DESC
+        """, (view_name, strategy_name)).fetchall()
+        
+        for (precomputed_workers,) in available:
+            if precomputed_workers % target_num_workers == 0:
+                # We can derive target from this precomputed configuration
+                print(f"Deriving {target_num_workers} workers from precomputed {precomputed_workers} workers")
+                
+                # Fetch all worker counts from the precomputed configuration
+                precomputed_counts = cur.execute("""
+                    SELECT worker_id, chunk_count FROM pretok_strategy_view_distributed_length
+                    WHERE view_name = ? AND strategy_name = ? AND num_workers = ?
+                    ORDER BY worker_id
+                """, (view_name, strategy_name, precomputed_workers)).fetchall()
+                
+                # Sum the relevant workers
+                total = 0
+                for worker_id, chunk_count in precomputed_counts:
+                    if worker_id % target_num_workers == target_worker_id:
+                        total += chunk_count
+                
+                return total
+        
+        raise ValueError(
+            f"No precomputed length found for {target_num_workers} workers. "
+            f"Available configurations: {[w[0] for w in available]}. "
+            f"Please run precompute_chunks_distributed() with a number divisible by {target_num_workers}"
+        )
 
         
 class SubMdat:
