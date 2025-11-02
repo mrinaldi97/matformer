@@ -3431,7 +3431,7 @@ def cmd_export_view_data(
     ds: Optional[MatformerDataset] = None
 ):
     ds = ds or MatformerDataset.load_dataset(path, readonly=True)
-    ds.export_view(output_file=output, wanted=wanted, with_meta=with_meta, limiter=limiter)
+    ds.export_view(output_file=output, wanted=wanted, with_meta=with_meta, limiter=limiter, view=view)
     return f"View exported to '{output}'"
 
 def cmd_shuffle_view(path: str, view: str, ds: Optional[MatformerDataset] = None):
