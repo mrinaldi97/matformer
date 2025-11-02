@@ -864,7 +864,41 @@ class MatformerDataset(IterableDataset):
                 self.current_strategy = None 
             except Exception as e:
                print(e)
+    def export_view(self,output_file,view_name='default',wanted='document',data_field_name='text',with_meta=True,limiter=None):
+        """
+        A function (WIP) to export all the documents from a view into an output file
+        Currently supports only documents (with/without metadata) and JSONL output.
+        
+        """
+        from tqdm import tqdm
+        import orjson
 
+        self.set_view(view_name)
+        self._reset_document_pointer()
+        self.set_iteration_modality(wanted, with_meta=with_meta)
+
+        counter=0
+        with open(output_file, "wb") as f:
+            for item in tqdm(self):
+                if limiter:
+                    counter+=1
+                    if counter>limiter:
+                        return 0
+                data = {
+                    "group": item['submdat_name'],
+                    data_field_name: item['data']
+                }
+
+                if with_meta:
+                    # Metadata is without "submdat_name" and "data"
+                    meta = {k: v for k, v in item.items() if k not in ('submdat_name', 'data')}
+                    data["meta"] = meta
+
+                f.write(orjson.dumps(data))
+                f.write(b"\n")
+                
+            
+        
     def __str__(self):
         stringa = ""
         stringa += ("\n---- Matformer Dataset ----")
@@ -1578,6 +1612,7 @@ class DatabaseManager:
         return {'document_number': int(r[0] or 0), 'bytes_criteria': int(r[1] or 0)}
 
 
+        
 class SubMdat:
     def __init__(self, parent_mdat: 'MatformerDataset', submdat_name: str) -> None:
         """Initialize SubMdat instance."""
@@ -3385,7 +3420,19 @@ def cmd_set_view(path: str, view: str, ds: Optional[MatformerDataset] = None):
     ds = ds or MatformerDataset.load_dataset(path, readonly=False)
     ds.set_view(view)
     return f"Active view set to '{view}'"
-
+    
+def cmd_export_view_data(
+    path: str,
+    view: str = "default",
+    output: str = "export_view.jsonl",
+    wanted: str = "document",
+    with_meta: bool = True,
+    limiter: Optional[int] = None,
+    ds: Optional[MatformerDataset] = None
+):
+    ds = ds or MatformerDataset.load_dataset(path, readonly=True)
+    ds.export_view(output_file=output, wanted=wanted, with_meta=with_meta, limiter=limiter)
+    return f"View exported to '{output}'"
 
 def cmd_shuffle_view(path: str, view: str, ds: Optional[MatformerDataset] = None):
     ds = ds or MatformerDataset.load_dataset(path, readonly=False)
@@ -3793,8 +3840,14 @@ class InteractiveShell:
             
             if pause:
                 self._pause()
-
+    def _pick_view(self, prompt_msg="Select a view"):
+            views = [v[0] for v in cmd_list_views(self.dataset_path, ds=self.ds)]
+            if not views:
+                print("\nNo views available.")
+                return None
+            return self.pick(views, prompt_msg)
     def view_menu(self):
+
         while True:
             self._clear()
             print(f"--- View Operations [{self.dataset_path}] ---")
@@ -3803,6 +3856,7 @@ class InteractiveShell:
             print("3. Create from JSON")
             print("4. Set active")
             print("5. Shuffle")
+            print("6. Export data to file")
             print("0. Back to Main Menu")
 
             c = self.prompt("Select", cast=int)
@@ -3840,23 +3894,41 @@ class InteractiveShell:
                 else:
                     pause = False
             
-            elif c in [4, 5]: # Set or Shuffle
-                if True:
-                    views = [v[0] for v in cmd_list_views(self.dataset_path, ds=self.ds)]
-                    if not views:
-                        print("\nNo views to select.")
-                        pause = True
-                        continue
-                    
-                    action_str = "set" if c == 4 else "shuffle"
-                    v = self.pick(views, f"Select View to {action_str}")
-                    
-                    if v:
-                        func = cmd_set_view if c == 4 else cmd_shuffle_view
-                        self._call_cmd(func, path=self.dataset_path, view=v)
-                    else:
-                        pause = False
-                
+            elif c in [4, 5]:  # Set or Shuffle
+                v = self._pick_view(f"Select View to {'set' if c==4 else 'shuffle'}")
+                if v:
+                    func = cmd_set_view if c == 4 else cmd_shuffle_view
+                    self._call_cmd(func, path=self.dataset_path, view=v)
+                else:
+                    pause = False
+
+            elif c == 6:  
+                v = self._pick_view("Select View to export")
+                if not v:
+                    pause = False
+                    continue
+
+                out = self.prompt("Output file", "export_view.jsonl")
+                if not out:
+                    pause = False
+                    continue
+
+                wanted = self.pick(["document", "tokens", "chunked_tokens"], "Select item type")
+                with_meta = self.prompt("Include metadata? (y/n)", "y").lower() == "y"
+                limiter_raw = self.prompt("Limiter (max items, empty for no limit)", "")
+                limiter = int(limiter_raw) if limiter_raw.strip() else None
+
+                self._call_cmd(
+                    cmd_export_view_data,
+                    path=self.dataset_path,
+                    view=v,
+                    output=out,
+                    wanted=wanted,
+                    with_meta=with_meta,
+                    limiter=limiter
+                )
+                print(f"View '{v}' exported to {out}")
+                            
             
             else:
                 print("Invalid choice.")
@@ -3975,7 +4047,24 @@ def build_cli():
         default="mock_view.json",  # <-- UPDATED DEFAULT
         help="Output file name"
     )
-
+    p_export_view_data = sp.add_parser(
+        "export-view-stream",
+        parents=[path_parser],
+        help="Stream export the active view to JSONL (TB-scale, selectable metadata, type, and limiter)"
+    )
+    p_export_view_data.add_argument("--output", default="export_view.jsonl", help="Output file path")
+    p_export_view_data.add_argument(
+        "--wanted", default="document", choices=["document", "default"], help="Type of items to export"
+    )
+    p_export_view_data.add_argument(
+        "--view", type=str,default="default", help="View to export"
+    )
+    p_export_view_data.add_argument(
+        "--meta/--no-meta", dest="with_meta", default=True, help="Include metadata in export"
+    )
+    p_export_view_data.add_argument(
+        "--limiter", type=int, default=None, help="Maximum number of items to export"
+    )
     p_create_view = sp.add_parser(
         "create-view", parents=[path_parser], help="Create a view from JSON"
     )
@@ -4060,6 +4149,7 @@ def main(argv=None):
         "pretokenize": cmd_pretokenize,
         "pretokenize-batch": cmd_pretokenize_batch,  
         "export-view": cmd_export_view_template,
+        "export-view-data": cmd_export_view_data,
         "create-view": cmd_create_view,
         "list-views": cmd_list_views,
         "set-view": cmd_set_view,
