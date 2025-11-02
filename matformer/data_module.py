@@ -33,8 +33,8 @@ class MatformerDataModule(pl.LightningDataModule):
             ds_view=self.mdat_view,
             batch_size=self.batch_size
         )
-		if self.mdat_view is not None:
-			self.mdat.set_view(self.mdat_view)        
+        if self.mdat_view is not None:
+            self.mdat.set_view(self.mdat_view)        
         if self.mdat_strategy is not None:
             self.mdat.set_strategy(self.mdat_strategy,max_seq_len=self.max_seq_len) 
 
