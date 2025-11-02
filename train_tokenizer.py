@@ -94,9 +94,7 @@ class UnicodeRangeHelper:
                 continue
             spans = cls.UNICODE_RANGES[name]
             chars = []
-            # spans may contain multiple segments concatenated
             parts = spans.split("\\u") if "\\u" in spans else spans.split("\\U")
-            # More robust: parse pairs like r'\u0370-\u03FF'
             import re
             for match in re.finditer(r'\\u([0-9A-Fa-f]{4})-\\u([0-9A-Fa-f]{4})|\\U([0-9A-Fa-f]{8})-\\U([0-9A-Fa-f]{8})', spans):
                 if match.group(1) and match.group(2):
@@ -108,7 +106,6 @@ class UnicodeRangeHelper:
                 chars.extend([chr(cp) for cp in range(start, end + 1)])
             result[name] = chars
         return result
-
 def train_hf_tokenizer(cfg: dict, dataset: MatformerDataset, save_path: Path, initialize_vocab: bool):
     tokenizer_type = cfg['tokenizer_type'].lower()
     model = models.BPE() if tokenizer_type == "bpe" else models.Unigram()
@@ -118,21 +115,44 @@ def train_hf_tokenizer(cfg: dict, dataset: MatformerDataset, save_path: Path, in
 
     unicode_cfg = cfg.get('unicode_filtering', {})
     if unicode_cfg.get('enabled', False):
-        pattern = UnicodeRangeHelper.build_unicode_pattern(unicode_cfg.get('ranges', []))
+        pattern = UnicodeRangeHelper.build_unicode_pattern(
+            unicode_cfg.get('ranges', []),
+            unicode_cfg.get('include_whitespace', True),
+            unicode_cfg.get('include_digits', True),
+            unicode_cfg.get('include_punctuation', True)
+        )
         normalizer_list.append(normalizers.Replace(Regex(f'[^{pattern}]'), ''))
     if cfg.get('normalization', {}).get('nfc', True):
         normalizer_list.append(normalizers.NFC())
 
     tokenizer.normalizer = normalizers.Sequence(normalizer_list)
-    tokenizer.pre_tokenizer = pre_tokenizers.Metaspace(replacement='▁', prepend_scheme='always')
+
+    specials = cfg.get("special_extra_tokens", [])
+    if specials:
+        escaped = [re.escape(t) for t in specials]
+        pattern = "(" + "|".join(escaped) + ")"
+        tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
+            pre_tokenizers.Split(Regex(pattern), behavior="isolated"),
+            pre_tokenizers.Metaspace(replacement="▁", prepend_scheme="always")
+        ])
+    else:
+        tokenizer.pre_tokenizer = pre_tokenizers.Metaspace(replacement='▁', prepend_scheme='always')
+
     tokenizer.decoder = decoders.Metaspace(replacement='▁', prepend_scheme='always')
+
+    initial_alphabet = None
+    if initialize_vocab:
+        range_names = [r for r in unicode_cfg.get('ranges', []) if isinstance(r, str)]
+        forced_chars = UnicodeRangeHelper.collect_range_characters(range_names)
+        initial_alphabet = [c for chars in forced_chars.values() for c in chars]
 
     trainer_cls = trainers.BpeTrainer if tokenizer_type == "bpe" else trainers.UnigramTrainer
     trainer = trainer_cls(
         vocab_size=cfg['vocab_size'],
         show_progress=True,
-        special_tokens=cfg['special_tokens'],
-        unk_token=cfg['unk_token']
+        special_tokens=cfg['special_tokens'] + specials,
+        unk_token=cfg['unk_token'],
+        initial_alphabet=initial_alphabet
     )
 
     tokenizer.train_from_iterator(dataset, trainer, length=len(dataset))
@@ -168,12 +188,12 @@ def train_sentencepiece(cfg: dict, dataset: MatformerDataset, save_path: Path):
         character_coverage=cfg.get("character_coverage", 0.9995),
     )
 
-    # Optionally convert to Hugging Face format
     fast_tok = PreTrainedTokenizerFast(tokenizer_file=str(save_path / "spm.model"))
     fast_tok.save_pretrained(save_path)
 
 
-def train_tokenizer(config: Union[str, Path], save_path: Union[str, Path], seed: int = 27, mdat: Union[str, Path] = '', mdat_view: Optional[str] = None):
+def train_tokenizer(config: Union[str, Path], save_path: Union[str, Path], seed: int = 27,
+                    mdat: Union[str, Path] = '', mdat_view: Optional[str] = None, initialize_vocab: bool = False):
     seed_everything(seed)
     cfg = json.loads(Path(config).read_text())
     save_path = Path(save_path)
@@ -186,7 +206,7 @@ def train_tokenizer(config: Union[str, Path], save_path: Union[str, Path], seed:
 
     backend = cfg.get('tokenizer_backend', 'huggingface').lower()
     if backend == 'huggingface':
-        train_hf_tokenizer(cfg, dataset, save_path, initialize_vocab=cfg.get('initialize_vocab', False))
+        train_hf_tokenizer(cfg, dataset, save_path, initialize_vocab)
     elif backend == 'sentencepiece':
         train_sentencepiece(cfg, dataset, save_path)
     else:
@@ -200,8 +220,9 @@ def main():
     p.add_argument('--mdat', type=str, required=True)
     p.add_argument('--mdat-view', type=str)
     p.add_argument('--seed', type=int, default=27)
+    p.add_argument('--initialize-vocab', action='store_true', help='Force inclusion of Unicode ranges in vocab')
     args = p.parse_args()
-    train_tokenizer(args.config, args.save_path, args.seed, args.mdat, args.mdat_view)
+    train_tokenizer(args.config, args.save_path, args.seed, args.mdat, args.mdat_view, args.initialize_vocab)
 
 
 if __name__ == "__main__":
