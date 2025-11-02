@@ -754,12 +754,12 @@ class MatformerDataset(IterableDataset):
         # Reset the iteration (ex. for a new epoch)
         self.current_document = None
         self.current_chunk_step = 0
-        self.document_index = 0 
+        self.document_index = 0
+        self._iteration_count = 0
         
-        # Reset shuffle file
         if hasattr(self, '_shuffle_file') and self._shuffle_file is not None:
-            self._shuffle_file.seek(0)  
-    
+            self._shuffle_file.seek(0)
+        
         return self
 
     def __next__(self):
@@ -796,7 +796,7 @@ class MatformerDataset(IterableDataset):
                     return chunk
 
     def set_iteration_modality(self, modality, with_meta=False, return_raw=False, add_special_tokens=True):
-        supported_modalities = ['document', 'tokens', 'chunked_tokens', 'strategy_default']
+        supported_modalities = ['document', 'tokens', 'chunked_tokens', 'strategy_default','chunks']
         if modality in supported_modalities:
             self.current_iteration_modality = modality
         else:
@@ -809,6 +809,10 @@ class MatformerDataset(IterableDataset):
             wanted_from_strategy = ['tokens']
             wanted_from_dbs = []
             self.len = self.total_documents
+        elif modality == 'chunks':
+            wanted_from_strategy = ['chunks']
+            wanted_from_dbs = []
+            self.len = self.total_documents            
         elif modality == 'chunked_tokens':
             wanted_from_strategy = ['chunked_tokens']
             wanted_from_dbs = []
