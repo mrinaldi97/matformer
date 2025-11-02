@@ -3045,7 +3045,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             print(encoding)
         return tokenspans
     def trim_long_sequences(self, aligned_spans, maxlen):
-        print(maxlen)   
+        #print(maxlen)   
         new_aligned_spans = []
         
         for x in aligned_spans:
