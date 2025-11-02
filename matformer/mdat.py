@@ -828,7 +828,7 @@ class MatformerDataset(IterableDataset):
 
     def set_strategy(self, strategy_name, max_seq_len=None):
         #1. Load the strategy object
-        self.current_strategy = PretokenizationStrategy(db=self.db,strategy_name=strategy_name,pretok_path=self.pretok_path,functions_path=self.functions_path)
+        self.current_strategy = PretokenizationStrategy.from_dict(db=self.db,strategy_name=strategy_name,pretok_path=self.pretok_path,functions_path=self.functions_path)
         #2. Set the chunk multiplier
         """
         A method to set the multiplier based on the max. sequence length required by the model
@@ -2605,7 +2605,7 @@ class PretokenizationStrategy:
         self.initialized = False
 
     @classmethod
-    def from_dict(cls, db: 'DatabaseManager', pretok_path: str, functions_path: str, strategy_name: str, strategy_dict: Dict[str, Any]) -> 'PretokenizationStrategy': 
+    def from_dict(cls, db: 'DatabaseManager', pretok_path: str, functions_path: str, strategy_name: str, strategy_dict: Dict[str, Any]=None) -> 'PretokenizationStrategy': 
         """
         Create a new PretokenizationStrategy from a dictionary configuration.
         """
@@ -2616,8 +2616,10 @@ class PretokenizationStrategy:
         instance.functions_path = functions_path
         instance.on_the_fly_warning = False
         instance.on_the_fly_mode = True
-        
-        instance._create_from_dict(strategy_dict)
+        if db==None:
+			instance._create_from_dict(strategy_dict)
+		else:
+			instance._create_from_dict(db.get_manifest(strategy=strategy_name)
         instance.initialized = False
         return instance
     def _create_from_dict(self, strategy_dict: Dict[str, Any]):
