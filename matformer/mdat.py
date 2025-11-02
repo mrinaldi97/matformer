@@ -864,7 +864,7 @@ class MatformerDataset(IterableDataset):
                 self.current_strategy = None 
             except Exception as e:
                print(e)
-    def export_view(self,output_file,view_name='default',wanted='document',data_field_name='text',with_meta=True,limiter=None):
+    def export_view(self,output_file,view='default',wanted='document',data_field_name='text',with_meta=True,limiter=None):
         """
         A function (WIP) to export all the documents from a view into an output file
         Currently supports only documents (with/without metadata) and JSONL output.
@@ -873,7 +873,7 @@ class MatformerDataset(IterableDataset):
         from tqdm import tqdm
         import orjson
 
-        self.set_view(view_name)
+        self.set_view(view)
         self._reset_document_pointer()
         self.set_iteration_modality(wanted, with_meta=with_meta)
 
