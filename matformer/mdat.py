@@ -699,7 +699,7 @@ class MatformerDataset(IterableDataset):
         
         self.set_iteration_modality(original_modality)
         
-        self._store_distributed_precomputed_length(
+        self.ds._store_distributed_precomputed_length(
             view_name=self.current_view,
             strategy_name=self.current_strategy.strategy_name,
             num_workers=num_workers,
@@ -1030,7 +1030,7 @@ class MatformerDataset(IterableDataset):
         if self.dist and self.current_iteration_modality == 'chunked_tokens':
             try:
                 # Get this worker's actual length
-                this_worker_length = self.get_worker_length_distributed(self.world_size, self.rank_size)
+                this_worker_length = self.db.get_worker_length_distributed(self.world_size, self.rank_size)
                 
                 # Broadcast maximum across all workers so everyone agrees
                 import torch.distributed as dist
