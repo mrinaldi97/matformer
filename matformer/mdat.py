@@ -1770,7 +1770,7 @@ class DatabaseManager:
             num_workers: Number of workers this was precomputed for
             worker_chunk_counts: List of chunk counts, one per worker
         """
-        conn = self.db.connect()
+        conn = self.connect()
         cur = conn.cursor()
         
         # Delete existing entries
@@ -1806,7 +1806,7 @@ class DatabaseManager:
         view_name = self.current_view
         strategy_name = self.current_strategy.strategy_name
         
-        conn = self.db.connect()
+        conn = self.connect()
         cur = conn.cursor()
         
         # Try exact match first
