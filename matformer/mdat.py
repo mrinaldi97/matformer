@@ -1830,8 +1830,7 @@ class DatabaseManager:
         
         for (precomputed_workers,) in available:
             if precomputed_workers % target_num_workers == 0:
-                # We can derive target from this precomputed configuration
-                print(f"Deriving {target_num_workers} workers from precomputed {precomputed_workers} workers")
+
                 
                 # Fetch all worker counts from the precomputed configuration
                 precomputed_counts = cur.execute("""
