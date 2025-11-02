@@ -1030,7 +1030,8 @@ class MatformerDataset(IterableDataset):
         if self.dist and self.current_iteration_modality == 'chunked_tokens':
             try:
                 # Get this worker's actual length
-                this_worker_length = self.db.get_worker_length_distributed(self.world_size, self.rank_size)
+
+                this_worker_length = self.db.get_worker_length_distributed(target_num_workers=self.world_size, target_worker_id=self.rank_size, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name)
                 
                 # Broadcast maximum across all workers so everyone agrees
                 import torch.distributed as dist
@@ -1791,7 +1792,7 @@ class DatabaseManager:
         print(f"Stored precomputed lengths for {num_workers} workers in database")
 
 
-    def get_worker_length_distributed(self, target_num_workers, target_worker_id):
+    def get_worker_length_distributed(self, target_num_workers, target_worker_id, view_name, strategy_name):
         """
         Get the precomputed chunk count for a specific worker.
         If exact match exists, return it. If precomputed for a multiple, calculate from that.
@@ -1803,8 +1804,7 @@ class DatabaseManager:
         Returns:
             int: Number of chunks this worker should process
         """
-        view_name = self.current_view
-        strategy_name = self.current_strategy.strategy_name
+
         
         conn = self.connect()
         cur = conn.cursor()
