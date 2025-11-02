@@ -2623,6 +2623,7 @@ class PretokenizationStrategy:
         instance.initialized = False
         return instance
     def _create_from_dict(self, strategy_dict: Dict[str, Any]):
+        self.manifest = strategy_dict
         """Create configuration from dictionary."""
         required_keys = ['strategy_name', 'tokenizer_type', 'tokenizer_name',
                          'splitter_class', 'splitter_init', 'modality',
