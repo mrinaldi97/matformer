@@ -89,7 +89,7 @@ class MatformerDataset(IterableDataset):
         instance = cls()
         instance._set_paths(path)
         instance.readonly = readonly
-        
+        instance.dist=None
         if instance._mdat_exists(instance.db_path): 
             instance.db = DatabaseManager(instance.db_path) 
             instance.db.connect() 
@@ -97,6 +97,8 @@ class MatformerDataset(IterableDataset):
             instance.pretok_strategies = {}
             if distributed:       
                 instance._set_distributed_training()
+            else:
+                instance.dist=None
             if ds_view is not None:
                 instance.set_view(ds_view)
             else:
@@ -1737,7 +1739,7 @@ class SubMdat:
                 db_path = os.path.join(self.submdat_path, db_type) + '.dat'
                 self.storage_db[db_type] = _create_lmdb(db_path, dbs['compression_level'], _get_map_size(dbs))
         else: #type=='pretok'
-            assert map_size is not None,"Map size should be specified when creating a new strategy's storage DB"
+            
             pretok_path = os.path.join(self.mdat.pretok_path, strategy, self.submdat_name)
             os.makedirs(pretok_path, exist_ok=True)
             self.pretok_db = {}
@@ -1757,6 +1759,7 @@ class SubMdat:
                 db_pointer = _create_lmdb(db_path, comp_level, map_size, batch_size or 50000)
                 
                 if create:
+                    assert map_size is not None,"Map size should be specified when creating a new strategy's storage DB"
                     db_id = self.db.add_database(_type='LMDB', compression_level=comp_level, map_size=_map_size, disk_size=disk_size, extra_data=extra_data)
                     is_tokens = 1 if db_name == 'tokens' else 0
                     is_chunks = 1 if db_name == 'chunks' else 0

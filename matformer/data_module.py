@@ -11,7 +11,7 @@ from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, 
 class MatformerDataModule(pl.LightningDataModule):
     def __init__(self, mdat_path: str, iteration_modality, pad_token_id: int, 
                  varlen_strategy='unpadding', with_meta=False, max_seq_len=None, 
-                 mdat_strategy=None, mdat_view=None, batch_size=None):
+                 mdat_strategy=None, mdat_view=None, batch_size=None,distributed=True):
         super().__init__()
         self.mdat_path = mdat_path
         self.iteration_modality = iteration_modality
