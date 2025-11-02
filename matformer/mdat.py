@@ -699,7 +699,7 @@ class MatformerDataset(IterableDataset):
         
         self.set_iteration_modality(original_modality)
         
-        self.ds._store_distributed_precomputed_length(
+        self.db._store_distributed_precomputed_length(
             view_name=self.current_view,
             strategy_name=self.current_strategy.strategy_name,
             num_workers=num_workers,
