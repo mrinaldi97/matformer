@@ -2625,7 +2625,7 @@ class PretokenizationStrategy:
         required_keys = ['strategy_name', 'tokenizer_type', 'tokenizer_name',
                          'splitter_class', 'splitter_init', 'modality',
                          'chunk_size', 'wants_from_db', 'returns', 'required_databases']
-
+        self.initialized=False
         for k in required_keys:
             if k not in strategy_dict.keys():
                 raise MissingStrategyKey(f"Missing required key: {k}")
@@ -2720,7 +2720,7 @@ class PretokenizationStrategy:
     def _initialize_components(self):
         """Initialize tokenizer and splitter components."""
         sys.path.append('../') #DIRTY stuff to load matformertokenizer
-        if not self.initialized:
+        if self.initialized==False:
             from matformer.matformer_tokenizers import MatformerTokenizer
             self.tokenizer = MatformerTokenizer(
                 tokenizer_type=self.tokenizer_type, 
