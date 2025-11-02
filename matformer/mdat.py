@@ -763,12 +763,9 @@ class MatformerDataset(IterableDataset):
         return self
 
     def __next__(self):
-        if self.current_iteration_modality == 'document':
+        if self.current_iteration_modality in ['document','tokens','chunks']:
             self.load_next_document()
-            return self.current_document
-        elif self.current_iteration_modality == 'tokens':
-            self.load_next_document()
-            return self.current_document
+            return self.current_document         
         elif self.current_iteration_modality == 'chunked_tokens':
             # current chunk step contains the chunk we are taking in the current document
             if not hasattr(self, 'current_chunk_step'):
