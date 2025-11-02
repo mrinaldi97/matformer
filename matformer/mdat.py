@@ -2173,7 +2173,6 @@ class SubMdat:
         return partial_manifest
        
 def get_datatype_for_numpy(datatype):
-	    print("DEBUG", datatype)
         if isinstance(datatype,int):
             datatype=str(datatype)
         if datatype=='8' or datatype=='uint8':
@@ -3277,6 +3276,46 @@ def cmd_pretokenize(
     )
     return "Pretokenization complete"
 
+def cmd_pretokenize_batch(
+    path: str,
+    submdats: Sequence[str],
+    strategy: str,
+    parallel: bool = False,
+    processes: Optional[int] = None,
+    compression: int = 0,
+    ds: Optional[MatformerDataset] = None,
+):
+    """Pretokenize multiple submdats with the same strategy."""
+    ds = ds or MatformerDataset.load_dataset(path, readonly=False)
+    
+    results = []
+    failed = []
+    
+    for submdat_name in submdats:
+        try:
+            print(f"\nPretokenizing '{submdat_name}' with strategy '{strategy}'...")
+            sub = ds.get_submdat(submdat_name)
+            sub.pretokenize_submdat(
+                strategy,
+                progress_bar=True,
+                parallel=parallel,
+                num_processes=processes,
+                compression_level=compression,
+            )
+            results.append(submdat_name)
+            print(f"✓ Completed: {submdat_name}")
+        except Exception as e:
+            failed.append((submdat_name, str(e)))
+            print(f"✗ Failed: {submdat_name} - {e}")
+    
+    summary = f"\nBatch pretokenization complete: {len(results)}/{len(submdats)} succeeded"
+    if failed:
+        summary += f"\nFailed ({len(failed)}):"
+        for name, err in failed:
+            summary += f"\n  - {name}: {err}"
+    
+    return summary
+
 def cmd_export_view_template(path: str, output: str = "mock_view.json", ds: Optional[MatformerDataset] = None):
 
     ds = ds or MatformerDataset.load_dataset(path, readonly=True)
@@ -3524,7 +3563,8 @@ class InteractiveShell:
             print("2. Add")
             print("3. Batch import folder")
             print("4. Convert external data")
-            print("5. Pretokenize")
+            print("5. Pretokenize (single)")
+            print("6. Pretokenize (batch)")  # NEW OPTION
             print("0. Back to Main Menu")
             
             c = self.prompt("Select", cast=int)
@@ -3595,7 +3635,7 @@ class InteractiveShell:
                 else:
                     pause = False
             
-            elif c == 5:
+            elif c == 5:  # Single pretokenize
                 subs = cmd_list_submdats(self.dataset_path, ds=self.ds)
                 if not subs:
                     print("No submdats to pretokenize.")
@@ -3615,12 +3655,79 @@ class InteractiveShell:
                             path=self.dataset_path,
                             submdat=name,
                             strategy=st,
-                            parallel=True, # Default to parallel for TUI
+                            parallel=True,
                         )
                     else:
                         pause = False
                 else:
                     pause = False
+            
+            elif c == 6:  # NEW: Batch pretokenize
+                subs = cmd_list_submdats(self.dataset_path, ds=self.ds)
+                if not subs:
+                    print("No submdats to pretokenize.")
+                    pause = True
+                    continue
+                
+                # Get strategy first
+                strategies = cmd_list_strategies(self.dataset_path, ds=self.ds)
+                if not strategies:
+                    print("No strategies registered. Cannot pretokenize.")
+                    pause = True
+                    continue
+                
+                st = self.pick(strategies, "Select Strategy")
+                if not st:
+                    pause = False
+                    continue
+                
+                # Select submdats
+                print("\n--- Select Submdats to Pretokenize ---")
+                print("Options:")
+                print("  1. All submdats")
+                print("  2. Select multiple individually")
+                
+                choice = self.prompt("Choice", cast=int)
+                
+                selected_submdats = []
+                if choice == 1:
+                    selected_submdats = [r["name"] for r in subs]
+                    print(f"\nSelected all {len(selected_submdats)} submdats")
+                elif choice == 2:
+                    print("\nEnter submdat names (comma-separated):")
+                    available_names = [r["name"] for r in subs]
+                    print(f"Available: {', '.join(available_names)}")
+                    
+                    names_input = self.prompt("Submdats")
+                    if names_input:
+                        selected_submdats = [n.strip() for n in names_input.split(",")]
+                        # Validate
+                        invalid = [n for n in selected_submdats if n not in available_names]
+                        if invalid:
+                            print(f"Invalid submdat names: {', '.join(invalid)}")
+                            selected_submdats = []
+                else:
+                    pause = False
+                    continue
+                
+                if selected_submdats:
+                    confirm = self.prompt(
+                        f"Pretokenize {len(selected_submdats)} submdat(s) with '{st}'? (y/n)", 
+                        "y"
+                    ).lower()
+                    if confirm == "y":
+                        self._call_cmd(
+                            cmd_pretokenize_batch,
+                            path=self.dataset_path,
+                            submdats=selected_submdats,
+                            strategy=st,
+                            parallel=True,
+                        )
+                    else:
+                        print("Cancelled.")
+                else:
+                    pause = False
+            
             else:
                 print("Invalid choice.")
             
@@ -3886,7 +3993,29 @@ def build_cli():
         "info", parents=[path_parser], help="Show dataset info"
     )
     p_info.add_argument("--verbose", action="store_true", help="Show full manifest")
-
+    #Batch pretokenize
+    p_pretok_batch = sp.add_parser(
+        "pretokenize-batch", 
+        parents=[path_parser], 
+        help="Pretokenize multiple submdats with the same strategy"
+    )
+    p_pretok_batch.add_argument(
+        "--submdats", 
+        nargs="+", 
+        required=True, 
+        help="Submdat names to pretokenize (space-separated)"
+    )
+    p_pretok_batch.add_argument("--strategy", required=True, help="Strategy to use")
+    p_pretok_batch.add_argument(
+        "--parallel", action="store_true", help="Use parallel processing"
+    )
+    p_pretok_batch.add_argument("--processes", type=int, help="Number of processes to use")
+    p_pretok_batch.add_argument("--compression", type=int, default=0)
+    p_pretok_batch.add_argument(
+        "--all", 
+        action="store_true", 
+        help="Pretokenize all submdats (ignores --submdats)"
+    )
     return p
 
 
@@ -3914,6 +4043,7 @@ def main(argv=None):
         "list-strategies": cmd_list_strategies,
         "register-strategy": cmd_register_strategy,
         "pretokenize": cmd_pretokenize,
+        "pretokenize-batch": cmd_pretokenize_batch,  
         "export-view": cmd_export_view_template,
         "create-view": cmd_create_view,
         "list-views": cmd_list_views,
@@ -3940,6 +4070,13 @@ def main(argv=None):
                 f"Dataset loaded: {info['documents']:,} docs, "
                 f"{info['submdats']} submdats, {info['strategies']} strategies"
             )
+        elif cmd_name == "pretokenize-batch" and kwargs.get("all"):
+            from matformer_dataset import MatformerDataset
+            ds = MatformerDataset.load_dataset(kwargs["path"], readonly=True)
+            subs = [r["name"] for r in cmd_list_submdats(kwargs["path"], ds=ds)]
+            kwargs["submdats"] = subs
+            kwargs.pop("all")
+            print(f"Pretokenizing all {len(subs)} submdats...")            
         elif cmd_name == "list-submdats":
             rows = result
             if not rows:
