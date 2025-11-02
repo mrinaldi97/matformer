@@ -2617,9 +2617,9 @@ class PretokenizationStrategy:
         instance.on_the_fly_warning = False
         instance.on_the_fly_mode = True
         if db==None:
-			instance._create_from_dict(strategy_dict)
-		else:
-			instance._create_from_dict(db.get_manifest(strategy=strategy_name)
+            instance._create_from_dict(strategy_dict)
+        else:
+            instance._create_from_dict(db.get_manifest(strategy=strategy_name)
         instance.initialized = False
         return instance
     def _create_from_dict(self, strategy_dict: Dict[str, Any]):
@@ -3041,6 +3041,7 @@ class split_and_tokenize_by_nltk_sentences_aligned:
             print(encoding)
         return tokenspans
     def trim_long_sequences(self, aligned_spans, maxlen):
+        print(maxlen)   
         new_aligned_spans = []
         
         for x in aligned_spans:
