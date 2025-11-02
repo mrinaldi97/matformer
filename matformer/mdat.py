@@ -758,7 +758,7 @@ class MatformerDataset(IterableDataset):
         if hasattr(self, '_shuffle_file') and self._shuffle_file is not None:
             self._shuffle_file.seek(0)  
     
-    return self
+        return self
 
     def __next__(self):
         if self.current_iteration_modality == 'document':
@@ -2513,7 +2513,7 @@ class LMDBDataset:
                 raise IndexError(f"Index {key} not found in LMDB dataset.")
             if self.compressed:
                 try:
-                    print("Attenzione! AL momento sqlite segna compresso ma dati non compressi. Facile da risolvere")
+                    #print("Attenzione! AL momento sqlite segna compresso ma dati non compressi. Facile da risolvere")
                     return zlib.decompress(data)
                 except:
                     safe_path = ''.join(c if c.isalnum() or c in '_-' else '_' for c in self.path)
