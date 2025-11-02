@@ -205,6 +205,7 @@ class MatformerDataset(IterableDataset):
     def _set_distributed_training(self) -> None:
         """Setup distributed training config."""
         try:
+            import torch
             import torch.distributed as dist
             torch_dist_available = True
         except:
