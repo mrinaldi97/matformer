@@ -1,17 +1,15 @@
-import re
-import torch
 import json
-import random
-import torch.utils.data
-from pathlib import Path
-from typing import Tuple, Optional, List, Union
-from tokenizers import models, trainers, decoders, pre_tokenizers, normalizers
-from tokenizers import Tokenizer, Regex
-from transformers.tokenization_utils_fast import PreTrainedTokenizerFast
-from pytorch_lightning import seed_everything
-from matformer.mdat import MatformerDataset
 import argparse
-import sys
+from pathlib import Path
+from typing import Optional, Union, List
+import torch
+from pytorch_lightning import seed_everything
+from tokenizers import Tokenizer, models, trainers, pre_tokenizers, normalizers, decoders, Regex
+from transformers import PreTrainedTokenizerFast
+from matformer.mdat import MatformerDataset
+import sentencepiece as spm
+import re
+
 
 class UnicodeRangeHelper:
     UNICODE_RANGES = {
@@ -111,153 +109,100 @@ class UnicodeRangeHelper:
             result[name] = chars
         return result
 
+def train_hf_tokenizer(cfg: dict, dataset: MatformerDataset, save_path: Path, initialize_vocab: bool):
+    tokenizer_type = cfg['tokenizer_type'].lower()
+    model = models.BPE() if tokenizer_type == "bpe" else models.Unigram()
 
-def train_tokenizer(
-              config: str | Path,
-              save_path: str | Path,
-              seed: int = 27,
-              mdat: str | Path = '',
-              mdat_view: Optional[str] = None,
-              initialize_vocab: bool = False,
-              test_mode: bool = False
-              ) -> None:
-        seed_everything(seed)
-        cfg = json.loads(Path(config).read_text())
-        
-        unicode_cfg = cfg.get('unicode_filtering', {})
-        selected_ranges = unicode_cfg.get('ranges', []) + [tuple(r) for r in unicode_cfg.get('custom_ranges', [])]
+    tokenizer = Tokenizer(model)
+    normalizer_list = []
 
-        # collect forced characters
-        forced_chars = {}
-        if initialize_vocab or test_mode:
-            # only named ranges are handled
-            range_names = [r for r in selected_ranges if isinstance(r, str)]
-            forced_chars = UnicodeRangeHelper.collect_range_characters(range_names)
+    unicode_cfg = cfg.get('unicode_filtering', {})
+    if unicode_cfg.get('enabled', False):
+        pattern = UnicodeRangeHelper.build_unicode_pattern(unicode_cfg.get('ranges', []))
+        normalizer_list.append(normalizers.Replace(Regex(f'[^{pattern}]'), ''))
+    if cfg.get('normalization', {}).get('nfc', True):
+        normalizer_list.append(normalizers.NFC())
 
-            if test_mode:
-                print("=== Expected vocabulary occupation per group ===")
-                for k, chars in forced_chars.items():
-                    print(f"{k}: {len(chars)} tokens")
-                return
+    tokenizer.normalizer = normalizers.Sequence(normalizer_list)
+    tokenizer.pre_tokenizer = pre_tokenizers.Metaspace(replacement='▁', prepend_scheme='always')
+    tokenizer.decoder = decoders.Metaspace(replacement='▁', prepend_scheme='always')
 
-        ds = MatformerDataset.load_dataset(Path(mdat))
-        if mdat_view:
-            ds.set_view(mdat_view)
-            print(f"View {mdat_view} set.")
-        ds.set_iteration_modality(modality='document', with_meta=False, return_raw=True)
-        
-        tokenizer = Tokenizer(models.Unigram())
-        
-        normalizer_list = []
-        
-        if unicode_cfg.get('enabled', False):
-            allowed_pattern = UnicodeRangeHelper.build_unicode_pattern(
-                selected_ranges,
-                include_whitespace=unicode_cfg.get('include_whitespace', True),
-                include_digits=unicode_cfg.get('include_digits', True),
-                include_punctuation=unicode_cfg.get('include_punctuation', True)
-            )
-            normalizer_list.append(
-                normalizers.Replace(Regex(f'[^{allowed_pattern}]'), '')
-            )
-        
-        if cfg.get('normalization', {}).get('nmt', False):
-            normalizer_list.append(normalizers.Nmt())
-        
-        if cfg.get('normalization', {}).get('nfc', True):
-            normalizer_list.append(normalizers.NFC())
-        elif cfg.get('normalization', {}).get('nfkc', False):
-            normalizer_list.append(normalizers.NFKC())
-        
-        case_mode = cfg.get('normalization', {}).get('case', 'preserve')
-        if case_mode == 'lowercase':
-            normalizer_list.append(normalizers.Lowercase())
-        elif case_mode == 'uppercase':
-            normalizer_list.append(normalizers.Uppercase())
-        
-        if cfg.get('normalization', {}).get('normalize_whitespace', True):
-            normalizer_list.append(normalizers.Replace(Regex(r'\s+'), ' '))
-            normalizer_list.append(normalizers.Strip())
-        
-        if cfg.get('replace_url', False):
-            url_pattern = r"(?:https?://)?(?:[a-zA-Z0-9-]+\.)+[a-zA-Z]{2,}(?:/\S*)?"
-            repl_url = normalizers.Replace(Regex(url_pattern), cfg['url_token'])
-            normalizer_list.append(repl_url)
-        
-        if cfg.get('replace_email', False):
-            email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
-            repl_email = normalizers.Replace(Regex(email_pattern), cfg.get('email_token', '[EMAIL]'))
-            normalizer_list.append(repl_email)
-        # special token isolation
-        specials = cfg.get("special_extra_tokens", [])
-        if specials:
-            escaped_specials = [re.escape(tok) for tok in specials]
-            pattern = "(" + "|".join(escaped_specials) + ")"
+    trainer_cls = trainers.BpeTrainer if tokenizer_type == "bpe" else trainers.UnigramTrainer
+    trainer = trainer_cls(
+        vocab_size=cfg['vocab_size'],
+        show_progress=True,
+        special_tokens=cfg['special_tokens'],
+        unk_token=cfg['unk_token']
+    )
 
-            for tok in specials:
-                normalizer_list.insert(0, normalizers.Replace(Regex(re.escape(tok)), tok))
+    tokenizer.train_from_iterator(dataset, trainer, length=len(dataset))
+    tokenizer.save(str(save_path / "tokenizer.json"))
 
-            tokenizer.pre_tokenizer = pre_tokenizers.Sequence([
-                pre_tokenizers.Split(Regex(pattern), behavior="isolated"),
-                pre_tokenizers.Metaspace(replacement="▁", prepend_scheme="always")
-            ])
-            for t in specials:
-                normalizer_list.insert(0, normalizers.Replace(Regex(re.escape(t)), t))
-            
-        else:
-            tokenizer.pre_tokenizer = pre_tokenizers.Metaspace(replacement='▁', prepend_scheme='always')
-            
-        tokenizer.normalizer = normalizers.Sequence(normalizer_list)
-        
-        tokenizer.pre_tokenizer = pre_tokenizers.Metaspace(replacement='▁', prepend_scheme='always')
-        tokenizer.decoder = decoders.Metaspace(replacement='▁', prepend_scheme='always')
-        special_tokens=cfg['special_tokens']+cfg.get("special_extra_tokens", [])
-        trainer = trainers.UnigramTrainer(
-            vocab_size=cfg['vocab_size'],
-            show_progress=True,
-            special_tokens=cfg['special_tokens'],
-            unk_token=cfg['unk_token'],
-            initial_alphabet=[c for chars in forced_chars.values() for c in chars] if initialize_vocab else None
-        )
-        
-        tokenizer.train_from_iterator(ds, trainer, length=len(ds))
-        
-        tt = PreTrainedTokenizerFast(
-            tokenizer_object=tokenizer,
-            unk_token=cfg['unk_token'],
-            pad_token=cfg['pad_token'],
-            cls_token=cfg['cls_token'],
-            sep_token=cfg['sep_token'],
-            mask_token=cfg['mask_token']
-        )
-        
-        tt.save_pretrained(save_path)
-        
+    fast_tok = PreTrainedTokenizerFast(
+        tokenizer_file=str(save_path / "tokenizer.json"),
+        **{k: cfg[k] for k in ['unk_token', 'pad_token', 'cls_token', 'sep_token', 'mask_token'] if k in cfg}
+    )
+    fast_tok.save_pretrained(save_path)
+
+
+def train_sentencepiece(cfg: dict, dataset: MatformerDataset, save_path: Path):
+    tokenizer_type = cfg['tokenizer_type'].lower()
+    model_type = 'bpe' if tokenizer_type == 'bpe' else 'unigram'
+    input_file = save_path / "sp_input.txt"
+
+    with open(input_file, "w", encoding="utf-8") as f:
+        for doc in dataset:
+            text = doc if isinstance(doc, str) else str(doc)
+            f.write(text.replace("\n", " ") + "\n")
+
+    spm.SentencePieceTrainer.Train(
+        input=str(input_file),
+        model_prefix=str(save_path / "spm"),
+        vocab_size=cfg['vocab_size'],
+        model_type=model_type,
+        unk_id=0,
+        pad_id=1,
+        bos_id=2,
+        eos_id=3,
+        user_defined_symbols=cfg.get("special_extra_tokens", []),
+        character_coverage=cfg.get("character_coverage", 0.9995),
+    )
+
+    # Optionally convert to Hugging Face format
+    fast_tok = PreTrainedTokenizerFast(tokenizer_file=str(save_path / "spm.model"))
+    fast_tok.save_pretrained(save_path)
+
+
+def train_tokenizer(config: Union[str, Path], save_path: Union[str, Path], seed: int = 27, mdat: Union[str, Path] = '', mdat_view: Optional[str] = None):
+    seed_everything(seed)
+    cfg = json.loads(Path(config).read_text())
+    save_path = Path(save_path)
+    save_path.mkdir(parents=True, exist_ok=True)
+
+    dataset = MatformerDataset.load_dataset(Path(mdat))
+    if mdat_view:
+        dataset.set_view(mdat_view)
+    dataset.set_iteration_modality(modality='document', with_meta=False, return_raw=True)
+
+    backend = cfg.get('tokenizer_backend', 'huggingface').lower()
+    if backend == 'huggingface':
+        train_hf_tokenizer(cfg, dataset, save_path, initialize_vocab=cfg.get('initialize_vocab', False))
+    elif backend == 'sentencepiece':
+        train_sentencepiece(cfg, dataset, save_path)
+    else:
+        raise ValueError(f"Unknown tokenizer backend: {backend}")
+
 
 def main():
-    parser = argparse.ArgumentParser(description='Train a tokenizer from configuration file')
-    parser.add_argument('config', type=str, help='Path to the JSON configuration file')
-    parser.add_argument('--save-path', type=str, help='Directory to save the trained tokenizer')
-    parser.add_argument('--mdat', type=str, help='Path to the Mdat dataset')
-    parser.add_argument('--mdat-view', type=str, help='Mdat view specification')
-    parser.add_argument('--seed', type=int, default=27, help='Random seed (default: 27)')
-    parser.add_argument('--initialize-vocab', action='store_true', help='Force inclusion of selected unicode ranges in vocab')
-    parser.add_argument('--test', action='store_true', help='Print expected vocabulary occupation per group and exit')
-    
-    args = parser.parse_args()
-    
-    if not args.save_path:
-        args.save_path = "./tokenizer"
-    
-    train_tokenizer(
-        config=args.config,
-        save_path=args.save_path,
-        mdat=args.mdat,
-        mdat_view=args.mdat_view,
-        seed=args.seed,
-        initialize_vocab=args.initialize_vocab,
-        test_mode=args.test
-    )
+    p = argparse.ArgumentParser(description='Train tokenizer (HF or SentencePiece)')
+    p.add_argument('config', type=str)
+    p.add_argument('--save-path', type=str, default='./tokenizer')
+    p.add_argument('--mdat', type=str, required=True)
+    p.add_argument('--mdat-view', type=str)
+    p.add_argument('--seed', type=int, default=27)
+    args = p.parse_args()
+    train_tokenizer(args.config, args.save_path, args.seed, args.mdat, args.mdat_view)
+
 
 if __name__ == "__main__":
     main()
