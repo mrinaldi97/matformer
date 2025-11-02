@@ -1878,7 +1878,7 @@ class SubMdat:
     def get_current_strategy(self):
         return self.current_strategy
 
-    def pretokenize_submdat(self, strategy_name,progress_bar=True, compression_level=0, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=5000, map_size=1<<40,disk_size_multiplier=4):
+    def pretokenize_submdat(self, strategy_name,progress_bar=True, compression_level=0, chunking_strict_checks=False, parallel=True, num_processes=None, batch_size=256, map_size=1<<40,disk_size_multiplier=4):
 
         max_multiplier = 100     #Precompute 100 times the base sequence length     
         # 1. Start adding the strategy to the submdat
