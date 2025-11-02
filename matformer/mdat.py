@@ -1036,6 +1036,7 @@ class MatformerDataset(IterableDataset):
                 
                 # Broadcast maximum across all workers so everyone agrees
                 import torch.distributed as dist
+                import torch
                 length_tensor = torch.tensor([this_worker_length], dtype=torch.long).cuda()
                 dist.all_reduce(length_tensor, op=dist.ReduceOp.MAX)
                 max_length = length_tensor.item()
