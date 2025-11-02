@@ -2619,7 +2619,7 @@ class PretokenizationStrategy:
         if db==None:
             instance._create_from_dict(strategy_dict)
         else:
-            instance._create_from_dict(db.get_manifest(strategy=strategy_name))
+            instance._load_configuration()
         instance.initialized = False
         return instance
     def _create_from_dict(self, strategy_dict: Dict[str, Any]):
