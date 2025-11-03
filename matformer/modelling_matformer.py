@@ -134,7 +134,7 @@ class MatformerModel(MatformerPreTrainedModel):
 # Causal LM
 # ============================================================================
 
-class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
+class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin, dtype=None):
     _tied_weights_keys = ["lm_head.module.weight"]
 
     def __init__(self, config: MatformerConfig):
