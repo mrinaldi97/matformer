@@ -108,38 +108,38 @@ class MatformerTokenizer:
             sequence = sequence.unpad()
         
         return sequence
-	def encode(
-		self,
-		text: str,
-		truncation: bool = False,
-		add_eos: bool = False,
-		add_bos: bool = False,
-		add_special_tokens: bool = False,
-		return_offsets_mapping: bool = False
-	):
-		encoded = self.tokenizer(
-			text,
-			add_special_tokens=add_special_tokens,
-			return_offsets_mapping=return_offsets_mapping
-		)
-		input_ids = encoded["input_ids"]
+    def encode(
+        self,
+        text: str,
+        truncation: bool = False,
+        add_eos: bool = False,
+        add_bos: bool = False,
+        add_special_tokens: bool = False,
+        return_offsets_mapping: bool = False
+    ):
+        encoded = self.tokenizer(
+            text,
+            add_special_tokens=add_special_tokens,
+            return_offsets_mapping=return_offsets_mapping
+        )
+        input_ids = encoded["input_ids"]
 
-		if add_bos and getattr(self.tokenizer, "bos_token_id", None) is not None:
-			input_ids = [self.tokenizer.bos_token_id] + input_ids
+        if add_bos and getattr(self.tokenizer, "bos_token_id", None) is not None:
+            input_ids = [self.tokenizer.bos_token_id] + input_ids
 
-		if add_eos and getattr(self.tokenizer, "eos_token_id", None) is not None:
-			input_ids = input_ids + [self.tokenizer.eos_token_id]
+        if add_eos and getattr(self.tokenizer, "eos_token_id", None) is not None:
+            input_ids = input_ids + [self.tokenizer.eos_token_id]
 
-		if truncation and hasattr(self, "seq_len"):
-			input_ids = input_ids[:self.seq_len]
+        if truncation and hasattr(self, "seq_len"):
+            input_ids = input_ids[:self.seq_len]
 
-		if return_offsets_mapping:
-			return {
-				"input_ids": input_ids,
-				"offset_mapping": encoded.get("offset_mapping", None)
-			}
+        if return_offsets_mapping:
+            return {
+                "input_ids": input_ids,
+                "offset_mapping": encoded.get("offset_mapping", None)
+            }
 
-		return input_ids
+        return input_ids
 
 
     def decode(self, ids: List[int]) -> str:
