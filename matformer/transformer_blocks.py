@@ -337,7 +337,7 @@ class Autoregressive_Model(TransformerWithLMHead):
             # Tokenize the prompt if it's provided as bytes
             assert isinstance(prompt, str), "Prompt expected as string"
             tokenizer = self.tokenizer
-            prompt_ids = torch.tensor(tokenizer.encode(text=prompt,add_bos_token=True,add_eos_token=False,add_special_tokens=False), device=self.device)
+            prompt_ids = torch.tensor(tokenizer.encode(text=prompt,add_bos=True,add_eos=False,add_special_tokens=False), device=self.device)
             current_ids = torch.tensor(prompt_ids.unsqueeze(0), device=self.device)
             # The forward expects: [batch_size, seq_len, vocab_size]
 
