@@ -1027,7 +1027,6 @@ class MatformerDataset(IterableDataset):
         List registered strategies
         """
         return list(self.db.list_strategies())
-            my_length = self.get_worker_length_distributed(self.world_size, self.rank_size)
             
 
     def __len__(self):
