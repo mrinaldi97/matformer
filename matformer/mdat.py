@@ -795,11 +795,14 @@ class MatformerDataset(IterableDataset):
         return self.db.list_views()
         
     def __iter__(self):
-        # Reset the iteration (ex. for a new epoch)
+        # Reset the iteration (ex. for a new epoch)     
         self.current_document = None
         self.current_chunk_step = 0
         self.document_index = 0
         self._iteration_count = 0
+        
+        if hasattr(self, '_max_iterations'):
+            del self._max_iterations  # Force recalculation for new epoch
         
         if hasattr(self, '_shuffle_file') and self._shuffle_file is not None:
             self._shuffle_file.seek(0)
@@ -809,7 +812,9 @@ class MatformerDataset(IterableDataset):
         if self.dist:
             if not hasattr(self, '_iteration_count'):
                 self._iteration_count = 0
-            if self._iteration_count >= len(self):
+            if not hasattr(self, '_max_iterations'):
+                self._max_iterations = len(self)  # Cache it once
+            if self._iteration_count >= self._max_iterations:
                 raise StopIteration
         try:
             if self.current_iteration_modality in ['document','tokens','chunks']:
@@ -1033,13 +1038,14 @@ class MatformerDataset(IterableDataset):
                 # Get this worker's actual length
 
                 this_worker_length = self.db.get_worker_length_distributed(target_num_workers=self.world_size, target_worker_id=self.rank_size, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name)
-                
+                print(f"WORKER {self.rank_size} got length {this_worker_length}")
                 # Broadcast maximum across all workers so everyone agrees
                 import torch.distributed as dist
                 import torch
                 length_tensor = torch.tensor([this_worker_length], dtype=torch.long).cuda()
                 dist.all_reduce(length_tensor, op=dist.ReduceOp.MAX)
                 max_length = length_tensor.item()
+                print(f"Max length set to {max_length}")
                 
                 return max_length
             except ValueError:
