@@ -156,8 +156,8 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
         import torch
         self.transformer=self.transformer.to('cuda').to(torch.bfloat16)
         for module in self.transformer.modules():
-        if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
-            module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
+            if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
+                module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
         self.transformer.eval()
     def get_input_embeddings(self):
         return self.transformer.transformer.embed_tokens.module
