@@ -142,6 +142,7 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
         mat_config = config.to_matformer_config()
         device = self._get_device()
         self.transformer = TransformerWithLMHead(config=mat_config, tokenizer=None, device=device)
+        self.move_to_cuda()
         self.main_input_name = "input_ids"
         self.post_init()
 
@@ -151,7 +152,12 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
         elif hasattr(torch.backends, 'mps') and torch.backends.mps.is_available():
             return torch.device("mps")
         return torch.device("cpu")
-
+    def move_to_cuda(self):
+        self.transformer=self.transformer.to('cuda')to(torch.bfloat16)
+        for module in self.transformer.modules():
+        if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
+            module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
+        self.transformer.eval()
     def get_input_embeddings(self):
         return self.transformer.transformer.embed_tokens.module
 
@@ -290,10 +296,6 @@ def rename_state_dict_keys(state_dict: dict) -> dict:
 
     return renamed
 def load_matformer_checkpoint(checkpoint_path: str, model_cls=None, device: str = None, **config_overrides):
-    """
-    Load a Matformer checkpoint robustly (Lightning .ckpt or directory).
-    Preserves: weights_only=False, renames keys, attaches tokenizer.
-    """
     # ---- device ----
     if device is None:
         device = "cuda" if torch.cuda.is_available() else "mps" if hasattr(torch.backends, 'mps') and torch.backends.mps.is_available() else "cpu"
