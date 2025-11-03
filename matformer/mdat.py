@@ -47,6 +47,7 @@ class MatformerDataset(IterableDataset):
         *It is possible (WIP) to prepare a "finalized" lightning-fast version of the dataset where modifications are no longer 
         possible but reading time is reduced to minimum (ideal for larger trainings)
         """
+        self._cached_length=None
         self.manifest: Dict[str, Any] = {}
         self.loaded_submdats: Dict[str, Any] = {} # Dictionary that contains the pointers to the loaded submdats, indexed by names
         self.pretok_strategies: Dict[str, Any] = {}
@@ -57,7 +58,7 @@ class MatformerDataset(IterableDataset):
         self.total_chunks = None 
         self.total_divided_chunks = None
         self.chunk_multiplier = 1 # Standard chunk multiplier: 1
-        self._cached_max_length = None
+        
     def _get_manifest_attr(self, key: str, default: Any = None) -> Any:
         """Get manifest attribute (possible to set a default)"""
         return self.manifest.get(key, default)
@@ -89,7 +90,7 @@ class MatformerDataset(IterableDataset):
         instance = cls()
         instance._set_paths(path)
         instance.readonly = readonly
-        instance._cached_max_length = None
+        instance._cached_length=None
         instance.dist=None
         if instance._mdat_exists(instance.db_path): 
             instance.db = DatabaseManager(instance.db_path) 
@@ -1026,6 +1027,8 @@ class MatformerDataset(IterableDataset):
         List registered strategies
         """
         return list(self.db.list_strategies())
+            my_length = self.get_worker_length_distributed(self.world_size, self.rank_size)
+            
 
     def __len__(self):
         """
@@ -1034,28 +1037,33 @@ class MatformerDataset(IterableDataset):
         2) If a view is specified, it computes the length according to the view
         3) If a pretokenization strategy is set, it returns the number of chunks according to max_seq_len (necessary for model training)
         """
-        def __len__(self):
-            if self._cached_max_length is not None:
-                return self._cached_max_length
-            
-            if self.dist and self.current_iteration_modality == 'chunked_tokens':
-                try:
-                    my_length = self.get_worker_length_distributed(self.world_size, self.rank_size)
-                    
-                    import torch.distributed as dist
-                    if dist.is_initialized():
-                        length_tensor = torch.tensor([my_length], dtype=torch.long, device='cuda')
-                        dist.all_reduce(length_tensor, op=dist.ReduceOp.MAX)
-                        max_length = length_tensor.item()
-                        self._cached_max_length = max_length
-                        return max_length
-                    else:
-                        return my_length
-                except ValueError:
-                    self.precompute_chunks_distributed(self.world_size)
-                    return self.__len__()
-            else:
-                return self.len
+        if self.dist and self.current_iteration_modality == 'chunked_tokens':
+            try:
+                if self._cached_length is not None:
+                    return self._cached_length
+                # Get this worker's actual length
+
+                this_worker_length = self.db.get_worker_length_distributed(target_num_workers=self.world_size, target_worker_id=self.rank_size, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name)
+                print(f"WORKER {self.rank_size} got length {this_worker_length}")
+                # Broadcast maximum across all workers so everyone agrees
+                import torch.distributed as dist
+                import torch
+                if dist.is_initialized():
+                    length_tensor = torch.tensor([this_worker_length], dtype=torch.long).cuda()
+                    dist.all_reduce(length_tensor, op=dist.ReduceOp.MAX)
+                    max_length = length_tensor.item()
+                    print(f"Max length set to {max_length}")
+                    self._cached_length=max_length
+                    return max_length
+                else:
+                    return this_worker_length
+            except ValueError:
+                # Precompute
+                print("I need to precompute lengths for an incompatible workers set up")
+                self.precompute_chunks_distributed(self.world_size)
+                return self.__len__() 
+        else:
+            return self.len
 # Exceptions
 if True:
      #This "if True" is just to easily collapse the exceptions in my editor, will be removed
