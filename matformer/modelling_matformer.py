@@ -145,6 +145,7 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
         self.move_to_cuda()
         self.main_input_name = "input_ids"
         self.post_init()
+        self.move_to_cuda()
 
     def _get_device(self):
         if torch.cuda.is_available():
