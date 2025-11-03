@@ -41,7 +41,7 @@
       "weight_decay": 0.01,
       "scheduler": "custom",
       "gradient_clip_val":1.0,
-      "warmup_steps": 2000,
+      "warmup_steps": 1250,
       "max_epochs": 1,
       "accumulate_grad_batches": 5,
       "seed": 27,
@@ -55,7 +55,7 @@
   },
   "data": {
     "data_root": "/home/matteo/Albertone/Albertina/Albertina_mdat",
-    "batch_size": 36,
+    "batch_size": 30,
     "num_workers": 1,
     "mdat_strategy":"Minerva1024",
     "mdat_view": null
