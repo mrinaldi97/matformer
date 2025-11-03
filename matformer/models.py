@@ -17,7 +17,7 @@ import math
 import torch.distributed as dist
 import numpy as np
 from dataclasses import replace
-from copy import deepcopy
+#from copy import deepcopy Provo a rimuovere
 from transformers import AutoTokenizer
 
 
@@ -44,13 +44,11 @@ class PL_ModelWrapper(pl.LightningModule):
         input_sequence=sequence
         if masked:
             masked_tokens,cloze_mask=self.maskerator(sequence.tensor)
-            masked_sequence=deepcopy(sequence)
-            masked_sequence=replace(masked_sequence,tensor=masked_tokens)
-            input_sequence=masked_sequence
+            input_sequence=replace(sequence,tensor=masked_tokens)
         
         ### Input al modello ###
-        model_input=deepcopy(input_sequence)
-        logits = self(deepcopy(model_input))
+        
+        logits = self(input_sequence)
         if self.nested:
             logits_flat = torch.cat(logits.unbind())
             targets_flat = torch.cat(sequence.unbind()).to(logits_flat.device)
@@ -96,13 +94,13 @@ class PL_ModelWrapper(pl.LightningModule):
             acc = (preds == targets).float().mean()
             self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
          
-        current_lr = self.lr_schedulers().get_last_lr()[0]
         try:
+            current_lr = self.lr_schedulers().get_last_lr()[0]
             self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
-            self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)
         except:
             pass
-        additional_metrics=True
+        self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)
+        additional_metrics=False
         if additional_metrics:
             if self.global_step % 100 == 0:
                grad_norms, param_norms, grad_param_ratios = {}, {}, {}

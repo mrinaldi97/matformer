@@ -199,7 +199,7 @@ class NakedTransformer(nn.Module):
         
         self.layers = nn.ModuleList()
         for layer_idx in range(config.num_hidden_layers):
-            self.layers.append(TransformerBlock(config=config,layer_idx=layer_idx)) 
+            self.layers.append(TransformerBlock(config=config,layer_idx=layer_idx,cache=cache)) 
 
     def forward(self, x, document_mask=None, inference=False):         
         for layer_idx, layer in enumerate(self.layers):
