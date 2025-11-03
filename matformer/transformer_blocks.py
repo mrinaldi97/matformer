@@ -337,11 +337,9 @@ class Autoregressive_Model(TransformerWithLMHead):
             # Tokenize the prompt if it's provided as bytes
             assert isinstance(prompt, str), "Prompt expected as string"
             tokenizer = self.tokenizer
-            prompt_ids = torch.tensor(tokenizer.encode(prompt), device=self.device)
+            prompt_ids = torch.tensor(tokenizer.encode(text=prompt,add_bos_token=True,add_eos_token=False,add_special_tokens=False), device=self.device)
             current_ids = torch.tensor(prompt_ids.unsqueeze(0), device=self.device)
             # The forward expects: [batch_size, seq_len, vocab_size]
-            print(f"Prompt_ids shape: {prompt_ids.shape}")
-            print(f"Current_ids shape: {current_ids.shape}")
 
         for _ in tqdm(range(max_length)):
             with torch.no_grad():
@@ -384,7 +382,7 @@ class Autoregressive_Model(TransformerWithLMHead):
             current_ids = torch.cat([current_ids, next_token], dim=1)
 
             # Stop if we generated an EOS token
-            if next_token.item() == self.config.eos_token_id:
+            if next_token.item() == self.tokenizer.eos_token_id:
                 break
         return self.tokenizer.decode(current_ids.squeeze().tolist())
 class EntropyModel(Autoregressive_Model):
