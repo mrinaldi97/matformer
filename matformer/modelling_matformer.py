@@ -153,7 +153,8 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
             return torch.device("mps")
         return torch.device("cpu")
     def move_to_cuda(self):
-        self.transformer=self.transformer.to('cuda')to(torch.bfloat16)
+		import torch
+        self.transformer=self.transformer.to('cuda').to(torch.bfloat16)
         for module in self.transformer.modules():
         if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
             module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
