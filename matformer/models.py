@@ -39,10 +39,10 @@ class PL_ModelWrapper(pl.LightningModule):
     def on_load_checkpoint(self, checkpoint):
         self._restored_from_ckpt = True        
     def training_step(self, batch, batch_idx):
-        
         sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
         if batch['worker_has_finished']:
-            print("Worker has finished!") # Bisogna implementare 
+            zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
+            return zero_loss
         masked=True if self.config.training_objective=='masked' else False
         input_sequence=sequence
         if masked:
