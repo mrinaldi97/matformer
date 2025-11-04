@@ -1024,10 +1024,9 @@ class MatformerDataset(IterableDataset):
                 if self._cached_length is not None:
                     return self._cached_length
                 # Get this worker's actual length
-
                 this_worker_length = self.db.get_worker_length_distributed(target_num_workers=self.world_size, target_worker_id=self.rank_size, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name)
                 if self.rank_size==2:
-					this_worker_length=10
+                     this_worker_length=10
                 print(f"WORKER {self.rank_size} got length {this_worker_length}")
                 # Broadcast maximum across all workers so everyone agrees
                 import torch.distributed as dist
