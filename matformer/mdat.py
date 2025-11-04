@@ -816,7 +816,7 @@ class MatformerDataset(IterableDataset):
                 self._iteration_count = 0
             if not hasattr(self, '_max_iterations'):
                 
-                if dist.get_rank() == 2:
+                if self.rank_size == 2:
                     self._max_iterations = 10 # FOR DEBUG
                 else:
                     self._max_iterations = len(self)
