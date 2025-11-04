@@ -815,11 +815,7 @@ class MatformerDataset(IterableDataset):
             if not hasattr(self, '_iteration_count'):
                 self._iteration_count = 0
             if not hasattr(self, '_max_iterations'):
-                
-                if self.rank_size == 2:
-                    self._max_iterations = 10 # FOR DEBUG
-                else:
-                    self._max_iterations = len(self)
+                self._max_iterations = len(self)  # Cache it once
             if self._iteration_count >= self._max_iterations:
                 raise StopIteration
         try:
@@ -853,16 +849,37 @@ class MatformerDataset(IterableDataset):
             
             if self.dist:
                 self._iteration_count += 1
-            return {'object':result,'worker_has_finished':False,'modality':'text'}
+                self._last_item = result
+            return result
         
         except StopIteration:
             if self.dist:
-                    self._iteration_count += 1
+                self._iteration_count += 1
+                
+                # Check padding mode flag (default to recycle last item)
+                use_pad_token = getattr(self, 'padding_use_pad_token', False)
+                
+                if use_pad_token:
+                    # Create padding item on first use
                     if not hasattr(self, '_padding_item'):
                         if self.current_iteration_modality == 'chunked_tokens':
                             pad_len = getattr(self, 'max_seq_len', 512)
                             self._padding_item = [self.current.strategy.pad_token_id] * pad_len
-                    return {'object':self._padding_item,'worker_has_finished':False,'modality':None}
+                        else:
+                            # For document/tokens mode, create empty padding
+                            self._padding_item = {'padding': True}
+                    return self._padding_item
+                else:
+                    # Use last real item
+                    if hasattr(self, '_last_item'):
+                        return self._last_item
+                    else:
+                        # Fallback if no last item cached
+                        if self.current_iteration_modality == 'chunked_tokens':
+                            pad_len = getattr(self, 'max_seq_len', 512)
+                            return [self.current.strategy.pad_token_id] * pad_len
+                        else:
+                            return {'padding': True}
             else:
                 raise
 
@@ -1024,9 +1041,8 @@ class MatformerDataset(IterableDataset):
                 if self._cached_length is not None:
                     return self._cached_length
                 # Get this worker's actual length
+
                 this_worker_length = self.db.get_worker_length_distributed(target_num_workers=self.world_size, target_worker_id=self.rank_size, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name)
-                if self.rank_size==2:
-                     this_worker_length=10
                 print(f"WORKER {self.rank_size} got length {this_worker_length}")
                 # Broadcast maximum across all workers so everyone agrees
                 import torch.distributed as dist
