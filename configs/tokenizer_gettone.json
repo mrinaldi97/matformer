@@ -43,9 +43,12 @@
         "case": "preserve",             
         "normalize_whitespace": false
     },
-    
-    "replace_url": false,
-    "replace_email": false,
-    "tokenizer_type": "Unigram",
-    "tokenizer_backend": "sentencepiece"
+    "replace_url_train": false,
+    "replace_email_train": false,    
+    "replace_url_final": false,
+    "replace_email_final": false,
+    "tokenizer_type": "BPE",
+    "tokenizer_backend": "huggingface",
+    "mdat":"/home/matteo/Albertone/Ultimo_MDAT_test",
+    "view":"gettone_train_view_bigger"
 }
