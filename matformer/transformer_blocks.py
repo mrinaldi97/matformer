@@ -313,8 +313,7 @@ class BERTModel(TransformerWithLMHead):
         accuracy = correct / total if total > 0 else 0.0
         out_tokens=list()
         for i,token in enumerate(masked_sequence.tensor.squeeze().tolist()):
-            if token != 0:
-                print(token)
+            if token != self.config.mask_token_id:
                 out_tokens.append(self.tokenizer.decode(token))
             else:
                 out_tokens.append(f"[ {self.tokenizer.decode(predictions.squeeze()[i])} ]")
