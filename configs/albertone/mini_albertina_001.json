@@ -34,7 +34,7 @@
     "custom_layers": {}
   },
   "training": {
-      "optimizer": "adam",
+      "optimizer": "muon",
       "lr_scheduling": true,
       "lr": 5e-4,
       "final_lr":2e-5,
