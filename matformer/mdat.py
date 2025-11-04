@@ -850,36 +850,19 @@ class MatformerDataset(IterableDataset):
             if self.dist:
                 self._iteration_count += 1
                 self._last_item = result
-            return result
+            return {"object":result,"worker_has_finished":None,"modality":"text"}
         
         except StopIteration:
             if self.dist:
                 self._iteration_count += 1
-                
-                # Check padding mode flag (default to recycle last item)
-                use_pad_token = getattr(self, 'padding_use_pad_token', False)
-                
-                if use_pad_token:
-                    # Create padding item on first use
-                    if not hasattr(self, '_padding_item'):
-                        if self.current_iteration_modality == 'chunked_tokens':
+                if not hasattr(self, '_padding_item'):
+                      if self.current_iteration_modality == 'chunked_tokens':
                             pad_len = getattr(self, 'max_seq_len', 512)
                             self._padding_item = [self.current.strategy.pad_token_id] * pad_len
-                        else:
-                            # For document/tokens mode, create empty padding
-                            self._padding_item = {'padding': True}
-                    return self._padding_item
-                else:
-                    # Use last real item
-                    if hasattr(self, '_last_item'):
-                        return self._last_item
-                    else:
-                        # Fallback if no last item cached
-                        if self.current_iteration_modality == 'chunked_tokens':
-                            pad_len = getattr(self, 'max_seq_len', 512)
-                            return [self.current.strategy.pad_token_id] * pad_len
-                        else:
-                            return {'padding': True}
+                      else:
+                            self._padding_item = ''
+                      # Utile: self._last_item
+                      return {"object":self._padding_item,"worker_has_finished":True,"modality":"text"}
             else:
                 raise
 

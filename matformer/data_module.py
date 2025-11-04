@@ -55,7 +55,29 @@ class MatformerDataModule(pl.LightningDataModule):
         if self.varlen_strategy == 'nested':
             sequence = torch.nested.nested_tensor(batch, layout=torch.jagged)
             return sequence
-            
+        padded_ids = []
+        for item in batch:
+            if isinstance(item, dict):
+                _object = item["object"]
+                if item.get("worker_has_finished", False):
+                    pass #WIP
+            else:
+                _object = item
+
+            #padding
+            padded_ids.append(
+                _object + [self.pad_token_id] * (self.max_seq_len - len(_object))
+            )
+
+        tensors = torch.tensor(padded_ids, dtype=torch.long)
+        padding_masks = (tensors == self.pad_token_id)
+        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks)
+
+        if self.varlen_strategy == "unpadding":
+            sequence = sequence.unpad()
+
+        return {'sequence':sequence,"worker_has_finished":item.get("worker_has_finished")}        
+        """    
         # Pad sequences
         padded_ids = [ids + [self.pad_token_id] * (self.max_seq_len - len(ids)) for ids in batch]
         tensors = torch.tensor(padded_ids, dtype=torch.long)
@@ -65,7 +87,8 @@ class MatformerDataModule(pl.LightningDataModule):
         if self.varlen_strategy == 'unpadding':
             sequence = sequence.unpad()   
             
-        return sequence       
+        return sequence 
+        """      
 
     def __len__(self):
         return len(self.mdat) if hasattr(self, 'mdat') else 0
