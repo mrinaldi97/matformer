@@ -1,17 +1,15 @@
 {
-  "model_class": "BERTModel",
+  "model_class": "Autoregressive_Model",
   "model_config": {
-    "name": "Modello-Di-Prova",
-    "hidden_size": 512,
+    "name": "DummyModel",
+    "hidden_size": 256,
     "ffn_factor": 1.0,
-    "num_hidden_layers": 10,
-    "num_attention_heads": 8,
-    "vocab_size": 32769,
-    "masked_substitution_rate": 0.25,
+    "num_hidden_layers": 4,
+    "num_attention_heads": 4,
+    "vocab_size": 32768,
     "bos_token_id": 1,
     "eos_token_id": 2,
     "pad_token_id": 0,
-    "mask_token_id":32768,
     "tie_word_embeddings": false,
     "rms_norm_eps": 1e-6,
     "attention_type": [],
@@ -20,45 +18,48 @@
     "rope_theta": 10000.0,
     "compile_flexattn": false,
     "bias": false,
-    "training_objective": "masked",
-    "is_causal": false,
+    "training_objective": "autoregressive",
+    "is_causal": true,
     "default_layer": {
       "attn_impl": "flash",
       "sliding_window_size": null,
       "positional_encoding": "alibi",
+      "normalization":"rmsnorm",
+      "normalization_position":"post",
+      "ffn_activation":"swiglu",
       "hooks": {}
     },
     "custom_layers": {}
   },
   "training": {
-    "optimizer": "adam",
+    "optimizer": "muon",
     "lr_scheduling": true,
     "lr": 5e-4,
-    "final_lr": 2e-5,
-    "hold_steps": 300,
+    "final_lr": 4e-5,
+    "hold_steps": 1000,
     "weight_decay": 0.01,
     "scheduler": "custom",
     "gradient_clip_val": 1.0,
-    "warmup_steps": 750,
-    "max_epochs": 1,
-    "accumulate_grad_batches": 5,
+    "warmup_steps": 250,
+    "max_epochs": 5,
+    "accumulate_grad_batches": 18,
     "seed": 27,
-    "save_every_n_steps": 5000,
-    "checkpoint_name": "modello_di_prova"
+    "save_every_n_steps": 8000,
+    "checkpoint_name": "Baby_modello_di_prova_28L"
   },
   "tokenizer": {
     "type": "huggingface",
     "pretrained_name": "sapienzanlp/Minerva-350M-base-v1.0",
-    "varlen_strategy": "padding"
+    "varlen_strategy": "unpadding"
   },
   "data": {
-    "data_root": "./datasets/liberwiki",
-    "batch_size": 48,
+    "data_root": "/home/matteo/BabyLM/Mdat_special",
+    "batch_size": 56,
     "num_workers": 1,
-    "mdat_strategy":"Split_and_tokenize_nltk_sentences",
-    "mdat_view": null
+    "mdat_strategy":"Gettone1024",
+    "mdat_view": "default"
   },
   "save_dir": "./checkpoints",
-  "wandb_project": "Test",
-  "wandb_run_name": "Test-Model"
+  "wandb_project": "Matformer",
+  "wandb_run_name": "Dummy"
 }
