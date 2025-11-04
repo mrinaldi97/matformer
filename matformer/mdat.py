@@ -858,7 +858,11 @@ class MatformerDataset(IterableDataset):
         except StopIteration:
             if self.dist:
                     self._iteration_count += 1
-                    return {'object':None,'worker_has_finished':True,'modality':None}
+                    if not hasattr(self, '_padding_item'):
+                        if self.current_iteration_modality == 'chunked_tokens':
+                            pad_len = getattr(self, 'max_seq_len', 512)
+                            self._padding_item = [self.current.strategy.pad_token_id] * pad_len
+                    return {'object':self._padding_item,'worker_has_finished':True,'modality':None}
             else:
                 raise
 
