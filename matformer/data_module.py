@@ -61,7 +61,7 @@ class MatformerDataModule(pl.LightningDataModule):
             if isinstance(item, dict):
                 _object = item["object"]
                 if item.get("worker_has_finished", False):
-                    return {"worker_finished": True}
+                    return {"padding_object":_object,"worker_finished": True}
             else:
                 _object = item
 

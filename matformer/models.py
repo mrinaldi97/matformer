@@ -40,9 +40,10 @@ class PL_ModelWrapper(pl.LightningModule):
         self._restored_from_ckpt = True        
     def training_step(self, batch, batch_idx):
         if isinstance(batch, dict) and batch.get("worker_finished", False): #Parte da controllare: se il trainer ha finito, ritorno una loss di zero [Chiedere a Gianluca]
-            param = next(self.parameters())
-            zero_loss = (param * 0.0).sum()  #Questo lo faccio per evitare l'errore di AMP
-            return zero_loss
+            batch=batch['padding_object']
+            #param = next(self.parameters())
+            #zero_loss = (param * 0.0).sum()  #Questo lo faccio per evitare l'errore di AMP
+            #return zero_loss
         sequence = batch # Arriva la sequenza già tokenizzata dal MatformerDataModule
         masked=True if self.config.training_objective=='masked' else False
         input_sequence=sequence
