@@ -294,10 +294,14 @@ class BERTModel(TransformerWithLMHead):
         self.masking_ratio=masking_ratio
         self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masking_ratio)
         print(f"Masking ratio: {self.masking_ratio}")
-    def inference_testing(self, input_text, masking_ratio=0.25,datatype=torch.bfloat16):
+    def inference_testing(self, input_text=None, masking_ratio=0.25,datatype=torch.bfloat16, tokens=None):
+		assert (is input_text or is_tokens)
         if not hasattr(self,'maskerator') or masking_ratio!=self.masking_ratio:
             self.init_maskerator(masking_ratio)
-        sequence = self.tokenizer.encode(input_text)
+        if not tokens:
+			sequence = self.tokenizer.encode(input_text)
+		else:
+			sequence=tokens
         sequence = torch.tensor(sequence).to(self.device)
         masked_list, cloze_list = self.maskerator(sequence)
         masked_list.to(self.device)
