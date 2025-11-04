@@ -292,7 +292,7 @@ class BERTModel(TransformerWithLMHead):
     def init_maskerator(self, masking_ratio):
         from matformer.masked_models import Maskerator
         self.masking_ratio=masking_ratio
-        self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masked_substitution_rate)
+        self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masking_ratio)
         print(f"Masking ratio: {self.masking_ratio}")
     def inference_testing(self, input_text, masking_ratio=0.25,datatype=torch.bfloat16):
         if not hasattr(self,'maskerator') or masking_ratio!=self.masking_ratio:
