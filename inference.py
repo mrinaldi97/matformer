@@ -71,6 +71,8 @@ if __name__ == "__main__":
 
 
     model,cfg=load_inference_model(checkpoint_path=args.model,ModelClass=ModelClass,map_location=device,tokenizer=tok_arg)
+    if ModelClass==BERTModel:
+        model.init_maskerator(args.masking_ratio)
     print("Loaded model on", device)
     print("Config:", cfg)
     # ---- FNS ----

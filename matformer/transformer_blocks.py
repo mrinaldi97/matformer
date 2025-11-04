@@ -289,11 +289,17 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         
 
 class BERTModel(TransformerWithLMHead):
-    def inference_testing(self, input_text, masking_ratio=0.25,mask_token=32768,datatype=torch.bfloat16):
-        #Copiata qui al volo per far girare i modelli già addestrati, da togliere. 
+    def init_maskerator(self, masking_ratio):
+        from matformer.masked_models import Maskerator
+        self.masking_ratio=masking_ratio
+        self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masked_substitution_rate)
+        print(f"Masking ratio: {self.masking_ratio}")
+    def inference_testing(self, input_text, masking_ratio=0.25,datatype=torch.bfloat16):
+        if not hasattr(self,'maskerator') or masking_ratio!=self.masking_ratio:
+            init_maskerator(masking_ratio)
         sequence = self.tokenizer.encode(input_text)
         sequence = torch.tensor(sequence).unsqueeze(0).to(self.device)
-        masked_list, cloze_list = maskerator(sequence, mask_token=mask_token, substitution_rate=masking_ratio)
+        masked_list, cloze_list = self.maskerator(sequence)
         masked_list.to(self.device)
         masked_sequence = NormalTensor(tensor=masked_list)
         model_input=deepcopy(masked_sequence)
