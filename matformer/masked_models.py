@@ -95,7 +95,7 @@ class Maskerator:
         if len(tokens) > 1:
             if all(not x for x in cloze_mask_out):
                 i = random.randrange(len(tokens))
-                output[i] = mask_token
+                output[i] = self.mask_token
                 cloze_mask_out[i] = True
             if all(cloze_mask_out):
                 i = random.randrange(len(tokens))
