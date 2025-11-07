@@ -2988,7 +2988,7 @@ class PretokenizationStrategy:
             print(f"\t{filename}")
             file_path = os.path.join(self.functions_path, filename)
             try:
-                spec = importlib.util.spec_from_file_location(None, file_path)
+                spec = importlib.util.spec_from_file_location(class_name, file_path)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
                 
