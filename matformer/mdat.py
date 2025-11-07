@@ -2975,7 +2975,7 @@ class PretokenizationStrategy:
     def _find_splitter_class(self, class_name: str):
         """Find splitter class in globals or import from functions directory."""
         if class_name in globals(): # First check if it exists in current globals
-
+            print(f"Using default class: {class_name}")
             return globals()[class_name]
         print(f"Looking in {self.functions_path}...")
         for filename in os.listdir(self.functions_path): # Try to find the class in any Python file in the functions directory
