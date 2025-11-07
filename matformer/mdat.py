@@ -2073,7 +2073,7 @@ class SubMdat:
             else:
                 return(text)
         if 'meta' in wanted_from_dbs:
-            composed.update(orjson.loads(self.storage_db['meta'][key])) 
+            composed.update({'meta':orjson.loads(self.storage_db['meta'][key])}) 
         if self.current_strategy is not None:
             if wanted_from_strategy is not None:
                composed.update(self.current_strategy(key=key, cache_dict=self.pretok_db, max_seq_len=max_seq_len, wanted_from_strategy=wanted_from_strategy, add_special_tokens=add_special_tokens))
