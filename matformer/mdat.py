@@ -2974,33 +2974,26 @@ class PretokenizationStrategy:
         
     def _find_splitter_class(self, class_name: str):
         """Find splitter class in globals or import from functions directory."""
-        # First check if it exists in current globals
-        if class_name in globals():
+        if class_name in globals(): # First check if it exists in current globals
+
             return globals()[class_name]
         
-        # Try to import from functions directory
-        sys.path.insert(0, self.functions_path)
-        try:
-            # Try to find the class in any Python file in the functions directory
-            for filename in os.listdir(self.functions_path):
-                if filename.endswith('.py') and not filename.startswith('__'):
-                    module_name = filename[:-3]
-                    try:
-                        spec = importlib.util.spec_from_file_location(
-                            module_name, 
-                            os.path.join(self.functions_path, filename)
-                        )
-                        module = importlib.util.module_from_spec(spec)
-                        spec.loader.exec_module(module)
-                        
-                        if hasattr(module, class_name):
-                            return getattr(module, class_name)
-                    except Exception:
-                        continue
-        finally:
-            sys.path.remove(self.functions_path)
-        
-        raise SplitterClassNotFound(f"Splitter class '{class_name}' not found")
+        for filename in os.listdir(self.functions_path): # Try to find the class in any Python file in the functions directory
+            if not filename.endswith(".py") or filename.startswith("__"):
+                continue
+            
+            file_path = os.path.join(self.functions_path, filename)
+            try:
+                spec = importlib.util.spec_from_file_location(None, file_path)        
+
+                module = importlib.util.module_from_spec(spec)
+                spec.loader.exec_module(module)
+                
+                if hasattr(module, class_name):
+                    return getattr(module, class_name)
+            except Exception:
+                continue        
+
 
     def save(self):
         """Insert or update strategy configuration in the database."""
