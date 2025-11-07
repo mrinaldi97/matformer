@@ -2977,11 +2977,11 @@ class PretokenizationStrategy:
         if class_name in globals(): # First check if it exists in current globals
 
             return globals()[class_name]
-        
+        print(f"Looking in {self.functions_path}...")
         for filename in os.listdir(self.functions_path): # Try to find the class in any Python file in the functions directory
             if not filename.endswith(".py") or filename.startswith("__"):
                 continue
-            
+            print("\t{filename}")
             file_path = os.path.join(self.functions_path, filename)
             try:
                 spec = importlib.util.spec_from_file_location(None, file_path)        
@@ -2990,7 +2990,10 @@ class PretokenizationStrategy:
                 spec.loader.exec_module(module)
                 
                 if hasattr(module, class_name):
-                    return getattr(module, class_name)
+                    cls = getattr(module, class_name)
+                    if cls is None:
+                        raise ValueError(f"Module {filename} defines {class_name} = None")
+                    return cls
             except Exception:
                 continue        
 
