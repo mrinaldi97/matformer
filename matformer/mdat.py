@@ -5,6 +5,8 @@ import os
 import json
 import shutil
 import struct
+import traceback
+
 try:
     from tqdm import tqdm  
 except:
@@ -2972,20 +2974,21 @@ class PretokenizationStrategy:
             self.save() #Saving in order to update token dtype and chunks dtype
 
         
+
     def _find_splitter_class(self, class_name: str):
         """Find splitter class in globals or import from functions directory."""
-        if class_name in globals(): # First check if it exists in current globals
+        if class_name in globals():  # First check if it exists in current globals
             print(f"Using default class: {class_name}")
             return globals()[class_name]
+        
         print(f"Looking in {self.functions_path}...")
-        for filename in os.listdir(self.functions_path): # Try to find the class in any Python file in the functions directory
+        for filename in os.listdir(self.functions_path):  # Try to find the class in any Python file in the functions directory
             if not filename.endswith(".py") or filename.startswith("__"):
                 continue
-            print("\t{filename}")
+            print(f"\t{filename}")
             file_path = os.path.join(self.functions_path, filename)
             try:
-                spec = importlib.util.spec_from_file_location(None, file_path)        
-
+                spec = importlib.util.spec_from_file_location(None, file_path)
                 module = importlib.util.module_from_spec(spec)
                 spec.loader.exec_module(module)
                 
@@ -2994,8 +2997,10 @@ class PretokenizationStrategy:
                     if cls is None:
                         raise ValueError(f"Module {filename} defines {class_name} = None")
                     return cls
-            except Exception:
-                continue        
+            except Exception as e:
+                print(f"Failed to import {filename}: {e}")
+                traceback.print_exc()
+                continue    
 
 
     def save(self):
