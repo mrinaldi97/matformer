@@ -3135,11 +3135,11 @@ class PretokenizationStrategy:
             
             # Chunking tokens
             if 'chunked_tokens' in wanted_from_strategy and 'tokens' in cache_dict and 'chunks' in cache_dict:
-                if hasattr(self.splitter,'splitter_decides_chunking') and getattr(self.splitter,'splitter_decides_chunking',False) == True:
+                if getattr(self.splitter_arguments,'splitter_decides_chunking',False):
                         #Leave the chunking logic to the custom splitter (for special cases)
                         print("Debug: splitter is getting called for chunking")
                         self._initialize_components()
-                        wanted_dbs_for_chunking=getattr(self.splitter,'wanted_dbs_for_chunking',['tokens','chunks'])
+                        wanted_dbs_for_chunking=getattr(self.splitter_arguments,'wanted_dbs_for_chunking',['tokens','chunks'])
                         data_from_dbs=dict()
                         for db in wanted_dbs_for_chunking:
                             data_from_dbs[db]=self._retrieve_from_storage(cache_dict[db][key],db)
