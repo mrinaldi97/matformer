@@ -3133,14 +3133,17 @@ class PretokenizationStrategy:
             
             # Chunking tokens
             if 'chunked_tokens' in wanted_from_strategy and 'tokens' in cache_dict and 'chunks' in cache_dict:
-                if self.splitter_arguments.get('splitter_decides_chunking', False):
+                splitter_args = self.splitter_arguments or {}
+                if splitter_args.get('splitter_decides_chunking', False):
                         #Leave the chunking logic to the custom splitter (for special cases)
                         self._initialize_components()
-                        wanted_dbs_for_chunking=self.splitter_arguments.get('wanted_dbs_for_chunking',['tokens','chunks'])
-                        data_from_dbs=dict()
+                        wanted_dbs_for_chunking = splitter_args.get('wanted_dbs_for_chunking', ['tokens', 'chunks'])
+                        data_from_dbs = dict()
                         for db in wanted_dbs_for_chunking:
-                            data_from_dbs[db]=self._retrieve_from_storage(cache_dict[db][key],db)
-                        return_dict['chunked_tokens']=self.splitter.chunk_tokens(data_from_dbs)
+                            if db in cache_dict and key in cache_dict[db]:
+                                data_from_dbs[db] = self._retrieve_from_storage(cache_dict[db][key], db)
+                        return_dict['chunked_tokens'] = self.splitter.chunk_tokens(data_from_dbs)
+
                 else: #Default chunking logic (splitter is not even intialized, faster)
                     tokens_data = self._retrieve_from_storage(cache_dict['tokens'][key], 'tokens')
                     chunks_data = self._retrieve_from_storage(cache_dict['chunks'][key], 'chunks')
