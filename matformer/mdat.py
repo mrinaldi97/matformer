@@ -2948,7 +2948,10 @@ class PretokenizationStrategy:
                 """If parameter is -1, try to fetch it from tokenizer; otherwise leave unchanged."""
                 if getattr(self, parameter, None) == -1:
                     try:
-                        setattr(self, parameter, getattr(tokenizer, parameter, None))
+                        if parameter=='vocab_size':
+                            setattr(self,parameter,len(tokenizer)) #More reliable, includes special tokens
+                        else:
+                            setattr(self, parameter, getattr(tokenizer, parameter, None))
                     except Exception:
                         print(f"Cannot find parameter {parameter} in the tokenizer. It stays to None")
 
@@ -3132,9 +3135,19 @@ class PretokenizationStrategy:
             
             # Chunking tokens
             if 'chunked_tokens' in wanted_from_strategy and 'tokens' in cache_dict and 'chunks' in cache_dict:
-                tokens_data = self._retrieve_from_storage(cache_dict['tokens'][key], 'tokens')
-                chunks_data = self._retrieve_from_storage(cache_dict['chunks'][key], 'chunks')
-                return_dict['chunked_tokens'] = self._chunk_tokens(tokens_data, chunks_data, add_special_tokens)
+                if hasattr(self.splitter,'splitter_decides_chunking') and getattr(self.splitter,'splitter_decides_chunking',False) == True:
+                        #Leave the chunking logic to the custom splitter (for special cases)
+                        print("Debug: splitter is getting called for chunking")
+                        self._initialize_components()
+                        wanted_dbs_for_chunking=getattr(self.splitter,'wanted_dbs_for_chunking',['tokens','chunks'])
+                        data_from_dbs=dict()
+                        for db in wanted_dbs_for_chunking:
+                            data_from_dbs[db]=self._retrieve_from_storage(cache_dict[db][key],db)
+                        return_dict['chunked_tokens']=self.splitter.chunk_tokens(data_from_dbs)
+                else: #Default chunking logic (splitter is not even intialized, faster)
+                    tokens_data = self._retrieve_from_storage(cache_dict['tokens'][key], 'tokens')
+                    chunks_data = self._retrieve_from_storage(cache_dict['chunks'][key], 'chunks')
+                    return_dict['chunked_tokens'] = self._chunk_tokens(tokens_data, chunks_data, add_special_tokens)
             return return_dict
         else:
             # We need to call splitter for pretokenization
@@ -3179,6 +3192,16 @@ class PretokenizationStrategy:
 
     def _chunk_tokens(self, tokens: List[int], chunks: List[tuple], add_special_tokens: bool = True) -> List[List[int]]:
         """Split tokens into chunks based on chunk boundaries."""
+
+        chunked_tokens = []
+        for start, end in chunks:
+            chunk = tokens[start:end]
+            if add_special_tokens:  
+                    chunk = [self.bos_token_id] + chunk + [self.eos_token_id]
+            chunked_tokens.append(chunk)
+        return chunked_tokens
+    def _chunk_tokens(self, tokens: List[int], chunks: List[tuple], add_special_tokens: bool = True) -> List[List[int]]:
+        """Split tokens into chunks based on chunk boundaries."""
         chunked_tokens = []
         for start, end in chunks:
             chunk = tokens[start:end]
@@ -3186,7 +3209,6 @@ class PretokenizationStrategy:
                 chunk = [self.bos_token_id] + chunk + [self.eos_token_id]
             chunked_tokens.append(chunk)
         return chunked_tokens
-
 
 
 # Exception classes
