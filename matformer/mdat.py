@@ -2978,14 +2978,11 @@ class PretokenizationStrategy:
     def _find_splitter_class(self, class_name: str):
         """Find splitter class in globals or import from functions directory."""
         if class_name in globals():  # First check if it exists in current globals
-            print(f"Using default class: {class_name}")
             return globals()[class_name]
         
-        print(f"Looking in {self.functions_path}...")
         for filename in os.listdir(self.functions_path):  # Try to find the class in any Python file in the functions directory
             if not filename.endswith(".py") or filename.startswith("__"):
                 continue
-            print(f"\t{filename}")
             file_path = os.path.join(self.functions_path, filename)
             try:
                 spec = importlib.util.spec_from_file_location(class_name, file_path)
@@ -3138,7 +3135,6 @@ class PretokenizationStrategy:
             if 'chunked_tokens' in wanted_from_strategy and 'tokens' in cache_dict and 'chunks' in cache_dict:
                 if self.splitter_arguments.get('splitter_decides_chunking', False):
                         #Leave the chunking logic to the custom splitter (for special cases)
-                        print("Debug: splitter is getting called for chunking")
                         self._initialize_components()
                         wanted_dbs_for_chunking=self.splitter_arguments.get('wanted_dbs_for_chunking',['tokens','chunks'])
                         data_from_dbs=dict()
