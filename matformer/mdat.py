@@ -3610,6 +3610,7 @@ def cmd_pretokenize(
     ds: Optional[MatformerDataset] = None,
 ):
     ds = ds or MatformerDataset.load_dataset(path, readonly=False)
+    ds.set_strategy(strategy)
     sub = ds.get_submdat(submdat)
     sub.pretokenize_submdat(
         strategy,
