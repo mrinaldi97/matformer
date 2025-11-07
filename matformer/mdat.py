@@ -3140,8 +3140,7 @@ class PretokenizationStrategy:
                         wanted_dbs_for_chunking = splitter_args.get('wanted_dbs_for_chunking', ['tokens', 'chunks'])
                         data_from_dbs = dict()
                         for db in wanted_dbs_for_chunking:
-                            if db in cache_dict and key in cache_dict[db]:
-                                data_from_dbs[db] = self._retrieve_from_storage(cache_dict[db][key], db)
+                            data_from_dbs[db] = self._retrieve_from_storage(cache_dict[db][key], db)
                         return_dict['chunked_tokens'] = self.splitter.chunk_tokens(data_from_dbs)
 
                 else: #Default chunking logic (splitter is not even intialized, faster)
