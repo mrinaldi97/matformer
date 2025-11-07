@@ -34,13 +34,13 @@
   "training": {
     "optimizer": "muon",
     "lr_scheduling": true,
-    "lr": 5e-4,
+    "lr": 7e-4,
     "final_lr": 4e-5,
     "hold_steps": 1000,
     "weight_decay": 0.01,
     "scheduler": "custom",
     "gradient_clip_val": 1.0,
-    "warmup_steps": 250,
+    "warmup_steps": 75,
     "max_epochs": 10,
     "accumulate_grad_batches": 18,
     "seed": 27,
@@ -54,7 +54,7 @@
   },
   "data": {
     "data_root": "/home/matteo/BabyLM/mdat_baby_finale/",
-    "batch_size": 40,
+    "batch_size": 36,
     "num_workers": 1,
     "mdat_strategy":"MinervaSpecialTokens",
     "mdat_view": null
