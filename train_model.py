@@ -52,12 +52,25 @@ def get_model_class(model_class: str):
 def main():
     config_path, overrides, device_count, ckpt_arg, start_scratch = parse_args()
     cfg = apply_overrides(load_config(config_path), overrides)
-
+    
+    #--------------------------------------#
+    # Removed training_objective and is_causal. 
+    # Brutto da vedere, credo si possa fare di meglio
+    model_class = cfg['model_class']
+    training_objective = "autoregressive" if model_class == "Autoregressive_Model" else "masked"
+    is_causal = True if model_class == "Autoregressive_Model" else False
+    
+    cfg['model_config']['training_objective'] = training_objective
+    cfg['model_config']['is_causal'] = is_causal
+    #--------------------------------------#
+    
     model_cfg = ModelConfig(**cfg['model_config'])
     train_cfg = cfg['training']
     data_cfg = cfg['data']
     tok_cfg = cfg['tokenizer']
     save_dir = cfg.get('save_dir', './checkpoints')
+    
+    
     
     pl.seed_everything(train_cfg.get('seed', 27))
     
