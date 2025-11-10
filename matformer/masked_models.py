@@ -50,10 +50,11 @@ class Maskerator:
         if isinstance(input_ids, torch.Tensor) and input_ids.dim() > 1:
             # Input is a batch of tokens
             outs, masks = [], []
+            device=input_ids.device
             for row in input_ids:
                 o, m = self._masking_function(row)
-                outs.append(o)
-                masks.append(m)
+                outs.append(torch.tensor(o,device=device))
+                masks.append(torch.tensor(m,device=device,dtype=torch.bool))
             return torch.stack(outs), torch.stack(masks)
 
         if isinstance(input_ids, torch.Tensor):
