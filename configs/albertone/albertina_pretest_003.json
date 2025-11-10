@@ -9,7 +9,7 @@
     "eos_token_id": 2,
     "pad_token_id": 0,
     "mask_token_id": 32768,
-    "masked_substitution_rate":0.15,
+    "masked_substitution_rate":0.35,
     "num_hidden_layers": 12,
     "num_attention_heads": 12,
     "tie_word_embeddings": false,
@@ -56,12 +56,12 @@
   },
   "data": {
     "data_root": "/home/matteo/Albertone/Albertina/Albertina_mdat",
-    "batch_size": 48,
+    "batch_size": 36,
     "num_workers": 1,
     "mdat_strategy":"Minerva1024",
     "mdat_view": null
   },
   "save_dir": "./checkpoints_albertone",
   "wandb_project": "Albertone",
-  "wandb_run_name": "Mini-Albertina-000"
+  "wandb_run_name": "Mini-Albertina-003"
 }

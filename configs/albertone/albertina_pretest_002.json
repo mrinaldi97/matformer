@@ -1,7 +1,7 @@
 {
   "model_class": "BERTModel",
   "model_config": {
-    "name": "Mini-Albertina-001",
+    "name": "Mini-Albertina-002-Adam",
     "hidden_size": 768,
     "ffn_factor": 4.0,
     "vocab_size": 32769,
@@ -34,20 +34,20 @@
     "custom_layers": {}
   },
   "training": {
-      "optimizer": "adam",
+      "optimizer": "adamw",
       "lr_scheduling": true,
       "lr": 5e-4,
       "final_lr":2e-5,
-      "hold_steps":5000,
+      "hold_steps":0.21,
       "weight_decay": 0.01,
       "scheduler": "custom",
       "gradient_clip_val":1.0,
-      "warmup_steps": 1250,
+      "warmup_steps": 0.05,
       "max_epochs": 1,
       "accumulate_grad_batches": 5,
       "seed": 27,
       "save_every_n_steps": 5000,
-      "checkpoint_name": "mini_albertina_001"
+      "checkpoint_name": "mini_albertina_002_adam"
   },
   "tokenizer": {
     "type": "huggingface",
@@ -63,5 +63,5 @@
   },
   "save_dir": "./checkpoints_albertone",
   "wandb_project": "Albertone",
-  "wandb_run_name": "Mini-Albertina-000"
+  "wandb_run_name": "Mini-Albertina-002_adam"
 }

@@ -1,0 +1,65 @@
+{
+  "model_class": "Autoregressive_Model",
+  "model_config": {
+    "name": "BabyLM",
+    "hidden_size": 768,
+    "ffn_factor": 3.0,
+    "num_hidden_layers": 12,
+    "num_attention_heads": 12,
+    "vocab_size": 32777,
+    "bos_token_id": 1,
+    "eos_token_id": 2,
+    "pad_token_id": 0,
+    "tie_word_embeddings": false,
+    "rms_norm_eps": 1e-6,
+    "attention_type": [],
+    "max_position_embeddings": 1024,
+    "block_size_for_attention": 128,
+    "rope_theta": 10000.0,
+    "compile_flexattn": false,
+    "bias": false,
+    "training_objective": "autoregressive",
+    "is_causal": true,
+    "default_layer": {
+      "attn_impl": "flash",
+      "sliding_window_size": null,
+      "positional_encoding": "alibi",
+      "normalization":"rmsnorm",
+      "normalization_position":"post",
+      "ffn_activation":"swiglu",
+      "hooks": {}
+    },
+    "custom_layers": {}
+  },
+  "training": {
+    "optimizer": "muon",
+    "lr_scheduling": true,
+    "lr": 8e-4,
+    "final_lr": 8e-5,
+    "hold_steps": 0.013,
+    "weight_decay": 0.01,
+    "scheduler": "custom",
+    "gradient_clip_val": 1.0,
+    "warmup_steps": 0.029,
+    "max_epochs": 10,
+    "accumulate_grad_batches": 5,
+    "seed": 27,
+    "save_every_n_steps": 8000,
+    "checkpoint_name": "Baby_modello_di_prova_28L"
+  },
+  "tokenizer": {
+    "type": "huggingface",
+    "pretrained_name": "sapienzanlp/Minerva-350M-base-v1.0",
+    "varlen_strategy": "unpadding"
+  },
+  "data": {
+    "data_root": "/home/matteo/BabyLM/mdat_baby_finale/",
+    "batch_size": 36,
+    "num_workers": 1,
+    "mdat_strategy":"MinervaSpecialTokens",
+    "mdat_view": null
+  },
+  "save_dir": "./checkpoints_baby",
+  "wandb_project": "BabyLM",
+  "wandb_run_name": "Baby-Test-Model-Piccolo"
+}
