@@ -206,11 +206,15 @@ class PL_ModelWrapper(pl.LightningModule):
             (self.train_config["num_batches"] // self.train_config.get("accumulate_grad_batches", 1))
             * self.train_config.get("max_epochs", 1)
         )
+        
         self.total_training_steps = total_steps
 
         if self.train_config.get("scheduler") == "custom":
-            warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
-            hold = self.train_config.get("hold_steps", int(0.10 * total_steps))
+            #warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            #hold = self.train_config.get("hold_steps", int(0.10 * total_steps))
+            warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps) 
+            hold = int(self.train_config.get("hold_steps", 0.10) * total_steps)
+            
             target = self.train_config.get("final_lr", 0.0)
             base_lr = optimizer.param_groups[0]["lr"]
             factor = target / base_lr if base_lr > 0 else 0.0
@@ -228,7 +232,9 @@ class PL_ModelWrapper(pl.LightningModule):
         elif self.train_config.get("scheduler") == "cosine_decay":
             from transformers import get_cosine_schedule_with_warmup
             
-            warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            #warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
+            
             final_lr = self.train_config.get("final_lr", 0.0)
             
             scheduler = get_cosine_schedule_with_warmup(
@@ -239,7 +245,8 @@ class PL_ModelWrapper(pl.LightningModule):
         elif self.train_config.get("scheduler") == "linear_decay":
             from transformers import get_linear_schedule_with_warmup
             
-            warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            #warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
             
             scheduler = get_linear_schedule_with_warmup(
                 optimizer=optimizer,
@@ -249,7 +256,9 @@ class PL_ModelWrapper(pl.LightningModule):
 
 
         else:
-            warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            #warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
+            warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
+            
             scheduler = get_scheduler(
                 name=self.train_config.get("scheduler", "linear"),
                 optimizer=optimizer,
