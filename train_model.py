@@ -65,11 +65,12 @@ def main():
     if torch.cuda.is_available():
         accelerator = 'gpu'
         precision = '16-mixed'
+        device_string = 'cuda'
     elif torch.backends.mps.is_available():
-        accelerator = 'mps'
-        precision = '32'  # MPS doesn't fully support mixed precision yet
+        accelerator = device_string = 'mps'
+        precision = '32'
     else:
-        accelerator = 'cpu'
+        accelerator = device_string = 'cpu'
         precision = '32'
     """
     tokenizer = (
@@ -131,25 +132,32 @@ def main():
     
     # Initialize model
     ModelClass = get_model_class(cfg['model_class'])
+    
     model = PL_ModelWrapper(
         ModelClass, 
         config=model_cfg, 
         tokenizer=None, 
         train_config=train_cfg, 
-        device='cuda', 
+        device=device_string, 
         batch_size=data_cfg['batch_size']
     )
 
-    # Setup logging
-    wandb_logger = WandbLogger(
-        name=cfg.get('wandb_run_name', 'training-run'),
-        project=cfg.get('wandb_project', 'matformer'),
-        config=cfg
-    )
+
     
     # Create timestamped checkpoint filename to avoid name clashes
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    checkpoint_name = f"{train_cfg.get('checkpoint_name', 'model')}_{timestamp}"
+    
+    #checkpoint_name = f"{train_cfg.get('checkpoint_name', 'model')}_{timestamp}"    
+    checkpoint_name = train_cfg.get('checkpoint_name', 'model') # jerik
+    run_name = cfg.get('wandb_run_name', 'training-run') # jerik
+    
+    # Setup logging
+    wandb_logger = WandbLogger(
+        name=f"{run_name}_{timestamp}",
+        #name=cfg.get('wandb_run_name', 'training-run'),
+        project=cfg.get('wandb_project', 'matformer'),
+        config=cfg
+    )
     
     checkpoint = ModelCheckpoint(
         dirpath=save_dir,
@@ -167,17 +175,27 @@ def main():
         if ckpt_arg and os.path.exists(ckpt_arg):
             ckpt_path = ckpt_arg
         else:
-            last_ckpt = Path(save_dir) / f"{checkpoint_name}_last.ckpt"
+            # last_ckpt = Path(save_dir) / f"{checkpoint_name}_last.ckpt"
+            # if last_ckpt.exists():
+            #     ckpt_path = str(last_ckpt)
+            
+            # jerik
+            last_ckpt = Path(save_dir) / "last.ckpt"
             if last_ckpt.exists():
+                print(f"Resuming training from {last_ckpt}")
                 ckpt_path = str(last_ckpt)
+            else:
+                print("No checkpoint found, starting from scratch.")
+            
+
 
     # Create trainer
     trainer = pl.Trainer(
         logger=wandb_logger,
         callbacks=[checkpoint],
-        precision='16-mixed',
+        precision=precision,
         gradient_clip_val=train_cfg.get('gradient_clip_val', 1),
-        accelerator='gpu',
+        accelerator=accelerator,
         devices=device_count,
         log_every_n_steps=10,
         accumulate_grad_batches=train_cfg.get('accumulate_grad_batches', 1),
