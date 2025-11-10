@@ -33,7 +33,14 @@ class PL_ModelWrapper(pl.LightningModule):
             self.model.apply(init_transformer_weights_)
             
         self.batch_size=batch_size # Utile per il learning rate scheduling
-        self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=self.config.masked_substitution_rate)
+        
+        # Maskerator setup
+        cloze_prob = self.train_config.get("cloze_prob", 1.0)
+        random_prob = self.train_config.get("random_prob", None)
+        same_prob = self.train_config.get("same_prob", None)
+        
+        self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=self.config.masked_substitution_rate, cloze_prob=cloze_prob,random_prob=random_prob,same_prob=same_prob)
+        
     def forward(self, _input):
         return self.model(_input.to(self.device))
     def on_load_checkpoint(self, checkpoint):
