@@ -5,7 +5,14 @@ import random
 from typing import Optional
 import torch
 class Maskerator:
-    def __init__(self,mask_token:int,substitution_rate:float,cloze_prob:Optional[float]=1.0,random_prob:Optional[float]=None,same_prob:Optional[float]=None,max_position_embeddings:Optional[int]=None):
+    def __init__(self,
+                 mask_token:int,
+                 substitution_rate:float,
+                 pad_token_id:int,
+                 cloze_prob:Optional[float]=1.0,
+                 random_prob:Optional[float]=None,
+                 same_prob:Optional[float]=None,
+                 vocab_size:Optional[int]=None):
         """
         The maskerator has three modalities: 
           - cloze_mask : replace with <mask>
@@ -16,23 +23,31 @@ class Maskerator:
           input_ids: [B,L] [L], torch tensor
           mask_token: int
           substitution_rate: probability of tokens to be masked
-          cloze_mask, random_substitution, same_token_ratio: proportions of different strategies, sum must be 1
-          max_positional_embeddings: required if random or same != None
+          pad_token_id: The token ID for [PAD]. This needs to avoid masking padding
+          cloze_prob, random_prob, same_prob: proportions of different strategies, sum must be 1
+          vocab_size: Required if random_prob > 0.
 
         Returns:
           output_ids: masked tensor
           cloze_mask: bool mask (True where prediction required)
         """
         self.mask_token=mask_token
-        self.substitution_rate=substitution_rate
-        self.cloze_prob=cloze_prob
-        self.random_prob=random_prob
-        self.same_prob=same_prob
-        self.max_position_embeddings=max_position_embeddings
-        if (random_prob is not None or same_prob is not None):
-            assert max_positional_embeddings is not None, "Need max_positional_embeddings"
-            total = cloze_mask + (random_prob or 0.0) + (same_prob or 0.0)
-            assert abs(total - 1.0) < 1e-6, "The proportions must sum to 1"
+        self.substitution_rate=substitution_rate # overall probability of masking
+        self.pad_token_id=pad_token_id
+        self.vocab_size=vocab_size
+        
+        self.use_only_cloze_mask = (random_prob is None) and (same_prob is None)
+
+        if not self.use_only_cloze_mask :
+            assert vocab_size is not None, "vocab_size is required for random substitution"
+            random_p = random_prob or 0.0
+            same_p = same_prob or 0.0
+            total = cloze_prob + random_p + same_p
+            assert abs(total - 1.0) < 1e-6, "The proportions (cloze, random, same) must sum to 1"
+            
+            # Pre-calculate cumulative probabilities 
+            self.cloze_cutoff = cloze_prob
+            self.random_cutoff = cloze_prob + random_p
         
     def __call__(self,input_ids):
         """
@@ -40,9 +55,89 @@ class Maskerator:
             * If it receives a Batch, the masking function will be applied to each batch's element
             * If it receives a list/tensor of elements, the masking function will be directly applied
         """
-        if isinstance(input_ids,torch.Tensor) and input_ids.is_nested:
+        if not isinstance(input_ids, torch.Tensor):
+            raise TypeError(f"Input must be a torch.Tensor, but got {type(input_ids)}")
+        
+        if input_ids.is_nested:
+            # NestedTensors. At the moment old method.
+            return self._iterative_call(input_ids)
+        
+        if input_ids.dim() == 1:
+            # Input is a single tensor
+            output_ids, cloze_mask = self._masking_function(input_ids.unsqueeze(0))
+            return output_ids.squeeze(0), cloze_mask.squeeze(0)
+        
+        else:
+            # Input is a batch of tokens
+            return self._masking_function(input_ids)
+                
+    def _masking_function(self,input_ids):
+        device = input_ids.device
+        
+        prob_matrix = torch.rand(input_ids.shape, device=device)
+        substitution_mask = (prob_matrix < self.substitution_rate)
+        
+        # Dont't mask [PAD] tokens.
+        non_pad_mask = (input_ids != self.pad_token_id)
+        
+        cloze_mask = substitution_mask & non_pad_mask
+        output_ids = input_ids.clone()
+        
+        if self.use_only_cloze_mask :
+            output_ids.masked_fill_(cloze_mask, self.mask_token)
+            
+        else:
+            # Multiple strategies
+            mask_decision_matrix = torch.rand(input_ids.shape, device=device)
+            
+            # [MASK]
+            mask_token_mask = (mask_decision_matrix < self.cloze_cutoff) & cloze_mask
+            output_ids.masked_fill_(mask_token_mask, self.mask_token)
+            
+            # Random token
+            random_token_mask = (mask_decision_matrix >= self.cloze_cutoff) & (mask_decision_matrix < self.random_cutoff) & cloze_mask
+        
+            if random_token_mask.any():
+                random_tokens = torch.randint(0, self.vocab_size, input_ids.shape, device=device, dtype=input_ids.dtype)
+                output_ids[random_token_mask] = random_tokens[random_token_mask]
+        
+        
+        # Avoid all masked or none mask to avoid problems such as NaN gradients
+        
+        # Count non-pad tokens per sequence
+        tokens_per_seq = (input_ids != self.pad_token_id).sum(dim=-1)
+        # Count masks per sequence
+        masked_per_seq = cloze_mask.sum(dim=-1)
+        rows_needing_mask = (tokens_per_seq > 1) & (masked_per_seq == 0)
+        if rows_needing_mask.any():
+            # Get the row that we have to mask
+            row_indices = rows_needing_mask.nonzero().squeeze(-1)
+            # Create a probability distribution (1.0 for non-pad, 0.0 for pad)
+            sample_probs = (input_ids[rows_needing_mask] != self.pad_token_id).float()
+            # Sample one index (column) for each of these rows
+            col_indices = torch.multinomial(sample_probs, num_samples=1).squeeze(-1)
+            # Use the row and col indices to force a mask
+            output_ids[row_indices, col_indices] = self.mask_token
+            cloze_mask[row_indices, col_indices] = True
+            
+        # Ensure that no sequence is fully masked
+        rows_fully_masked = (tokens_per_seq > 1) & (masked_per_seq == tokens_per_seq)
+        if rows_fully_masked.any():
+            # For these rows, pick one token to unmask (not [PAD] token)
+            row_indices = rows_fully_masked.nonzero().squeeze(-1)
+            sample_probs = (input_ids[rows_fully_masked] != self.pad_token_id).float()
+            col_indices = torch.multinomial(sample_probs, num_samples=1).squeeze(-1)
+            # Revert this token to its original value
+            output_ids[row_indices, col_indices] = input_ids[row_indices, col_indices]
+            cloze_mask[row_indices, col_indices] = False
+                        
+        return output_ids, cloze_mask
+
+    def _iterative_call(self, input_ids):
+        
+        if isinstance(input_ids, torch.Tensor) and input_ids.is_nested:
             # Input is a nested tensor
-            masked_sequences, cloze_masks = zip(*[self._masking_function(seq) for seq in sequence.unbind()])
+            masked_sequences, cloze_masks = zip(*[self._iterative_masking_function(seq) for seq in input_ids.unbind()])
             sequence = torch.nested.nested_tensor(torch.stack(masked_sequences), layout=torch.jagged)
             cloze_mask = torch.nested.nested_tensor(torch.stack(cloze_masks), layout=torch.jagged)
             return sequence,cloze_mask
@@ -50,26 +145,25 @@ class Maskerator:
         if isinstance(input_ids, torch.Tensor) and input_ids.dim() > 1:
             # Input is a batch of tokens
             outs, masks = [], []
-            device=input_ids.device
+            device = input_ids.device
             for row in input_ids:
-                o, m = self._masking_function(row)
-                outs.append(torch.tensor(o,device=device))
-                masks.append(torch.tensor(m,device=device,dtype=torch.bool))
+                o, m = self._iterative_masking_function(row.tolist())
+                outs.append(torch.tensor(o, device=device))
+                masks.append(torch.tensor(m, device=device, dtype=torch.bool))
             return torch.stack(outs), torch.stack(masks)
 
         if isinstance(input_ids, torch.Tensor):
             # Input is a single tensor
             tokens = input_ids.tolist()
             device = input_ids.device
-            output,mask=self._masking_function(tokens)
+            output, mask = self._iterative_masking_function(tokens)
             return (torch.tensor(output, device=device),
                     torch.tensor(mask, dtype=torch.bool, device=device))            
         else:
-            tokens = list(input_ids) # Input is a list of token
-            return self._masking_function(tokens)
-        
-                
-    def _masking_function(self,tokens):
+            tokens = list(input_ids)  # Input is a list of token
+            return self._iterative_masking_function(tokens)
+   
+    def _iterative_masking_function(self,tokens):
         output, cloze_mask_out = [], []
         for tok in tokens:
             if random.random() < self.substitution_rate:
@@ -79,10 +173,10 @@ class Maskerator:
                     output.append(self.mask_token)
                     cloze_mask_out.append(True)
                 else:
-                    if r < cloze_mask:
+                    if r < self.cloze_cutoff:
                         output.append(self.mask_token)
                         cloze_mask_out.append(True)
-                    elif r < cloze_mask + (self.random_prob or 0.0):
+                    elif r < self.random_cutoff:
                         output.append(random.randint(0, self.max_positional_embeddings-1))
                         cloze_mask_out.append(True)
                     else:  # same_token
@@ -103,5 +197,3 @@ class Maskerator:
                 output[i] = tokens[i]
                 cloze_mask_out[i] = False
         return output, cloze_mask_out
-
-

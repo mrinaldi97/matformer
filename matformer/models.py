@@ -35,11 +35,18 @@ class PL_ModelWrapper(pl.LightningModule):
         self.batch_size=batch_size # Utile per il learning rate scheduling
         
         # Maskerator setup
-        cloze_prob = self.train_config.get("cloze_prob", 1.0)
-        random_prob = self.train_config.get("random_prob", None)
-        same_prob = self.train_config.get("same_prob", None)
+        cloze_prob = self.config.get("cloze_prob", 1.0)
+        random_prob = self.config.get("random_prob", None)
+        same_prob = self.config.get("same_prob", None)
+        vocab_size = self.config.get("vocab_size", None)
         
-        self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=self.config.masked_substitution_rate, cloze_prob=cloze_prob,random_prob=random_prob,same_prob=same_prob)
+        self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
+                                   substitution_rate=self.config.masked_substitution_rate,
+                                   pad_token_id=self.config.pad_token_id,
+                                   cloze_prob=cloze_prob,
+                                   random_prob=random_prob,
+                                   same_prob=same_prob,
+                                   vocab_size=vocab_size)
         
     def forward(self, _input):
         return self.model(_input.to(self.device))
