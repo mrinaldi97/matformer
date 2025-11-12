@@ -57,9 +57,8 @@ class MatformerConfig(PretrainedConfig):
 
     def __init__(self, **kwargs):
         self._matformer_config_dict = kwargs.pop('_matformer_config_dict', None)
-        self.use_cache = kwargs.pop('use_cache', False)
+        self.use_cache = kwargs.pop('use_cache', True)
         self.tie_word_embeddings = kwargs.pop('tie_word_embeddings', False)
-
         self.hidden_size = kwargs.get('hidden_size', 768)
         self.num_hidden_layers = kwargs.get('num_hidden_layers', 12)
         self.num_attention_heads = kwargs.get('num_attention_heads', 12)
@@ -256,7 +255,7 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
 
 def rename_state_dict_keys(state_dict: dict) -> dict:
     """
-    Robustly rename old Matformer checkpoint keys to match the current model.
+    Rename Matformer checkpoint keys to Huggingface
     
     - Strips 'model.' prefix from Lightning checkpoints.
     - Adds 'transformer.' prefix to lm_head and embedding keys if missing.
