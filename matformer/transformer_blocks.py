@@ -294,6 +294,29 @@ class BERTModel(TransformerWithLMHead):
         self.masking_ratio=masking_ratio
         self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masking_ratio)
         print(f"Masking ratio: {self.masking_ratio}")
+
+    def init_classification_head(self, num_labels=2, pooling_type='cls'):
+        """Initialize classification head. Compatible with HuggingFace Trainer."""
+        self.classification_head = ModuleWrapper(nn.Linear(self.config.hidden_size, num_labels))
+        self.pooling_type = pooling_type
+        self.num_labels = num_labels
+        
+    def forward_classification(self, x, attention_mask=None):
+        """Forward pass for sequence classification."""
+        hidden_states = self.transformer(x)
+        
+        if self.pooling_type == 'cls':
+            pooled = hidden_states.tensor[:, 0]
+        elif self.pooling_type == 'mean':
+            if attention_mask is not None:
+                mask = attention_mask.unsqueeze(-1).expand(hidden_states.tensor.size()).float()
+                pooled = torch.sum(hidden_states.tensor * mask, 1) / torch.clamp(mask.sum(1), min=1e-9)
+            else:
+                pooled = hidden_states.tensor.mean(dim=1)
+        else:
+            raise ValueError(f"pooling_type must be 'cls' or 'mean', got {self.pooling_type}")
+            
+        return self.classification_head(pooled).tensor        
     def inference_testing(self, input_text=None, masking_ratio=0.25,datatype=torch.bfloat16, tokens=None):
         #assert (is input_text or is_tokens)
         if not hasattr(self,'maskerator') or masking_ratio!=self.masking_ratio:

@@ -1,0 +1,12 @@
+Metadata-Version: 2.4
+Name: matformer
+Version: 0.1.0
+Summary: A modular transformer library
+Author: Matteo Rinaldi, Calojero Jerik Scozzaro
+License: MIT
+Project-URL: Homepage, https://github.com/mrinaldi97/matformer
+Project-URL: Bug Tracker, https://github.com/mrinaldi97/matformer/issues
+Requires-Python: >=3.6
+Description-Content-Type: text/markdown
+Requires-Dist: torch>=2.6.0
+Requires-Dist: pytorch-lightning>=2.6.0
