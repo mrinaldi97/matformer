@@ -67,7 +67,7 @@ class MatformerConfig(PretrainedConfig):
         self.pad_token_id = kwargs.get('pad_token_id', 0)
         self.bos_token_id = kwargs.get('bos_token_id', 1)
         self.eos_token_id = kwargs.get('eos_token_id', 2)
-        self.num_labels = kwargs.get('num_labels', 2)
+        #self.num_labels = kwargs.get('num_labels', 2)
 
         if self._matformer_config_dict is None:
             self._matformer_config_dict = kwargs.copy()
