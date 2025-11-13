@@ -29,6 +29,18 @@ from copy import deepcopy
 #flex_attention = torch.compile(flex_attention) # Chiarire questione compilazione (dove? di che tipo? migliora o peggiora? in che casi farla?)
 from typing import Any
 from matformer.cached_stuff import CachedStuff
+from matformer.matformer_registry import registry
+from warnings import warn
+
+def ensure_cache_and_registry(cache):
+    """Ensure cache and registry initialization"""
+    if cache is None:
+        warn("Cache not provided, initializing new cache. Consider passing cache for efficiency.")
+        cache = CachedStuff()
+    if not hasattr(cache, 'registry'):
+        warn("Registry not found in cache, initializing. Consider initializing registry in cache.")
+        cache.registry = registry
+    return cache
 
 
 class TransformerBlock(nn.Module):
@@ -50,24 +62,23 @@ class TransformerBlock(nn.Module):
         If a LayerConfig is given as "config", then it will directly use that config ignoring layer_idx value
         """
         super().__init__()
-        self.cache=CachedStuff() if not cache else cache #Initialize the cache of attention masks and positional embeddings   
-        
+        self.cache = ensure_cache_and_registry(cache)   
+        cache=self.cache
         # Get layer-specific configuration
         if isinstance(config,ModelConfig):
             layer_config = config.get_layer_config(layer_idx) if layer_idx is not None else config.default_layer
         else:
             layer_config=config
-         
+               
         self.norm_position = layer_config['normalization_position']
-        normalization = RMSNorm if layer_config['normalization'] == 'rmsnorm' else LayerNorm
-        
         norm_kwargs = {
-            'normalized_shape': config.hidden_size,
-            'eps': config.rms_norm_eps,
-            'elementwise_affine': True
+            "normalized_shape": config.hidden_size,
+            "eps": config.rms_norm_eps,
+            "elementwise_affine": True
         }
-        self.attn_norm = ModuleWrapper(normalization(**norm_kwargs))
-        self.mlp_norm = ModuleWrapper(normalization(**norm_kwargs))
+        self.attn_norm = ModuleWrapper(self.cache.registry.create("norm", layer_config['normalization'], **norm_kwargs))
+        self.mlp_norm = ModuleWrapper(self.cache.registry.create("norm", layer_config['normalization'], **norm_kwargs))
+
         
         # jerik. al momento device lo ricaviamo cosi, valutare se averlo come parametro
         if torch.cuda.is_available():
@@ -96,7 +107,9 @@ class TransformerBlock(nn.Module):
         # ))
         
         
-        self.mlp = PackedSwiGLUFFN(config) if layer_config["ffn_activation"]== "swiglu" else PackedGELUFFN(config)
+        self.mlp = ModuleWrapper(self.cache.registry.create(
+            "mlp", layer_config["ffn_activation"], hidden_size=config.hidden_size, ffn_factor=config.ffn_factor
+        ))
         
         
         self.config = config
@@ -184,19 +197,15 @@ class NakedTransformer(nn.Module):
     def __init__(self, config: ModelConfig, cache=None):
         super().__init__()
         self.config = config
-        self.cache=CachedStuff() if not cache else cache #Initialize the cache of attention masks and positional embeddings   
-        
+        self.cache = ensure_cache_and_registry(cache)   
+        cache=self.cache
         #self.norm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_size, eps=config.rms_norm_eps, elementwise_affine=True))
-        
-        normalization = RMSNorm if config.default_layer['normalization'] == 'rmsnorm' else LayerNorm
-        
-        self.norm = ModuleWrapper(normalization(
-            normalized_shape=config.hidden_size,
-            eps=config.rms_norm_eps,
-            elementwise_affine=True
-        ))
-
-        
+        norm_kwargs = {
+            "normalized_shape": config.hidden_size,
+            "eps": config.rms_norm_eps,
+            "elementwise_affine": True
+        }
+        self.norm = ModuleWrapper(self.cache.registry.create("norm", config.default_layer['normalization'], **norm_kwargs))       
         self.layers = nn.ModuleList()
         for layer_idx in range(config.num_hidden_layers):
             self.layers.append(TransformerBlock(config=config,layer_idx=layer_idx,cache=cache)) 
@@ -212,17 +221,18 @@ class TransformerWithEmbeddingHead(nn.Module):
     """
     Adding an embedding layer at the beginning
     """
-    def __init__(self,config: ModelConfig):
+    def __init__(self,config: ModelConfig, cache=None):
         super().__init__()
-        
-        self.embed_tokens = ModuleWrapper(nn.Embedding(num_embeddings=config.vocab_size,embedding_dim=config.hidden_size,padding_idx=config.pad_token_id))
-        self.transformer = NakedTransformer(config)
+        self.cache = ensure_cache_and_registry(cache)   
+        cache=self.cache
+        self.embed_tokens = ModuleWrapper(self.cache.registry.create(
+            "embedding", "embedding", num_embeddings=config.vocab_size, embedding_dim=config.hidden_size, padding_idx=config.pad_token_id))
+        self.transformer = NakedTransformer(config,cache=cache)
         
         # added learnable positional embeddings
-        if (config.default_layer['positional_encoding'] == "learnable"):
-            self.embed_positions = ModuleWrapper(nn.Embedding(config.max_position_embeddings, config.hidden_size))
-        else:
-            self.embed_positions = None
+        self.embed_positions = ModuleWrapper(self.cache.registry.create(
+            "embedding", "embedding", num_embeddings=config.max_position_embeddings, embedding_dim=config.hidden_size
+        )) if config.default_layer['positional_encoding'] == "learnable" else None
         
     def forward(self,x, **kwargs): 
         embeddings=self.embed_tokens(x)
@@ -246,10 +256,12 @@ class TransformerWithLMHead(nn.Module):
     """
     Adding an LM Head to TransformerWithEmbeddingHead. This is enough for Bert-like/GPT-like models.
     """
-    def __init__(self,config: ModelConfig,tokenizer=None,device=None):
-        super().__init__()      
-        self.lm_head = ModuleWrapper(nn.Linear(config.hidden_size, config.vocab_size))
-        self.transformer = TransformerWithEmbeddingHead(config)
+    def __init__(self,config: ModelConfig,tokenizer=None,device=None,cache=None):
+        super().__init__()  
+        self.cache = ensure_cache_and_registry(cache)    
+        cache=self.cache           
+        self.lm_head = ModuleWrapper(self.cache.registry.create("linear", "linear", in_features=config.hidden_size, out_features=config.vocab_size))
+        self.transformer = TransformerWithEmbeddingHead(config,cache=cache)
         self.device=device #This is used only for inference!
         if config.tie_word_embeddings:
             self.lm_head.weight = self.transformer.embed_tokens.weight
@@ -263,9 +275,13 @@ class TransformerWithLMHead(nn.Module):
         return x
 
 class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
-    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='mean', num_features=2):
+    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='mean', num_features=2,cache=None):
         super().__init__(config)
-        self.classification_head = ModuleWrapper(nn.Linear(config.hidden_size, num_features))
+        self.cache = ensure_cache_and_registry(cache)   
+        cache=self.cache                    
+        self.classification_head = ModuleWrapper(self.cache.registry.create(
+            "linear", "linear", in_features=config.hidden_size, out_features=num_features
+        ))
         self.config = config
         self.tokenizer = tokenizer
         self.pooling_type = pooling_type
@@ -295,9 +311,12 @@ class BERTModel(TransformerWithLMHead):
         self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masking_ratio)
         print(f"Masking ratio: {self.masking_ratio}")
 
-    def init_classification_head(self, num_labels=2, pooling_type='cls'):
+    def init_classification_head(self, num_labels=2, pooling_type='cls',cache=None):
         """Initialize classification head. Compatible with HuggingFace Trainer."""
-        self.classification_head = ModuleWrapper(nn.Linear(self.config.hidden_size, num_labels))
+        self.cache = ensure_cache_and_registry(cache)                               
+        self.classification_head = ModuleWrapper(self.cache.registry.create(
+            "linear", "linear", in_features=config.hidden_size, out_features=num_labels
+        ))
         self.pooling_type = pooling_type
         self.num_labels = num_labels
         

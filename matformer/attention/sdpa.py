@@ -1,0 +1,36 @@
+from matformer.matformer_registry import registry
+import torch.nn as nn
+import torch
+# attention/sdpa.py
+@registry.register(
+    'attention', 'normal', 'sdpa',
+    requires=['torch>=2.0'],
+    priority=1,
+    metadata={
+        'tensor_order_input': 'BHSD',
+        'tensor_order_output': 'BHSD',
+        'supports_unpadding': False,
+        'supports_packed_qkv': False,
+        'supports_sliding_window': True,
+        'supports_alibi': True,
+    }
+)
+class SDPAKernel(nn.Module):
+    def __init__(self, nheads, head_dim, is_causal, sliding_window, positional_encoding, cache, **kwargs):
+        super().__init__()
+        self.nheads = nheads
+        self.is_causal = is_causal
+        self.sliding_window = sliding_window
+        self.cache = cache
+    
+    def forward(self, qkv=None, q=None, k=None, v=None, query_input=None, key_input=None, **kwargs):
+        from torch.nn.functional import scaled_dot_product_attention
+        
+        # Generate (or get from cache) the attention mask
+        attn_mask = self.cache.get_attention_mask(
+            query=q, kv=k, nheads=self.nheads, causal=self.is_causal, 
+            sliding_window=self.sliding_window, add_alibi=False
+        )
+        
+        attn_output = scaled_dot_product_attention(q, k, v, attn_mask=attn_mask)
+        return attn_output

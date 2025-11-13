@@ -53,8 +53,8 @@
     "varlen_strategy": "unpadding"
   },
   "data": {
-    "data_root": "/home/matteo/BabyLM/mdat_baby_finale/",
-    "batch_size": 36,
+    "data_root": "/home/matteo/Ricerca/BabyLM/mdat_baby_finale/",
+    "batch_size": 16,
     "num_workers": 1,
     "mdat_strategy":"MinervaSpecialTokens",
     "mdat_view": null

@@ -19,6 +19,8 @@ import numpy as np
 from dataclasses import replace
 #from copy import deepcopy Provo a rimuovere
 from transformers import AutoTokenizer
+from matformer.matformer_registry import registry
+from matformer.cached_stuff import CachedStuff
 
 
 class PL_ModelWrapper(pl.LightningModule):
@@ -27,8 +29,13 @@ class PL_ModelWrapper(pl.LightningModule):
         self.config=config
         self.train_config=train_config
         self.save_hyperparameters()  
-        self.model = ModelClass(config,tokenizer=tokenizer,device=device)    
+        # Initialize cache and set registry
+        self.cache = CachedStuff()
+        self.cache.registry = registry
+        self.model = ModelClass(config,tokenizer=tokenizer,device=device,cache=self.cache)    
         self.nested = None    
+        self.cross_entropy_loss = self.cache.registry.create("loss", "cross_entropy_loss", *[], **{})
+
         if not getattr(self, "_restored_from_ckpt", False): 
             self.model.apply(init_transformer_weights_)
             
@@ -97,15 +104,10 @@ class PL_ModelWrapper(pl.LightningModule):
 
         if masked:
             mask = cloze_mask_flat & base_mask
-            #train_debug_print(_input=model_input.tensor, output=targets_flat[mask], model_cfg=self.config, tokenizer=self.tokenizer, varlen_strategy='unpadding')            
-            loss = F.cross_entropy(logits_flat[mask], targets_flat[mask])
-
+            loss = self.cross_entropy_loss(logits_flat[mask], targets_flat[mask])
         else:
             mask = base_mask[1:]
-            #train_debug_print(_input=model_input.tensor, output=targets_flat[1:][mask], model_cfg=self.config, tokenizer=self.tokenizer, varlen_strategy='unpadding')            
-            # So this was wrong? Jerik controlla se puoi:
-            loss = F.cross_entropy(logits_flat[:-1][mask], targets_flat[1:][mask])
-            #loss=F.cross_entropy(logits_flat[:-1][mask[:-1]], targets_flat[1:][mask[:-1]])
+            loss = self.cross_entropy_loss(logits_flat[:-1][mask], targets_flat[1:][mask])
 
             
         if masked: #Logging also the accuracy
