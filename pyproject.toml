@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "matformer"
+version = "0.1.0"
+description = "A modular transformer library"
+authors = [
+    { name = "Matteo Rinaldi" }
+    {name = "Calojero Jerik Scozzaro"}
+]
+readme = "README.md"
+requires-python = ">=3.6"
+license = { text = "MIT" }
+
+dependencies = [
+    "torch>=2.6.0",
+    "pytorch-lightning>=2.6.0"
+]
+
+[project.urls]
+"Homepage" = "https://github.com/mrinaldi97/matformer"
+"Bug Tracker" = "https://github.com/mrinaldi97/matformer/issues"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["matformer*"]
