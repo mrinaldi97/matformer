@@ -7,7 +7,7 @@ name = "matformer"
 version = "0.1.0"
 description = "A modular transformer library"
 authors = [
-    { name = "Matteo Rinaldi" }
+    {name = "Matteo Rinaldi" },
     {name = "Calojero Jerik Scozzaro"}
 ]
 readme = "README.md"
