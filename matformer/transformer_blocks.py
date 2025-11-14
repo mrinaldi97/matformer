@@ -184,10 +184,6 @@ class TransformerBlock(nn.Module):
         x = self._apply_hook("output", x) if self.has_hooks else x
         return x
 
-
-
-
-
 class NakedTransformer(nn.Module):
     """
     This transformer module misses the embedding as well as the "unembedding" layer.
@@ -267,12 +263,14 @@ class TransformerWithLMHead(nn.Module):
             self.lm_head.weight = self.transformer.embed_tokens.weight
         self.config=config
         self.tokenizer=tokenizer
-        
-    def forward(self,x,**kwargs):
-
+  
+    def forward(self,x,return_type='logits',**kwargs):
         x=self.transformer(x,**kwargs)
-        x= self.lm_head(x)
-        return x
+        if return_type=='logits':
+            return self.lm_head(x)
+        else:
+            return x
+        
 
 class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
     def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='mean', num_features=2,cache=None):
@@ -305,11 +303,46 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         
 
 class BERTModel(TransformerWithLMHead):
-    def init_maskerator(self, masking_ratio):
+    
+    def init_training(self,config: ModelConfig,tokenizer=None,device=None,cache=None):
+        # Training a BERT-Like model
+        self.config=config
+        self.cache = ensure_cache_and_registry(cache) 
+        super().__init__()
+        
+        # 1. Init the maskerator
+        self.init_maskerator()
+        # 2. Define the loss function
+        if self.has_fused_loss:
+            pass
+        else:
+            pass
+   
+    def init_maskerator(self, masking_ratio=None):
         from matformer.masked_models import Maskerator
-        self.masking_ratio=masking_ratio
-        self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masking_ratio)
-        print(f"Masking ratio: {self.masking_ratio}")
+        # Maskerator setup
+        if not hasattr(self,'config'): # The bert model was not istantiated with the config, masking ratio parameter has to be passed as argument (case for inference)
+             assert masking_ratio is not None
+             self.masking_ratio=masking_ratio
+             self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masking_ratio)
+             print(f"Masking ratio: {self.masking_ratio}")
+        else: # We get the maskerator settings from the config
+            try:
+                cloze_prob = self.config.get("cloze_prob", 1.0)
+                random_prob = self.config.get("random_prob", None)
+                same_prob = self.config.get("same_prob", None)
+                vocab_size = self.config.get("vocab_size", None)
+                
+                self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
+                                           substitution_rate=self.config.masked_substitution_rate,
+                                           pad_token_id=self.config.pad_token_id,
+                                           cloze_prob=cloze_prob,
+                                           random_prob=random_prob,
+                                           same_prob=same_prob,
+                                           vocab_size=vocab_size)
+            except:
+                print("Maskerator not set up. Fine for Autoregressive model")     
+
 
     def init_classification_head(self, num_labels=2, pooling_type='cls',cache=None):
         """Initialize classification head. Compatible with HuggingFace Trainer."""
@@ -365,6 +398,7 @@ class BERTModel(TransformerWithLMHead):
                 out_tokens.append(f"[ {self.tokenizer.decode(predictions.squeeze()[i])} ]")
         
         return accuracy, out_tokens
+
 class Autoregressive_Model(TransformerWithLMHead):
     def generate(self, prompt=None, max_length=100, temperature=1.0, top_k=0, top_p=0.9):
         """
@@ -436,6 +470,7 @@ class Autoregressive_Model(TransformerWithLMHead):
             if next_token.item() == self.tokenizer.eos_token_id:
                 break
         return self.tokenizer.decode(current_ids.squeeze().tolist())
+
 class EntropyModel(Autoregressive_Model):
     def compute_entropy(self, prompts):
         """

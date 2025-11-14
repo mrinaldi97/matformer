@@ -59,7 +59,7 @@ class LigerGEGLU(nn.Module):
         return self.inner(x)
 
 
-@registry.register("loss","cross_entropy_loss","liger",requires=["liger_kernel"],priority=10)
+@registry.register("loss","cross_entropy_loss","liger",requires=["liger_kernel"],priority=0)
 class LigerCrossEntropyLoss(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__()
@@ -68,3 +68,13 @@ class LigerCrossEntropyLoss(nn.Module):
 
     def forward(self, logits, targets, **kwargs):
         return self.inner(logits, targets, **kwargs)
+
+@registry.register("loss", "cross_entropy_loss_fused", "liger", requires=["liger_kernel"], priority=0)
+class LigerCrossEntropyLossFused(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        cls = _load("liger_kernel.transformers", "LigerFusedLinearCrossEntropyLoss")
+        self.inner = cls(*args, **kwargs)
+
+    def forward(self, hidden, targets, **kwargs):
+        return self.inner(_input=hidden, target=targets, lin_weight=kwargs['lm_head_weight'], bias=kwargs.get("lm_head_bias", None))

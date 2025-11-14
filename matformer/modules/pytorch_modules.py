@@ -23,7 +23,7 @@ class TorchEmbedding(nn.Module):
     def forward(self, x, *args, **kwargs):
         return self.inner(x, *args, **kwargs)
         
-@registry.register("loss","cross_entropy_loss","torch",requires=["torch"],priority=0)
+@registry.register("loss","cross_entropy_loss","torch",requires=["torch"],priority=10)
 class TorchCrossEntropyLoss(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__()

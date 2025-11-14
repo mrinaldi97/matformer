@@ -21,7 +21,7 @@ from dataclasses import replace
 from transformers import AutoTokenizer
 from matformer.matformer_registry import registry
 from matformer.cached_stuff import CachedStuff
-
+from copy import deepcopy
 
 class PL_ModelWrapper(pl.LightningModule):
     def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False):
@@ -33,8 +33,12 @@ class PL_ModelWrapper(pl.LightningModule):
         self.cache = CachedStuff()
         self.cache.registry = registry
         self.model = ModelClass(config,tokenizer=tokenizer,device=device,cache=self.cache)    
-        self.nested = None    
-        self.cross_entropy_loss = self.cache.registry.create("loss", "cross_entropy_loss", *[], **{})
+        self.nested = None  
+        self.loss_type='fused'  
+        if self.loss_type=='fused':
+            self.cross_entropy_loss = self.cache.registry.create("loss", "cross_entropy_loss_fused", *[], **{"ignore_index":config.pad_token_id})
+        else: #22785MiB
+            self.cross_entropy_loss = self.cache.registry.create("loss", "cross_entropy_loss", *[], **{"ignore_index":config.pad_token_id})
 
         if not getattr(self, "_restored_from_ckpt", False): 
             self.model.apply(init_transformer_weights_)
@@ -58,10 +62,12 @@ class PL_ModelWrapper(pl.LightningModule):
         except:
             print("Maskerator not set up. Fine for Autoregressive model") #Fix al volo
         
-    def forward(self, _input):
-        return self.model(_input.to(self.device))
+    def forward(self, _input,*args,**kwargs):
+        return self.model(_input.to(self.device),*args,**kwargs)
     def on_load_checkpoint(self, checkpoint):
-        self._restored_from_ckpt = True        
+        self._restored_from_ckpt = True       
+        
+     
     def training_step(self, batch, batch_idx):
         sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
         if batch['worker_has_finished']:
@@ -71,16 +77,61 @@ class PL_ModelWrapper(pl.LightningModule):
         input_sequence=sequence
         if masked:
             masked_tokens,cloze_mask=self.maskerator(sequence.tensor)
-            input_sequence=replace(sequence,tensor=masked_tokens)
+            input_sequence=replace(sequence,tensor=masked_tokens)      
+        if self.loss_type=='fused':
+            model_return_type = 'hidden'
+            flattening_dimension = self.config.hidden_size
+            loss_kwargs = {"lm_head_weight": self.model.lm_head.module.inner.weight}
+            if hasattr(self.model.lm_head, "bias"):
+                loss_kwargs["lm_head_bias"] = self.model.lm_head.module.inner.bias #TODO: Better way to access inner attributes of wrapped modules
+        else: #Normal loss
+            model_return_type='logits'
+            flattening_dimension=self.config.vocab_size
+            loss_kwargs={}
+        
         
         ### Input al modello ###
+        model_output = self(input_sequence, return_type=model_return_type) #Return type can be 'logits' or 'hidden' (required for fused loss)   
+        # 1. UnPad everything (must be checked)
+        model_output=model_output.unpad()
+        input_sequence=input_sequence.unpad()
+        # 2. Flattening
+        #model_output_flat = model_output.tensor.reshape(-1, flattening_dimension) #Per pad
+        #targets_flat = sequence.tensor.reshape(-1) #Per pad
+        model_output_flat = model_output.tensor
+        targets_flat = input_sequence.tensor
+        base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
+        cloze_mask_flat = cloze_mask if masked else None
+
+        # 3. Masking
+        #base_mask = (targets_flat != self.config.pad_token_id) #Per pad
+        #cloze_mask_flat = cloze_mask.reshape(-1) if masked else None #Per pad
+        # 4. Setting the training objective
+        if masked:
+            mask = cloze_mask_flat & base_mask
+            inputs=model_output_flat[mask]
+            targets=targets_flat[mask]
+        else: #Autoregressive
+            mask = base_mask[1:]
+            inputs=model_output_flat[:-1][mask]
+            targets=targets_flat[1:][mask]
+        # 4. Getting the loss
+        loss = self.cross_entropy_loss(inputs, targets, **loss_kwargs)        
         
-        logits = self(input_sequence)
+        
+        """ TODO Currently disabled
         if self.nested:
             logits_flat = torch.cat(logits.unbind())
             targets_flat = torch.cat(sequence.unbind()).to(logits_flat.device)
             base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
             cloze_mask_flat = torch.cat(cloze_mask.unbind()).to(logits_flat.device) if masked else None
+        """
+        
+        
+        #Trying to simplify the logic,now it by defaults pad everything again.It could be less efficient,we need some tiny test and benchmark
+        #1) See if the loss makes sense directly with unpadding
+        #2) See if repadding causes a significant performances loss
+        """
         elif logits.isPadded:
             vocab_size = logits.shape[-1]
             logits_flat = logits.tensor.reshape(-1, vocab_size)
@@ -88,13 +139,15 @@ class PL_ModelWrapper(pl.LightningModule):
             #print(f"Logits flat shape: {logits_flat.shape}")
             #print(f"Targets flat shape: {targets_flat.shape}")
             base_mask = (targets_flat != self.config.pad_token_id)
-            """
+        
+        
             autoencoders_experimental=False
             if autoencoders_experimental:
                 base_mask = (targets_flat.to(logits.tensor.device) != 259)   
                 fake_mask = ~logits.padding_mask.reshape(-1).to(logits.tensor.device )
-                base_mask = base_mask & fake_mask               
-            """
+                base_mask = base_mask & fake_mask  
+                     
+            
             cloze_mask_flat = cloze_mask.reshape(-1) if masked else None
         else:
             logits_flat = logits.tensor
@@ -108,20 +161,21 @@ class PL_ModelWrapper(pl.LightningModule):
         else:
             mask = base_mask[1:]
             loss = self.cross_entropy_loss(logits_flat[:-1][mask], targets_flat[1:][mask])
-
-            
+        """
+        self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)
+        try:
+            current_lr = self.lr_schedulers().get_last_lr()[0]
+            self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
+        except:
+            pass                 
         if masked: #Logging also the accuracy
             preds = logits_flat[mask].argmax(dim=-1)
             targets = targets_flat[mask]
             acc = (preds == targets).float().mean()
             self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
          
-        try:
-            current_lr = self.lr_schedulers().get_last_lr()[0]
-            self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
-        except:
-            pass
-        self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)
+
+        # TODO: this part has to be revised and cleaned
         additional_metrics=False
         if additional_metrics:
             if self.global_step % 100 == 0:

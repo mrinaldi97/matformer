@@ -154,8 +154,9 @@ def main():
         device=device_string, 
         batch_size=data_cfg['batch_size']
     )
-
-
+    compile=False
+    if compile:
+       model=torch.compile(model)
     
     # Create timestamped checkpoint filename to avoid name clashes
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
