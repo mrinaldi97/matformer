@@ -178,12 +178,9 @@ class MultiHeadAttention(nn.Module):
         # Apply RoPe
         if self.positional_encoding == 'rope':
             qkv_projected = None
-            q = q.transpose(-1, -2)
-            k = k.transpose(-1, -2)
             q = self.rotary_emb.rotate_queries_or_keys(q)
             k = self.rotary_emb.rotate_queries_or_keys(k)
-            q = q.transpose(-1, -2)
-            k = k.transpose(-1, -2)
+
         
         # Transpose to kernel's expected input format
         # Current format after head creation: (B, H, S, Hd)
