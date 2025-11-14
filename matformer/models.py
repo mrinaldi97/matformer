@@ -68,7 +68,7 @@ class PL_ModelWrapper(pl.LightningModule):
         self._restored_from_ckpt = True       
         
      
-    def training_step(self, batch, batch_idx):
+    def training_step(self, batch, batch_idx=None):
         sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
         if batch['worker_has_finished']:
             zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
@@ -225,36 +225,85 @@ class PL_ModelWrapper(pl.LightningModule):
                 self.log("diagnostics/post_clip_grad_norm", post_clip_norm, on_step=True, batch_size=self.batch_size)
                 
     def configure_optimizers(self):
-        #use_muon = self.train_config["optimizer"].lower() == "muon"
-        
         if self.train_config["optimizer"] == "muon":
-            muon_params = []
-            adamw_params = []
-            for name, param in self.named_parameters():
-                if not param.requires_grad:
-                    continue
-                if (
-                    "lm_head" in name
-                    or "embed_tokens" in name
-                    or param.ndim < 2
-                ):
-                    adamw_params.append(param)
-                    print(f"{name} in AdamW (ndim={param.ndim})")
-                else:
-                    muon_params.append(param)
-                    print(f"{name} in Muon")
+            use_clip = False
+            
+            if use_clip:
+                from muon import MuonClip, MuonConfig
+                base_lr = self.train_config["lr"]
+                
+                from types import SimpleNamespace
 
-            optimizer = Muon(
-                lr=self.train_config["lr"],
-                wd=self.train_config.get("weight_decay", 0.01),
-                muon_params=muon_params,
-                momentum=self.train_config.get("muon_momentum", 0.95),
-                nesterov=self.train_config.get("muon_nesterov", True),
-                ns_steps=self.train_config.get("muon_ns_steps", 5),
-                adamw_params=adamw_params,
-                adamw_betas=self.train_config.get("betas", (0.9, 0.95)),
-                adamw_eps=self.train_config.get("eps", 1e-10),
-            )
+                model_config = SimpleNamespace(
+                    num_key_value_heads=self.config.num_attention_heads,
+                    num_attention_heads=self.config.num_attention_heads,
+                    head_dim=self.config.hidden_size // self.config.num_attention_heads
+                )
+                
+                # adjust lr for muon
+                muon_lr = base_lr * 0.2 * math.sqrt(max(
+                    p.shape[0] for p in self.parameters() if p.ndim >= 2 and p.requires_grad
+                ))
+                
+                muon_config = MuonConfig(
+                    unified_lr=False,
+                    lr_muon=muon_lr,
+                    lr_adam=base_lr,
+                    muon_beta=self.train_config.get("muon_momentum", 0.95),
+                    muon_decay=self.train_config.get("weight_decay", 0.01),
+                    ns_steps=self.train_config.get("muon_ns_steps", 5),
+                    adam_betas=self.train_config.get("betas", (0.9, 0.95)),
+                    adam_decay=self.train_config.get("weight_decay", 0.01),
+                    adam_eps=self.train_config.get("eps", 1e-10),
+                    enable_clipping=True,
+                    clipping_layers_mapping={"q_proj": "packed_proj", "k_proj": "packed_proj"},
+                    clipping_threshold=self.train_config.get("clip_threshold", 50.0),
+                    clipping_alpha=self.train_config.get("clip_alpha", 0.5),
+                    log_max_logits=False,
+                    cans_ortho=False,
+                    estimate_lower_bound=False
+                )
+                
+                optimizer = MuonClip(self, model_config, muon_config)
+               
+            else:
+                muon_params = []
+                adamw_params = []
+                for name, param in self.named_parameters():
+                    if not param.requires_grad:
+                        continue
+                    if "lm_head" in name or "embed_tokens" in name or param.ndim < 2:
+                        adamw_params.append(param)
+                        print(f"{name} in AdamW (ndim={param.ndim})")
+                    else:
+                        muon_params.append(param)
+                        print(f"{name} in Muon")
+                
+                use_flash = self.train_config.get("use_flash_muon", False)
+                base_lr = self.train_config["lr"]
+                
+                if use_flash:
+                    from flash_muon import Muon as FlashMuon
+                    muon_lr = base_lr * 0.2 * math.sqrt(max(muon_params[0].shape[:2])) if muon_params else base_lr
+                    optimizer = [
+                        FlashMuon(muon_params, lr=muon_lr, 
+                                 momentum=self.train_config.get("muon_momentum", 0.95), rank=0, world_size=1),
+                        torch.optim.AdamW(adamw_params, lr=base_lr, 
+                                        betas=self.train_config.get("betas", (0.9, 0.95)),
+                                        weight_decay=self.train_config.get("weight_decay", 0.01))
+                    ]
+                else:
+                    optimizer = Muon(
+                        lr=base_lr,
+                        wd=self.train_config.get("weight_decay", 0.01),
+                        muon_params=muon_params,
+                        momentum=self.train_config.get("muon_momentum", 0.95),
+                        nesterov=self.train_config.get("muon_nesterov", True),
+                        ns_steps=self.train_config.get("muon_ns_steps", 5),
+                        adamw_params=adamw_params,
+                        adamw_betas=self.train_config.get("betas", (0.9, 0.95)),
+                        adamw_eps=self.train_config.get("eps", 1e-10),
+                    )
             
         elif self.train_config["optimizer"] == "adamw":
             optimizer = AdamW(
@@ -269,8 +318,6 @@ class PL_ModelWrapper(pl.LightningModule):
                 weight_decay=self.train_config.get("weight_decay", 0.01),
             )
 
-
-
         # === Scheduler ===
         if not self.train_config.get("lr_scheduling", False):
             return optimizer
@@ -281,69 +328,61 @@ class PL_ModelWrapper(pl.LightningModule):
         )
         
         self.total_training_steps = total_steps
+        
+        def create_scheduler(opt):
+            if self.train_config.get("scheduler") == "custom":
+                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps) 
+                hold = int(self.train_config.get("hold_steps", 0.10) * total_steps)
+                target = self.train_config.get("final_lr", 0.0)
+                base_lr = opt.param_groups[0]["lr"]
+                factor = target / base_lr if base_lr > 0 else 0.0
 
-        if self.train_config.get("scheduler") == "custom":
-            #warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
-            #hold = self.train_config.get("hold_steps", int(0.10 * total_steps))
-            warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps) 
-            hold = int(self.train_config.get("hold_steps", 0.10) * total_steps)
-            
-            target = self.train_config.get("final_lr", 0.0)
-            base_lr = optimizer.param_groups[0]["lr"]
-            factor = target / base_lr if base_lr > 0 else 0.0
+                def lr_schedule(step):
+                    if step < warmup:
+                        return step / max(1, warmup)
+                    if step < warmup + hold:
+                        return 1.0
+                    prog = (step - warmup - hold) / max(1, total_steps - warmup - hold)
+                    return factor + (1 - factor) * 0.5 * (1 + math.cos(math.pi * prog))
 
-            def lr_schedule(step):
-                if step < warmup:
-                    return step / max(1, warmup)
-                if step < warmup + hold:
-                    return 1.0
-                prog = (step - warmup - hold) / max(1, total_steps - warmup - hold)
-                return factor + (1 - factor) * 0.5 * (1 + math.cos(math.pi * prog))
+                return torch.optim.lr_scheduler.LambdaLR(opt, lr_schedule, last_epoch=-1)
 
-            scheduler = torch.optim.lr_scheduler.LambdaLR(optimizer, lr_schedule, last_epoch=-1)
+            elif self.train_config.get("scheduler") == "cosine_decay":
+                from transformers import get_cosine_schedule_with_warmup
+                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
+                return get_cosine_schedule_with_warmup(
+                    optimizer=opt,
+                    num_warmup_steps=warmup,
+                    num_training_steps=total_steps
+                )
 
-        elif self.train_config.get("scheduler") == "cosine_decay":
-            from transformers import get_cosine_schedule_with_warmup
-            
-            #warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
-            warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
-            
-            final_lr = self.train_config.get("final_lr", 0.0)
-            
-            scheduler = get_cosine_schedule_with_warmup(
-                optimizer=optimizer,
-                num_warmup_steps=warmup,
-                num_training_steps=total_steps            )
+            elif self.train_config.get("scheduler") == "linear_decay":
+                from transformers import get_linear_schedule_with_warmup
+                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
+                return get_linear_schedule_with_warmup(
+                    optimizer=opt,
+                    num_warmup_steps=warmup,
+                    num_training_steps=total_steps
+                )
 
-        elif self.train_config.get("scheduler") == "linear_decay":
-            from transformers import get_linear_schedule_with_warmup
-            
-            #warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
-            warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
-            
-            scheduler = get_linear_schedule_with_warmup(
-                optimizer=optimizer,
-                num_warmup_steps=warmup,
-                num_training_steps=total_steps
-            )
-
-
+            else:
+                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
+                return get_scheduler(
+                    name=self.train_config.get("scheduler", "linear"),
+                    optimizer=opt,
+                    num_warmup_steps=warmup,
+                    num_training_steps=total_steps
+                )
+        
+        if isinstance(optimizer, list):
+            scheduler = [create_scheduler(opt) for opt in optimizer]
         else:
-            #warmup = self.train_config.get("warmup_steps", int(0.05 * total_steps))
-            warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
-            
-            scheduler = get_scheduler(
-                name=self.train_config.get("scheduler", "linear"),
-                optimizer=optimizer,
-                num_warmup_steps=warmup,
-                num_training_steps=total_steps
-            )
+            scheduler = create_scheduler(optimizer)
 
         return {
             "optimizer": optimizer,
             "lr_scheduler": {"scheduler": scheduler, "interval": "step", "frequency": 1},
         }
-
 
     def debug_on_after_backward(self):
         # Log dei gradienti per debug
