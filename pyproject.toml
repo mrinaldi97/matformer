@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "A modular transformer library"
 authors = [
     {name = "Matteo Rinaldi" },
-    {name = "Calojero Jerik Scozzaro"}
+    {name = "Calogero Jerik Scozzaro"}
 ]
 readme = "README.md"
 requires-python = ">=3.6"
@@ -16,7 +16,7 @@ license = { text = "MIT" }
 
 dependencies = [
     "torch>=2.6.0",
-    "pytorch-lightning>=2.6.0"
+    "pytorch-lightning>=2.6.0.dev0"
 ]
 
 [project.urls]
