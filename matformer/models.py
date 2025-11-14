@@ -34,7 +34,7 @@ class PL_ModelWrapper(pl.LightningModule):
         self.cache.registry = registry
         self.model = ModelClass(config,tokenizer=tokenizer,device=device,cache=self.cache)    
         self.nested = None  
-        self.loss_type='fused'  
+        self.loss_type='normal'  
         if self.loss_type=='fused':
             self.cross_entropy_loss = self.cache.registry.create("loss", "cross_entropy_loss_fused", *[], **{"ignore_index":config.pad_token_id})
         else: #22785MiB
