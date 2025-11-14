@@ -160,7 +160,7 @@ class MatformerModel(MatformerPreTrainedModel):
 
 
 class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
-    _tied_weights_keys = ["lm_head.module.weight", "lm_head.module.bias"]
+    _tied_weights_keys = ["lm_head.module.inner.weight", "lm_head.module.inner.bias"]
     
     def __init__(self, config: MatformerConfig):
         super().__init__(config)
