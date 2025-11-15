@@ -198,7 +198,9 @@ def main():
         max_epochs=max_epochs
     )
 
+
     try:
+
         trainer.fit(model, data, ckpt_path=ckpt_path)
     except KeyboardInterrupt:
         response = input("\nTraining interrupted. Save model? (y/n): ").strip().lower()

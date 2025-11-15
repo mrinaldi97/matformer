@@ -1,4 +1,5 @@
 # matformer/base.py
+import torch
 import torch.nn as nn
 from typing import Optional
 
@@ -84,6 +85,10 @@ class ParametersRenamer:
             #if not isinstance(module, nn.Module):
             #    continue
                         
+            #if module is None:
+            #    continue
+
+                        
             for param_name, _ in module.named_parameters(recurse=True): # named_parameters() returns (name, parameter)
                 # Simplify the parameter path (remove wrapper layers)
                 # e.g., "module.inner.weight" -> "weight"
@@ -111,8 +116,9 @@ class ParametersRenamer:
         Returns:
             Simplified path (e.g., "weight")
         """
-        # Check if module is a ModuleWrapper and has registry metadata
-        if isinstance(module, ModuleWrapper) and hasattr(module.module, '_params_names'):
+
+        # Renames modules having a `.module` attribute and inner module `_params_names` metadata.
+        if hasattr(module, 'module') and hasattr(module.module, '_params_names'):
             # Get the parameter name mapping from registry metadata
             parameters_map = module.module._params_names 
             
@@ -159,7 +165,22 @@ class ParametersRenamer:
         translated = {mapping.get(k, k): v for k, v in state_dict.items()}
         
         # Load the translated state dict using PyTorch's standard method
-        return self.load_state_dict(translated, strict=strict)
+        return nn.Module.load_state_dict(self, translated, strict=strict)
+    
+    # ---- Compatibility aliases to avoid AttributeError from other modules ----
+    def stable_state_dict(self):
+        """
+        Alias for parameters_state_dict for compatibility with MatformerModule / PL hook.
+        Returns the model state dict with stable (external) names.
+        """
+        return self.parameters_state_dict()
+
+    def load_stable_state_dict(self, state_dict, strict=True, external_mapping: Optional[dict] = None):
+        """
+        Alias for load_parameters_state_dict for compatibility.
+        Loads a state dict expressed in stable (or external) names.
+        """
+        return self.load_parameters_state_dict(state_dict, strict=strict, external_mapping=external_mapping)
 
 
 # Choose base class based on Lightning availability and config
@@ -167,13 +188,15 @@ if HAS_LIGHTNING:
     class MatformerModule(pl.LightningModule, ParametersRenamer):
         def __init__(self):
             super().__init__()
-            self.has_lightning=False
+            # Indicate we are running under Lightning
+            self.has_lightning = True
+
         def on_save_checkpoint(self, checkpoint):
             """Convert to stable names when saving"""
             if getattr(self, 'use_stable_checkpoints', True):
                 stable_state = self.stable_state_dict()
                 # Don't add 'model.' prefix if this IS the model
-                if 'model.' in list(checkpoint['state_dict'].keys())[0]:
+                if 'model.' in list(checkpoint.get('state_dict', {}).keys())[:1]:
                     checkpoint['state_dict'] = {f'model.{k}': v for k, v in stable_state.items()}
                 else:
                     checkpoint['state_dict'] = stable_state
@@ -194,11 +217,10 @@ else:
         Provides stable checkpointing + manual device/dtype management.
         """
         def __init__(self):
-            raise NotImplementedError #Still todo
             super().__init__()
             self._matformer_device = None
             self._matformer_dtype = None
-            self.has_lightning=False
+            self.has_lightning = False
         
         def to(self, *args, **kwargs):
             """Override to track device/dtype"""
