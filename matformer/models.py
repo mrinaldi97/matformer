@@ -98,11 +98,12 @@ class PL_ModelWrapper(MatformerModule):
         # 1. UnPad everything (must be checked)
         model_output=model_output.unpad()
         input_sequence=input_sequence.unpad()
+        original_unpadded = sequence.unpad()
         # 2. Flattening
         #model_output_flat = model_output.tensor.reshape(-1, flattening_dimension) #Per pad
         #targets_flat = sequence.tensor.reshape(-1) #Per pad
         model_output_flat = model_output.tensor
-        targets_flat = input_sequence.tensor
+        targets_flat = original_unpadded.tensor
         base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
         cloze_mask_flat = input_sequence.cloze_mask if masked else None
 
