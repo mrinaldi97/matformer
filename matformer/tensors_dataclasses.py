@@ -33,8 +33,12 @@ class TensorDC:
     def dtype(self) -> torch.dtype: return self.tensor.dtype
     @property
     def device(self) -> torch.device: return self.tensor.device
-    def to(self,*args, **kwargs):
-        self.tensor=self.tensor.to(*args, **kwargs)
+    def to(self, *args, **kwargs):
+        self.tensor = self.tensor.to(*args, **kwargs)
+        if self.cloze_mask is not None:
+            self.cloze_mask = self.cloze_mask.to(*args, **kwargs)
+        if self.document_mask is not None:
+            self.document_mask = self.document_mask.to(*args, **kwargs)
         return self
         
         

@@ -80,7 +80,7 @@ class PL_ModelWrapper(MatformerModule):
         input_sequence=sequence
         if masked:
             masked_tokens,cloze_mask=self.maskerator(sequence.tensor)
-            input_sequence=replace(sequence,tensor=masked_tokens)      
+            input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)      
         if self.loss_type=='fused':
             model_return_type = 'hidden'
             flattening_dimension = self.config.hidden_size
@@ -96,19 +96,15 @@ class PL_ModelWrapper(MatformerModule):
         ### Input al modello ###
         model_output = self(input_sequence, return_type=model_return_type) #Return type can be 'logits' or 'hidden' (required for fused loss)   
         # 1. UnPad everything (must be checked)
-        if masked:
-            cloze_mask_padded = PaddedTensor(tensor=cloze_mask,padding_mask=sequence.padding_mask) 
-            cloze_mask_unpadded = cloze_mask_padded.unpad()
-            cloze_mask_flat = cloze_mask_unpadded.tensor
         model_output=model_output.unpad()
         input_sequence=input_sequence.unpad()
-
         # 2. Flattening
         #model_output_flat = model_output.tensor.reshape(-1, flattening_dimension) #Per pad
         #targets_flat = sequence.tensor.reshape(-1) #Per pad
         model_output_flat = model_output.tensor
         targets_flat = input_sequence.tensor
         base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
+        cloze_mask_flat = input_sequence.cloze_mask if masked else None
 
         # 3. Masking
         #base_mask = (targets_flat != self.config.pad_token_id) #Per pad
