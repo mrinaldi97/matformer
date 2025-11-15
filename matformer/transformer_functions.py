@@ -1,5 +1,7 @@
 """
 File transformer_functions.py
+
+DEPRECATED FILE!!!
 """
 import torch
 import torch.nn as nn
@@ -14,7 +16,7 @@ from matformer.matformer_registry import registry
 from warnings import warn
 
 
-class MultiHeadAttention(nn.Module):
+class DeprecatedMultiHeadAttention(nn.Module):
     def __init__(
         self,
         q_dim: int,               
@@ -217,7 +219,7 @@ class MultiHeadAttention(nn.Module):
             
         return query_input
 
-class PackedSwiGLUFFN(nn.Module):
+class DeprecatedPackedSwiGLUFFN(nn.Module):
     def __init__(
         self,
         config: Optional[ModelConfig] = None,
@@ -242,7 +244,7 @@ class PackedSwiGLUFFN(nn.Module):
         return replace(_input, tensor=out)
 
 
-class PackedGELUFFN(nn.Module):
+class DeprecatedPackedGELUFFN(nn.Module):
     def __init__(
         self,
         config: Optional[ModelConfig] = None,

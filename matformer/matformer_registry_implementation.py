@@ -4,12 +4,82 @@ from typing import Dict, List, Optional, Any, Callable
 import pathlib
 import sys
 class MatformerRegistry:
+    """
+    =The Matformer Registry: customization of modules =
+    The Matformer architecture tries to avoid every direct instantiation of hard-coded classes of neural network components.
+    Instead, every implementation of the core components is managed by the MatformerRegistry. This means that it is possible
+    to define modules for every component of the model, such as MLP, attention implementations, layer normalizations...
+    In this way the model is not bound to specific implementation (such as vanilla pyTorch) but it is immediately possible
+    to adopt different kernels without touching a single line of the core transformer implementation
+    This gives extreme flexibility to the developer: just by putting python files in the "user-modules" folder and decorating 
+    the class with a decorator it is possible to substitute every module of the network.
+    By using the registry it is also possible to import customized experimental modules that can be hooked to many different entry points of
+    the model, and, if necessary, they can be trained together with the rest of the network!
+    Adding custom components to a transformer model has never been so easy.
+    
+    The registry has the following hierarchy:
+        _registry (dict)
+            category (dict) <= example "attention","norm","linear","embedding","mlp","loss"
+            variant (dict) <= example "geglu","swiglu","rmsnorm","flash","gated_deltanet","mamba"...
+            name (dict) <= example "torch","liger","nvidia-transformer-engine"... this is the name of the actual implementation
+                name contains: 
+                    * requires => List of required modules, useful for auto-fallback if not supported
+                    * priority => The priority of different variants, ex torch 0, liger 1, nvidia 2 and so on
+                    * metadata => Free dictionary of metadata
+                    * params_names => *IMPORTANT* A mapping that renames the parameters to create universal checkpoints compatible also
+                                        with different implementations
+     
+     == Add a custom implementation ==
+			Put your script in the external_modules folder.
+            Then, you don't have to do anything by hand, as the registration is handled by an easy to use decorator, example:
+            from matformer.matformer_registry import registry
+            @registry.register("mlp", "swiglu", "a_name_for_your_swiglu_kernel",
+                   params_names={'w13.weight': 'gate_proj.weight', 
+                                  'w2.weight': 'down_proj.weight'}, priority=100,requires=["torch","my_custom_library"])
+            class MySwigluImplementation(nn.Module):
+				(your code here)
+				def _is_available():
+					#Test logic here, for auto-fallback
+				
+			
+			
+            The MatformerRegister works in tandem with the CachedStuff object, thus it's very simple to define a module and let Matformer handle
+            the picking of correct implementation for you:
+            cache.registry.create("mlp", "swiglu", hidden_size=768, ffn_factor=4)
+    These are the only requirements to seamless integrate different custom implementation of basic modules into a Matformer model! Just be careful to 
+    match conventions for param_names if you want that your model correctly loads also with other implementation.
+    
+    == Adding custom modules to the model  ==
+    
+    The registry can also be used to add hooked modules/functions to any part of the model.
+    The main transformer block exposes the following entry points:
+			* pre_attn
+			* pre_mlp
+			* post_mlp
+			* pre_output
+	Let's say you want to add a custom module before the mlp. What you need to do is just to insert into the "external modules" directory a file
+	my_module.py
+		from matformer.matformer_registry import registry
+		@register.registry("hook","name_of_my_hook","default")
+		class ACustomModule(nn.Module):
+			(your code...)
+	
+	Then, in the model config's JSON file the hook should be attached in this way:
+		    "default_layer": { (or custom layer)
+					[other params...]
+				  "hooks": {"pre_mlp":"name_of_my_hook"}
+				},
+	If the modules contains trainable parameters, it will be trained togheter with the model.
+	That's it! 
+            
+    """
+
     def __init__(self):
         self._registry = {}
-        self._availability_cache = {}
-        self._global_preferences = {}
-        self._env_overrides = {}
-        self._selected_implementations = {}  # Cache selected impl per (category, variant)
+        self._availability_cache = {} # 
+        self._global_preferences = {} # It is possible to force preferences using set_preferences(preferences)
+        self._env_overrides = {} # It is possible to force preferences using environment variables
+        self._selected_implementations = {}  # Chosen implementation (category, variable) is cached so that search is performed only once
          
     def load_modules(self):
         base_dir = pathlib.Path(__file__).resolve().parent
@@ -19,12 +89,13 @@ class MatformerRegistry:
                 continue
             for py_file in folder_path.glob("*.py"):
                 module_name = f"matformer.{folder.replace('/', '.')}.{py_file.stem}"
-                
-                importlib.import_module(module_name)                        
+                importlib.import_module(module_name)        
+                                
     def register(self, category: str, variant: str, name: str, *, 
                  requires: Optional[List[str]] = None, 
                  priority: Optional[int] = None, 
-                 metadata: Optional[Dict[str, Any]] = None):
+                 metadata: Optional[Dict[str, Any]] = None,
+                 params_names:Optional[Dict]=None):
         """
         Register implementation in a two-level hierarchy.
         
@@ -33,7 +104,7 @@ class MatformerRegistry:
             variant: Semantic variant (e.g., 'flash', 'linear', 'sdpa' for attention)
             name: Implementation name (e.g., 'torch', 'triton', 'nvidia', 'liger')
             requires: Import/version requirements
-            priority: Priority within variant (lower = higher priority)
+            priority: Priority within variant (higher = higher priority)
             metadata: Additional info (tensor_order, causal_support, etc.)
         """
         def decorator(cls):
@@ -42,12 +113,13 @@ class MatformerRegistry:
             if variant not in self._registry[category]:
                 self._registry[category][variant] = {'implementations': {}, 'priorities': []}
             
-            # Store numeric priority in the implementation info
+            # Store priorites in the implementation info
             self._registry[category][variant]['implementations'][name] = {
                 'cls': cls,
                 'requires': requires or [],
                 'metadata': metadata or {},
-                'priority': priority if priority is not None else 0
+                'priority': priority if priority is not None else 0,
+                'params_names': params_names or {}
             }
             
             # Optionally keep simple registration order
@@ -76,9 +148,9 @@ class MatformerRegistry:
     def create(self, category: str, variant: str, preferred: Optional[str] = None, **kwargs):
         """
         Create instance with preference resolution and fallback.
-        Once an implementation is selected for a (category, variant) pair, it's cached
+        Once an implementation is selected for a (category, variant) pair, it is cached
         and reused without re-testing.
-        
+
         Args:
             category: e.g., 'attention'
             variant: e.g., 'flash'
@@ -87,50 +159,45 @@ class MatformerRegistry:
         """
         if category not in self._registry or variant not in self._registry[category]:
             raise ValueError(f"Unknown {category}.{variant}")
-        
+
         cache_key = (category, variant)
+
         
-        # Check if we've already selected an implementation
+        def instantiate(name: str):
+            impl = self._registry[category][variant]['implementations'][name]
+            obj = impl['cls'](**kwargs)
+            self._attach_metadata(obj, impl, variant, name)
+            obj._params_names = impl.get('params_names', {})
+            return obj
+
+        # If already selected, instantiate
         if cache_key in self._selected_implementations:
-            selected_name = self._selected_implementations[cache_key]
-            impl_info = self._registry[category][variant]['implementations'][selected_name]
-            instance = impl_info['cls'](**kwargs)
-            self._attach_metadata(instance, impl_info, variant, selected_name)
-            return instance
-        
+            return instantiate(self._selected_implementations[cache_key])
+
         variant_info = self._registry[category][variant]
-        
-        # Build candidate list with numeric priority
-        all_candidates = list(variant_info['implementations'].items())
-        
-        # Explicit preferred override has top priority
+
+        # Sort candidates implementations: first explicit preferences then follows priority
+        items = list(variant_info['implementations'].items())
         if preferred and preferred in variant_info['implementations']:
-            all_candidates.sort(key=lambda x: 0 if x[0] == preferred else 1)
+            items.sort(key=lambda x: 0 if x[0] == preferred else 1)
         else:
-            # Sort by numeric priority (higher = higher precedence)
-            all_candidates.sort(key=lambda x: x[1].get('priority', 0), reverse=True)
-        
-        candidates = [name for name, _info in all_candidates]
-        
-        # Try each candidate
+            items.sort(key=lambda x: x[1].get('priority', 0), reverse=True)
+
+        candidates = [name for name, _ in items]
         last_error = None
+
+        # Test each candidate in order until a viable one is found
         for name in candidates:
             if not self._is_available(category, variant, name):
                 continue
-            
-            impl_info = variant_info['implementations'][name]
             try:
-                instance = impl_info['cls'](**kwargs)
-                self._attach_metadata(instance, impl_info, variant, name)
-                
-                # Cache this selection for future creates
+                obj = instantiate(name)
                 self._selected_implementations[cache_key] = name
                 print(f"Implementation {name} was chosen for {category}.{variant}")
-                return instance
+                return obj
             except Exception as e:
                 last_error = e
-                continue
-        
+
         raise RuntimeError(
             f"No available implementation for {category}.{variant}. "
             f"Tried: {candidates}. Last error: {last_error}"

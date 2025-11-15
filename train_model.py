@@ -40,17 +40,33 @@ def parse_args():
     parser.add_argument('--gpu', type=int, default=1)
     parser.add_argument('--checkpoint', type=str, default=None) 
     parser.add_argument('--start-from-scratch', action='store_true') 
+    parser.add_argument('--simulate', action='store_true', help="Instantiate model and print state_dict shapes, then exit")
+    parser.add_argument('--dump-json', type=str, default=None, help="Path to dump JSON state dict shapes (used with --simulate or --checkpoint)")
 
     args = parser.parse_args()
     overrides = dict(kv.split('=') for kv in args.override)
-    return args.config, overrides, args.gpu, args.checkpoint, args.start_from_scratch
+    return args.config, overrides, args.gpu, args.checkpoint, args.start_from_scratch, args.simulate, args.dump_json
 
 def get_model_class(model_class: str):
     module = import_module("matformer.transformer_blocks")
     return getattr(module, model_class)
 
+def extract_state_dict_shapes(state_dict):
+    """
+    Extracts a dict of param_name -> shape string
+    """
+    shapes = {}
+    for k, v in state_dict.items():
+        shapes[k] = "x".join(str(d) for d in v.shape)
+    return shapes
+
+def save_state_dict_json(state_dict, path):
+    shapes = extract_state_dict_shapes(state_dict)
+    with open(path, 'w') as f:
+        json.dump(shapes, f, indent=2)
+
 def main():
-    config_path, overrides, device_count, ckpt_arg, start_scratch = parse_args()
+    config_path, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json = parse_args()
     cfg = apply_overrides(load_config(config_path), overrides)
     
     #--------------------------------------#
@@ -70,8 +86,6 @@ def main():
     tok_cfg = cfg['tokenizer']
     save_dir = cfg.get('save_dir', './checkpoints')
     
-    
-    
     pl.seed_everything(train_cfg.get('seed', 27))
     
     # Detect device
@@ -85,39 +99,7 @@ def main():
     else:
         accelerator = device_string = 'cpu'
         precision = '32'
-    """
-    tokenizer = (
-        AutoTokenizer.from_pretrained(tok_cfg['pretrained_name'])
-        if tok_cfg['type'] == 'huggingface' else str(tok_cfg['type'])
-    )
-
-    # If we are in masked mode, be sure that there is a mask token and config is consistent
-    if model_cfg.training_objective == 'masked':
-        print("Addestramento di un modello MLM")
-        if tokenizer.mask_token is None:
-            tokenizer.add_special_tokens({"mask_token": "<mask>"})
-            print(f"Added <mask> token to {tok_cfg['pretrained_name']} at id={tokenizer.mask_token_id}")
-
-        mask_id = tokenizer.mask_token_id
-
-        if getattr(model_cfg, "mask_token_id", None) is None:
-            model_cfg.mask_token_id = mask_id
-        else:
-            if model_cfg.mask_token_id != mask_id:
-                raise ValueError(
-                    f"Inconsistent mask_token_id: model_cfg={model_cfg.mask_token_id}, tokenizer={mask_id}"
-                )
-
-        if model_cfg.vocab_size < len(tokenizer):
-            print(f"Expanding vocab_size from {model_cfg.vocab_size} -> {len(tokenizer)}")
-            model_cfg.vocab_size = len(tokenizer)
-
-    tokenizer = MatformerTokenizer(
-        config=model_cfg,
-        tokenizer=tokenizer,
-        varlen_strategy=tok_cfg['varlen_strategy']
-    )
-    """
+    
     # Create data module with MDAT dataset
     data = MatformerDataModule(
         mdat_path=data_cfg['data_root'],
@@ -131,6 +113,7 @@ def main():
         batch_size=data_cfg['batch_size']
     )
     data.setup()
+    
     # Calculate training steps if dataset length is available
     max_epochs = train_cfg.get("max_epochs", 1)
     if hasattr(data, '__len__') and len(data) > 0: #Nel caso di più GPU viene già divisa per numero di GPU (es. /4)
@@ -154,21 +137,39 @@ def main():
         device=device_string, 
         batch_size=data_cfg['batch_size']
     )
-    compile=False
-    if compile:
-       model=torch.compile(model)
+    
+    if simulate:
+        print("=== SIMULATION MODE ===")
+        print("Stable state_dict parameter names and shapes:")
+        shapes = extract_state_dict_shapes(model.parameters_state_dict())
+        for k, v in shapes.items():
+            print(f"{k}: {v}")
+        if dump_json:
+            save_state_dict_json(model.parameters_state_dict(), dump_json)
+            print(f"State dict shapes saved to {dump_json}")
+        return
+    
+    # Handle checkpoint loading
+    ckpt_path = None
+    if not start_scratch:
+        if ckpt_arg and os.path.exists(ckpt_arg):
+            ckpt_path = ckpt_arg
+        else:
+            last_ckpt = Path(save_dir) / "last.ckpt"
+            if last_ckpt.exists():
+                print(f"Resuming training from {last_ckpt}")
+                ckpt_path = str(last_ckpt)
+            else:
+                print("No checkpoint found, starting from scratch.")
     
     # Create timestamped checkpoint filename to avoid name clashes
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    
-    #checkpoint_name = f"{train_cfg.get('checkpoint_name', 'model')}_{timestamp}"    
     checkpoint_name = train_cfg.get('checkpoint_name', 'model') # jerik
     run_name = cfg.get('wandb_run_name', 'training-run') # jerik
     
     # Setup logging
     wandb_logger = WandbLogger(
         name=f"{run_name}_{timestamp}",
-        #name=cfg.get('wandb_run_name', 'training-run'),
         project=cfg.get('wandb_project', 'matformer'),
         config=cfg
     )
@@ -182,26 +183,6 @@ def main():
     )
 
     torch.set_float32_matmul_precision('high')
-
-    # Handle checkpoint loading
-    ckpt_path = None
-    if not start_scratch:
-        if ckpt_arg and os.path.exists(ckpt_arg):
-            ckpt_path = ckpt_arg
-        else:
-            # last_ckpt = Path(save_dir) / f"{checkpoint_name}_last.ckpt"
-            # if last_ckpt.exists():
-            #     ckpt_path = str(last_ckpt)
-            
-            # jerik
-            last_ckpt = Path(save_dir) / "last.ckpt"
-            if last_ckpt.exists():
-                print(f"Resuming training from {last_ckpt}")
-                ckpt_path = str(last_ckpt)
-            else:
-                print("No checkpoint found, starting from scratch.")
-            
-
 
     # Create trainer
     trainer = pl.Trainer(
@@ -228,24 +209,5 @@ def main():
         else:
             print("Checkpoint not saved.")
 
-
 if __name__ == '__main__':
     main()
-
-"""
-CLI overrides via --override
-train_model.py --config CONFIG.json --override key1=val1 key2.nested=val2 
-• Each override is a single KEY=VALUE pair.
-• Keys are dotted paths that mirror the JSON hierarchy.
-• Values are parsed with eval first; if that fails they are kept as strings.
-Examples: 
-
-# Run a quick debug with smaller model
---override model_config.hidden_size=128 model_config.num_hidden_layers=2
-
-# Switch to cosine scheduler and longer warmup
---override training.scheduler="cosine" training.warmup_steps=5000
-
-# Change batch-size, learning-rate and run name
---override data.batch_size=32 training.lr=1e-4 wandb_run_name=quick_try
-"""

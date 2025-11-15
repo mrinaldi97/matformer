@@ -1,36 +1,29 @@
 """
 File: matformer/transformer_blocks.py
 """
-import torch
-import torch.nn as nn
-from matformer.transformer_functions import MultiHeadAttention, PackedSwiGLUFFN, PackedGELUFFN
-from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor, ModuleWrapper
-from torch.nn import RMSNorm, LayerNorm
-from matformer.model_config import ModelConfig  
-from functools import partial, reduce
-from torch.nn.attention.flex_attention import (
-    _DEFAULT_SPARSE_BLOCK_SIZE,
-    create_block_mask,
-    create_nested_block_mask,
-    create_mask,
-    and_masks,
-    or_masks,
-    noop_mask
-)
-from matformer.masked_models import Maskerator
-from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
-import torch.nn.functional as F
-from tqdm import tqdm
-from datetime import datetime
+#Don't remember why
 import sys
 sys.path.append('../')
-from dataclasses import replace
-from copy import deepcopy
-#flex_attention = torch.compile(flex_attention) # Chiarire questione compilazione (dove? di che tipo? migliora o peggiora? in che casi farla?)
-from typing import Any
+#Torch
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+#Matformer
+from matformer.matformer_module import MatformerModule
+from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor, ModuleWrapper
+from matformer.model_config import ModelConfig  
 from matformer.cached_stuff import CachedStuff
 from matformer.matformer_registry import registry
+from matformer.masked_models import Maskerator
+from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
+#Other
+from functools import partial, reduce
+from tqdm import tqdm
+from datetime import datetime
+from dataclasses import replace
+from copy import deepcopy
 from warnings import warn
+from typing import Optional, List, Literal, Any
 
 def ensure_cache_and_registry(cache):
     """Ensure cache and registry initialization"""
@@ -42,198 +35,449 @@ def ensure_cache_and_registry(cache):
         cache.registry = registry
     return cache
 
+class MultiHeadAttention(MatformerModule):
+    # Stable parameter names
+    packed_proj: "param_name:qkv_proj"      # Packed Q+K+V projection (when applicable)
+    q_proj: "param_name:q_proj"             # Separate query projection (cross-attention)
+    k_proj: "param_name:k_proj"             # Separate key projection (cross-attention)
+    v_proj: "param_name:v_proj"             # Separate value projection (cross-attention)
+    out_proj: "param_name:o_proj"           # Output projection
+    attn_kernel: "param_name:attn_kernel"   # Attention implementation kernel
+	
+    def __init__(
+        self,
+        q_dim: int,               
+        k_dim: Optional[int] = None,
+        v_dim: Optional[int] = None,
+        is_cross_attention: bool = False,
+        nheads: int = 8,
+        bias: bool = False,
+        positional_encoding: str = 'rope',  # 'alibi', 'rope', 'nope', 'sinusoidal', 'learnable'
+        #dropout: float = 0.0, # Not supported by FlexAttention yet
+        cache: Optional['CachedStuff'] = None,
+        attn_variant: str = 'normal',  # 'normal', 'wersa', 'linear', etc.
+        attn_impl: str = 'flash',  # Preferred implementation within variant
+        is_causal: bool = True,
+        sliding_window: Optional[int] = None,
+        device: str = 'cuda'  
+    ):
+        super().__init__()
 
-class TransformerBlock(nn.Module):
-    """ A transformer self-attention block
-        It applies a pre layernorm 
-        A self-attention layer
-        A SwiGLU Mlp Layer
-        A post layer norm
-        It takes all the necessary configuration from the ModelConfig object
-        The block_mask for the attention can be passed either at the init or during the forward
+        # Assertions
+        assert q_dim % nheads == 0, "q_dim is not divisible by nheads"
+        if is_cross_attention:
+            assert k_dim is not None, "You asked for a cross attention, but you haven't provided keys dim"
+            assert v_dim is not None, "You asked for a cross attention, but you haven't provided values dim"
+        else:
+            k_dim=q_dim
+            v_dim=q_dim 
+
+        # Initialization
+        if cache is None:     
+            warn("Cache not provided to MultiHeadAttention, initializing new cache. Consider passing cache for efficiency.")
+            cache = CachedStuff()
+        self.cache = cache
         
-        Now supports flexible hook system for custom interventions at key points.
+        # Initialize registry if not present
+        if not hasattr(self.cache, 'registry'):
+            warn("Registry not found in cache, initializing. Consider initializing registry in cache.")
+            self.cache.registry = registry
+        
+        self.nheads = nheads
+        self.attn_variant = attn_variant
+        self.positional_encoding = positional_encoding
+        self.is_causal = is_causal
+        self.is_cross_attention = is_cross_attention
+        self.sliding_window = sliding_window
+        self.bias = bias
+        self.qkv_samedim = q_dim == k_dim and q_dim == v_dim
+        self.q_dim = q_dim
+        self.k_dim = k_dim
+        self.v_dim = v_dim
+        self.head_dim = q_dim // nheads
+        
+        # RoPE initialization
+        if self.positional_encoding == 'rope':
+            self.rotary_emb = self.cache.get_rotary_emb(self.head_dim)
+        
+        # Initialize attention kernel
+        self.attn_kernel = self.cache.registry.create(
+            'attention', 
+            attn_variant,
+            preferred=attn_impl,
+            nheads=nheads,
+            head_dim=self.head_dim,
+            is_causal=is_causal,
+            sliding_window=sliding_window,
+            positional_encoding=positional_encoding,
+            cache=cache,
+            device=device
+        )
+        
+        # Get kernel metadata
+        self.kernel_meta = self.attn_kernel._matformer_metadata
+                        
+        # Packed qkv projection for efficiency  
+        if not is_cross_attention or self.qkv_samedim:
+            self.packed_proj = nn.Linear(self.q_dim, 3 * q_dim, bias=bias)
+        else:
+            self.q_proj = nn.Linear(q_dim, q_dim, bias=bias)
+            self.k_proj = nn.Linear(k_dim, q_dim, bias=bias)
+            self.v_proj = nn.Linear(v_dim, q_dim, bias=bias)
+            
+        self.out_proj = nn.Linear(q_dim, self.q_dim, bias=bias)  # Out projection
+
+    def _transpose_for_kernel(self, tensor, current_order, target_order):
+        """
+        Helper to transpose tensors based on metadata.
+        Supports: BHSD <-> BSHD conversions
+        """
+        if current_order == target_order:
+            return tensor
+        
+        if current_order == 'BHSD' and target_order == 'BSHD':
+            return tensor.transpose(1, 2)
+        elif current_order == 'BSHD' and target_order == 'BHSD':
+            return tensor.transpose(1, 2)
+        else:
+            raise ValueError(f"Unsupported tensor order conversion: {current_order} -> {target_order}")
+
+    def forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None):
+        """
+        Input Tensors:
+        query_input: (Batch, Seqlen, Qdim)
+        key_input: (Batch, Seqlen, Kdim) [If omitted, self-attention]
+        value_input: (Batch, Seqlen, Vdim) [If omitted, self-attention]
+        Output:
+        (Batch, Seqlen, Qdim) # Qdim is the query dimension as well as the output.
+        """
+        
+        supports_unpadding = self.kernel_meta.get('supports_unpadding', False)
+        supports_packed_qkv = self.kernel_meta.get('supports_packed_qkv', False)
+        
+        # Set defaults for self-attention
+        if key_input is None:
+            key_input = query_input
+        if value_input is None:
+            value_input = query_input
+                
+        # If the attention implementation does not support unpadding, eventually unpadded sequences must be padded
+        repadded = False
+        if not supports_unpadding:
+            if isinstance(query_input, UnpaddedTensor):
+                repadded = True  # A flag: if original inputs were padded from unpadded tensors, they will be unpadded again at the end
+                query_input = query_input.pad()
+                if self.is_cross_attention:
+                    key_input = key_input.pad()
+                    value_input = value_input.pad()
+
+        # Extract tensors (handle both regular tensors and Matformer's TensorDC)
+        q_tensor = query_input.tensor if hasattr(query_input, 'tensor') else query_input
+        k_tensor = key_input.tensor if hasattr(key_input, 'tensor') else key_input
+        v_tensor = value_input.tensor if hasattr(value_input, 'tensor') else value_input
+        
+        # Projecting (eventually, packed projection)
+        if self.qkv_samedim and not self.is_cross_attention:
+            qkv_projected = self.packed_proj(q_tensor)
+            q = None
+            k = None
+            v = None
+            if not supports_packed_qkv or self.positional_encoding == 'rope': #TODO: Ricordarsi perchè non funzionava con RoPe
+                q, k, v = torch.chunk(qkv_projected, 3, dim=-1)
+                qkv_projected = None
+        elif self.qkv_samedim and self.is_cross_attention:
+            qkv_projected = None
+            w = torch.chunk(self.packed_proj.weight, 3, dim=0)
+            b = torch.chunk(self.packed_proj.bias, 3, dim=0) if self.bias else (None, None, None)
+            q = F.linear(q_tensor, w[0], b[0])
+            k = F.linear(k_tensor, w[1], b[1])
+            v = F.linear(v_tensor, w[2], b[2])
+        else:
+            qkv_projected = None
+            q = self.q_proj(q_tensor)
+            k = self.k_proj(k_tensor)
+            v = self.v_proj(v_tensor)
+        
+        # Creating the heads (B, S, D) -> (B, H, S, Hd)
+        if qkv_projected is None:
+            q = q.unflatten(-1, [self.nheads, self.head_dim]).transpose(1, 2)
+            k = k.unflatten(-1, [self.nheads, self.head_dim]).transpose(1, 2)
+            v = v.unflatten(-1, [self.nheads, self.head_dim]).transpose(1, 2)
+         
+        # Apply RoPe
+        if self.positional_encoding == 'rope':
+            qkv_projected = None
+            q = self.rotary_emb.rotate_queries_or_keys(q)
+            k = self.rotary_emb.rotate_queries_or_keys(k)
+
+        
+        # Transpose to kernel's expected input format
+        # Current format after head creation: (B, H, S, Hd)
+        kernel_input_order = self.kernel_meta.get('tensor_order_input', 'BHSD')
+        
+        if qkv_projected is None:
+            q = self._transpose_for_kernel(q, 'BHSD', kernel_input_order)
+            k = self._transpose_for_kernel(k, 'BHSD', kernel_input_order)
+            v = self._transpose_for_kernel(v, 'BHSD', kernel_input_order)
+        
+        # Attention computation
+        attn_output = self.attn_kernel(
+            qkv=qkv_projected, q=q, k=k, v=v,
+            query_input=query_input, key_input=key_input,
+            original_x=original_x
+        )
+        
+        # Transpose from kernel's output format to expected format (B, S, H, Hd)
+        kernel_output_order = self.kernel_meta.get('tensor_order_output', 'BHSD')
+        attn_output = self._transpose_for_kernel(attn_output, kernel_output_order, 'BSHD')
+        
+        # Post-attention stuff
+        attn_output = attn_output.flatten(-2)  # The flatten expects: (B, S, H, Hd)
+        output_tensor = self.out_proj(attn_output)
+        
+        # Handle output based on input type
+        if hasattr(query_input, 'tensor'):
+            query_input = replace(query_input, tensor=output_tensor)
+        else:
+            query_input = output_tensor
+            
+        if repadded:
+            query_input = query_input.unpad()
+            
+        return query_input
+class TransformerBlock(MatformerModule):
+    """Transformer self-attention block with pre/post normalization and flexible hooks.
+    
+    Architecture:
+        - Configurable normalization position (pre/post)
+        - Self-attention layer
+        - Feed-forward (MLP) layer
+        - Residual connections
+        - Optional hook system for custom interventions
+    
+    Configuration is layer-specific: each layer can have different settings
+    as defined in ModelConfig, or use a direct LayerConfig.
     """
     
-    def __init__(self, config: ['ModelConfig','LayerConfig'], block_mask=None, layer_idx=None, cache=None):
-        """
-        If the layer_idx corresponds to a custom layer as defined in the config, the layer will follow that specifications
-        otherwise, it will follow the default layer config.
-        If a LayerConfig is given as "config", then it will directly use that config ignoring layer_idx value
+    # Stable parameter names (independent of internal implementation changes)
+    attn_norm: "param_name:attn_norm"
+    mlp_norm: "param_name:mlp_norm"
+    self_attn: "param_name:attn"
+    mlp: "param_name:mlp"
+    
+    def __init__(self, config: ['ModelConfig', 'LayerConfig'], 
+                 block_mask=None, layer_idx=None, cache=None):
+        """Initialize transformer block. 
+        Args:
+            config: ModelConfig or LayerConfig for this layer
+            block_mask: Optional block mask (TODO: maybe deprecated)
+            layer_idx: Layer index for layer-specific configs
+            cache: Shared cache for registry and precomputed values
         """
         super().__init__()
-        self.cache = ensure_cache_and_registry(cache)   
-        cache=self.cache
-        # Get layer-specific configuration
-        if isinstance(config,ModelConfig):
-            layer_config = config.get_layer_config(layer_idx) if layer_idx is not None else config.default_layer
+        self.cache = ensure_cache_and_registry(cache)
+        
+        # Extract layer-specific configuration
+        if isinstance(config, ModelConfig):
+            layer_config = (config.get_layer_config(layer_idx) 
+                          if layer_idx is not None 
+                          else config.default_layer)
         else:
-            layer_config=config
-               
+            layer_config = config
+        
+        self.config = config
+        self.layer_config = layer_config
         self.norm_position = layer_config['normalization_position']
+        
+        # Initialize normalization layers
         norm_kwargs = {
             "normalized_shape": config.hidden_size,
             "eps": config.rms_norm_eps,
             "elementwise_affine": True
         }
-        self.attn_norm = ModuleWrapper(self.cache.registry.create("norm", layer_config['normalization'], **norm_kwargs))
-        self.mlp_norm = ModuleWrapper(self.cache.registry.create("norm", layer_config['normalization'], **norm_kwargs))
-
+        self.attn_norm = ModuleWrapper(
+            self.cache.registry.create("norm", layer_config['normalization'], **norm_kwargs)
+        )
+        self.mlp_norm = ModuleWrapper(
+            self.cache.registry.create("norm", layer_config['normalization'], **norm_kwargs)
+        )
         
-        # jerik. al momento device lo ricaviamo cosi, valutare se averlo come parametro
-        if torch.cuda.is_available():
-            device = torch.device("cuda")
-        elif torch.backends.mps.is_available():
-            device = torch.device("mps")
-        else:
-            device = torch.device("cpu")      
-              
+        # Initialize self-attention
         self.self_attn = MultiHeadAttention(
-            bias=config.bias, 
-            q_dim=config.hidden_size, 
-            nheads=config.num_attention_heads, 
-            cache=cache, 
+            bias=config.bias,
+            q_dim=config.hidden_size,
+            nheads=config.num_attention_heads,
+            cache=self.cache,
             attn_impl=layer_config['attn_impl'],
             positional_encoding=layer_config['positional_encoding'],
             is_causal=config.is_causal,
             sliding_window=layer_config['sliding_window_size'],
-            device=device,
+            device=self.device
         )
         
-        # self.post_attention_layernorm = ModuleWrapper(RMSNorm(
-        #     normalized_shape=config.hidden_size,
-        #     eps=config.rms_norm_eps,
-        #     elementwise_affine=True
-        # ))
+        # Initialize MLP
+        self.mlp = ModuleWrapper(
+            self.cache.registry.create(
+                "mlp", 
+                layer_config["ffn_activation"],
+                hidden_size=config.hidden_size,
+                ffn_factor=config.ffn_factor
+            )
+        )
         
-        
-        self.mlp = ModuleWrapper(self.cache.registry.create(
-            "mlp", layer_config["ffn_activation"], hidden_size=config.hidden_size, ffn_factor=config.ffn_factor
-        ))
-        
-        
-        self.config = config
-        self.layer_config = layer_config
-        
-        # Hook system 
-        self.has_hooks = bool(layer_config['hooks'])
-        self.resolved_hooks = {}
-        
-        # Initialize hooks
-        if self.has_hooks:
-            for name, hook_spec in layer_config['hooks'].items():
-                resolved = resolve_hook(hook_spec, config)
-                if isinstance(resolved, nn.Module):
-                    self.add_module(f"hook_{name}", resolved)
-                self.resolved_hooks[name] = resolved
+        # Initialize hook system
+        self.hooks = self._init_hooks(layer_config.get('hooks', {}))
     
-    def _apply_hook(self, hook_name: str, x: Any, *args, **kwargs) -> Any:
-        return self.resolved_hooks[hook_name](x, *args, **kwargs) if hook_name in self.resolved_hooks else x
-    
-    def forward(self, x, block_mask=None, sliding=False):
-        if self.layer_config['attn_impl']=='wersa':
-            original_x=x #Required for WERSA
-        else:
-            original_x=None
-            
-        # x = self._apply_hook("pre_attn", x) if self.has_hooks else x # HOOK: Pre-attention hooks  
-        # x = self.input_layernorm(x) # NORMAL: 1. Input layernorm    
-        # x = self._apply_hook("post_norm_pre_attn", x) if self.has_hooks else x # HOOK: Post-norm, pre-attention hook  
-        # attn_out = self.self_attn(x,original_x=original_x)   # NORMAL: Self attention
-        # attn_out = self._apply_hook("post_attn", attn_out) if self.has_hooks else attn_out # HOOK: Post-attention hook (before residual)
-        # x = x + attn_out # NORMAL: Self attention residual add
-        # x = self._apply_hook("pre_mlp", x) if self.has_hooks else x # HOOK: Pre-MLP hook
-        # normed = self.post_attention_layernorm(x) # NORMAL: Post attention layer norm
-        # normed = self._apply_hook("post_norm_pre_mlp", normed) if self.has_hooks else normed # HOOK: Post-norm, pre-MLP hook      
-        # mlp_out = self.mlp(normed)  # NORMAL: MLP
-        # mlp_out = self._apply_hook("post_mlp", mlp_out) if self.has_hooks else mlp_out # HOOK: Post-MLP hook (before residual)    
-        # x = x + mlp_out # NORMAL: MLP Residual add
-        # x = self._apply_hook("output", x) if self.has_hooks else x # HOOK: Final output hook  
+    def _init_hooks(self, hook_specs):
+        """Initialize hooks from layer config via registry."""
+        if not hook_specs:
+            return {}
         
-        # TODO @Matteo: da ricontrollare gli hook
-        # Attention block
-        x = self._apply_hook("pre_attn", x) if self.has_hooks else x
+        hooks = {}
+        for name, hook_name in hook_specs.items():
+            # Resolve hook implementation from registry
+            hook = self.cache.registry.create("hooks", hook_name,config=self.config, cache=self.cache)
+            # Register as submodule if it's a nn.Module
+            if isinstance(hook, nn.Module):
+                self.add_module(f"hook_{name}", hook)
+            hooks[name] = hook
+        
+        return hooks
+    
+    def _apply_hook(self, hook_name, x, *args, **kwargs):
+        """Apply hook if it exists, otherwise return input unchanged."""
+        return self.hooks[hook_name](x, *args, **kwargs) if hook_name in self.hooks else x
+    
+    def _norm_attn_residual(self, x, original_x):
+        """Apply normalization, attention, and residual connection."""
         if self.norm_position == 'pre':
             normed = self.attn_norm(x)
-            normed = self._apply_hook("post_norm_pre_attn", normed) if self.has_hooks else normed
+            normed = self._apply_hook("post_norm_pre_attn", normed)
             attn_out = self.self_attn(normed, original_x=original_x)
-            attn_out = self._apply_hook("post_attn", attn_out) if self.has_hooks else attn_out
-            x = x + attn_out
-        else:  # post
+            attn_out = self._apply_hook("post_attn", attn_out)
+            return x + attn_out
+        else:  # post normalization
             attn_out = self.self_attn(x, original_x=original_x)
-            attn_out = self._apply_hook("post_attn", attn_out) if self.has_hooks else attn_out
+            attn_out = self._apply_hook("post_attn", attn_out)
             x = x + attn_out
             x = self.attn_norm(x)
-            x = self._apply_hook("post_attn_norm", x) if self.has_hooks else x
-        
-        # MLP block
-        x = self._apply_hook("pre_mlp", x) if self.has_hooks else x
+            return self._apply_hook("post_attn_norm", x)
+    
+    def _norm_mlp_residual(self, x):
+        """Apply normalization, MLP, and residual connection."""
         if self.norm_position == 'pre':
             normed = self.mlp_norm(x)
-            normed = self._apply_hook("post_norm_pre_mlp", normed) if self.has_hooks else normed
+            normed = self._apply_hook("post_norm_pre_mlp", normed)
             mlp_out = self.mlp(normed)
-            mlp_out = self._apply_hook("post_mlp", mlp_out) if self.has_hooks else mlp_out
-            x = x + mlp_out
-        else:  # post
+            mlp_out = self._apply_hook("post_mlp", mlp_out)
+            return x + mlp_out
+        else:  # post normalization
             mlp_out = self.mlp(x)
-            mlp_out = self._apply_hook("post_mlp", mlp_out) if self.has_hooks else mlp_out
+            mlp_out = self._apply_hook("post_mlp", mlp_out)
             x = x + mlp_out
             x = self.mlp_norm(x)
-            x = self._apply_hook("post_mlp_norm", x) if self.has_hooks else x
-        
-        x = self._apply_hook("output", x) if self.has_hooks else x
-        return x
+            return self._apply_hook("post_mlp_norm", x)
+    
+    def forward(self, x, block_mask=None, sliding=False):
+        """Forward pass through transformer block.     
+        If self.norm_position == pre:
+			pre_attn => norm => attn => residual => pre_mpl => norm => mlp => residual => output
+		else (self.norm_position == post):
+			pre_attn => attn => norm => residual => pre_mlp => mlp => norm => residual => output
 
-class NakedTransformer(nn.Module):
+        """
+        # WERSA attention requires original input
+        original_x = x if self.layer_config['attn_impl'] == 'wersa' else None
+        
+        # Attention block
+        x = self._apply_hook("pre_attn", x)
+        x = self._norm_attn_residual(x, original_x)
+        
+        # MLP block
+        x = self._apply_hook("pre_mlp", x)
+        x = self._norm_mlp_residual(x)
+        
+        # Final output hook
+        return self._apply_hook("before_output", x)
+
+class NakedTransformer(MatformerModule):
     """
     This transformer module misses the embedding as well as the "unembedding" layer.
     The reason is that is a Transformer meant to run only on "patches".
     It applies n transformer blocks as defined in the ModelConfig
-    """
+    """  
+    # Stable parameter names
+    norm: "param_name:norm"
+    layers: "param_name:layers"
+    
     def __init__(self, config: ModelConfig, cache=None):
         super().__init__()
         self.config = config
-        self.cache = ensure_cache_and_registry(cache)   
-        cache=self.cache
-        #self.norm = ModuleWrapper(RMSNorm(normalized_shape=config.hidden_size, eps=config.rms_norm_eps, elementwise_affine=True))
+        self.cache = ensure_cache_and_registry(cache)
+        
         norm_kwargs = {
             "normalized_shape": config.hidden_size,
             "eps": config.rms_norm_eps,
             "elementwise_affine": True
         }
-        self.norm = ModuleWrapper(self.cache.registry.create("norm", config.default_layer['normalization'], **norm_kwargs))       
-        self.layers = nn.ModuleList()
-        for layer_idx in range(config.num_hidden_layers):
-            self.layers.append(TransformerBlock(config=config,layer_idx=layer_idx,cache=cache)) 
-
-    def forward(self, x, document_mask=None, inference=False):         
-        for layer_idx, layer in enumerate(self.layers):
-                x = layer(x)
-        x = self.norm(x)
-
-        return x
+        self.norm = ModuleWrapper(
+            self.cache.registry.create("norm", config.default_layer['normalization'], **norm_kwargs)
+        )
         
-class TransformerWithEmbeddingHead(nn.Module):
-    """
-    Adding an embedding layer at the beginning
-    """
-    def __init__(self,config: ModelConfig, cache=None):
+        self.layers = nn.ModuleList([
+            TransformerBlock(config=config, layer_idx=idx, cache=self.cache)
+            for idx in range(config.num_hidden_layers)
+        ])
+    
+    def forward(self, x, document_mask=None, inference=False):
+        for layer in self.layers:
+            x = layer(x)
+        return self.norm(x)
+
+
+class TransformerWithEmbeddingHead(MatformerModule):
+    
+    # Stable parameter names
+    embed_tokens: "param_name:embed_tokens"
+    embed_positions: "param_name:embed_positions"
+    blocks: "param_name:blocks"
+    
+    def __init__(self, config: ModelConfig, cache=None):
         super().__init__()
-        self.cache = ensure_cache_and_registry(cache)   
-        cache=self.cache
-        self.embed_tokens = ModuleWrapper(self.cache.registry.create(
-            "embedding", "embedding", num_embeddings=config.vocab_size, embedding_dim=config.hidden_size, padding_idx=config.pad_token_id))
-        self.transformer = NakedTransformer(config,cache=cache)
+        self.config = config
+        self.cache = ensure_cache_and_registry(cache)
         
-        # added learnable positional embeddings
-        self.embed_positions = ModuleWrapper(self.cache.registry.create(
-            "embedding", "embedding", num_embeddings=config.max_position_embeddings, embedding_dim=config.hidden_size
-        )) if config.default_layer['positional_encoding'] == "learnable" else None
+        # Token embeddings
+        self.embed_tokens = ModuleWrapper(
+            self.cache.registry.create(
+                "embedding", "embedding",
+                num_embeddings=config.vocab_size,
+                embedding_dim=config.hidden_size,
+                padding_idx=config.pad_token_id
+            )
+        )
         
-    def forward(self,x, **kwargs): 
-        embeddings=self.embed_tokens(x)
+        # Learnable positional embeddings (if configured)
+        self.embed_positions = (
+            ModuleWrapper(
+                self.cache.registry.create(
+                    "embedding", "embedding",
+                    num_embeddings=config.max_position_embeddings,
+                    embedding_dim=config.hidden_size
+                )
+            )
+            if config.default_layer['positional_encoding'] == "learnable"
+            else None
+        )
         
-        # added learnable positional embeddings
+        # Core transformer
+        self.blocks = NakedTransformer(config, cache=self.cache)
+    
+    def forward(self, x, **kwargs):
+        """Embed tokens (+ positions) then process through transformer."""
+        embeddings = self.embed_tokens(x)
+        
+        # Add learnable positional embeddings if configured
         if self.embed_positions is not None:
             batch_size, seq_len = x.tensor.shape
             position_ids = torch.arange(seq_len, dtype=torch.long, device=x.tensor.device)
@@ -242,35 +486,56 @@ class TransformerWithEmbeddingHead(nn.Module):
             position_embeds = self.embed_positions(position_ids_wrapped)
             embeddings = replace(embeddings, tensor=embeddings.tensor + position_embeds.tensor)
         
-        return self.transformer(embeddings,**kwargs)
+        return self.blocks(embeddings, **kwargs)
 
 
-
-         
-
-class TransformerWithLMHead(nn.Module):
+class TransformerWithLMHead(MatformerModule):
     """
-    Adding an LM Head to TransformerWithEmbeddingHead. This is enough for Bert-like/GPT-like models.
+    Complete language model with embeddings and language modeling head.
+    Suitable for autoregressive (GPT-like) or masked (BERT-like) language models.
+    Supports weight tying between embeddings and output projection.
     """
-    def __init__(self,config: ModelConfig,tokenizer=None,device=None,cache=None):
-        super().__init__()  
-        self.cache = ensure_cache_and_registry(cache)    
-        cache=self.cache           
-        self.lm_head = ModuleWrapper(self.cache.registry.create("linear", "linear", in_features=config.hidden_size, out_features=config.vocab_size))
-        self.transformer = TransformerWithEmbeddingHead(config,cache=cache)
-        self.device=device #This is used only for inference!
+    
+    # Stable parameter names
+    lm_head: "param_name:lm_head"
+    encoder: "param_name:encoder"
+    
+    def __init__(self, config: ModelConfig, tokenizer=None, device=None, cache=None):
+        super().__init__()
+        self.config = config
+        self.tokenizer = tokenizer
+        self.cache = ensure_cache_and_registry(cache)
+        
+        # Language modeling head (output projection)
+        self.lm_head = ModuleWrapper(
+            self.cache.registry.create(
+                "linear", "linear",
+                in_features=config.hidden_size,
+                out_features=config.vocab_size
+            )
+        )
+        
+        # Transformer with embeddings
+        self.encoder = TransformerWithEmbeddingHead(config, cache=self.cache)
+        
+        # Weight tying: share embeddings with output projection
         if config.tie_word_embeddings:
             self.lm_head.weight = self.transformer.embed_tokens.weight
-        self.config=config
-        self.tokenizer=tokenizer
-  
-    def forward(self,x,return_type='logits',**kwargs):
-        x=self.transformer(x,**kwargs)
-        if return_type=='logits':
-            return self.lm_head(x)
-        else:
-            return x
+    
+    def forward(self, x, return_type='logits', **kwargs):
+        """Forward pass with optional return type.
         
+        Args:
+            x: Input token IDs
+            return_type: 'logits' for language modeling head output,
+                        'hidden' for transformer hidden states
+        """
+        hidden_states = self.encoder(x, **kwargs)
+        
+        if return_type == 'logits':
+            return self.lm_head(hidden_states)
+        else:
+            return hidden_states
 
 class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
     def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='mean', num_features=2,cache=None):
@@ -286,7 +551,7 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         self.num_features = num_features
 
     def forward(self, x, attention_mask=None):
-        outputs = self.transformer(x) # (B,S,D)
+        outputs = self.encoder(x) # (B,S,D)
 
         if self.pooling_type == 'cls':
             # [CLS] in pos. 0
@@ -355,7 +620,7 @@ class BERTModel(TransformerWithLMHead):
         
     def forward_classification(self, x, attention_mask=None):
         """Forward pass for sequence classification."""
-        hidden_states = self.transformer(x)
+        hidden_states = self.encoder(x)
         
         if self.pooling_type == 'cls':
             pooled = hidden_states.tensor[:, 0]
@@ -688,7 +953,7 @@ class EntropyModel(Autoregressive_Model):
             
             else:
                 raise ValueError("text must be either a string or a list of strings")
-class TransformerWithCharAutoencoder(nn.Module):
+class TransformerWithCharAutoencoder(MatformerModule):
     def __init__(self, config, device=None, tokenizer=None, log=None):
         super().__init__()
         from char_autoencoder.autoencoders import TransCharAutoencoder_Encoder, TransCharAutoencoder_Decoder

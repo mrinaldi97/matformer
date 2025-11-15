@@ -22,8 +22,9 @@ from transformers import AutoTokenizer
 from matformer.matformer_registry import registry
 from matformer.cached_stuff import CachedStuff
 from copy import deepcopy
+from matformer.matformer_module import MatformerModule
 
-class PL_ModelWrapper(pl.LightningModule):
+class PL_ModelWrapper(MatformerModule):
     def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False):
         super().__init__()
         self.config=config
