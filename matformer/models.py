@@ -47,21 +47,23 @@ class PL_ModelWrapper(MatformerModule):
         self.batch_size=batch_size # Utile per il learning rate scheduling
         
         # Maskerator setup
-        try:
-            cloze_prob = self.config.get("cloze_prob", 1.0)
-            random_prob = self.config.get("random_prob", None)
-            same_prob = self.config.get("same_prob", None)
-            vocab_size = self.config.get("vocab_size", None)
+        if True: #TODO @Jerik: self.config non è un dizionario, bisogna trovare un altro modo per i valori di default
+            #cloze_prob = self.config.get("cloze_prob", 1.0)  
+            #random_prob = self.config.get("random_prob", None)
+            #same_prob = self.config.get("same_prob", None)
+            #vocab_size = self.config.get("vocab_size", None)
             
             self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
                                        substitution_rate=self.config.masked_substitution_rate,
                                        pad_token_id=self.config.pad_token_id,
-                                       cloze_prob=cloze_prob,
-                                       random_prob=random_prob,
-                                       same_prob=same_prob,
-                                       vocab_size=vocab_size)
-        except:
-            print("Maskerator not set up. Fine for Autoregressive model") #Fix al volo
+                                       cloze_prob=1.0,
+                                       random_prob=0.0,
+                                       same_prob=0.0,
+                                       vocab_size=self.config.vocab_size)
+        #except:
+        #    print("Maskerator not set up. Fine for Autoregressive model") #Fix al volo
+        
+
         
     def forward(self, _input,*args,**kwargs):
         return self.model(_input.to(self.device),*args,**kwargs)
@@ -170,7 +172,7 @@ class PL_ModelWrapper(MatformerModule):
         except:
             pass                 
         if masked: #Logging also the accuracy
-            preds = logits_flat[mask].argmax(dim=-1)
+            preds = model_output_flat[mask].argmax(dim=-1)
             targets = targets_flat[mask]
             acc = (preds == targets).float().mean()
             self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
