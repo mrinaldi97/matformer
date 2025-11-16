@@ -20,10 +20,6 @@ dependencies = [
     "einops>=0.8.1
 ]
 
-[project.urls]
-"Homepage" = "https://github.com/mrinaldi97/matformer"
-"Bug Tracker" = "https://github.com/mrinaldi97/matformer/issues"
-
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["matformer*"]
