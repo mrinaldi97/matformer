@@ -155,7 +155,7 @@ class MatformerModel(MatformerPreTrainedModel):
     def forward(self, input_ids, attention_mask=None, **kwargs):
         if len(input_ids.shape) == 1:
             input_ids = input_ids.unsqueeze(0)
-        input_ids = NormalTensor(tensor=input_ids)
+        #input_ids = NormalTensor(tensor=input_ids)
         return self.matformer_model(input_ids)
 
 
@@ -192,7 +192,7 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
         if len(input_ids.shape) == 1:
             input_ids = input_ids.unsqueeze(0)
         
-        input_ids = NormalTensor(tensor=input_ids)
+        #input_ids = NormalTensor(tensor=input_ids)
         hidden_states = self.matformer_model(input_ids)
         logits = self.matformer_model.lm_head(hidden_states)
         
@@ -244,7 +244,7 @@ class MatformerForMaskedLM(MatformerPreTrainedModel):
         if len(input_ids.shape) == 1:
             input_ids = input_ids.unsqueeze(0)
         
-        input_ids = NormalTensor(tensor=input_ids)
+        #input_ids = NormalTensor(tensor=input_ids)
         hidden_states = self.matformer_model(input_ids)
         logits = self.matformer_model.lm_head(hidden_states)
         
@@ -293,7 +293,7 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
         if len(input_ids.shape) == 1:
             input_ids = input_ids.unsqueeze(0)
         
-        input_ids = NormalTensor(tensor=input_ids)
+        #input_ids = NormalTensor(tensor=input_ids)
         logits = self.matformer_model.forward_classification(input_ids, attention_mask)
         
         loss = None
