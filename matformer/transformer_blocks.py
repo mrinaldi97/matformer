@@ -601,6 +601,8 @@ class BERTModel(TransformerWithLMHead):
                 except:
                     print("Maskerator fallback.")
                     cloze_prob=1.0
+                    random_prob=0.0
+                    same_prob=0.0
                     vocab_size=self.config.get("vocab_size",None)
                 
                 self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
