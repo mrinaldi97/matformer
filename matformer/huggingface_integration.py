@@ -183,7 +183,7 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
             if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
                 module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
         
-        instance.matformer_model = model.model
+        instance.matformer_model = model
         instance.post_init()
         
         return instance
@@ -235,7 +235,7 @@ class MatformerForMaskedLM(MatformerPreTrainedModel):
             if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
                 module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
         
-        instance.matformer_model = model.model
+        instance.matformer_model = model
         instance.post_init()
         
         return instance
@@ -284,7 +284,7 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
         if not hasattr(model.model, 'classification_head'):
             model.model.init_classification_head(config.num_labels)
         
-        instance.matformer_model = model.model
+        instance.matformer_model = model
         instance.post_init()
         
         return instance
