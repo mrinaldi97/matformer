@@ -1,0 +1,18 @@
+{
+    "training": {
+        "optimizer": "adam",
+        "lr_scheduling": true,
+        "lr": 5e-4,
+        "final_lr":2e-5,
+        "hold_steps":0.21,
+        "weight_decay": 0.01,
+        "scheduler": "linear_decay",
+        "gradient_clip_val":1.0,
+        "warmup_steps": 0.05,
+        "max_epochs": 1,
+        "accumulate_grad_batches": 5,
+        "seed": 27,
+        "save_every_n_steps": 5000,
+        "checkpoint_name": "mini_albertina_001"
+    }
+}

@@ -1,0 +1,7 @@
+{
+    "tokenizer": {
+        "type": "huggingface",
+        "pretrained_name": "sapienzanlp/Minerva-350M-base-v1.0",
+        "varlen_strategy": "unpadding"
+      }
+}

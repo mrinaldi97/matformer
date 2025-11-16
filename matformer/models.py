@@ -56,9 +56,9 @@ class PL_ModelWrapper(MatformerModule):
             self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
                                        substitution_rate=self.config.masked_substitution_rate,
                                        pad_token_id=self.config.pad_token_id,
-                                       cloze_prob=1.0,
-                                       random_prob=0.0,
-                                       same_prob=0.0,
+                                       cloze_prob=self.config.cloze_probability,
+                                       random_prob=self.config.random_probability,
+                                       same_prob=self.config.same_probability,
                                        vocab_size=self.config.vocab_size)
         #except:
         #    print("Maskerator not set up. Fine for Autoregressive model") #Fix al volo
