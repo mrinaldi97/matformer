@@ -66,7 +66,7 @@ class ParametersRenamer:
         2. For each marked attribute, recursively map all its parameters
         3. Store the mapping as {stable_name: actual_path}
         """
-        self._parameters_mappings = {}
+        self._parameters_mappings = {} #The variable that contains all the mappings
         annotations = getattr(self.__class__, '__annotations__', {}) # (annotations are where we put "param_name:XXX" markers)
         
         for attr, ann in annotations.items():
@@ -75,9 +75,7 @@ class ParametersRenamer:
             if not ann.startswith('param_name:'):
                 continue
             
-            # Extract the stable name prefix after "param_name:"
-            # e.g., "param_name:transformer" -> "transformer"
-            parameters_prefix = ann.split(':', 1)[1]
+            parameters_prefix = ann.split(':', 1)[1] #"param_name:transformer" -> "transformer"
             
             # Get the actual module instance from the attribute
             module = getattr(self, attr, None)
@@ -89,49 +87,12 @@ class ParametersRenamer:
             #    continue
 
                         
-            for param_name, _ in module.named_parameters(recurse=True): # named_parameters() returns (name, parameter)
-                # Simplify the parameter path (remove wrapper layers)
-                # e.g., "module.inner.weight" -> "weight"
-                simplified = self._simplify_path(module, param_name)
-                
-                # Construct stable name: prefix + simplified path
-                # e.g., "transformer" + "weight" -> "transformer.weight"
-                stable_full_name = f"{parameters_prefix}.{simplified}"
-                
-                # Construct actual path: attribute name + full param path
-                # e.g., "transformer" + "module.inner.weight" -> "transformer.module.inner.weight"
-                actual_full_path = f"{attr}.{param_name}"
-                
-                # Store mapping: stable -> actual
-                self._parameters_mappings[stable_full_name] = actual_full_path
-    
-    def _simplify_path(self, module, param_path):
-        """
-        Simplify a parameter path by removing wrapper layers.
-        
-        Args:
-            module: The module containing the parameter
-            param_path: The full parameter path (e.g., "module.inner.weight")
-        
-        Returns:
-            Simplified path (e.g., "weight")
-        """
+		for param_name, _ in module.named_parameters(recurse=True):
+			raw = ".".join(p for p in param_name.split(".") if p not in ("model", "module", "inner")) #Strips model, module and inner.
+			if raw in self._parameters_mappings:
+				raw = param_name #If there is a collision, avoid the stripping
+			self._parameters_mappings[f"{parameters_prefix}.{raw}"] = f"{attr}.{param_name}"
 
-        # Renames modules having a `.module` attribute and inner module `_params_names` metadata.
-        if hasattr(module, 'module') and hasattr(module.module, '_params_names'):
-            # Get the parameter name mapping from registry metadata
-            parameters_map = module.module._params_names 
-            
-            # Remove the 'module.' prefix of the wrapper
-            # e.g., "module.inner.weight" -> "inner.weight"
-            inner_path = param_path.replace('module.', '', 1)
-            
-            # Look up simplified name in the mapping, or use as-is if not found
-            # e.g., {"inner.weight": "weight"} -> "weight"
-            return parameters_map.get(inner_path, inner_path)
-        
-        # No simplification needed, return original path
-        return param_path
     
     def parameters_state_dict(self):
         """
@@ -167,19 +128,10 @@ class ParametersRenamer:
         # Load the translated state dict using PyTorch's standard method
         return nn.Module.load_state_dict(self, translated, strict=strict)
     
-    # ---- Compatibility aliases to avoid AttributeError from other modules ----
     def stable_state_dict(self):
-        """
-        Alias for parameters_state_dict for compatibility with MatformerModule / PL hook.
-        Returns the model state dict with stable (external) names.
-        """
         return self.parameters_state_dict()
 
     def load_stable_state_dict(self, state_dict, strict=True, external_mapping: Optional[dict] = None):
-        """
-        Alias for load_parameters_state_dict for compatibility.
-        Loads a state dict expressed in stable (or external) names.
-        """
         return self.load_parameters_state_dict(state_dict, strict=strict, external_mapping=external_mapping)
 
 
@@ -190,25 +142,6 @@ if HAS_LIGHTNING:
             super().__init__()
             # Indicate we are running under Lightning
             self.has_lightning = True
-
-        def on_save_checkpoint(self, checkpoint):
-            """Convert to stable names when saving"""
-            if getattr(self, 'use_stable_checkpoints', True):
-                stable_state = self.stable_state_dict()
-                # Don't add 'model.' prefix if this IS the model
-                if 'model.' in list(checkpoint.get('state_dict', {}).keys())[:1]:
-                    checkpoint['state_dict'] = {f'model.{k}': v for k, v in stable_state.items()}
-                else:
-                    checkpoint['state_dict'] = stable_state
-        
-        def load_state_dict(self, state_dict, strict=True):
-            """Handle stable names when loading"""
-            # Remove potential 'model.' prefix
-            cleaned_state = {
-                k[6:] if k.startswith('model.') else k: v 
-                for k, v in state_dict.items()
-            }
-            return self.load_stable_state_dict(cleaned_state, strict=strict)
 
 else:
     class MatformerModule(nn.Module, ParametersRenamer):
