@@ -14,7 +14,7 @@ from pathlib import Path
 from matformer.models import PL_ModelWrapper
 from matformer.transformer_blocks import Autoregressive_Model, BERTModel
 from matformer.model_config import ModelConfig
-from matformer.tensors_dataclasses import NormalTensor
+#from matformer.tensors_dataclasses import NormalTensor
 
 
 def to_dict(obj):
@@ -198,14 +198,14 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
         
         loss = None
         if labels is not None:
-            shift_logits = logits.tensor[..., :-1, :].contiguous()
+            shift_logits = logits[..., :-1, :].contiguous()
             shift_labels = labels[..., 1:].contiguous()
             loss = F.cross_entropy(
                 shift_logits.view(-1, shift_logits.size(-1)),
                 shift_labels.view(-1)
             )
         
-        return CausalLMOutputWithPast(loss=loss, logits=logits.tensor)
+        return CausalLMOutputWithPast(loss=loss, logits=logits)
     
     def prepare_inputs_for_generation(self, input_ids, **kwargs):
         return {"input_ids": input_ids}
@@ -251,11 +251,11 @@ class MatformerForMaskedLM(MatformerPreTrainedModel):
         loss = None
         if labels is not None:
             loss = F.cross_entropy(
-                logits.tensor.view(-1, logits.tensor.size(-1)),
+                logits.view(-1, logits.size(-1)),
                 labels.view(-1)
             )
         
-        return MaskedLMOutput(loss=loss, logits=logits.tensor)
+        return MaskedLMOutput(loss=loss, logits=logits)
 
 
 class MatformerForSequenceClassification(MatformerPreTrainedModel):
