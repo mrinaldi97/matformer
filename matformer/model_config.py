@@ -59,6 +59,9 @@ class BaseSubModelConfig:
     # stuff for masked modeling:
     mask_token_id: Optional[int] = None
     masked_substitution_rate: Optional[float] = None
+    cloze_probability: Optional[float] = None
+    random_probability: Optional[float] = None
+    same_probability: Optional[float] = None
     # compilation & bias
     compile_flexattn: Optional[bool] = None
     bias: Optional[bool] = None

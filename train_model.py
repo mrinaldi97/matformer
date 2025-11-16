@@ -35,7 +35,13 @@ def apply_overrides(cfg, overrides):
 
 def parse_args():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, required=True)
+    #parser.add_argument('--config', type=str, required=True)
+    
+    parser.add_argument('--model_config', type=str, required=True, help="Path to model_config.json")
+    parser.add_argument('--training_config', type=str, required=True, help="Path to train_config.json")
+    parser.add_argument('--data_config', type=str, required=True, help="Path to data_config.json")
+    parser.add_argument('--tokenizer_config', type=str, required=True, help="Path to tok_config.json")
+    
     parser.add_argument('--override', nargs='*', default=[])
     parser.add_argument('--gpu', type=int, default=1)
     parser.add_argument('--checkpoint', type=str, default=None) 
@@ -45,7 +51,14 @@ def parse_args():
 
     args = parser.parse_args()
     overrides = dict(kv.split('=') for kv in args.override)
-    return args.config, overrides, args.gpu, args.checkpoint, args.start_from_scratch, args.simulate, args.dump_json
+    
+    config_paths = {
+        "model_config": args.model_config,
+        "training": args.train_config,
+        "data": args.data_config,
+        "tokenizer": args.tok_config
+    }
+    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch, args.simulate, args.dump_json
 
 def get_model_class(model_class: str):
     module = import_module("matformer.transformer_blocks")
@@ -65,25 +78,53 @@ def save_state_dict_json(state_dict, path):
     with open(path, 'w') as f:
         json.dump(shapes, f, indent=2)
 
-def main():
-    config_path, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json = parse_args()
-    cfg = apply_overrides(load_config(config_path), overrides)
+def load_and_prepare_configs(config_paths, overrides):
+    """
+    Loads multiple separate JSON configs, merges them, applies overrides,
+    and derives any dependent configuration properties (like is_causal).
+    """
     
-    #--------------------------------------#
-    # Removed training_objective and is_causal. 
-    # Brutto da vedere, credo si possa fare di meglio
-    model_class = cfg['model_class']
+    model_cfg_dict = load_config(config_paths["model_config"])
+    train_cfg_dict = load_config(config_paths["training"])
+    data_cfg_dict = load_config(config_paths["data"])
+    tok_cfg_dict = load_config(config_paths["tokenizer"])
+
+    cfg = {
+        "model_class": model_cfg_dict.pop("model_class", None),
+        "save_dir": model_cfg_dict.pop("save_dir", "./checkpoints"),
+        "wandb_project": model_cfg_dict.pop("wandb_project", "default_project"),
+        "wandb_run_name": model_cfg_dict.pop("wandb_run_name", "default_run"),
+        "model_config": model_cfg_dict, 
+        "training": train_cfg_dict,
+        "data": data_cfg_dict,
+        "tokenizer": tok_cfg_dict
+    }
+
+    cfg = apply_overrides(cfg, overrides)
+
+    model_class = cfg['model_class'] 
     training_objective = "autoregressive" if model_class == "Autoregressive_Model" else "masked"
     is_causal = True if model_class == "Autoregressive_Model" else False
-    
     cfg['model_config']['training_objective'] = training_objective
     cfg['model_config']['is_causal'] = is_causal
-    #--------------------------------------#
     
-    model_cfg = ModelConfig(**cfg['model_config'])
-    train_cfg = cfg['training']
-    data_cfg = cfg['data']
-    tok_cfg = cfg['tokenizer']
+    model_config_dict_clean = cfg['model_config']
+    train_config_dict = cfg['training']
+    data_config_dict = cfg['data']
+    tok_config_dict = cfg['tokenizer']
+    
+    return model_config_dict_clean, train_config_dict, data_config_dict, tok_config_dict, cfg
+
+
+def main():
+    #config_path, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json = parse_args()
+    #cfg = apply_overrides(load_config(config_path), overrides)
+    
+    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json = parse_args()
+    model_config_dict, train_cfg, data_cfg, tok_cfg, cfg = load_and_prepare_configs(config_paths, overrides)
+    
+    #model_cfg = ModelConfig(**cfg['model_config'])
+    model_cfg = ModelConfig(**model_config_dict)
     save_dir = cfg.get('save_dir', './checkpoints')
     
     pl.seed_everything(train_cfg.get('seed', 27))
