@@ -143,10 +143,10 @@ if HAS_LIGHTNING:
             checkpoint['state_dict'] = self.stable_state_dict()
             print(f"Saved checkpoint with {len(checkpoint['state_dict'])} keys")
         
-	def on_load_checkpoint(self, checkpoint: dict) -> None:
-		"""Translate stable names in checkpoint to actual internal names."""
-		mapping = self.get_parameters_name_mapping()  # stable -> actual
-		checkpoint['state_dict'] = {mapping.get(k, k): v for k, v in checkpoint['state_dict'].items()} # checkpoint has stable keys, translate them to actual keys
+    def on_load_checkpoint(self, checkpoint: dict) -> None:
+        """Translate stable names in checkpoint to actual internal names."""
+        mapping = self.get_parameters_name_mapping()  # stable -> actual
+        checkpoint['state_dict'] = {mapping.get(k, k): v for k, v in checkpoint['state_dict'].items()} # checkpoint has stable keys, translate them to actual keys
 else:
     class MatformerModule(nn.Module, ParametersRenamer):
         """
