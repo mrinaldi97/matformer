@@ -87,11 +87,11 @@ class ParametersRenamer:
             #    continue
 
                         
-		for param_name, _ in module.named_parameters(recurse=True):
-			raw = ".".join(p for p in param_name.split(".") if p not in ("model", "module", "inner")) #Strips model, module and inner.
-			if raw in self._parameters_mappings:
-				raw = param_name #If there is a collision, avoid the stripping
-			self._parameters_mappings[f"{parameters_prefix}.{raw}"] = f"{attr}.{param_name}"
+        for param_name, _ in module.named_parameters(recurse=True):
+            raw = ".".join(p for p in param_name.split(".") if p not in ("model", "module", "inner")) #Strips model, module and inner.
+            if raw in self._parameters_mappings:
+                raw = param_name #If there is a collision, avoid the stripping
+            self._parameters_mappings[f"{parameters_prefix}.{raw}"] = f"{attr}.{param_name}"
 
     
     def parameters_state_dict(self):
