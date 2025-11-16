@@ -194,7 +194,7 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
         
         #input_ids = NormalTensor(tensor=input_ids)
         hidden_states = self.matformer_model(input_ids,return_type='hidden')
-        logits = self.matformer_model.lm_head(hidden_states)
+        logits = self.matformer_model.model.lm_head(hidden_states)
         
         loss = None
         if labels is not None:
@@ -246,7 +246,7 @@ class MatformerForMaskedLM(MatformerPreTrainedModel):
         
         #input_ids = NormalTensor(tensor=input_ids)
         hidden_states = self.matformer_model(input_ids,return_type='hidden')
-        logits = self.matformer_model.lm_head(hidden_states)
+        logits = self.matformer_model.model.lm_head(hidden_states)
         
         loss = None
         if labels is not None:
