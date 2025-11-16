@@ -121,11 +121,20 @@ if HAS_LIGHTNING:
             super().__init__()
             # Indicate we are running under Lightning
             self.has_lightning = True
-        def state_dict(self, *args, **kwargs):
-            return self.parameters_state_dict()
+        def on_save_checkpoint(self, checkpoint: dict) -> None:
+            """Replace raw state dict with renamed version before saving."""
+            checkpoint['state_dict'] = self.parameters_state_dict()
         
-        def load_state_dict(self, state_dict, strict=True, **kwargs):
-            return self.load_parameters_state_dict(state_dict, strict=strict)
+        def on_load_checkpoint(self, checkpoint: dict) -> None:
+            """Rename keys back to actual paths before Lightning loads them."""
+            # Build mapping if not already done
+            mapping = self.get_parameters_name_mapping()
+            # Reverse it: stable_name -> actual_name
+            reverse = {v: k for k, v in mapping.items()}
+            # Translate checkpoint keys back to raw names
+            translated = {reverse.get(k, k): v for k, v in checkpoint['state_dict'].items()}
+            checkpoint['state_dict'] = translated
+            # Lightning will now load normally with correct internal names
 else:
     class MatformerModule(nn.Module, ParametersRenamer):
         """
