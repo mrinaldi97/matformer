@@ -43,7 +43,7 @@ class MultiHeadAttention(MatformerModule):
     v_proj: "param_name:v_proj"             # Separate value projection (cross-attention)
     out_proj: "param_name:o_proj"           # Output projection
     attn_kernel: "param_name:attn_kernel"   # Attention implementation kernel
-	
+    
     def __init__(
         self,
         q_dim: int,               
@@ -381,9 +381,9 @@ class TransformerBlock(MatformerModule):
     def forward(self, x, block_mask=None, sliding=False):
         """Forward pass through transformer block.     
         If self.norm_position == pre:
-			pre_attn => norm => attn => residual => pre_mpl => norm => mlp => residual => output
-		else (self.norm_position == post):
-			pre_attn => attn => norm => residual => pre_mlp => mlp => norm => residual => output
+            pre_attn => norm => attn => residual => pre_mpl => norm => mlp => residual => output
+        else (self.norm_position == post):
+            pre_attn => attn => norm => residual => pre_mlp => mlp => norm => residual => output
 
         """
         # WERSA attention requires original input
@@ -593,10 +593,15 @@ class BERTModel(TransformerWithLMHead):
              print(f"Masking ratio: {self.masking_ratio}")
         else: # We get the maskerator settings from the config
             try:
-                cloze_prob = self.config.get("cloze_prob", 1.0)
-                random_prob = self.config.get("random_prob", None)
-                same_prob = self.config.get("same_prob", None)
-                vocab_size = self.config.get("vocab_size", None)
+                try:
+                    cloze_prob = self.config.get("cloze_prob", 1.0)
+                    random_prob = self.config.get("random_prob", None)
+                    same_prob = self.config.get("same_prob", None)
+                    vocab_size = self.config.get("vocab_size", None)
+                except:
+                    print("Maskerator fallback.")
+                    cloze_prob=1.0
+                    vocab_size=self.config.get("vocab_size",None)
                 
                 self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
                                            substitution_rate=self.config.masked_substitution_rate,
