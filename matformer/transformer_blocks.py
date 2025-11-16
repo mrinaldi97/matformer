@@ -593,6 +593,10 @@ class BERTModel(TransformerWithLMHead):
              print(f"Masking ratio: {self.masking_ratio}")
         else: # We get the maskerator settings from the config
             try:
+                self.masking_ratio=self.config.masked_substitution_rate
+            except:
+                self.masking_ratio=0.15
+            try:
                 try:
                     cloze_prob = self.config.get("cloze_prob", 1.0)
                     random_prob = self.config.get("random_prob", None)
