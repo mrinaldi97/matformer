@@ -8,133 +8,147 @@ try:
     HAS_LIGHTNING = True
 except ImportError:
     HAS_LIGHTNING = False
-
-
 class ParametersRenamer:
-    """
-    Mixin class that handles parameter name mapping/translation.
-    Allows defining stable parameter names independent of internal implementation.
-    """
-    
     def get_parameters_name_mapping(self, external_mapping: Optional[dict] = None):
-        """
-        Get the mapping from stable parameter names to actual parameter paths.
-        
-        Args:
-            external_mapping: Optional dict for translating external checkpoint names
-                             (e.g., from pretrained models) to our stable names.
-                             Format: {checkpoint_name: stable_name}
-        
-        Returns:
-            Dict mapping stable/external names to actual parameter paths in the model
-        """
-        if not hasattr(self, '_parameters_mappings'): #_parameters_mapping, once initialized, store the mapping of each class
+        if not hasattr(self, '_modules') or len(self._modules) == 0:
+            self._parameters_mappings = {}
+            return
+        if not hasattr(self, '_parameters_mappings'):
             self._build_parameters_mappings()
         
-        # If external mapping provided (for loading pretrained models)
         if external_mapping:
-            # Create a new composed mapping: external -> stable -> actual
             composed = {}
-            
-            # For each entry in the external mapping
             for checkpoint_name, parameters_name in external_mapping.items():
-                # Look up what actual path this stable name maps to
                 actual_name = self._parameters_mappings.get(parameters_name)
-                
-                # If we found a mapping for this stable name
                 if actual_name:
-                    # Map external checkpoint name to actual internal path
                     composed[checkpoint_name] = actual_name
                 else:
-                    # No mapping found, use the parameters_name as-is
-                    # (might be already an actual path)
                     composed[checkpoint_name] = parameters_name
-            
-            # Return the composed mapping
             return composed
         
-        # No external mapping, just return our internal stable->actual mapping
         return self._parameters_mappings
     
     def _build_parameters_mappings(self):
-        """
-        Build the internal mapping from stable parameter names to actual paths.
-        This is called once when first accessing the mapping.
-        
-        Process:
-        1. Scan class annotations for "param_name:XXX" markers
-        2. For each marked attribute, recursively map all its parameters
-        3. Store the mapping as {stable_name: actual_path}
-        """
-        self._parameters_mappings = {} #The variable that contains all the mappings
-        annotations = getattr(self.__class__, '__annotations__', {}) # (annotations are where we put "param_name:XXX" markers)
-        
-        for attr, ann in annotations.items():
-            if not isinstance(ann, str):
-                continue      
-            if not ann.startswith('param_name:'):
-                continue
-            
-            parameters_prefix = ann.split(':', 1)[1] #"param_name:transformer" -> "transformer"
-            
-            # Get the actual module instance from the attribute
-            module = getattr(self, attr, None)
-            
-            #if not isinstance(module, nn.Module):
-            #    continue
-                        
-            #if module is None:
-            #    continue
+        """Recursively scan entire module hierarchy."""
+        self._parameters_mappings = {}
+        self._scan_tree(self, "", "")
+        print(f"Mappings: {len(self._parameters_mappings)}")
+        if not self._parameters_mappings:
+            print("WARNING: No mappings found!")
 
-                        
-            for param_name, _ in module.named_parameters(recurse=True):
-                raw = ".".join(p for p in param_name.split(".") if p not in ("model", "module", "inner")) #Strips model, module and inner.
-                if raw in self._parameters_mappings:
-                    raw = param_name #If there is a collision, avoid the stripping
-                self._parameters_mappings[f"{parameters_prefix}.{raw}"] = f"{attr}.{param_name}"
-
+    def _scan_tree(self, module: nn.Module, stable_prefix: str, actual_prefix: str):
+        """
+        Recursively scan module hierarchy, building mappings.
+        
+        Args:
+            module: Current module to scan
+            stable_prefix: Clean path (strips model/module/inner)
+            actual_prefix: Real attribute path
+        """
+        # Get annotations from current module's class (these annotate CHILDREN)
+        annotations = getattr(module.__class__, '__annotations__', {})
+        
+        # Get registry custom mappings for this module's parameters
+        custom_maps = getattr(module, '_params_names', {})
+        if custom_maps:
+            print(f"   {module.__class__.__name__} => {custom_maps}")
+        
+        # Process this module's direct parameters (respect custom maps)
+        for param_name, _ in module.named_parameters(recurse=False):
+            if param_name in custom_maps:
+                stable_name = custom_maps[param_name]
+                print(f" {param_name} => {stable_name}")
+            else:
+                # Strip generic prefixes from parameter name itself
+                parts = param_name.split('.')
+                stable_name = '.'.join(p for p in parts if p not in ('model', 'module', 'inner'))
+            
+            # Build full paths
+            full_stable = f"{stable_prefix}.{stable_name}" if stable_prefix else stable_name
+            full_actual = f"{actual_prefix}.{param_name}" if actual_prefix else param_name
+            
+            self._parameters_mappings[full_stable] = full_actual
+            print(f"{full_stable} => {full_actual}")
+        # Process BUFFERS (add this block)
+        for buffer_name, _ in module.named_buffers(recurse=False):
+            # Use the same renaming logic as parameters
+            clean_name = '.'.join(p for p in buffer_name.split('.') if p not in ('model', 'module', 'inner'))
+            
+            if buffer_name in custom_maps:  # Also respect _params_names for buffers
+                stable_name = custom_maps[buffer_name]
+                print(f"{buffer_name} => {stable_name}")
+            else:
+                stable_name = clean_name
+            
+            full_stable = f"{stable_prefix}.{stable_name}" if stable_prefix else stable_name
+            full_actual = f"{actual_prefix}.{buffer_name}" if actual_prefix else buffer_name
+            
+            self._parameters_mappings[full_stable] = full_actual
+            print(f"Mapped buffer: {full_stable} => {full_actual}")        
+        # Recurse into children
+        for child_name, child_module in module.named_children():
+            # Check for annotation override (e.g., module: "param_name:mlp")
+            override_name = None
+            if child_name in annotations:
+                ann = annotations[child_name]
+                if isinstance(ann, str) and ann.startswith('param_name:'):
+                    override_name = ann.split(':', 1)[1]
+                    print(f"  {module.__class__.__name__}.{child_name} => {override_name}")
+            
+            # Determine stable child name:
+            # - If annotation override exists: use it
+            # - If child_name is generic (model/module/inner): skip this level
+            # - Otherwise: use child_name
+            if override_name:
+                stable_child_name = override_name
+            elif child_name in ('model', 'module', 'inner'):
+                stable_child_name = None  # Skip generic names in stable path
+            else:
+                stable_child_name = child_name
+            
+            # Build stable prefix (skip if None)
+            if stable_child_name:
+                child_stable = f"{stable_prefix}.{stable_child_name}" if stable_prefix else stable_child_name
+            else:
+                child_stable = stable_prefix  # Pass through current prefix
+            
+            # Build actual prefix (always keep real names)
+            child_actual = f"{actual_prefix}.{child_name}" if actual_prefix else child_name
+            
+            # Continue recursion
+            self._scan_tree(child_module, child_stable, child_actual)
     
     def parameters_state_dict(self):
-        mapping = self.get_parameters_name_mapping()     
+        """Get renamed state dict without recursion issues."""
+        mapping = self.get_parameters_name_mapping()
         reverse = {v: k for k, v in mapping.items()}
-        raw_state_dict = nn.Module.state_dict(self)
-        return {reverse.get(k, k): v for k, v in raw_state_dict.items()}
-    
+        raw_dict = nn.Module.state_dict(self)
+        return {reverse.get(k, k): v for k, v in raw_dict.items()}
+
     def load_parameters_state_dict(self, state_dict, strict=True, external_mapping=None):
         """Load renamed state dict."""
         mapping = self.get_parameters_name_mapping(external_mapping)
         translated = {mapping.get(k, k): v for k, v in state_dict.items()}
         return nn.Module.load_state_dict(self, translated, strict=strict)
 
-    
-    def stable_state_dict(self):
-        return self.parameters_state_dict()
 
-    def load_stable_state_dict(self, state_dict, strict=True, external_mapping: Optional[dict] = None):
-        return self.load_parameters_state_dict(state_dict, strict=strict, external_mapping=external_mapping)
-
-
-# Choose base class based on Lightning availability and config
 if HAS_LIGHTNING:
     class MatformerModule(pl.LightningModule, ParametersRenamer):
         def __init__(self):
             super().__init__()
-            # Indicate we are running under Lightning
             self.has_lightning = True
+        
         def on_save_checkpoint(self, checkpoint: dict) -> None:
-            """Replace raw state dict with renamed version before saving."""
+            """Transform state dict before saving."""
             checkpoint['state_dict'] = self.parameters_state_dict()
+            print(f"Saved checkpoint with {len(checkpoint['state_dict'])} keys")
         
         def on_load_checkpoint(self, checkpoint: dict) -> None:
-            """Rename keys back to actual paths before Lightning loads them."""
-            # Build mapping if not already done
+            """Transform state dict before loading."""
             mapping = self.get_parameters_name_mapping()
-            # Reverse it: stable_name -> actual_name
             reverse = {v: k for k, v in mapping.items()}
-            # Translate checkpoint keys back to raw names
-            translated = {reverse.get(k, k): v for k, v in checkpoint['state_dict'].items()}
-            checkpoint['state_dict'] = translated
-            # Lightning will now load normally with correct internal names
+            checkpoint['state_dict'] = {reverse.get(k, k): v for k, v in checkpoint['state_dict'].items()}
+            print(f"Loading checkpoint with {len(checkpoint['state_dict'])} keys")
 else:
     class MatformerModule(nn.Module, ParametersRenamer):
         """

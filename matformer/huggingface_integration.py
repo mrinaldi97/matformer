@@ -147,7 +147,7 @@ class MatformerModel(MatformerPreTrainedModel):
             if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
                 module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
         
-        instance.matformer_model = model.model
+        instance.matformer_model = model
         instance.post_init()
         
         return instance
@@ -212,7 +212,7 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
 
 
 class MatformerForMaskedLM(MatformerPreTrainedModel):
-    _tied_weights_keys = ["lm_head.module.weight", "lm_head.module.bias"]
+    _tied_weights_keys = ["lm_head.weight", "lm_head.bias"]
     
     def __init__(self, config: MatformerConfig):
         super().__init__(config)
