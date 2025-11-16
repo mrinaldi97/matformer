@@ -603,7 +603,10 @@ class BERTModel(TransformerWithLMHead):
                     cloze_prob=1.0
                     random_prob=0.0
                     same_prob=0.0
-                    vocab_size=self.config.get("vocab_size",None)
+                    try:
+                        vocab_size=self.config.vocab_size
+                    except:
+                        vocab_size=None
                 
                 self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
                                            substitution_rate=self.config.masked_substitution_rate,
