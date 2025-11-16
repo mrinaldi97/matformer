@@ -95,38 +95,17 @@ class ParametersRenamer:
 
     
     def parameters_state_dict(self):
-        """
-        Get the model's state dict with stable parameter names. 
-        """   
         mapping = self.get_parameters_name_mapping()     
         reverse = {v: k for k, v in mapping.items()}
-        return {reverse.get(k, k): v for k, v in self.state_dict().items()}
+        raw_state_dict = nn.Module.state_dict(self)
+        return {reverse.get(k, k): v for k, v in raw_state_dict.items()}
     
-    def load_parameters_state_dict(self, state_dict, strict=True, external_mapping: Optional[dict] = None):
-        """
-        Load a state dict that uses stable (or external) parameter names.
-        Used when LOADING checkpoints.
-        
-        Args:
-            state_dict: State dict with stable/external names
-            strict: Whether to require exact key matching
-            external_mapping: Optional mapping from external names to stable names
-        
-        Returns:
-            Result from PyTorch's load_state_dict
-        """
-        # Get mapping (stable/external -> actual)
-        # If external_mapping provided, this creates a composed mapping
+    def load_parameters_state_dict(self, state_dict, strict=True, external_mapping=None):
+        """Load renamed state dict."""
         mapping = self.get_parameters_name_mapping(external_mapping)
-        
-        # Translate all keys in state_dict from stable/external to actual
-        # For each key in the incoming state dict:
-        #   - Look it up in mapping to get actual internal name
-        #   - If not in mapping, keep the key as-is
         translated = {mapping.get(k, k): v for k, v in state_dict.items()}
-        
-        # Load the translated state dict using PyTorch's standard method
         return nn.Module.load_state_dict(self, translated, strict=strict)
+
     
     def stable_state_dict(self):
         return self.parameters_state_dict()
@@ -142,7 +121,11 @@ if HAS_LIGHTNING:
             super().__init__()
             # Indicate we are running under Lightning
             self.has_lightning = True
-
+        def state_dict(self, *args, **kwargs):
+            return self.parameters_state_dict()
+        
+        def load_state_dict(self, state_dict, strict=True, **kwargs):
+            return self.load_parameters_state_dict(state_dict, strict=strict)
 else:
     class MatformerModule(nn.Module, ParametersRenamer):
         """
