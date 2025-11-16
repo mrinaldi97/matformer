@@ -118,14 +118,14 @@ class ParametersRenamer:
             # Continue recursion
             self._scan_tree(child_module, child_stable, child_actual)
     
-    def parameters_state_dict(self):
+    def stable_state_dict(self):
         """Get renamed state dict without recursion issues."""
         mapping = self.get_parameters_name_mapping()
         reverse = {v: k for k, v in mapping.items()}
         raw_dict = nn.Module.state_dict(self)
         return {reverse.get(k, k): v for k, v in raw_dict.items()}
 
-    def load_parameters_state_dict(self, state_dict, strict=True, external_mapping=None):
+    def load_stable_state_dict(self, state_dict, strict=True, external_mapping=None):
         """Load renamed state dict."""
         mapping = self.get_parameters_name_mapping(external_mapping)
         translated = {mapping.get(k, k): v for k, v in state_dict.items()}
@@ -140,15 +140,13 @@ if HAS_LIGHTNING:
         
         def on_save_checkpoint(self, checkpoint: dict) -> None:
             """Transform state dict before saving."""
-            checkpoint['state_dict'] = self.parameters_state_dict()
+            checkpoint['state_dict'] = self.stable_state_dict()
             print(f"Saved checkpoint with {len(checkpoint['state_dict'])} keys")
         
-        def on_load_checkpoint(self, checkpoint: dict) -> None:
-            """Transform state dict before loading."""
-            mapping = self.get_parameters_name_mapping()
-            reverse = {v: k for k, v in mapping.items()}
-            checkpoint['state_dict'] = {reverse.get(k, k): v for k, v in checkpoint['state_dict'].items()}
-            print(f"Loading checkpoint with {len(checkpoint['state_dict'])} keys")
+	def on_load_checkpoint(self, checkpoint: dict) -> None:
+		"""Translate stable names in checkpoint to actual internal names."""
+		mapping = self.get_parameters_name_mapping()  # stable -> actual
+		checkpoint['state_dict'] = {mapping.get(k, k): v for k, v in checkpoint['state_dict'].items()} # checkpoint has stable keys, translate them to actual keys
 else:
     class MatformerModule(nn.Module, ParametersRenamer):
         """

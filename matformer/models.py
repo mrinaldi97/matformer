@@ -426,7 +426,8 @@ class PL_ModelWrapper(MatformerModule):
         )     
 
         model = PL_ModelWrapper(ModelClass=ModelClass, config=config, tokenizer=tokenizer, device=map_location, train_config=None)  
-        model.load_state_dict(checkpoint['state_dict'])
+        #model.load_state_dict(checkpoint['state_dict'])
+        model.load_stable_state_dict(checkpoint['state_dict'], strict=False)
         return model,config   
         
 
