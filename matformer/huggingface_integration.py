@@ -156,7 +156,7 @@ class MatformerModel(MatformerPreTrainedModel):
         if len(input_ids.shape) == 1:
             input_ids = input_ids.unsqueeze(0)
         input_ids = NormalTensor(tensor=input_ids)
-        return self.matformer_model.transformer(input_ids)
+        return self.matformer_model(input_ids)
 
 
 class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
@@ -193,7 +193,7 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
             input_ids = input_ids.unsqueeze(0)
         
         input_ids = NormalTensor(tensor=input_ids)
-        hidden_states = self.matformer_model.transformer(input_ids)
+        hidden_states = self.matformer_model(input_ids)
         logits = self.matformer_model.lm_head(hidden_states)
         
         loss = None
@@ -245,7 +245,7 @@ class MatformerForMaskedLM(MatformerPreTrainedModel):
             input_ids = input_ids.unsqueeze(0)
         
         input_ids = NormalTensor(tensor=input_ids)
-        hidden_states = self.matformer_model.transformer(input_ids)
+        hidden_states = self.matformer_model(input_ids)
         logits = self.matformer_model.lm_head(hidden_states)
         
         loss = None
