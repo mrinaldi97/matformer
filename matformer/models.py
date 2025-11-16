@@ -66,8 +66,8 @@ class PL_ModelWrapper(MatformerModule):
 
         
     def forward(self, _input,*args,**kwargs):
-        #if isinstance(_input,torch.tensor):
-        #    _input=NormalTensor(tensor=_input)
+        if isinstance(_input,torch.tensor):
+            _input=NormalTensor(tensor=_input)
         return self.model(_input.to(self.device),*args,**kwargs)
     def on_load_checkpoint(self, checkpoint):
         self._restored_from_ckpt = True       
