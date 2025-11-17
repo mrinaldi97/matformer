@@ -1,3 +1,4 @@
+#inference.py
 import argparse, torch, sys, re, os
 from matformer.models import PL_ModelWrapper
 from matformer.matformer_tokenizers import MatformerTokenizer

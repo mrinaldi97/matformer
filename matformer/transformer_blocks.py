@@ -536,6 +536,45 @@ class TransformerWithLMHead(MatformerModule):
             return self.lm_head(hidden_states)
         else:
             return hidden_states
+    def collate_generation_inputs(batch, pad_token_id, max_seq_len=None, varlen_strategy='unpadding'):
+        if batch is None or len(batch) == 0:
+            warn("Empty batch received in collate_generation_inputs")
+            return None
+        
+        sequences = []
+        for item in batch:
+            if isinstance(item, dict):
+                seq = item.get("input_ids", item.get("object", item))
+            elif isinstance(item, torch.Tensor):
+                seq = item.tolist() if item.dim() > 0 else [item.item()]
+            elif isinstance(item, list):
+                seq = item
+            else:
+                seq = [item]
+            sequences.append(seq)
+        
+        if varlen_strategy == 'nested':
+            return torch.nested.nested_tensor([torch.tensor(s) for s in sequences], layout=torch.jagged)
+        
+        if max_seq_len is None:
+            max_seq_len = max(len(s) for s in sequences)
+        
+        padded_ids = []
+        for seq in sequences:
+            if len(seq) < max_seq_len:
+                padded_ids.append(seq + [pad_token_id] * (max_seq_len - len(seq)))
+            else:
+                padded_ids.append(seq[:max_seq_len])
+        
+        tensors = torch.tensor(padded_ids, dtype=torch.long)
+        padding_masks = (tensors == pad_token_id)
+        
+        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks)
+        
+        if varlen_strategy == 'unpadding':
+            sequence = sequence.unpad()
+        
+        return sequence
 
 class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
     def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='mean', num_features=2,cache=None):
@@ -679,77 +718,149 @@ class BERTModel(TransformerWithLMHead):
         return accuracy, out_tokens
 
 class Autoregressive_Model(TransformerWithLMHead):
-    def generate(self, prompt=None, max_length=100, temperature=1.0, top_k=0, top_p=0.9):
-        """
-        Generate a sequence starting from an optional prompt
-
-        Args:
-            prompt: Optional starting prompt as bytes or None for empty start
-            max_length: Maximum sequence length to generate
-            temperature: Sampling temperature (1.0=normal, <1.0=more conservative)
-            top_k: Limit sampling to top k tokens (0 for no limit)
-            top_p: Nucleus sampling probability threshold
-
-        Returns:
-            ByteTensor of generated sequence
-        """
-        self.eval()  
-
-        if prompt is None:
-            current_ids = torch.tensor([[self.config.bos_token_id]], device=self.device)
+    def generate(
+        self, 
+        prompt=None, 
+        input_ids=None, 
+        max_length=100, 
+        min_length=0,
+        temperature=1.0, 
+        top_k=0, 
+        top_p=0.9,
+        repetition_penalty=1.0,
+        no_repeat_ngram_size=0,
+        num_return_sequences=1,
+        pad_token_id=None,
+        eos_token_id=None,
+        bos_token_id=None,
+        stopping_criteria=None,
+        output_scores=False,
+        return_type='text'
+    ):
+        self.eval()
+        
+        if pad_token_id is None:
+            pad_token_id = self.config.pad_token_id
+        if eos_token_id is None:
+            eos_token_id = self.config.eos_token_id
+        if bos_token_id is None:
+            bos_token_id = self.config.bos_token_id
+        
+        if input_ids is None:
+            if prompt is None:
+                current_ids = torch.tensor([[bos_token_id]], device=self.device).repeat(num_return_sequences, 1)
+            else:
+                assert isinstance(prompt, str), "Prompt expected as string"
+                tokenizer = self.tokenizer
+                prompt_ids = tokenizer.encode(text=prompt, add_bos=True, add_eos=False, add_special_tokens=False)
+                current_ids = torch.tensor([prompt_ids], device=self.device).repeat(num_return_sequences, 1)
         else:
-            # Tokenize the prompt if it's provided as bytes
-            assert isinstance(prompt, str), "Prompt expected as string"
-            tokenizer = self.tokenizer
-            prompt_ids = torch.tensor(tokenizer.encode(text=prompt,add_bos=True,add_eos=False,add_special_tokens=False), device=self.device)
-            current_ids = torch.tensor(prompt_ids.unsqueeze(0), device=self.device)
-            # The forward expects: [batch_size, seq_len, vocab_size]
-
-        for _ in tqdm(range(max_length)):
+            if isinstance(input_ids, NormalTensor):
+                current_ids = input_ids.tensor
+            elif isinstance(input_ids, torch.Tensor):
+                current_ids = input_ids
+                if current_ids.dim() == 1:
+                    current_ids = current_ids.unsqueeze(0)
+            elif isinstance(input_ids, list):
+                current_ids = torch.tensor([input_ids], device=self.device)
+            else:
+                raise TypeError(f"input_ids must be NormalTensor, torch.Tensor, or list, got {type(input_ids)}")
+            
+            if num_return_sequences > 1 and current_ids.shape[0] == 1:
+                current_ids = current_ids.repeat(num_return_sequences, 1)
+        
+        current_ids = current_ids.to(self.device)
+        batch_size = current_ids.shape[0]
+        
+        all_scores = [] if output_scores else None
+        finished = torch.zeros(batch_size, dtype=torch.bool, device=self.device)
+        
+        for step in range(max_length):
             with torch.no_grad():
                 outputs = self(NormalTensor(tensor=current_ids)).tensor
-                
-            next_token_logits = outputs[:, -1, :]  # Get logits for the last position
-
-            # Apply temperature
+            
+            next_token_logits = outputs[:, -1, :]
+            
+            if output_scores:
+                all_scores.append(next_token_logits.clone())
+            
+            if repetition_penalty != 1.0:
+                for batch_idx in range(batch_size):
+                    for token_id in set(current_ids[batch_idx].tolist()):
+                        if next_token_logits[batch_idx, token_id] < 0:
+                            next_token_logits[batch_idx, token_id] *= repetition_penalty
+                        else:
+                            next_token_logits[batch_idx, token_id] /= repetition_penalty
+            
+            if no_repeat_ngram_size > 0 and current_ids.shape[1] >= no_repeat_ngram_size:
+                for batch_idx in range(batch_size):
+                    ngrams = {}
+                    seq = current_ids[batch_idx].tolist()
+                    for i in range(len(seq) - no_repeat_ngram_size + 1):
+                        ngram = tuple(seq[i:i + no_repeat_ngram_size - 1])
+                        next_token = seq[i + no_repeat_ngram_size - 1]
+                        if ngram not in ngrams:
+                            ngrams[ngram] = []
+                        ngrams[ngram].append(next_token)
+                    
+                    if len(seq) >= no_repeat_ngram_size - 1:
+                        current_ngram = tuple(seq[-(no_repeat_ngram_size - 1):])
+                        if current_ngram in ngrams:
+                            for banned_token in ngrams[current_ngram]:
+                                next_token_logits[batch_idx, banned_token] = float('-inf')
+            
+            if current_ids.shape[1] < min_length:
+                next_token_logits[:, eos_token_id] = float('-inf')
+            
             if temperature != 1.0:
                 next_token_logits = next_token_logits / temperature
-
-            # Apply top-k filtering
+            
             if top_k > 0:
-                top_k_values, top_k_indices = torch.topk(next_token_logits, top_k, dim=-1)
-                next_token_logits = torch.full_like(next_token_logits, float('-inf'))
-                next_token_logits.scatter_(1, top_k_indices, top_k_values)
-
-            # Apply top-p (nucleus) filtering
+                for batch_idx in range(batch_size):
+                    top_k_values, top_k_indices = torch.topk(next_token_logits[batch_idx], min(top_k, next_token_logits.shape[-1]), dim=-1)
+                    next_token_logits[batch_idx] = torch.full_like(next_token_logits[batch_idx], float('-inf'))
+                    next_token_logits[batch_idx].scatter_(0, top_k_indices, top_k_values)
+            
             if top_p < 1.0:
-                sorted_logits, sorted_indices = torch.sort(next_token_logits, descending=True, dim=-1)
-                cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
-
-                # Remove tokens with cumulative probability above the threshold
-                sorted_indices_to_remove = cumulative_probs > top_p
-                # Shift the indices to the right to keep the first token above the threshold
-                sorted_indices_to_remove[..., 1:] = sorted_indices_to_remove[..., :-1].clone()
-                sorted_indices_to_remove[..., 0] = 0
-
-                # Scatter sorted tensors to original indexing
-                indices_to_remove = sorted_indices_to_remove.scatter(1, sorted_indices, sorted_indices_to_remove)
-                next_token_logits = next_token_logits.masked_fill(indices_to_remove, float('-inf'))
-
-            # Convert logits to probabilities
+                for batch_idx in range(batch_size):
+                    sorted_logits, sorted_indices = torch.sort(next_token_logits[batch_idx], descending=True)
+                    cumulative_probs = torch.cumsum(F.softmax(sorted_logits, dim=-1), dim=-1)
+                    
+                    sorted_indices_to_remove = cumulative_probs > top_p
+                    sorted_indices_to_remove[1:] = sorted_indices_to_remove[:-1].clone()
+                    sorted_indices_to_remove[0] = 0
+                    
+                    indices_to_remove = sorted_indices[sorted_indices_to_remove]
+                    next_token_logits[batch_idx, indices_to_remove] = float('-inf')
+            
             probs = F.softmax(next_token_logits, dim=-1)
-
-            # Sample from the distribution
-            next_token = torch.multinomial(probs, num_samples=1)
-            #print(f"Generated: {next_token.item()} Char: {tokenizer.decode(next_token.item())}")
-            # Append the new token to the sequence
-            current_ids = torch.cat([current_ids, next_token], dim=1)
-
-            # Stop if we generated an EOS token
-            if next_token.item() == self.tokenizer.eos_token_id:
+            next_tokens = torch.multinomial(probs, num_samples=1)
+            
+            next_tokens = next_tokens.masked_fill(finished.unsqueeze(1), pad_token_id)
+            current_ids = torch.cat([current_ids, next_tokens], dim=1)
+            
+            finished = finished | (next_tokens.squeeze(1) == eos_token_id)
+            
+            if stopping_criteria is not None:
+                if stopping_criteria(current_ids, None):
+                    break
+            
+            if finished.all():
                 break
-        return self.tokenizer.decode(current_ids.squeeze().tolist())
-
+        
+        if return_type == 'text':
+            if batch_size == 1:
+                return self.tokenizer.decode(current_ids[0].tolist())
+            else:
+                return [self.tokenizer.decode(seq.tolist()) for seq in current_ids]
+        elif return_type == 'pt':
+            if output_scores:
+                return current_ids, torch.stack(all_scores, dim=1)
+            return current_ids
+        else:
+            if output_scores:
+                return [seq.tolist() for seq in current_ids], all_scores
+            return [seq.tolist() for seq in current_ids]
 class EntropyModel(Autoregressive_Model):
     def compute_entropy(self, prompts):
         """

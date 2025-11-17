@@ -127,7 +127,7 @@ class MatformerModel(MatformerPreTrainedModel):
     def __init__(self, config: MatformerConfig):
         super().__init__(config)
         self.matformer_model = None
-        
+        self.config=config
     @classmethod
     def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
         instance = cls(config)
@@ -165,35 +165,18 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
     def __init__(self, config: MatformerConfig):
         super().__init__(config)
         self.matformer_model = None
-        
-    @classmethod
-    def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
-        instance = cls(config)
-        
-        model, _ = PL_ModelWrapper.load_from_checkpoint(
-            checkpoint_path=checkpoint_path,
-            ModelClass=Autoregressive_Model,
-            map_location=map_location,
-            tokenizer=config._tokenizer_name
-        )
-        
-        model = model.to(map_location).to(torch.bfloat16).eval()
-        
-        for module in model.modules():
-            if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
-                module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
-        
-        instance.matformer_model = model
-        instance.post_init()
-        
-        return instance
+        self.config=config
     
     def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
-        if len(input_ids.shape) == 1:
+        if isinstance(input_ids, list):
+            input_ids = self.matformer_model.model.collate_generation_inputs(
+                input_ids, 
+                pad_token_id=self.config.pad_token_id
+            )
+        elif isinstance(input_ids, torch.Tensor) and input_ids.dim() == 1:
             input_ids = input_ids.unsqueeze(0)
         
-        #input_ids = NormalTensor(tensor=input_ids)
-        hidden_states = self.matformer_model(input_ids,return_type='hidden')
+        hidden_states = self.matformer_model(input_ids, return_type='hidden')
         logits = self.matformer_model.model.lm_head(hidden_states).tensor
         
         loss = None
@@ -202,11 +185,109 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
             shift_labels = labels[..., 1:].contiguous()
             loss = F.cross_entropy(
                 shift_logits.view(-1, shift_logits.size(-1)),
-                shift_labels.view(-1)
+                shift_labels.view(-1),ignore_index=self.config.pad_token_id
             )
         
         return CausalLMOutputWithPast(loss=loss, logits=logits)
+    def generate(
+        self,
+        inputs=None,
+        input_ids=None,
+        max_length=None,
+        max_new_tokens=None,
+        min_length=0,
+        min_new_tokens=None,
+        temperature=1.0,
+        top_k=0,
+        top_p=0.9,
+        repetition_penalty=1.0,
+        no_repeat_ngram_size=0,
+        do_sample=True,
+        num_return_sequences=1,
+        num_beams=1,
+        pad_token_id=None,
+        eos_token_id=None,
+        bos_token_id=None,
+        stopping_criteria=None,
+        output_scores=False,
+        return_dict_in_generate=False,
+        use_cache=None,
+        length_penalty=None,
+        early_stopping=None,
+        **kwargs
+    ):
+        if num_beams > 1:
+            warn("Beam search not supported, ignoring num_beams parameter")
+        if use_cache is not None:
+            warn("use_cache not supported, ignoring parameter")
+        if length_penalty is not None:
+            warn("length_penalty not supported (requires beam search), ignoring parameter")
+        if early_stopping is not None:
+            warn("early_stopping not supported (requires beam search), ignoring parameter")
+        if return_dict_in_generate:
+            warn("return_dict_in_generate not fully supported, will return tensors only")
+        
+        if input_ids is None:
+            input_ids = inputs
+        
+        if max_new_tokens is not None:
+            if input_ids is not None:
+                input_length = input_ids.shape[-1] if isinstance(input_ids, torch.Tensor) else len(input_ids)
+                effective_max_length = input_length + max_new_tokens
+            else:
+                effective_max_length = max_new_tokens
+        elif max_length is not None:
+            effective_max_length = max_length
+        else:
+            effective_max_length = 100
+        
+        if min_new_tokens is not None:
+            if input_ids is not None:
+                input_length = input_ids.shape[-1] if isinstance(input_ids, torch.Tensor) else len(input_ids)
+                effective_min_length = input_length + min_new_tokens
+            else:
+                effective_min_length = min_new_tokens
+        else:
+            effective_min_length = min_length
+        
+        if not do_sample:
+            temperature = 1e-7
+        
+        if pad_token_id is None:
+            pad_token_id = self.config.pad_token_id
+        if eos_token_id is None:
+            eos_token_id = self.config.eos_token_id
+        if bos_token_id is None:
+            bos_token_id = self.config.bos_token_id
+        
+        result = self.matformer_model.model.generate(
+            prompt=None,
+            input_ids=input_ids,
+            max_length=effective_max_length,
+            min_length=effective_min_length,
+            temperature=temperature,
+            top_k=top_k,
+            top_p=top_p,
+            repetition_penalty=repetition_penalty,
+            no_repeat_ngram_size=no_repeat_ngram_size,
+            num_return_sequences=num_return_sequences,
+            pad_token_id=pad_token_id,
+            eos_token_id=eos_token_id,
+            bos_token_id=bos_token_id,
+            stopping_criteria=stopping_criteria,
+            output_scores=output_scores,
+            return_type='pt'
+        )
+        
+        if output_scores:
+            output_ids, scores = result
+            if return_dict_in_generate:
+                return {"sequences": output_ids, "scores": scores}
+            return output_ids
+        
+        return result
     
+  
     def prepare_inputs_for_generation(self, input_ids, **kwargs):
         return {"input_ids": input_ids}
 
@@ -217,42 +298,25 @@ class MatformerForMaskedLM(MatformerPreTrainedModel):
     def __init__(self, config: MatformerConfig):
         super().__init__(config)
         self.matformer_model = None
-        
-    @classmethod
-    def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
-        instance = cls(config)
-        
-        model, _ = PL_ModelWrapper.load_from_checkpoint(
-            checkpoint_path=checkpoint_path,
-            ModelClass=BERTModel,
-            map_location=map_location,
-            tokenizer=config._tokenizer_name
-        )
-        
-        model = model.to(map_location).to(torch.bfloat16).eval()
-        
-        for module in model.modules():
-            if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
-                module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
-        
-        instance.matformer_model = model
-        instance.post_init()
-        
-        return instance
+        self.config=config
     
-    def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
-        if len(input_ids.shape) == 1:
+    def forward(self, input_ids, attention_mask=None, token_type_ids=None, labels=None, **kwargs):
+        if isinstance(input_ids, list):
+            input_ids = self.matformer_model.model.collate_generation_inputs(
+                input_ids,
+                pad_token_id=self.config.pad_token_id
+            )
+        elif isinstance(input_ids, torch.Tensor) and input_ids.dim() == 1:
             input_ids = input_ids.unsqueeze(0)
         
-        #input_ids = NormalTensor(tensor=input_ids)
-        hidden_states = self.matformer_model(input_ids,return_type='hidden')
+        hidden_states = self.matformer_model(input_ids, return_type='hidden')
         logits = self.matformer_model.model.lm_head(hidden_states).tensor
         
         loss = None
         if labels is not None:
             loss = F.cross_entropy(
                 logits.view(-1, logits.size(-1)),
-                labels.view(-1)
+                labels.view(-1), ignore_index=self.config.pad_token_id
             )
         
         return MaskedLMOutput(loss=loss, logits=logits)
@@ -264,30 +328,6 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
         self.matformer_model = None
         self.num_labels = config.num_labels
         
-    @classmethod
-    def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
-        instance = cls(config)
-        
-        model, _ = PL_ModelWrapper.load_from_checkpoint(
-            checkpoint_path=checkpoint_path,
-            ModelClass=BERTModel,
-            map_location=map_location,
-            tokenizer=config._tokenizer_name
-        )
-        
-        model = model.to(map_location).to(torch.bfloat16).eval()
-        
-        for module in model.modules():
-            if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
-                module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
-        
-        if not hasattr(model.model, 'classification_head'):
-            model.model.init_classification_head(config.num_labels)
-        
-        instance.matformer_model = model
-        instance.post_init()
-        
-        return instance
     
     def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
         if len(input_ids.shape) == 1:
