@@ -96,7 +96,11 @@ class MatformerPreTrainedModel(PreTrainedModel):
     _no_split_modules = ["TransformerBlock"]
 
     def _init_weights(self, module):
-        pass
+        try:
+            from matformer.initialization import init_transformer_weights_
+            init_transformer_weights_(module)
+        except:
+            print("Weights' Initialization failed!") 
     
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, *model_args, **kwargs):
@@ -121,18 +125,18 @@ class MatformerPreTrainedModel(PreTrainedModel):
             map_location = "cuda" if torch.cuda.is_available() else "cpu"
             
         return cls._load_from_checkpoint(checkpoint_path, config, map_location)
-
-
-class MatformerModel(MatformerPreTrainedModel):
-    def __init__(self, config: MatformerConfig):
-        super().__init__(config)
-        self.matformer_model = None
-        self.config=config
     @classmethod
     def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
         instance = cls(config)
         
-        ModelClass = eval(config._model_class) if config._model_class else Autoregressive_Model
+        model_class_map = {
+            'MatformerForCausalLM': Autoregressive_Model,
+            'MatformerForMaskedLM': BERTModel,
+            'MatformerForSequenceClassification': BERTModel,
+            'MatformerModel': eval(config._model_class) if config._model_class else Autoregressive_Model
+        }
+        
+        ModelClass = model_class_map.get(cls.__name__, Autoregressive_Model)
         
         model, _ = PL_ModelWrapper.load_from_checkpoint(
             checkpoint_path=checkpoint_path,
@@ -151,11 +155,17 @@ class MatformerModel(MatformerPreTrainedModel):
         instance.post_init()
         
         return instance
-        
+    
+
+class MatformerModel(MatformerPreTrainedModel):
+    def __init__(self, config: MatformerConfig):
+        super().__init__(config)
+        self.matformer_model = None
+        self.config=config
+
     def forward(self, input_ids, attention_mask=None, **kwargs):
         if len(input_ids.shape) == 1:
             input_ids = input_ids.unsqueeze(0)
-        #input_ids = NormalTensor(tensor=input_ids)
         return self.matformer_model(input_ids)
 
 
