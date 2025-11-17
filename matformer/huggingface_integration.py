@@ -96,11 +96,12 @@ class MatformerPreTrainedModel(PreTrainedModel):
     _no_split_modules = ["TransformerBlock"]
 
     def _init_weights(self, module):
-        try:
-            from matformer.initialization import init_transformer_weights_
-            init_transformer_weights_(module)
-        except:
-            print("Weights' Initialization failed!") 
+        pass
+        #try:
+        #    from matformer.initialization import init_transformer_weights_
+        #    init_transformer_weights_(module)
+        #except:
+        #    print("Weights' Initialization failed!") 
     
     @classmethod
     def from_pretrained(cls, pretrained_model_name_or_path, *model_args, **kwargs):
