@@ -20,8 +20,8 @@ class LigerRMSNorm(nn.Module):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerRMSNorm")
         self.inner = cls(normalized_shape, eps=eps)
-    def is_available(self):
-        return torch.cuda.is_available() 
+    #def is_available(self):
+    #    return torch.cuda.is_available() 
     def forward(self, x):
         return self.inner(x)
 
@@ -39,8 +39,8 @@ class LigerLayerNorm(nn.Module):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerLayerNorm")
         self.inner = cls(normalized_shape, eps=eps)
-    def is_available(self):
-        return torch.cuda.is_available() 
+    #def is_available(self):
+    #    return torch.cuda.is_available() 
     def forward(self, x):
         return self.inner(x)
 
@@ -66,8 +66,8 @@ class LigerSwiGLU(nn.Module):
         config.intermediate_size = int(hidden_size * ffn_factor)
         config.hidden_act = "silu"
         self.inner = LigerSwiGLUMLP(config)
-    def is_available(self):
-        return torch.cuda.is_available() 
+    #def is_available(self):
+    #    return torch.cuda.is_available() 
     def forward(self, x):
         return self.inner(x)
 
@@ -93,8 +93,8 @@ class LigerGEGLU(nn.Module):
         config.intermediate_size = int(hidden_size * ffn_factor)
         config.hidden_act = "gelu"
         self.inner = LigerGEGLUMLP(config)
-    def is_available(self):
-        return torch.cuda.is_available() 
+    #def is_available(self):
+    #    return torch.cuda.is_available() 
     def forward(self, x):
         return self.inner(x)
 
@@ -111,8 +111,8 @@ class LigerCrossEntropyLoss(nn.Module):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerCrossEntropyLoss")
         self.inner = cls(*args, **kwargs)
-    def is_available(self):
-        return torch.cuda.is_available() 
+    #def is_available(self):
+    #    return torch.cuda.is_available() 
     def forward(self, logits, targets, **kwargs):
         return self.inner(logits, targets, **kwargs)
 
@@ -129,8 +129,8 @@ class LigerCrossEntropyLossFused(nn.Module):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerFusedLinearCrossEntropyLoss")
         self.inner = cls(*args, **kwargs)
-    def is_available(self):
-        return torch.cuda.is_available() 
+    #def is_available(self):
+    #    return torch.cuda.is_available() 
     def forward(self, hidden, targets, **kwargs):
         return self.inner(
             _input=hidden,
