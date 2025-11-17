@@ -520,7 +520,7 @@ class TransformerWithLMHead(MatformerModule):
         
         # Weight tying: share embeddings with output projection
         if config.tie_word_embeddings:
-            self.lm_head.weight = self.encoder.embed_tokens.weight
+            self.lm_head.weight = self.encoder.embed_tokens.module.inner.weight
     
     def forward(self, x, return_type='logits', **kwargs):
         """Forward pass with optional return type.
