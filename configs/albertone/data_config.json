@@ -1,9 +1,9 @@
 {
     "data": {
-        "data_root": "/home/matteo/Albertone/Albertina/Albertina_mdat",
+        "data_root": "/home/matteo/Albertone/Albertina/mini-albertina-2",
         "batch_size": 48,
         "num_workers": 1,
-        "mdat_strategy":"Minerva1024",
+        "mdat_strategy":"Gettone_1024",
         "mdat_view": null
       }
 }
