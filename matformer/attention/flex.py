@@ -21,7 +21,7 @@ class FlexAttentionKernel(nn.Module): #TODO: Flex attention must be reviewed and
     def is_available():
         try:
             from torch.nn.attention.flex_attention import flex_attention
-            return True
+            return False #Ancora da implementare
         except Exception:
             return False
     
