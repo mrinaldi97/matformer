@@ -16,6 +16,12 @@ import torch
     }
 )
 class SDPAKernel(nn.Module):
+    def is_available():
+        try:
+            from torch.nn.functional import scaled_dot_product_attention
+            return True
+        except Exception:
+            return False
     def __init__(self, nheads, head_dim, is_causal, sliding_window, positional_encoding, cache, **kwargs):
         super().__init__()
         self.nheads = nheads
