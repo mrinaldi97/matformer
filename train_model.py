@@ -314,10 +314,8 @@ def main():
             print("Compilation failed! Running non-compiled model")
 
     try:
-        if not _compile:
-            trainer.fit(model, data, ckpt_path=ckpt_path)
-        else:
-            try:
+        trainer.fit(model, data, ckpt_path=ckpt_path)
+
                 
     except KeyboardInterrupt:
         response = input("\nTraining interrupted. Save model? (y/n): ").strip().lower()
