@@ -12,7 +12,7 @@ except:
 @registry.register(
     'attention', 'normal', 'flash',
     requires=['flash_attn'],
-    priority=0,
+    priority=10,
     metadata={
         'tensor_order_input': 'BSHD',
         'tensor_order_output': 'BSHD',

@@ -4,8 +4,8 @@ import torch
 # attention/sdpa.py
 @registry.register(
     'attention', 'normal', 'sdpa',
-    requires=['torch>=2.0'],
-    priority=1,
+    requires=['torch'],
+    priority=2,
     metadata={
         'tensor_order_input': 'BHSD',
         'tensor_order_output': 'BHSD',
