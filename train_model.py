@@ -296,7 +296,20 @@ def main():
     )
     if _compile:
         try:
-            model=torch.compile(model)
+            if tok_cfg['varlen_strategy']:
+                print("Trying compilation: dynamic sequence length, max autotune")
+                try:
+                    model=torch.compile(model, dynamic=True, mode="max-autotune")
+                except:
+                    print("Trying compilation: dynamic sequence length, normal autotune")
+                    model=torch.compile(model, dynamic=True)
+            else:
+                print("Trying compilation: fixed sequence length, max autotune")
+                try:
+                    model=torch.compile(model, mode="max-autotune")
+                except:
+                    print("Trying compilation: fixed sequence length, normale autotune")
+                    model=torch.compile(model)
         except:
             print("Compilation failed! Running non-compiled model")
 
