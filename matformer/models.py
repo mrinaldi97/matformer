@@ -328,10 +328,8 @@ class PL_ModelWrapper(MatformerModule):
         if not self.train_config.get("lr_scheduling", False):
             return optimizer
 
-        total_steps = math.ceil(
-            (self.train_config["num_batches"] // self.train_config.get("accumulate_grad_batches", 1))
-            * self.train_config.get("max_epochs", 1)
-        )
+
+        total_steps = self.train_config.get("total_steps") 
         
         self.total_training_steps = total_steps
         
