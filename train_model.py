@@ -290,7 +290,7 @@ def main():
         log_every_n_steps=10,
         accumulate_grad_batches=train_cfg.get('accumulate_grad_batches', 1),
         default_root_dir=save_dir,
-        max_epochs=max_epochs
+        max_epochs=max_epochs,
         max_steps=max_steps
     )
 
