@@ -103,7 +103,7 @@ class TorchSwiGLU(nn.Module):
         'down_proj.weight': 'down_proj.weight'
     }
 )
-class TorchGELU(nn.Module):
+class TorchGEGLU(nn.Module):
     def __init__(self, config=None, hidden_size=None, ffn_factor=None):
         super().__init__()
         if config is not None:
@@ -118,7 +118,29 @@ class TorchGELU(nn.Module):
     def forward(self, _input):
         return self.down_proj(F.gelu(self.gate_proj(_input)) * self.up_proj(_input))
 
-
+@registry.register(
+    "mlp",
+    "gelu",
+    "torch",
+    requires=["torch"],
+    priority=0,
+    params_names={
+        'up_proj.weight': 'up_proj.weight',
+        'down_proj.weight': 'down_proj.weight'
+    }
+)
+class TorchGELU(nn.Module):
+    def __init__(self, config=None, hidden_size=None, ffn_factor=None):
+        super().__init__()
+        if config is not None:
+            hidden_size = config.hidden_size
+            ffn_factor = config.ffn_factor
+        ffn_internal_dim = int(hidden_size * ffn_factor)
+        self.up_proj = nn.Linear(hidden_size, ffn_internal_dim, bias=False)
+        self.down_proj = nn.Linear(ffn_internal_dim, hidden_size, bias=False)
+    
+    def forward(self, _input):
+        return self.down_proj(F.gelu(self.up_proj(_input)))
 @registry.register(
     "norm",
     "rmsnorm",
