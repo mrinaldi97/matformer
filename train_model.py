@@ -279,7 +279,7 @@ def main():
         max_epochs=None
         max_steps=debug_steps
     else:
-        max_steps=None
+        max_steps=-1
     # Create trainer
     trainer = pl.Trainer(
         logger=wandb_logger,
