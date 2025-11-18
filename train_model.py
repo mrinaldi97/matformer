@@ -297,9 +297,9 @@ def main():
     if _compile:
         try:
             if tok_cfg['varlen_strategy']:
-                print("Trying compilation: dynamic sequence length, max autotune")
+                print("Trying compilation: dynamic sequence length, normal")
                 try:
-                    model=torch.compile(model, dynamic=True, mode="max-autotune")
+                    model=torch.compile(model, dynamic=True)
                 except:
                     print("Trying compilation: dynamic sequence length, normal autotune")
                     model=torch.compile(model, dynamic=True)
@@ -314,8 +314,11 @@ def main():
             print("Compilation failed! Running non-compiled model")
 
     try:
-
-        trainer.fit(model, data, ckpt_path=ckpt_path)
+        if not _compile:
+            trainer.fit(model, data, ckpt_path=ckpt_path)
+        else:
+            try:
+                
     except KeyboardInterrupt:
         response = input("\nTraining interrupted. Save model? (y/n): ").strip().lower()
         if response == 'y':
