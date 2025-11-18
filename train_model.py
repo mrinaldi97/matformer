@@ -50,6 +50,7 @@ def parse_args():
     parser.add_argument('--simulate', action='store_true', help="Instantiate model and print state_dict shapes, then exit")
     parser.add_argument('--dump-json', type=str, default=None, help="Path to dump JSON state dict shapes")
     parser.add_argument('--debug-steps', type=int, default=None, help="If you choose this, train for one epoch on this number of steps")
+    parser.add_argument('--compile', action='store_true', help="Torch.compile the whole model")
     args = parser.parse_args()
     
     separate_configs = {
@@ -90,7 +91,7 @@ def parse_args():
         except ValueError:
             parser.error(f"Override '{item}' must be in key=value format")
     
-    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch,args.simulate,args.dump_json,args.debug_steps
+    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch,args.simulate,args.dump_json,args.debug_steps,args.compile
 
 def get_model_class(model_class: str):
     module = import_module("matformer.transformer_blocks")
@@ -167,7 +168,7 @@ def main():
     #config_path, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json = parse_args()
     #cfg = apply_overrides(load_config(config_path), overrides)
     
-    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json, debug_steps = parse_args()
+    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json, debug_steps,_compile = parse_args()
     model_config_dict, train_cfg, data_cfg, tok_cfg, cfg = load_and_prepare_configs(config_paths, overrides)
     
     #model_cfg = ModelConfig(**cfg['model_config'])
@@ -275,7 +276,7 @@ def main():
 
     torch.set_float32_matmul_precision('high')
     if debug_steps is not None:
-        max_epochs=1
+        max_epochs=None
         max_steps=debug_steps
     else:
         max_steps=None
@@ -293,7 +294,11 @@ def main():
         max_epochs=max_epochs,
         max_steps=max_steps
     )
-
+    if _compile:
+        try:
+            model=torch.compile(model)
+        except:
+            print("Compilation failed! Running non-compiled model")
 
     try:
 
