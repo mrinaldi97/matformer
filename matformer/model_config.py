@@ -69,6 +69,9 @@ class BaseSubModelConfig:
     training_objective: Optional[str] = None
     is_causal: Optional[bool] = None
     has_text_autoencoder: Optional[bool] = None
+    # tokenizer
+    tokenizer_type: Optional[str] = None #ex. HuggingFace
+    tokenizer_name: Optional[str] = None # Ex mrinaldi/Gettone
 
 @dataclass
 class SubModelConfig(BaseSubModelConfig):

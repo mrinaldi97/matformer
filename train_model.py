@@ -33,32 +33,64 @@ def apply_overrides(cfg, overrides):
             d[keys[-1]] = val
     return cfg
 
-def parse_args():
-    parser = argparse.ArgumentParser()
-    #parser.add_argument('--config', type=str, required=True)
-    
-    parser.add_argument('--model_config', type=str, required=True, help="Path to model_config.json")
-    parser.add_argument('--training_config', type=str, required=True, help="Path to train_config.json")
-    parser.add_argument('--data_config', type=str, required=True, help="Path to data_config.json")
-    parser.add_argument('--tokenizer_config', type=str, required=True, help="Path to tok_config.json")
-    
-    parser.add_argument('--override', nargs='*', default=[])
-    parser.add_argument('--gpu', type=int, default=1)
-    parser.add_argument('--checkpoint', type=str, default=None) 
-    parser.add_argument('--start-from-scratch', action='store_true') 
-    parser.add_argument('--simulate', action='store_true', help="Instantiate model and print state_dict shapes, then exit")
-    parser.add_argument('--dump-json', type=str, default=None, help="Path to dump JSON state dict shapes (used with --simulate or --checkpoint)")
+import argparse
+import sys
 
+def parse_args():
+    parser = argparse.ArgumentParser(description='Train a Matformer model')
+    parser.add_argument('--config', type=str, help="Path to single combined config file")
+    parser.add_argument('--model_config', type=str, help="Path to model_config.json")
+    parser.add_argument('--training_config', type=str, help="Path to train_config.json")
+    parser.add_argument('--data_config', type=str, help="Path to data_config.json")
+    parser.add_argument('--tokenizer_config', type=str, help="Path to tokenizer_config.json")
+    parser.add_argument('--override', nargs='*', default=[], help="Override config parameters as key=value pairs")
+    parser.add_argument('--gpu', type=int, default=1, help="GPU device ID")
+    parser.add_argument('--checkpoint', type=str, default=None, help="Path to checkpoint file")
+    parser.add_argument('--start-from-scratch', action='store_true', help="Start training from scratch")
+    parser.add_argument('--simulate', action='store_true', help="Instantiate model and print state_dict shapes, then exit")
+    parser.add_argument('--dump-json', type=str, default=None, help="Path to dump JSON state dict shapes")
+    parser.add_argument('--debug-steps', type=int, default=None, help="If you choose this, train for one epoch on this number of steps")
     args = parser.parse_args()
-    overrides = dict(kv.split('=') for kv in args.override)
     
-    config_paths = {
-        "model_config": args.model_config,
-        "training": args.train_config,
-        "data": args.data_config,
-        "tokenizer": args.tok_config
+    separate_configs = {
+        'model_config': args.model_config,
+        'training_config': args.training_config,
+        'data_config': args.data_config,
+        'tokenizer_config': args.tokenizer_config
     }
-    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch, args.simulate, args.dump_json
+    separate_count = sum(1 for v in separate_configs.values() if v is not None)
+    
+    # Enforce exclusive requirement
+    if args.config is not None and separate_count > 0:
+        parser.error("Cannot specify both --config and individual config files. Choose ONE approach.")
+    
+    if args.config is None and separate_count == 0:
+        parser.error("Must specify either --config OR all four individual config files (--model_config, --training_config, --data_config, --tokenizer_config)")
+    
+    if args.config is None and separate_count != 4:
+        missing = [k for k, v in separate_configs.items() if v is None]
+        parser.error(f"Missing {len(missing)} individual config file(s): {', '.join(missing)}")
+    
+    # Build config_paths dictionary
+    if args.config is not None:
+        config_paths = args.config
+    else:
+        config_paths = {
+            "model_config": args.model_config,
+            "training": args.training_config,
+            "data": args.data_config,
+            "tokenizer": args.tokenizer_config
+        }
+    
+    overrides = {}
+    for item in args.override:
+        try:
+            k, v = item.split('=', 1)  # Split on first '=' only
+            overrides[k] = v
+        except ValueError:
+            parser.error(f"Override '{item}' must be in key=value format")
+    
+    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch,args.simulate,args.dump_json,args.debug_steps
 
 def get_model_class(model_class: str):
     module = import_module("matformer.transformer_blocks")
@@ -83,13 +115,12 @@ def load_and_prepare_configs(config_paths, overrides):
     Loads multiple separate JSON configs, merges them, applies overrides,
     and derives any dependent configuration properties (like is_causal).
     """
-    
-    model_cfg_dict = load_config(config_paths["model_config"])
-    train_cfg_dict = load_config(config_paths["training"])
-    data_cfg_dict = load_config(config_paths["data"])
-    tok_cfg_dict = load_config(config_paths["tokenizer"])
-
-    cfg = {
+    if isinstance(config_paths,dict): # Multiple config files
+        model_cfg_dict = load_config(config_paths["model_config"])
+        train_cfg_dict = load_config(config_paths["training"])
+        data_cfg_dict = load_config(config_paths["data"])
+        tok_cfg_dict = load_config(config_paths["tokenizer"])
+        cfg = {
         "model_class": model_cfg_dict.pop("model_class", None),
         "save_dir": model_cfg_dict.pop("save_dir", "./checkpoints"),
         "wandb_project": model_cfg_dict.pop("wandb_project", "default_project"),
@@ -98,7 +129,21 @@ def load_and_prepare_configs(config_paths, overrides):
         "training": train_cfg_dict,
         "data": data_cfg_dict,
         "tokenizer": tok_cfg_dict
-    }
+        }
+
+    else: #Single config file 
+        json_config=load_config(config_paths)
+        cfg = {
+        "model_class": json_config['model_class'],
+        "save_dir": json_config.pop("save_dir", "./checkpoints"),
+        "wandb_project": json_config.pop("wandb_project", "default_project"),
+        "wandb_run_name": json_config.pop("wandb_run_name", "default_run"),
+        "model_config": json_config['model_config'], 
+        "training": json_config['training'],
+        "data": json_config['data'],
+        "tokenizer": json_config['tokenizer']
+        }       
+
 
     cfg = apply_overrides(cfg, overrides)
 
@@ -107,6 +152,8 @@ def load_and_prepare_configs(config_paths, overrides):
     is_causal = True if model_class == "Autoregressive_Model" else False
     cfg['model_config']['training_objective'] = training_objective
     cfg['model_config']['is_causal'] = is_causal
+    cfg['model_config']['tokenizer_type']=cfg['tokenizer']['type']
+    cfg['model_config']['tokenizer_name']=cfg['tokenizer']['pretrained_name']
     
     model_config_dict_clean = cfg['model_config']
     train_config_dict = cfg['training']
@@ -120,7 +167,7 @@ def main():
     #config_path, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json = parse_args()
     #cfg = apply_overrides(load_config(config_path), overrides)
     
-    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json = parse_args()
+    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json, debug_steps = parse_args()
     model_config_dict, train_cfg, data_cfg, tok_cfg, cfg = load_and_prepare_configs(config_paths, overrides)
     
     #model_cfg = ModelConfig(**cfg['model_config'])
@@ -207,7 +254,10 @@ def main():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     checkpoint_name = train_cfg.get('checkpoint_name', 'model') # jerik
     run_name = cfg.get('wandb_run_name', 'training-run') # jerik
-    
+    if not debug_steps:
+        checkpoint_name=f"{checkpoint_name}_{timestamp}"
+    else:
+        checkpoint_name=f"{checkpoint_name}_DEBUG_{debug_steps}_{timestamp}"
     # Setup logging
     wandb_logger = WandbLogger(
         name=f"{run_name}_{timestamp}",
@@ -224,7 +274,11 @@ def main():
     )
 
     torch.set_float32_matmul_precision('high')
-
+    if debug_steps is not None:
+        max_epochs=1
+        max_steps=debug_steps
+    else:
+        max_steps=None
     # Create trainer
     trainer = pl.Trainer(
         logger=wandb_logger,
@@ -237,6 +291,7 @@ def main():
         accumulate_grad_batches=train_cfg.get('accumulate_grad_batches', 1),
         default_root_dir=save_dir,
         max_epochs=max_epochs
+        max_steps=max_steps
     )
 
 
@@ -251,6 +306,9 @@ def main():
             print(f"Checkpoint saved as {interrupted_checkpoint}")
         else:
             print("Checkpoint not saved.")
-
+    
+    #Rename last.ckpt with a better name
+    os.rename(os.path.join(save_dir,'last.ckpt'), os.path.join(save_dir,f'{checkpoint_name}_last.ckpt')
+    
 if __name__ == '__main__':
     main()
