@@ -5,7 +5,7 @@ import torch
 @registry.register(
     'attention', 'normal', 'flex',
     requires=['torch>=2.5'],
-    priority=2,
+    priority=0,
     metadata={
         'tensor_order_input': 'BHSD',
         'tensor_order_output': 'BHSD',
