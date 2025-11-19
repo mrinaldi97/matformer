@@ -7,13 +7,12 @@ from dataclasses import asdict, fields, is_dataclass
 from transformers import PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast, SequenceClassifierOutput, MaskedLMOutput
 from transformers.generation import GenerationMixin
-from transformer_blocks import TransformerWithClassificationHead
 import json
 import os
 from pathlib import Path
 
 from matformer.models import PL_ModelWrapper
-from matformer.transformer_blocks import Autoregressive_Model, BERTModel
+from matformer.transformer_blocks import Autoregressive_Model, BERTModel, TransformerWithClassificationHead
 from matformer.model_config import ModelConfig
 #from matformer.tensors_dataclasses import NormalTensor
 
