@@ -11,7 +11,7 @@ from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, 
 class MatformerDataModule(pl.LightningDataModule):
     def __init__(self, mdat_path: str, iteration_modality, pad_token_id: int, 
                  varlen_strategy='unpadding', with_meta=False, max_seq_len=None, 
-                 mdat_strategy=None, mdat_view=None, batch_size=None,distributed=True):
+                 mdat_strategy=None, mdat_view=None, batch_size=None,distributed=True,num_devices=1):
         super().__init__()
         self.mdat_path = mdat_path
         self.iteration_modality = iteration_modality
@@ -22,8 +22,11 @@ class MatformerDataModule(pl.LightningDataModule):
         self.mdat_strategy = mdat_strategy
         self.mdat_view = mdat_view
         self.batch_size = batch_size
-        
+        self.num_devices=num_devices
+        self.distributed_initialized=False
     def setup(self, stage=None):
+        if dist.is_initialized():
+            self.distributed_initialized=True
         # Initialize dataset here for proper distributed handling
         self.mdat = MatformerDataset.load_dataset(
             path=self.mdat_path,
@@ -37,16 +40,9 @@ class MatformerDataModule(pl.LightningDataModule):
             self.mdat.set_view(self.mdat_view)        
         if self.mdat_strategy is not None:
             self.mdat.set_strategy(self.mdat_strategy,max_seq_len=self.max_seq_len) 
-        if False:  #Problema risolto
-            self.mdat.current_strategy.bos_token_id=4 #TEMPORANEO gettone
-            self.mdat.current_strategy.eos_token_id=6 #TEMPORANEO gettone
-            self.mdat.current_strategy.mask_token_id='uint16' #TEMPORANEO
             
-            self.mdat.current_strategy.chunks_datatype='uint16' #TEMPORANEO
-            self.mdat.current_strategy.tokens_datatype='uint16' #TEMPORANEO
-
         self.mdat.set_iteration_modality(self.iteration_modality, with_meta=self.with_meta)
-        
+        print(f"Len attuale: {len(self)}")
     def collate_fn(self, batch):        
         if batch is None:
             print("WARNING: GOT A None TOKEN SEQUENCES FROM THE DATALOADER!")
@@ -91,7 +87,10 @@ class MatformerDataModule(pl.LightningDataModule):
         """      
 
     def __len__(self):
-        return len(self.mdat) if hasattr(self, 'mdat') else 0
+        if self.num_devices == 1 or self.distributed_initialized:
+            return len(self.mdat) if hasattr(self, 'mdat') else 0
+        else:
+            return self.mdat.get_distributed_length_before_training(num_devices=self.num_devices)
             
     def train_dataloader(self):
         return DataLoader(
@@ -101,3 +100,4 @@ class MatformerDataModule(pl.LightningDataModule):
             collate_fn=self.collate_fn,  
             shuffle=False  
         )
+

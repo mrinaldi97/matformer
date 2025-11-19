@@ -115,7 +115,7 @@ def load_and_prepare_configs(config_paths, overrides):
     """
     Loads multiple separate JSON configs, merges them, applies overrides,
     and derives any dependent configuration properties (like is_causal).
-    """    
+    """
     if isinstance(config_paths,dict): # Multiple config files
         model_cfg_dict = load_config(config_paths["model_config"])
         train_cfg_dict = load_config(config_paths["training"])
@@ -199,33 +199,24 @@ def main():
         mdat_view=data_cfg['mdat_view'],
         with_meta=False,
         max_seq_len=model_cfg.max_position_embeddings,
-        batch_size=data_cfg['batch_size']
+        batch_size=data_cfg['batch_size'],
+        num_devices=device_count
     )
     data.setup()
     
     # Calculate training steps if dataset length is available
     max_epochs = train_cfg.get("max_epochs", 1)
     if hasattr(data, '__len__') and len(data) > 0: #Nel caso di più GPU viene già divisa per numero di GPU (es. /4)
-        #num_batches = math.ceil(len(data) / data_cfg["batch_size"])
-        
-        # start. Changed to handle multiple devices correctly
-        dataset_len = len(data)
-        if device_count > 1:
-            dataset_len = math.ceil(dataset_len / device_count)
-        num_batches = math.ceil(dataset_len / data_cfg["batch_size"])
-        # end. Changed
-        
+        num_batches = math.ceil(len(data) / data_cfg["batch_size"])
         accumulate_grad_batches = train_cfg.get("accumulate_grad_batches", 1)
-        
-        #total_steps = (num_batches // accumulate_grad_batches) * max_epochs
-        total_steps = (math.ceil(num_batches / accumulate_grad_batches)) * max_epochs
-
+        total_steps = (num_batches // accumulate_grad_batches) * max_epochs
         train_cfg["total_steps"] = total_steps
         train_cfg["num_batches"] = num_batches
     else:
         print("The Datamodule is not returning the length. Thus, LR scheduling is disabled")
         train_cfg["lr_scheduling"] = False
-    
+    print("Len debug")
+    print(data.__len__())
     # Initialize model
     ModelClass = get_model_class(cfg['model_class'])
     
@@ -305,8 +296,6 @@ def main():
         max_epochs=max_epochs,
         max_steps=max_steps
     )
-    print("Trainer and model initialized. Starting training...")
-    exit()
     if _compile:
         try:
             if tok_cfg['varlen_strategy']:
@@ -344,3 +333,4 @@ def main():
     
 if __name__ == '__main__':
     main()
+

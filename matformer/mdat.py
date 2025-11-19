@@ -1006,7 +1006,25 @@ class MatformerDataset(IterableDataset):
         """
         return list(self.db.list_strategies())
             
-
+    def get_distributed_length_before_training(self,num_devices=1):
+        """
+        Lightning initialize the dataset with torch.dist not set when first gathering the dataset info
+        however, dataset length is required for correct learning rate scheduling calculation
+        This function, given a target of gpu, returns the maximum distributed length, the one that will actually be used
+        during training
+        """
+        assert self.current_view is not None
+        assert self.current_strategy is not None
+        if self.current_iteration_modality=='chunked_tokens':
+            max_len=0
+            for w in range(num_devices):
+                w_len=self.db.get_worker_length_distributed(target_num_workers=num_devices, target_worker_id=w, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name)
+                if w_len>max_len:
+                    max_len=w_len
+            return max_len
+        else:
+            print("You are asking for distributed length but you are not using chunked_tokens modality.")
+            raise Exception
     def __len__(self):
         """
         The len behaves in different ways:
@@ -4525,3 +4543,4 @@ def main(argv=None):
 
 if __name__ == "__main__":
     main()
+
