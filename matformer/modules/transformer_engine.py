@@ -5,8 +5,16 @@ import torch
 
 def _load(module: str, attr: str):
     return getattr(importlib.import_module(module), attr)
+"""
+layer_norm_weight
+layer_norm_bias
+fc1_weight
+fc1_bias
+fc2_weight
+fc2_bias
 
-
+Da implementare il Fused Layer norm mlp
+"""
 @registry.register(
     "norm",
     "rmsnorm",
