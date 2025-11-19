@@ -7,6 +7,7 @@ from dataclasses import asdict, fields, is_dataclass
 from transformers import PretrainedConfig, PreTrainedModel
 from transformers.modeling_outputs import CausalLMOutputWithPast, SequenceClassifierOutput, MaskedLMOutput
 from transformers.generation import GenerationMixin
+from transformer_blocks import TransformerWithClassificationHead
 import json
 import os
 from pathlib import Path
@@ -133,7 +134,7 @@ class MatformerPreTrainedModel(PreTrainedModel):
         model_class_map = {
             'MatformerForCausalLM': Autoregressive_Model,
             'MatformerForMaskedLM': BERTModel,
-            'MatformerForSequenceClassification': BERTModel,
+            'MatformerForSequenceClassification': TransformerWithClassificationHead,
             'MatformerModel': eval(config._model_class) if config._model_class else Autoregressive_Model
         }
         
@@ -344,8 +345,12 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
         if len(input_ids.shape) == 1:
             input_ids = input_ids.unsqueeze(0)
         
-        #input_ids = NormalTensor(tensor=input_ids)
-        logits = self.matformer_model.forward_classification(input_ids, attention_mask)
+        if not hasattr(self.matformer_model, "classification_head"):
+            #we actually do not directly call the classification head but we still require it as a 'type check'
+            raise Exception("The underneath model of a MatformerForSequenceClassification needs to have an attr 'classification_head'")
+        
+        logits = self.matformer_model.forward(input_ids, 
+                                            attention_mask=attention_mask)
         
         loss = None
         if labels is not None:

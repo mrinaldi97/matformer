@@ -24,6 +24,9 @@ from dataclasses import replace
 from copy import deepcopy
 from warnings import warn
 from typing import Optional, List, Literal, Any
+#Transformers
+from transformers.modeling_outputs import SequenceClassifierOutput
+
 
 def ensure_cache_and_registry(cache):
     """Ensure cache and registry initialization"""
@@ -590,18 +593,21 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         self.num_features = num_features
 
     def forward(self, x, attention_mask=None):
-        outputs = self.encoder(x) # (B,S,D)
+        hidden_states = self.encoder(x) # (B,S,D)
 
         if self.pooling_type == 'cls':
             # [CLS] in pos. 0
-            pooled = outputs[:, 0, :]
+            pooled_output = hidden_states[:, 0, :]
         elif self.pooling_type == 'mean':
-            print("NOT IMPLEMENTED")
-            raise ValueError(f"Non ho ancora implementato la media")
+            #TODO: check if the mask works
+            mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size()).float()
+            sum_hidden = torch.sum(hidden_states * mask_expanded, dim=1)
+            sum_mask = torch.clamp(mask_expanded.sum(dim=1), min=1e-9)
+            pooled_output = sum_hidden / sum_mask
         else:
             raise ValueError(f"{self.pooling_type} not in 'cls','mean'")
 
-        logits = self.classification_head(pooled)
+        logits = self.classification_head(pooled_output)
         return logits
         
         
