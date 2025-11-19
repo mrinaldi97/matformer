@@ -349,7 +349,7 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
             #we actually do not directly call the classification head but we still require it as a 'type check'
             raise Exception("The underneath model of a MatformerForSequenceClassification needs to have an attr 'classification_head'")
         
-        logits = self.matformer_model.forward(input_ids, 
+        logits = self.matformer_model(input_ids, 
                                             attention_mask=attention_mask)
         
         loss = None
