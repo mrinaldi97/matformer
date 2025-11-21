@@ -14,9 +14,9 @@ except:
     requires=['flash_attn'],
     priority=10,
     metadata={
-        'tensor_order_input': 'BSHD',
-        'tensor_order_qkv_packed_input': 'BS3HD',
-        'tensor_order_output': 'BSHD',
+        'tensor_order_input': 'SHD',
+        'tensor_order_qkv_packed_input': 'S3HD',
+        'tensor_order_output': 'SHD',
         'supports_unpadding': True,
         'supports_packed_qkv': True,
         'supports_sliding_window': True,
