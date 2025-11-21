@@ -220,8 +220,8 @@ class MultiHeadAttention(MatformerModule):
                 max_seq_len = query_input.shape[0]
             else:
                 max_seq_len=query_input.shape[1]
-        self.device=query_input.device
-        self.dtype=query_input.dtype
+        #self.device=query_input.device
+        #self.dtype=query_input.dtype
         
         supports_unpadding = self.kernel_meta.get('supports_unpadding', False)
         if self.positional_encoding == 'rope':
@@ -315,7 +315,7 @@ class MultiHeadAttention(MatformerModule):
                 k = self._transpose_for_kernel(k, rope_input_order)
 
             # 1. Get sin and cos from cache
-            cos, sin = self.cache.get_rotary_cos_sin(max_seq_len, self.head_dim, device=self.device, dtype=self.dtype)  
+            cos, sin = self.cache.get_rotary_cos_sin(max_seq_len, self.head_dim, device=query_input.device, dtype=self.dtype)  
 
             cu_seqlens = query_input.cu_seqlens if isinstance(query_input, UnpaddedTensor) else None
             max_seq_len_rope = query_input.max_seq_len if isinstance(query_input, UnpaddedTensor) else None
