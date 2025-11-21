@@ -168,9 +168,9 @@ class MultiHeadAttention(MatformerModule):
             new_ea = ea.copy()
             new_ea['tensor_order'] = 'HSD'
             return (
-                NormalTensor(q, new_ea.copy()),
-                NormalTensor(k, new_ea.copy()),
-                NormalTensor(v, new_ea.copy()),
+                NormalTensor(q, extra_attributes=new_ea.copy()),
+                NormalTensor(k, extra_attributes=new_ea.copy()),
+                NormalTensor(v, extra_attributes=new_ea.copy()),
             )
 
         # Packed unpadded: (S, 3, H, Hd)
@@ -181,18 +181,18 @@ class MultiHeadAttention(MatformerModule):
             new_ea = ea.copy()
             new_ea['tensor_order'] = 'HSD'
             return (
-                NormalTensor(q, new_ea.copy()),
-                NormalTensor(k, new_ea.copy()),
-                NormalTensor(v, new_ea.copy()),
+                NormalTensor(q, extra_attributes=new_ea.copy()),
+                NormalTensor(k, extra_attributes=new_ea.copy()),
+                NormalTensor(v, extra_attributes=new_ea.copy()),
             )
 
         # Fallback: classic BSD flat packing
         if order in (None, 'SD'):
             q_t, k_t, v_t = torch.chunk(t, 3, dim=-1)
             return (
-                NormalTensor(q_t, ea.copy()),
-                NormalTensor(k_t, ea.copy()),
-                NormalTensor(v_t, ea.copy()),
+                NormalTensor(q_t, extra_attributes=ea.copy()),
+                NormalTensor(k_t, extra_attributes=ea.copy()),
+                NormalTensor(v_t, extra_attributes=ea.copy()),
             )
 
         raise NotImplementedError(f"Unpacking not supported for layout {order}")
