@@ -29,7 +29,7 @@ class SDPAKernel(nn.Module):
         self.sliding_window = sliding_window
         self.cache = cache
         if positional_encoding=='alibi':
-			self.add_alibi=True
+            self.add_alibi=True
     def forward(self, qkv=None, q=None, k=None, v=None, query_input=None, key_input=None, **kwargs):
         from torch.nn.functional import scaled_dot_product_attention
         
