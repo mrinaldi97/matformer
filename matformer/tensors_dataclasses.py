@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass, replace
+from dataclasses import dataclass, replace, field
 from typing import ClassVar, Tuple, Optional
 import torch
 from torch import nn
@@ -11,12 +11,11 @@ class TensorDC:
     tensor: torch.Tensor
     cloze_mask: Optional[torch.Tensor] = None # To be used for MLM objectives 
     document_mask: Optional[torch.Tensor] = None # Useful for BLT, Multimodal transformers...
-    
+    extra_attributes: dict = field(default_factory=dict)
         
     isUnpadded: ClassVar[bool] = False
     isPadded: ClassVar[bool] = False
     isNormal: ClassVar[bool] = True
-    extra_attributes=dict()
     @property
     def has_cloze_mask(self) -> bool:
         return self.cloze_mask is not None
