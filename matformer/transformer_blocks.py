@@ -137,7 +137,7 @@ class MultiHeadAttention(MatformerModule):
         Tracks current order in tensor_dc.extra_attributes['tensor_order']
         """
         current_order = tensor_dc.extra_attributes.get('tensor_order', 'BHSD')
-        if current_order == target_order:
+        if current_order.replace('B','') == target_order.replace('B',''):
             return tensor_dc
 
         if (current_order == 'BHSD' and target_order == 'BSHD') or (current_order == 'BSHD' and target_order == 'BHSD'):
@@ -299,10 +299,9 @@ class MultiHeadAttention(MatformerModule):
                 qkv_projected = None  
                 repack_after_rope = supports_packed_qkv  #Repack only if supported by the attention kernel
             elif qkv_projected is not None and rope_supports_packed:
-                # Ensure the packed qkv matches the rotary embedding expected packed layout
                 rope_qkv_packed_order = self.rotary_embedding_meta.get('tensor_order_qkv_packed_input', None)
                 current_order = qkv_projected.extra_attributes.get('tensor_order', None)
-                if rope_qkv_packed_order is not None and current_order != rope_qkv_packed_order:
+                if rope_qkv_packed_order is not None and current_order.replace('B','') != rope_qkv_packed_order.replace('B',''):
                     raise NotImplementedError(
                         f"RoPE kernel expects packed layout {rope_qkv_packed_order} but current is {current_order}"
                     )
