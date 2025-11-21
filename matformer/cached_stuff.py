@@ -179,7 +179,38 @@ class CachedStuff:
 
     # --------- Rotary Embeddings ---------
     
-    def get_rotary_emb(self, dim: int, theta: int = 10000):
+    def _compute_inv_freq(self, dim: int, theta: float, device: torch.device) -> torch.Tensor:
+        """Compute inverse frequencies in fp32 for precision."""
+        return 1.0 / (theta ** (torch.arange(0, dim, 2, device=device, dtype=torch.float32) / dim))
+
+    def get_rotary_cos_sin(self, seq_len: int, dim: int, device: torch.device, dtype: torch.dtype,
+                          theta: float = 10000.0) -> Tuple[torch.Tensor, torch.Tensor]:
+        """
+        Get cached cos/sin for RoPE of shape (seq_len, dim).
+        
+        Computation done in fp32 for precision (critical under AMP), output cast to dtype.
+        Uses torch.outer instead of einsum to avoid AMP precision loss.
+        """
+        key = (dim, theta, device)
+        
+        # Check if cache exists and is large enough
+        if key in self.rotary_emb_cache:
+            cos, sin, cached_len = self.rotary_emb_cache[key]
+            if cached_len >= seq_len and cos.dtype == dtype:
+                return cos[:seq_len], sin[:seq_len]
+        
+        # Compute in fp32 for precision
+        inv_freq = self._compute_inv_freq(dim, theta, device)
+        t = torch.arange(seq_len, device=device, dtype=torch.float32)
+        freqs = torch.outer(t, inv_freq)  # (seq_len, dim//2)
+        freqs = torch.cat([freqs, freqs], dim=-1)  # (seq_len, dim) - standard RoPE interleave
+        
+        cos, sin = freqs.cos().to(dtype), freqs.sin().to(dtype)
+        self.rotary_emb_cache[key] = (cos, sin, seq_len)
+        
+        return cos, sin
+
+    def get_rotary_emb_old(self, dim: int, theta: int = 10000):
         """Get cached rotary embedding instance."""
         key = (dim, theta)
         if key not in self.rotary_emb_cache:
