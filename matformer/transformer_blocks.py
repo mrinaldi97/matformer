@@ -293,9 +293,9 @@ class MultiHeadAttention(MatformerModule):
             repack_after_rope = False  
             if qkv_projected is not None and not rope_supports_packed:
                 # (3, B, H, S, Hd) -> separate q, k, v 
-                q = NormalTensor(tensor=qkv_projected.tensor[0], extra_attributes=qkv_projected.extra_attributes.copy())  
-                k = NormalTensor(tensor=qkv_projected.tensor[1], extra_attributes=qkv_projected.extra_attributes.copy())  
-                v = NormalTensor(tensor=qkv_projected.tensor[2], extra_attributes=qkv_projected.extra_attributes.copy()) 
+                q = NormalTensor(tensor=qkv_projected.tensor[0], extra_attributes={'tensor_order': 'BHSD'})  
+                k = NormalTensor(tensor=qkv_projected.tensor[1], extra_attributes={'tensor_order': 'BHSD'})  
+                v = NormalTensor(tensor=qkv_projected.tensor[2], extra_attributes={'tensor_order': 'BHSD'}) 
                 qkv_projected = None  
                 repack_after_rope = supports_packed_qkv  #Repack only if supported by the attention kernel
             elif qkv_projected is not None and rope_supports_packed:
