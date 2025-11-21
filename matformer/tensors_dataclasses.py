@@ -16,7 +16,7 @@ class TensorDC:
     isUnpadded: ClassVar[bool] = False
     isPadded: ClassVar[bool] = False
     isNormal: ClassVar[bool] = True
-
+    extra_attributes=dict()
     @property
     def has_cloze_mask(self) -> bool:
         return self.cloze_mask is not None

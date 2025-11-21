@@ -15,6 +15,7 @@ except:
     priority=10,
     metadata={
         'tensor_order_input': 'BSHD',
+        'tensor_order_qkv_packed_input': 'BS3HD',
         'tensor_order_output': 'BSHD',
         'supports_unpadding': True,
         'supports_packed_qkv': True,
