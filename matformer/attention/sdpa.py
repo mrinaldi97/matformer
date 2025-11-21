@@ -28,14 +28,15 @@ class SDPAKernel(nn.Module):
         self.is_causal = is_causal
         self.sliding_window = sliding_window
         self.cache = cache
-    
+        if positional_encoding=='alibi':
+			self.add_alibi=True
     def forward(self, qkv=None, q=None, k=None, v=None, query_input=None, key_input=None, **kwargs):
         from torch.nn.functional import scaled_dot_product_attention
         
         # Generate (or get from cache) the attention mask
         attn_mask = self.cache.get_attention_mask(
             query=q, kv=k, nheads=self.nheads, causal=self.is_causal, 
-            sliding_window=self.sliding_window, add_alibi=False
+            sliding_window=self.sliding_window, add_alibi=True
         )
         
         attn_output = scaled_dot_product_attention(q, k, v, attn_mask=attn_mask)
