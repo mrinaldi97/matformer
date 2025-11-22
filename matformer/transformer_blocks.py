@@ -939,20 +939,27 @@ class TransformerWithLMHead(MatformerModule):
         return sequence
 
 class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
-    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='mean', num_features=2,cache=None):
+    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='mean', num_features=2, device=None, cache=None):
         super().__init__(config)
         self.cache = ensure_cache_and_registry(cache)   
         cache=self.cache                    
         self.classification_head = ModuleWrapper(self.cache.registry.create(
             "linear", "linear", in_features=config.hidden_size, out_features=num_features
         ))
+        # Transformer with embeddings
+        self.encoder = TransformerWithEmbeddingHead(config, cache=self.cache)
+        
+        # Weight tying: share embeddings with output projection
+        if config.tie_word_embeddings:
+            self.lm_head.weight = self.encoder.embed_tokens.module.inner.weight
+   
         self.config = config
         self.tokenizer = tokenizer
         self.pooling_type = pooling_type
         self.num_features = num_features
 
-    def forward(self, x, attention_mask=None):
-        hidden_states = self.encoder(x) # (B,S,D)
+    def forward(self, x, attention_mask=None, **kwargs):
+        hidden_states = self.encoder(x, **kwargs) # (B,S,D)
 
         if self.pooling_type == 'cls':
             # [CLS] in pos. 0

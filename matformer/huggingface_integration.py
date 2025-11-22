@@ -344,9 +344,9 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
         if len(input_ids.shape) == 1:
             input_ids = input_ids.unsqueeze(0)
         
-        if not hasattr(self.matformer_model, "classification_head"):
+        # if not hasattr(self.matformer_model, "classification_head"):
             #we actually do not directly call the classification head but we still require it as a 'type check'
-            raise Exception("The underneath model of a MatformerForSequenceClassification needs to have an attr 'classification_head'")
+            # raise Exception("The underneath model of a MatformerForSequenceClassification needs to have an attr 'classification_head'")
         
         logits = self.matformer_model(input_ids, 
                                             attention_mask=attention_mask)
