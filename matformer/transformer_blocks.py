@@ -969,8 +969,8 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
             if attention_mask is None:
                 pooled_output = hidden_states.tensor.mean(dim=1)
             else:
-                mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.size()).float()
-                sum_hidden = torch.sum(hidden_states * mask_expanded, dim=1)
+                mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.tensor.size()).to(hidden_states.dtype)
+                sum_hidden = torch.sum(hidden_states.tensor * mask_expanded, dim=1)
                 sum_mask = torch.clamp(mask_expanded.sum(dim=1), min=1e-9)
                 pooled_output = sum_hidden / sum_mask
         else:
