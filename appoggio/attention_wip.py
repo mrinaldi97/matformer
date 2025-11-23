@@ -80,86 +80,53 @@ class MultiHeadAttention_WorkInProgress(MatformerModule):
         
         # Get kernel metadata
         self.kernel_meta = self.attn_kernel._matformer_metadata
-                        
-        # Packed qkv projection for efficiency  
-        if not is_cross_attention or self.qkv_samedim:
-            self.packed_proj = nn.Linear(self.q_dim, 3 * q_dim, bias=bias)
+        
+        if not is_cross_attention or self.qkv_samedim: # Packed qkv projection for efficiency  
+            self.packed_proj=self.cache.registry.create('linear','linear',in_features=self.q_dim, out_features=3*q_dim,bias=bias)
         else:
-            self.q_proj = nn.Linear(q_dim, q_dim, bias=bias)
-            self.k_proj = nn.Linear(k_dim, q_dim, bias=bias)
-            self.v_proj = nn.Linear(v_dim, q_dim, bias=bias)
-            
-        self.out_proj = nn.Linear(q_dim, self.q_dim, bias=bias)  # Out projection
-    def _transpose_for_kernel(self, tensor_dc, target_order):
+            self.q_proj=self.cache.registry.create('linear','linear',in_features=q_dim, out_features=q_dim,bias=bias)
+            self.k_proj=self.cache.registry.create('linear','linear',in_features=k_dim, out_features=q_dim,bias=bias)
+            self.v_proj=self.cache.registry.create('linear','linear',in_features=v_dim, out_features=q_dim,bias=bias)
+
+        self.out_proj=self.cache.registry.create('linear','linear',in_features=q_dim,out_features=self.q_dim,bias=bias) # Out projection
+
+    @staticmethod
+    def _pack_qkv(q, k, v):
+        assert q.tensor_order == k.tensor_order == v.tensor_order, "QKV must have same tensor order"
+        packed_tensor = torch.stack([q.tensor, k.tensor, v.tensor], dim=2)
+        order = q.tensor_order
+        new_order = order[:2] + '3' + order[2:] if len(order) > 2 else order + '3'
+        return replace(q, tensor=packed_tensor, tensor_order=new_order)
+
+    @staticmethod
+    def _unpack_qkv(qkv_packed):
+        q_t, k_t, v_t = qkv_packed.tensor.unbind(dim=2)
+        order = qkv_packed.tensor_order.replace('3', '')
+        return (replace(qkv_packed, tensor=q_t, tensor_order=order),
+                replace(qkv_packed, tensor=k_t, tensor_order=order),
+                replace(qkv_packed, tensor=v_t, tensor_order=order))
+        
+    @staticmethod
+    def _transpose_for_kernel(tensor, wanted_from_kernel):
+        """ Currently this helper function only supports conversion from and to flash style, sdpa style 
+            BHSD
+            BSHD
+            that is, when transposing dimensions 1 and 2 
+            Every other conversion wil raise an error
+            Letters 'B' and '?' are trated as if they are the same, it represents equivalence of batching/unbatching in Matformer's jargon.
+            The tensorDC must have a 'tensor_order' attribute, if not the conversion will fail too
         """
-        Helper to transpose tensors based on metadata.
-        Supports: BHSD <-> BSHD conversions
-        Tracks current order in tensor_dc.extra_attributes['tensor_order']
-        """
-        current_order = tensor_dc.extra_attributes.get('tensor_order', 'HSD')
-        if current_order == target_order:
-            return tensor_dc
-
-        if (current_order == 'HSD' and target_order == 'SHD') or (current_order == 'SHD' and target_order == 'HSD'):
-            new_extra = tensor_dc.extra_attributes.copy()
-            new_extra['tensor_order'] = target_order
-            return NormalTensor(tensor=tensor_dc.tensor.transpose(1, 2), extra_attributes=new_extra)
-
-        # Packed layouts: BS3HD and S3HD are only allowed if already matching the kernel's target layout.
-        # This helper does not perform conversion for packed layouts; callers must convert or reject.
-        if current_order in ('S3HD', 'S3HD'):
-            raise NotImplementedError(
-                f"Packed QKV layout conversion not supported in _transpose_for_kernel: {current_order} -> {target_order}"
-            )
-
-        raise NotImplementedError(f"Unsupported tensor order conversion: {current_order} -> {target_order}")
-
-    def _unpack_qkv(self, qkv_projected):
-        """Unpack qkv into separate q, k, v NormalTensors, preserving extra_attributes."""
-        ea = qkv_projected.extra_attributes
-        order = ea.get('tensor_order', None)
-        t = qkv_projected.tensor
-
-        # Packed padded: (B, S, 3, H, Hd)
-        if order == 'S3HD':
-            q = t[:, :, 0]  # (B, S, H, Hd)
-            k = t[:, :, 1]
-            v = t[:, :, 2]
-            new_ea = ea.copy()
-            new_ea['tensor_order'] = 'HSD'
-            return (
-                NormalTensor(tensor=q, extra_attributes=new_ea.copy()),
-                NormalTensor(tensor=k, extra_attributes=new_ea.copy()),
-                NormalTensor(tensor=v, extra_attributes=new_ea.copy()),
-            )
-
-        # Packed unpadded: (S, 3, H, Hd)
-        if order == 'S3HD':
-            q = t[:, 0]  # (S, H, Hd)
-            k = t[:, 1]
-            v = t[:, 2]
-            new_ea = ea.copy()
-            new_ea['tensor_order'] = 'HSD'
-            return (
-                NormalTensor(tensor=q, extra_attributes=new_ea.copy()),
-                NormalTensor(tensor=k, extra_attributes=new_ea.copy()),
-                NormalTensor(tensor=v, extra_attributes=new_ea.copy()),
-            )
-
-        # Fallback: classic BSD flat packing
-        if order in (None, 'SD'):
-            q_t, k_t, v_t = torch.chunk(t, 3, dim=-1)
-            return (
-                NormalTensor(tensor=q_t, extra_attributes=ea.copy()),
-                NormalTensor(tensor=k_t, extra_attributes=ea.copy()),
-                NormalTensor(tensor=v_t, extra_attributes=ea.copy()),
-            )
-
-        raise NotImplementedError(f"Unpacking not supported for layout {order}")
-
-    def _pack_qkv(self, q, k, v):
-        """Pack separate q, k, v into single qkv NormalTensor."""
-        return NormalTensor(tensor=torch.cat([q.tensor, k.tensor, v.tensor], dim=-1), extra_attributes=q.extra_attributes.copy())
+        if not isinstance(tensor, TensorDC) or not hasattr(tensor, 'tensor_order'):
+            raise Exception       
+        normalize = lambda s: s.translate(str.maketrans('', '', '?B'))
+        wanted = normalize(wanted_from_kernel)
+        current = normalize(tensor.tensor_order)        
+        if current == wanted:
+            return tensor  # No change required, great!       
+        if current == wanted[0] + wanted[2] + wanted[1] + wanted[3:]:
+            # It can be transposed
+            return tensor.replace(tensor=tensor.tensor.transpose(1, 2), tensor_order='?' + wanted)     
+        raise Exception
 
     def forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None):
         """
@@ -170,8 +137,12 @@ class MultiHeadAttention_WorkInProgress(MatformerModule):
         Output:
         (Batch, Seqlen, Qdim) # Qdim is the query dimension as well as the output.
         """
+        
+        # 1. Extract max seq len and cu_seqlens (if appliable), convert to Normal Tensor in case a pytorch tensor is passed.
+        cu_seqlens=None
         if isinstance(query_input, UnpaddedTensor):
             max_seq_len = query_input.max_seq_len # This variable can be used, for example, to get the correct RoPe cos and sin from cache, but in general is useful
+            cu_seqlens=query_input.cu_seqlens # Used for unpadding
         elif isinstance(query_input, PaddedTensor):
             max_seq_len = query_input.shape[1]
         else: #normal tensor
@@ -180,16 +151,21 @@ class MultiHeadAttention_WorkInProgress(MatformerModule):
                 max_seq_len = query_input.shape[0]
             else:
                 max_seq_len=query_input.shape[1]
+                
+                
         #self.device=query_input.device
         #self.dtype=query_input.dtype
         
+        # 2. 
+        
         supports_unpadding = self.kernel_meta.get('supports_unpadding', False)
         if self.positional_encoding == 'rope':
-            supports_unpadding = supports_unpadding and self.rotary_embedding_meta.get('supports_unpadding', False)
+            supports_unpadding = supports_unpadding and self.rotary_embedding_meta.get('supports_unpadding', False) # If either the RoPe or the attn kernel do not support unpadding, sequence is repadded
         supports_packed_qkv = self.kernel_meta.get('supports_packed_qkv', False)
         rope_supports_packed = self.rotary_embedding_meta.get('supports_packed_qkv', False) if self.positional_encoding == 'rope' else True  
         
         # Set defaults for self-attention
+        
         if key_input is None:
             key_input = query_input
         if value_input is None:
@@ -200,84 +176,54 @@ class MultiHeadAttention_WorkInProgress(MatformerModule):
         if not supports_unpadding:
             if isinstance(query_input, UnpaddedTensor):
                 repadded = True  # A flag: if original inputs were padded from unpadded tensors, they will be unpadded again at the end
+                #warn('The selected attention implementation does not support unpadding. Sequence is automatically repadded. This can lead to a loss in performances')
                 query_input = query_input.pad()
                 key_input = key_input.pad()
                 value_input = value_input.pad()
 
-        # Extract tensors (handle both regular tensors and Matformer's TensorDC)
-        q_tensor = query_input.tensor if hasattr(query_input, 'tensor') else query_input
-        k_tensor = key_input.tensor if hasattr(key_input, 'tensor') else key_input
-        v_tensor = value_input.tensor if hasattr(value_input, 'tensor') else value_input
+
         
         # Projecting (eventually, packed projection)
         if self.qkv_samedim and not self.is_cross_attention and not self.force_separed_qkv:
-            qkv_projected = NormalTensor(tensor=self.packed_proj(q_tensor), extra_attributes={'tensor_order': 'SD'})
+            qkv_projected = NormalTensor(tensor=self.packed_proj(query_input.tensor), tensor_order='?S(3*D)')
             q, k, v = None, None, None
-            is_qkv_packed=True
         elif self.qkv_samedim and self.is_cross_attention and not self.force_separed_qkv:
             qkv_projected = None
             w = torch.chunk(self.packed_proj.weight, 3, dim=0)
             b = torch.chunk(self.packed_proj.bias, 3, dim=0) if self.bias else (None, None, None)
-            q = NormalTensor(tensor=F.linear(q_tensor, w[0], b[0]), extra_attributes={'tensor_order': 'SD'})
-            k = NormalTensor(tensor=F.linear(k_tensor, w[1], b[1]), extra_attributes={'tensor_order': 'SD'})
-            v = NormalTensor(tensor=F.linear(v_tensor, w[2], b[2]), extra_attributes={'tensor_order': 'SD'})
-            is_qkv_packed=False
+            q = NormalTensor(tensor=F.linear(query_input.tensor, w[0], b[0]),tensor_order='?SD')
+            k = NormalTensor(tensor=F.linear(key_input.tensor, w[1], b[1]),tensor_order='?SD')
+            v = NormalTensor(tensor=F.linear(value_input.tensor, w[2], b[2]),tensor_order='?SD')
         else:
             qkv_projected = None
-            q = NormalTensor(tensor=self.q_proj(q_tensor), extra_attributes={'tensor_order': 'SD'})
-            k = NormalTensor(tensor=self.k_proj(k_tensor), extra_attributes={'tensor_order': 'SD'})
-            v = NormalTensor(tensor=self.v_proj(v_tensor), extra_attributes={'tensor_order': 'SD'})
-            is_qkv_packed=False
-        # Creating the heads (B, S, D) -> (B, H, S, Hd) or (B, S, 3*D) -> (B, S, 3, H, Hd) for packed 
+            q = NormalTensor(tensor=self.q_proj(query_input.tensor),tensor_order='?SD')
+            k = NormalTensor(tensor=self.k_proj(key_input.tensor),tensor_order='?SD')
+            v = NormalTensor(tensor=self.v_proj(value_input.tensor),tensor_order='?SD')
+            
+        # 3. Heads creation  
         if qkv_projected is not None:
-            # Packed: (B, S, 3*D) -> (B, S, 3, H, Hd)
-            t = qkv_projected.tensor.unflatten(-1, [3, self.nheads, self.head_dim])
-            # Detect whether batch dim exists (padded / normal) or not (unpadded represented as (S, 3, H, Hd))
-            if t.dim() == 5:
-                order = 'S3HD'
-            elif t.dim() == 4:
-                order = 'S3HD'
-            else:
-                raise NotImplementedError(f"Unsupported packed qkv tensor shape: {tuple(t.shape)}")
-            qkv_projected = NormalTensor(tensor=t, extra_attributes={'tensor_order': order})
+            qkv_projected = replace(qkv_projected, tensor=qkv_projected.tensor.unflatten(-1, [3, self.nheads, self.head_dim]), tensor_order='?S3HD')
         else:
-            q = NormalTensor(tensor=q.tensor.unflatten(-1, [self.nheads, self.head_dim]).transpose(1, 2), extra_attributes={'tensor_order': 'HSD'})
-            k = NormalTensor(tensor=k.tensor.unflatten(-1, [self.nheads, self.head_dim]).transpose(1, 2), extra_attributes={'tensor_order': 'HSD'})
-            v = NormalTensor(tensor=v.tensor.unflatten(-1, [self.nheads, self.head_dim]).transpose(1, 2), extra_attributes={'tensor_order': 'HSD'})
+            q = replace(q, tensor=q.tensor.unflatten(-1, [self.nheads, self.head_dim]),tensor_order='?SHD')
+            k = replace(k, tensor=k.tensor.unflatten(-1, [self.nheads, self.head_dim]),tensor_order='?SHD')
+            v = replace(v, tensor=v.tensor.unflatten(-1, [self.nheads, self.head_dim]),tensor_order='?SHD')
 
-        # Apply RoPe
+        # 3b. (facultative) Apply RoPe
         if self.positional_encoding == 'rope':
-            rope_input_order = self.rotary_embedding_meta.get('tensor_order_input', 'HSD')
-
-            # Unpack if RoPe doesn't support packed qkv  
             repack_after_rope = False  
-            if qkv_projected is not None and not rope_supports_packed:
-                # (3, B, H, S, Hd) -> separate q, k, v 
-                q = NormalTensor(tensor=qkv_projected.tensor[0], extra_attributes={'tensor_order': 'SHD'})  
-                k = NormalTensor(tensor=qkv_projected.tensor[1], extra_attributes={'tensor_order': 'SHD'})  
-                v = NormalTensor(tensor=qkv_projected.tensor[2], extra_attributes={'tensor_order': 'SHD'})
-                qkv_projected = None  
+            if qkv_projected is not None and not rope_supports_packed: # Unpack if RoPe doesn't support packed qkv  
+                q, k, v = self._unpack_qkv(qkv_projected)
+                qkv_projected = None
                 repack_after_rope = supports_packed_qkv  #Repack only if supported by the attention kernel
             elif qkv_projected is not None and rope_supports_packed:
-                rope_qkv_packed_order = self.rotary_embedding_meta.get('tensor_order_qkv_packed_input', None)
-                current_order = qkv_projected.extra_attributes.get('tensor_order', None)
-                if rope_qkv_packed_order is not None and current_order != rope_qkv_packed_order:
-                    raise NotImplementedError(
-                        f"RoPE kernel expects packed layout {rope_qkv_packed_order} but current is {current_order}"
-                    )
-
-            # Transpose to RoPe's expected format 
-            if qkv_projected is not None:
-                qkv_projected = self._transpose_for_kernel(qkv_projected, rope_input_order)  
-            else: 
-                q = self._transpose_for_kernel(q, rope_input_order)
-                k = self._transpose_for_kernel(k, rope_input_order)
+                assert qkv_projected.tensor_order == self.rotary_embedding_meta['tensor_order_qkv_packed_input']
+            
+            if qkv_projected is None:  #non-packed branch, adapt to requested tensor order 
+                q = self._transpose_for_kernel(q, self.rotary_embedding_meta['tensor_order_input'])
+                k = self._transpose_for_kernel(k, self.rotary_embedding_meta['tensor_order_input'])
 
             # 1. Get sin and cos from cache
-            cos, sin = self.cache.get_rotary_cos_sin(max_seq_len, self.head_dim, device=query_input.device, dtype=self.dtype)  
-
-            cu_seqlens = query_input.cu_seqlens if isinstance(query_input, UnpaddedTensor) else None
-            max_seq_len_rope = query_input.max_seq_len if isinstance(query_input, UnpaddedTensor) else None
+            cos, sin = self.cache.get_rotary_cos_sin(max_seq_len, self.head_dim, device=query_input.device, dtype=query_input.dtype)  
 
             # 2. Rotate query and keys
             qkv_t, q_t, k_t = self.rotary_embedding(
@@ -285,41 +231,26 @@ class MultiHeadAttention_WorkInProgress(MatformerModule):
                 q=q.tensor if q is not None else None,
                 k=k.tensor if k is not None else None,
                 cos=cos, sin=sin,
-                cu_seqlens=cu_seqlens, max_seq_len=max_seq_len_rope
+                cu_seqlens=cu_seqlens, max_seq_len=max_seq_len
             )
             if qkv_projected is not None:
-                qkv_projected = NormalTensor(tensor=qkv_t, extra_attributes=qkv_projected.extra_attributes)
+                qkv_projected = replace(qkv_projected, tensor=qkv_t, tensor_order=self.rotary_embedding_meta['tensor_order_qkv_packed_output'])
             else:
-                q = NormalTensor(tensor=q_t, extra_attributes=q.extra_attributes)
-                k = NormalTensor(tensor=k_t, extra_attributes=k.extra_attributes)
+                q = replace(q, tensor=q_t, tensor_order=self.rotary_embedding_meta['tensor_order_output'])
+                k = replace(k, tensor=k_t, tensor_order=self.rotary_embedding_meta['tensor_order_output'])
+
 
             # Repack if needed for attention kernel 
             if repack_after_rope:
-                qkv_projected = NormalTensor(  
-                    tensor=torch.stack([q.tensor, k.tensor, v.tensor], dim=2) if q.tensor.dim() == 4 else torch.stack([q.tensor, k.tensor, v.tensor], dim=1), 
-                    extra_attributes=q.extra_attributes.copy()  
-                )  
-                # When repacked above, ensure extra_attributes tensor_order is set correctly
-                # prefer BS3HD for batched, S3HD for unbatched
-                if qkv_projected.tensor.dim() == 5:
-                    qkv_projected.extra_attributes['tensor_order'] = 'S3HD'
-                elif qkv_projected.tensor.dim() == 4:
-                    qkv_projected.extra_attributes['tensor_order'] = 'S3HD'
+                qkv_projected = self._pack_qkv(q, k, v)
                 q, k, v = None, None, None
 
-        kernel_input_order = self.kernel_meta.get('tensor_order_input', 'HSD')
-
+        kernel_input_order = self.kernel_meta.get('tensor_order_input', '?SHD')
         tensor_order_qkv_packed = self.kernel_meta.get('tensor_order_qkv_packed_input', None)
-        if qkv_projected is not None:
-            if supports_packed_qkv:
-                current_order = qkv_projected.extra_attributes.get('tensor_order', None)
-                if tensor_order_qkv_packed is not None and current_order != tensor_order_qkv_packed:
-                    raise NotImplementedError(
-                        f"Kernel expects packed layout {tensor_order_qkv_packed} but current is {current_order}"
-                    )
-            else:
-                q,k,v=self._unpack_qkv(qkv_projected)
-                qkv_projected=None
+        
+        if qkv_projected is not None and not supports_packed_qkv:
+            q, k, v = self._unpack_qkv(qkv_projected)
+            qkv_projected = None
 
         if qkv_projected is not None:
             qkv_projected = self._transpose_for_kernel(qkv_projected, tensor_order_qkv_packed if tensor_order_qkv_packed is not None else kernel_input_order)
@@ -339,9 +270,9 @@ class MultiHeadAttention_WorkInProgress(MatformerModule):
         )
 
         # Transpose from kernel's output format to expected format (B, S, H, Hd)
-        kernel_output_order = self.kernel_meta.get('tensor_order_output', 'HSD')
-        attn_output = NormalTensor(tensor=attn_output, extra_attributes={'tensor_order': kernel_output_order})
-        attn_output = self._transpose_for_kernel(attn_output, 'SHD')
+        kernel_output_order = self.kernel_meta.get('tensor_order_output', '?SHD')
+        attn_output = NormalTensor(tensor=attn_output, tensor_order=kernel_output_order)
+        attn_output = self._transpose_for_kernel(attn_output, '?SHD')
 
         # Post-attention stuff
         attn_output = attn_output.tensor.flatten(-2)  # (B, S, H, Hd) -> (B, S, D)

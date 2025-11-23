@@ -11,6 +11,7 @@ class TensorDC:
     tensor: torch.Tensor
     cloze_mask: Optional[torch.Tensor] = None # To be used for MLM objectives 
     document_mask: Optional[torch.Tensor] = None # Useful for BLT, Multimodal transformers...
+    tensor_order: Optional[str] = None # Useful to keep track fof what is represented in the tensor (ex. heads in MHA)
     extra_attributes: dict = field(default_factory=dict)
         
     isUnpadded: ClassVar[bool] = False
