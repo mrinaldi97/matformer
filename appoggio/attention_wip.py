@@ -1,4 +1,4 @@
-class MultiHeadAttention_WorkInProgress(MatformerModule):
+class MultiHeadAttention(MatformerModule):
     # Stable parameter names
     packed_proj: "param_name:qkv_proj"      # Packed Q+K+V projection (when applicable)
     q_proj: "param_name:q_proj"             # Separate query projection (cross-attention)
@@ -287,4 +287,4 @@ class MultiHeadAttention_WorkInProgress(MatformerModule):
         if repadded:
             query_input = query_input.unpad()
 
-        return query_input
+        return query_input	
