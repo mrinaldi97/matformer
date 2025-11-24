@@ -48,7 +48,7 @@ class FlexAttentionKernel(nn.Module): #TODO: Flex attention must be reviewed and
             sliding_window=self.sliding_window, B=q.size(0)
         )
         
-        score_mod = self._alibi_score_mod if self.positional_encoding == 'alibi' else None
+        score_mod = self._alibi_score_mod if 'alibi' in self.positional_encoding else None
         
         attn_output = flex_attention(
             q, k, v, block_mask=block_mask, 

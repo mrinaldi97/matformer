@@ -43,7 +43,7 @@ class FlashAttentionKernel(nn.Module):
         self.cache = cache
         
         # Alibi initialization
-        if positional_encoding == 'alibi':
+        if 'alibi' in positional_encoding:
             alibi_slopes = torch.tensor(
                 cache.get_alibi_slopes(nheads, device=torch.device(device), dtype=torch.float32), 
                 dtype=torch.float32
