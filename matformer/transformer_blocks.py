@@ -132,8 +132,8 @@ class MultiHeadAttention(MatformerModule):
 
     @staticmethod
     def _pack_qkv(q, k, v):
-        assert q.tensor_order == k.tensor_order == v.tensor_order, "QKV must have same tensor order"
         normalize = lambda s: s.translate(str.maketrans('', '', '?B'))
+        assert normalize(q.tensor_order) == normalize(k.tensor_order) == normalize(v.tensor_order), "QKV must have same tensor order"
         current_order_norm = normalize(q.tensor_order)
         
         if current_order_norm == "HSD":
@@ -198,7 +198,7 @@ class MultiHeadAttention(MatformerModule):
         cu_seqlens=None
         if isinstance(query_input, UnpaddedTensor):
             max_seq_len = query_input.max_seq_len # This variable can be used, for example, to get the correct RoPe cos and sin from cache, but in general is useful
-            cu_seqlens=query_input.cu_seqlens # Used for unpadding
+            cu_seqlens=query_input.cu_seqlens.to(query_input.device) # Used for unpadding
         elif isinstance(query_input, PaddedTensor):
             max_seq_len = query_input.shape[1]
         else: #normal tensor
