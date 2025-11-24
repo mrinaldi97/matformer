@@ -22,6 +22,9 @@ class LayerConfig:
     def __setitem__(self, key, value):
         """Allow dict-like setting of dataclass fields"""
         setattr(self, key, value)
+    def get(self, key, default=None):
+        """Dict-like get method with default value"""
+        return getattr(self, key, default)        
 def resolve_hook(hook_spec: Union[str, nn.Module, Callable], config: 'ModelConfig') -> Union[nn.Module, Callable]:
     """Resolve hook specification to actual callable/module"""
     if isinstance(hook_spec, (nn.Module, type(lambda: None))):
