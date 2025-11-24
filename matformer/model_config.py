@@ -8,7 +8,7 @@ class LayerConfig:
     """Configuration for a single transformer layer"""
     attn_impl: Optional[Literal['flash','sdpa','flex','xformers','wersa']] = "flash"
     sliding_window_size: Optional[int] = None
-	positional_encoding: Optional[Union[List[Literal['alibi','rope','sinusoidal','nope', 'learnable']], Literal['alibi','rope','sinusoidal','nope', 'learnable']]] = 'alibi'    
+    positional_encoding: Optional[Union[List[Literal['alibi','rope','sinusoidal','nope', 'learnable']], Literal['alibi','rope','sinusoidal','nope', 'learnable']]] = 'alibi'    
     normalization: Optional[Literal['layernorm','rmsnorm']] = 'rmsnorm'
     normalization_position: Optional[Literal['pre','post']] = 'post'
     ffn_activation: Optional[Literal['gelu','swiglu']] = 'swiglu'
