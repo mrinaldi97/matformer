@@ -63,8 +63,8 @@ class FlashAttentionKernel(nn.Module):
         if key_input is None:
             key_input = query_input
             
-        if qkv is not None:
-            qkv = qkv.unflatten(-1, [3, self.nheads, self.head_dim])  # (B, S, 3, H, Hd)
+        #if qkv is not None:
+        #    qkv = qkv.unflatten(-1, [3, self.nheads, self.head_dim])  # (B, S, 3, H, Hd)
             
         if isinstance(query_input, UnpaddedTensor):
             # Version with Unpadding
