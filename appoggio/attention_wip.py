@@ -93,18 +93,34 @@ class MultiHeadAttention(MatformerModule):
     @staticmethod
     def _pack_qkv(q, k, v):
         assert q.tensor_order == k.tensor_order == v.tensor_order, "QKV must have same tensor order"
-        packed_tensor = torch.stack([q.tensor, k.tensor, v.tensor], dim=2)
-        order = q.tensor_order
-        new_order = order[:2] + '3' + order[2:] if len(order) > 2 else order + '3'
+        normalize = lambda s: s.translate(str.maketrans('', '', '?B'))
+        current_order_norm = normalize(q.tensor_order)
+        
+        if current_order_norm == "HSD":
+            # [?, H, S, D] => [?, S, H, D]
+            q_t = q.tensor.transpose(1, 2)
+            k_t = k.tensor.transpose(1, 2)
+            v_t = v.tensor.transpose(1, 2)
+            #  [?, S, 3, H, D]
+            packed_tensor = torch.stack([q_t, k_t, v_t], dim=2)
+            new_order = '?S3HD'
+        elif current_order_norm == "SHD":
+            # [?, S, 3, H, D]
+            packed_tensor = torch.stack([q.tensor, k.tensor, v.tensor], dim=2)
+            new_order = '?S3HD'
+        else:
+            raise ValueError(f"Unsupported tensor order: {q.tensor_order}")
+        
         return replace(q, tensor=packed_tensor, tensor_order=new_order)
-
+    
     @staticmethod
     def _unpack_qkv(qkv_packed):
-        q_t, k_t, v_t = qkv_packed.tensor.unbind(dim=2)
-        order = qkv_packed.tensor_order.replace('3', '')
-        return (replace(qkv_packed, tensor=q_t, tensor_order=order),
-                replace(qkv_packed, tensor=k_t, tensor_order=order),
-                replace(qkv_packed, tensor=v_t, tensor_order=order))
+            # S3HD => ?SHD
+            q_t, k_t, v_t = qkv_packed.tensor.unbind(dim=1)
+            order = qkv_packed.tensor_order.replace('3', '')
+            return (replace(qkv_packed, tensor=q_t, tensor_order=order),
+                    replace(qkv_packed, tensor=k_t, tensor_order=order),
+                    replace(qkv_packed, tensor=v_t, tensor_order=order))
         
     @staticmethod
     def _transpose_for_kernel(tensor, wanted_from_kernel):
@@ -287,4 +303,4 @@ class MultiHeadAttention(MatformerModule):
         if repadded:
             query_input = query_input.unpad()
 
-        return query_input	
+        return query_input  
