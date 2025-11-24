@@ -142,11 +142,11 @@ class MultiHeadAttention(MatformerModule):
             k_t = k.tensor.transpose(1, 2)
             v_t = v.tensor.transpose(1, 2)
             #  [?, S, 3, H, D]
-            packed_tensor = torch.stack([q_t, k_t, v_t], dim=2)
+            packed_tensor = torch.stack([q_t, k_t, v_t], dim=-3)
             new_order = '?S3HD'
         elif current_order_norm == "SHD":
             # [?, S, 3, H, D]
-            packed_tensor = torch.stack([q.tensor, k.tensor, v.tensor], dim=2)
+            packed_tensor = torch.stack([q.tensor, k.tensor, v.tensor], dim=-3)
             new_order = '?S3HD'
         else:
             raise ValueError(f"Unsupported tensor order: {q.tensor_order}")
@@ -156,7 +156,7 @@ class MultiHeadAttention(MatformerModule):
     @staticmethod
     def _unpack_qkv(qkv_packed):
             # S3HD => ?SHD
-            q_t, k_t, v_t = qkv_packed.tensor.unbind(dim=1)
+            q_t, k_t, v_t = qkv_packed.tensor.unbind(dim=-3)
             order = qkv_packed.tensor_order.replace('3', '')
             return (replace(qkv_packed, tensor=q_t, tensor_order=order),
                     replace(qkv_packed, tensor=k_t, tensor_order=order),
@@ -300,7 +300,6 @@ class MultiHeadAttention(MatformerModule):
             if repack_after_rope:
                 qkv_projected = self._pack_qkv(q, k, v)
                 q, k, v = None, None, None
-
         kernel_input_order = self.kernel_meta.get('tensor_order_input', '?SHD')
         tensor_order_qkv_packed = self.kernel_meta.get('tensor_order_qkv_packed_input', None)
         
