@@ -15,7 +15,13 @@ class LayerConfig:
     ffn_activation: Optional[Literal['gelu','swiglu']] = 'swiglu'
     
     hooks: Dict[str, Union[str, nn.Module]] = field(default_factory=dict)
-
+    def __getitem__(self, key):
+        """Allow dict-like access to dataclass fields"""
+        return getattr(self, key)
+    
+    def __setitem__(self, key, value):
+        """Allow dict-like setting of dataclass fields"""
+        setattr(self, key, value)
 def resolve_hook(hook_spec: Union[str, nn.Module, Callable], config: 'ModelConfig') -> Union[nn.Module, Callable]:
     """Resolve hook specification to actual callable/module"""
     if isinstance(hook_spec, (nn.Module, type(lambda: None))):
