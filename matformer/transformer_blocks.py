@@ -65,8 +65,8 @@ class MultiHeadAttention(MatformerModule):
         device: str = 'cuda'  
     ):
         super().__init__()
-		if isinstance(positional_encoding, str):
-			positional_encoding = [positional_encoding]        
+        if isinstance(positional_encoding, str):
+            positional_encoding = [positional_encoding]        
         # Assertions
         assert q_dim % nheads == 0, "q_dim is not divisible by nheads"
         if is_cross_attention:
