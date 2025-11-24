@@ -73,6 +73,7 @@ class BaseSubModelConfig:
     # compilation & bias
     compile_flexattn: Optional[bool] = None
     bias: Optional[bool] = None
+    loss_type: str = 'normal' #Can be normal or fused
     # behavior
     training_objective: Optional[str] = None
     is_causal: Optional[bool] = None
@@ -102,7 +103,6 @@ class ModelConfig(BaseSubModelConfig):
     default_layer: LayerConfig = field(default_factory=LayerConfig)
     custom_layers: Dict[Union[int, str], LayerConfig] = field(default_factory=LayerConfig)
     
-    # optional subconfigs - now accept both dict and dataclass
     encoder: Optional[Union[SubModelConfig, dict]] = None
     decoder: Optional[Union[SubModelConfig, dict]] = None
     entropy: Optional[Union[EntropyConfig, dict]] = None
@@ -127,11 +127,9 @@ class ModelConfig(BaseSubModelConfig):
     
     def get_layer_config(self, layer_idx: int) -> LayerConfig:
         """Get configuration for a specific layer"""
-        # Direct lookup first (fastest path)
         if layer_idx in self.custom_layers:
             return self.custom_layers[layer_idx]
         
-        # Pattern matching for groups  
         for pattern, config in self.custom_layers.items():
             if isinstance(pattern, str) and self._matches_pattern(layer_idx, pattern):
                 return config

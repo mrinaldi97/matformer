@@ -35,8 +35,7 @@ class PL_ModelWrapper(MatformerModule):
         self.cache.registry = registry
         self.model = ModelClass(config,tokenizer=tokenizer,device=device,cache=self.cache)    
         self.nested = None  
-        self.loss_type='normal'  
-        if self.loss_type=='fused':
+        if self.config.loss_type=='fused':
             self.cross_entropy_loss = self.cache.registry.create("loss", "cross_entropy_loss_fused", *[], **{"ignore_index":config.pad_token_id})
         else: #22785MiB
             self.cross_entropy_loss = self.cache.registry.create("loss", "cross_entropy_loss", *[], **{"ignore_index":config.pad_token_id})
@@ -83,7 +82,7 @@ class PL_ModelWrapper(MatformerModule):
         if masked:
             masked_tokens,cloze_mask=self.maskerator(sequence.tensor)
             input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)      
-        if self.loss_type=='fused':
+        if self.config.loss_type=='fused':
             model_return_type = 'hidden'
             flattening_dimension = self.config.hidden_size
             loss_kwargs = {"lm_head_weight": self.model.lm_head.module.inner.weight}
