@@ -25,7 +25,7 @@
     "default_layer": {
       "attn_impl": "flash",
       "sliding_window_size": null,
-      "positional_encoding": "alibi",
+      "positional_encoding": ["rope","alibi"],
       "normalization":"rmsnorm",
       "normalization_position":"pre",
       "ffn_activation":"swiglu",
