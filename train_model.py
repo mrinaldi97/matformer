@@ -151,12 +151,10 @@ def load_and_prepare_configs(config_paths, overrides):
     cfg = apply_overrides(cfg, overrides)
 
     model_class = cfg['model_class'] 
-    if not cfg['model_config']['training_objective']:
-        training_objective = "autoregressive" if model_class == "Autoregressive_Model" else "masked"
-    if not cfg['model_config']['is_causal']:
-        is_causal = True if model_class == "Autoregressive_Model" else False
-    cfg['model_config']['training_objective'] = training_objective
-    cfg['model_config']['is_causal'] = is_causal
+    if cfg['model_config']['training_objective'] is None:
+        cfg['model_config']['training_objective'] = "autoregressive" if model_class == "Autoregressive_Model" else "masked"
+    if cfg['model_config']['is_causal'] is None:
+        cfg['model_config']['is_causal'] = True if model_class == "Autoregressive_Model" else False
     cfg['model_config']['tokenizer_type']=cfg['tokenizer']['type']
     cfg['model_config']['tokenizer_name']=cfg['tokenizer']['pretrained_name']
     
