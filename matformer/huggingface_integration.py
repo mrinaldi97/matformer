@@ -12,7 +12,7 @@ import os
 from pathlib import Path
 
 from matformer.models import PL_ModelWrapper
-from matformer.transformer_blocks import Autoregressive_Model, BERTModel, TransformerWithClassificationHead
+from matformer.transformer_blocks import Autoregressive_Model, BERTModel, TransformerWithClassificationHead, TransformerWithTokenClassificationHead
 from matformer.model_config import ModelConfig
 #from matformer.tensors_dataclasses import NormalTensor
 
@@ -134,6 +134,7 @@ class MatformerPreTrainedModel(PreTrainedModel):
             'MatformerForCausalLM': Autoregressive_Model,
             'MatformerForMaskedLM': BERTModel,
             'MatformerForSequenceClassification': TransformerWithClassificationHead,
+            'MatformerForTokenClassification': TransformerWithTokenClassificationHead,
             'MatformerModel': eval(config._model_class) if config._model_class else Autoregressive_Model
         }
         
@@ -385,13 +386,14 @@ class MatformerForTokenClassification(MatformerPreTrainedModel):
 
 
 def register_matformer():
-    from transformers import AutoConfig, AutoModel, AutoModelForCausalLM, AutoModelForMaskedLM, AutoModelForSequenceClassification
+    from transformers import AutoConfig, AutoModel, AutoModelForCausalLM, AutoModelForMaskedLM, AutoModelForSequenceClassification, AutoModelForTokenClassification
     
     AutoConfig.register("matformer", MatformerConfig)
     AutoModel.register(MatformerConfig, MatformerModel)
     AutoModelForCausalLM.register(MatformerConfig, MatformerForCausalLM)
     AutoModelForMaskedLM.register(MatformerConfig, MatformerForMaskedLM)
     AutoModelForSequenceClassification.register(MatformerConfig, MatformerForSequenceClassification)
+    AutoModelForTokenClassification.register(MatformerConfig, MatformerForTokenClassification)
 
 
 def load_matformer_model(checkpoint_path, config_dict, model_type='auto', **kwargs):
