@@ -728,6 +728,40 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         pooled_output = self.dropout(pooled_output)
         logits = self.classification_head(pooled_output)
         return logits
+
+class TransformerWithTokenClassificationHead(TransformerWithEmbeddingHead):
+    def __init__(self, config: ModelConfig, tokenizer=None, num_features=2, device=None, cache=None):
+        super().__init__(config)
+        self.cache = ensure_cache_and_registry(cache)   
+        cache=self.cache      
+        self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)             
+        self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)             
+        self.classification_head = ModuleWrapper(self.cache.registry.create(
+            "linear", "linear", in_features=config.hidden_size, out_features=num_features
+        ))
+
+        self.dropout = ModuleWrapper(self.cache.registry.create(
+                "dropout", "dropout",
+                p=self.classifier_dropout_p, inplace=self.classifier_dropout_inplace
+            )
+        )
+        # Transformer with embeddings
+        self.encoder = TransformerWithEmbeddingHead(config, cache=self.cache)
+        
+        # Weight tying: share embeddings with output projection
+        if config.tie_word_embeddings:
+            self.lm_head.weight = self.encoder.embed_tokens.module.inner.weight
+   
+        self.config = config
+        self.tokenizer = tokenizer
+        self.num_features = num_features
+
+    def forward(self, x, attention_mask=None, **kwargs):
+        hidden_states = self.encoder(x, **kwargs).tensor # (B,S,D)
+
+        hidden_states = self.dropout(hidden_states)
+        logits = self.classification_head(hidden_states)
+        return logits
         
         
 
