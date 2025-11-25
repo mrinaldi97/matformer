@@ -2420,13 +2420,15 @@ class SubMdat:
             if do_transform:
                 # item = transformer_function(item)
                 pass
-            
-            if data_key not in item:
-                warning = f"Data key '{data_key}' not found in item {i}. Item has keys {item.keys()}"
-                logger_fn.warning(warning)
-                errors_counters['missingDataKey'] += 1
-                continue
-            data = item[data_key]
+            if 'raw_content' in item:
+                data=item['raw_content']
+            else:
+                if data_key not in item:
+                    warning = f"Data key '{data_key}' not found in item {i}. Item has keys {item.keys()}"
+                    logger_fn.warning(warning)
+                    errors_counters['missingDataKey'] += 1
+                    continue
+                data = item[data_key]
             if isinstance(data, str):
                 data = data.encode('utf-8')
             if not isinstance(data, bytes):
