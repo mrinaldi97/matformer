@@ -170,7 +170,7 @@ class PL_ModelWrapper(MatformerModule):
         """
         self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)
         if self.config.training_objective == 'crazy':
-            self.log(f'train/loss_masked_{str(masked)}')
+            self.log(f'train/loss_masked_{str(masked)}',loss, prog_bar=True,batch_size=self.batch_size)
         try:
             current_lr = self.lr_schedulers().get_last_lr()[0]
             self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
