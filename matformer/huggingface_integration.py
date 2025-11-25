@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from dataclasses import asdict, fields, is_dataclass
 from transformers import PretrainedConfig, PreTrainedModel
-from transformers.modeling_outputs import CausalLMOutputWithPast, SequenceClassifierOutput, MaskedLMOutput
+from transformers.modeling_outputs import CausalLMOutputWithPast, SequenceClassifierOutput, MaskedLMOutput,TokenClassifierOutput
 from transformers.generation import GenerationMixin
 import json
 import os
@@ -356,6 +356,32 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
             loss = F.cross_entropy(logits, labels)
         
         return SequenceClassifierOutput(loss=loss, logits=logits)
+
+
+
+class MatformerForTokenClassification(MatformerPreTrainedModel):
+    def __init__(self, config: MatformerConfig):
+        super().__init__(config)
+        self.matformer_model = None
+        self.num_labels = config.num_labels
+        
+    
+    def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
+        if len(input_ids.shape) == 1:
+            input_ids = input_ids.unsqueeze(0)
+        
+        # if not hasattr(self.matformer_model, "classification_head"):
+            #we actually do not directly call the classification head but we still require it as a 'type check'
+            # raise Exception("The underneath model of a MatformerForSequenceClassification needs to have an attr 'classification_head'")
+        
+        logits = self.matformer_model(input_ids, 
+                                            attention_mask=attention_mask)
+        
+        loss = None
+        if labels is not None:
+            loss = F.cross_entropy(logits.view(-1, self.num_labels), labels.view(-1))
+        
+        return TokenClassifierOutput(loss=loss, logits=logits)
 
 
 def register_matformer():
