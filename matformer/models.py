@@ -46,22 +46,14 @@ class PL_ModelWrapper(MatformerModule):
         self.batch_size=batch_size # Utile per il learning rate scheduling
         
         # Maskerator setup
-        if True: #TODO @Jerik: self.config non è un dizionario, bisogna trovare un altro modo per i valori di default
-            #cloze_prob = self.config.get("cloze_prob", 1.0)  
-            #random_prob = self.config.get("random_prob", None)
-            #same_prob = self.config.get("same_prob", None)
-            #vocab_size = self.config.get("vocab_size", None)
-            
-            self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
+        self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
                                        substitution_rate=self.config.masked_substitution_rate,
                                        pad_token_id=self.config.pad_token_id,
                                        cloze_prob=self.config.cloze_probability,
                                        random_prob=self.config.random_probability,
                                        same_prob=self.config.same_probability,
                                        vocab_size=self.config.vocab_size)
-        #except:
-        #    print("Maskerator not set up. Fine for Autoregressive model") #Fix al volo
-        
+
 
         
     def forward(self, _input,*args,**kwargs):
@@ -78,6 +70,15 @@ class PL_ModelWrapper(MatformerModule):
             zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
             return zero_loss
         masked=True if self.config.training_objective=='masked' else False
+        if self.config.training_objective == 'crazy':
+            self.crazy_previous_state = not getattr(self, 'crazy_previous_state', False)
+            masked = self.crazy_previous_state
+            for m in self.model.modules():
+                if hasattr(m, 'is_causal'):
+                    m.is_causal = masked
+                if hasattr(m, 'attn_kernel') and hasattr(m.attn_kernel, 'is_causal'):
+                    m.attn_kernel.is_causal = masked
+
         input_sequence=sequence
         if masked:
             masked_tokens,cloze_mask=self.maskerator(sequence.tensor)
