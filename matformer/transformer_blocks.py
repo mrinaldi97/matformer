@@ -680,13 +680,21 @@ class TransformerWithLMHead(MatformerModule):
         return sequence
 
 class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
-    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='mean', num_features=2, device=None, cache=None):
+    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='cls', num_features=2, device=None, cache=None):
         super().__init__(config)
         self.cache = ensure_cache_and_registry(cache)   
-        cache=self.cache                    
+        cache=self.cache      
+        self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)             
+        self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)             
         self.classification_head = ModuleWrapper(self.cache.registry.create(
             "linear", "linear", in_features=config.hidden_size, out_features=num_features
         ))
+
+        self.dropout = ModuleWrapper(self.cache.registry.create(
+                "dropout", "dropout",
+                p=self.classifier_dropout_p, inplace=self.classifier_dropout_inplace
+            )
+        )
         # Transformer with embeddings
         self.encoder = TransformerWithEmbeddingHead(config, cache=self.cache)
         
@@ -704,7 +712,7 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
 
         if self.pooling_type == 'cls':
             # [CLS] in pos. 0
-            pooled_output = hidden_states[:, 0, :]
+            pooled_output = hidden_states.tensor[:, 0, :]
         elif self.pooling_type == 'mean':
             #TODO: check if the mask works
             if attention_mask is None:
@@ -717,6 +725,7 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         else:
             raise ValueError(f"{self.pooling_type} not in 'cls','mean'")
 
+        pooled_output = self.dropout(pooled_output)
         logits = self.classification_head(pooled_output)
         return logits
         
