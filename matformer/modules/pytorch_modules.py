@@ -181,3 +181,18 @@ class TorchLayerNorm(nn.Module):
 
     def forward(self, x):
         return self.inner(x)
+
+@registry.register(
+    "dropout",
+    "dropout",
+    "torch",
+    requires=["torch"],
+    priority=0
+    )
+class TorchDropout(nn.Module):
+    def __init__(self, p=0.5, inplace=False, *args, **kwargs):
+        super().__init__()
+        self.inner = nn.Dropout(p=p, inplace=inplace)
+
+    def forward(self, x, *args, **kwargs):
+        return self.inner(x, *args, **kwargs)
