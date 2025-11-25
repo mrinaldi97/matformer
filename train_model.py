@@ -151,9 +151,9 @@ def load_and_prepare_configs(config_paths, overrides):
     cfg = apply_overrides(cfg, overrides)
 
     model_class = cfg['model_class'] 
-    if not cfg['training_objective']:
+    if not cfg['model_config']['training_objective']:
         training_objective = "autoregressive" if model_class == "Autoregressive_Model" else "masked"
-    if not cfg['is_causal']:
+    if not cfg['model_config']['is_causal']:
         is_causal = True if model_class == "Autoregressive_Model" else False
     cfg['model_config']['training_objective'] = training_objective
     cfg['model_config']['is_causal'] = is_causal
