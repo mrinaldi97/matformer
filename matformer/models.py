@@ -75,9 +75,9 @@ class PL_ModelWrapper(MatformerModule):
             masked = self.crazy_previous_state
             for m in self.model.modules():
                 if hasattr(m, 'is_causal'):
-                    m.is_causal = masked
+                    m.is_causal = not masked
                 if hasattr(m, 'attn_kernel') and hasattr(m.attn_kernel, 'is_causal'):
-                    m.attn_kernel.is_causal = masked
+                    m.attn_kernel.is_causal = not masked
 
         input_sequence=sequence
         if masked:
@@ -169,6 +169,8 @@ class PL_ModelWrapper(MatformerModule):
             loss = self.cross_entropy_loss(logits_flat[:-1][mask], targets_flat[1:][mask])
         """
         self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)
+        if self.config.training_objective == 'crazy':
+            self.log(f'train/loss_masked_{str(masked)}')
         try:
             current_lr = self.lr_schedulers().get_last_lr()[0]
             self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
