@@ -142,15 +142,19 @@ def load_and_prepare_configs(config_paths, overrides):
         "model_config": json_config['model_config'], 
         "training": json_config['training'],
         "data": json_config['data'],
-        "tokenizer": json_config['tokenizer']
+        "tokenizer": json_config['tokenizer'],
+        "training_objective":json_config.pop("training_objective",None),
+        "is_causal":json_config.pop("is_causal",None)        
         }       
 
 
     cfg = apply_overrides(cfg, overrides)
 
     model_class = cfg['model_class'] 
-    training_objective = "autoregressive" if model_class == "Autoregressive_Model" else "masked"
-    is_causal = True if model_class == "Autoregressive_Model" else False
+    if not cfg['training_objective']:
+        training_objective = "autoregressive" if model_class == "Autoregressive_Model" else "masked"
+    if not cfg['is_causal']:
+        is_causal = True if model_class == "Autoregressive_Model" else False
     cfg['model_config']['training_objective'] = training_objective
     cfg['model_config']['is_causal'] = is_causal
     cfg['model_config']['tokenizer_type']=cfg['tokenizer']['type']

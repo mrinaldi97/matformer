@@ -1,5 +1,5 @@
 {
-  "model_class": "AutoregressiveModel",
+  "model_class": "Autoregressive_Model",
   "model_config": {
     "name": "CrazyModel",
     "hidden_size": 768,
