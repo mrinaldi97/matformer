@@ -10,11 +10,16 @@ from statistics import mean
 
 # ---- LOAD ----
 def load_inference_model(checkpoint_path, ModelClass, map_location, tokenizer):
+    if ModelClass==BERTModel:
+        overrides={'is_causal':False}
+    elif ModelClass==Autoregressive_Model:
+        overrides={'is_causal':True}
     model, cfg = PL_ModelWrapper.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
         ModelClass=ModelClass,
         map_location=map_location,
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
+        overrides=overrides
     )
 
     model = model.to(map_location).to(torch.bfloat16).eval()

@@ -402,7 +402,7 @@ class PL_ModelWrapper(MatformerModule):
                 self.log(f"grad_min/{name}", param.grad.abs().min().item(), on_step=True)
 
     @staticmethod
-    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, map_location=None, tokenizer=None, varlen_strategy='padding'):
+    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, map_location=None, tokenizer=None, overrides=None,varlen_strategy='padding'):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
 
         if config is None:
@@ -420,6 +420,9 @@ class PL_ModelWrapper(MatformerModule):
             if tokenizer != 'bytes' else 'bytes'
         )
         """
+        if overrides is not None:
+            for k,v in override.items():
+                setattr(config,k,v)
         tokenizer = MatformerTokenizer(
             config=config,
             tokenizer_type='huggingface',
