@@ -408,9 +408,6 @@ class PL_ModelWrapper(MatformerModule):
         if config is None:
             if 'hyper_parameters' in checkpoint and 'config' in checkpoint['hyper_parameters']:
                 config = checkpoint['hyper_parameters']['config']
-                print("Found this config:")
-                print(config)
-
             else:
                 raise ValueError("Config not found in checkpoint and not provided. Please provide a config.")  
                 
@@ -421,7 +418,7 @@ class PL_ModelWrapper(MatformerModule):
         )
         """
         if overrides is not None:
-            for k,v in override.items():
+            for k,v in overrides.items():
                 setattr(config,k,v)
         tokenizer = MatformerTokenizer(
             config=config,
@@ -433,6 +430,8 @@ class PL_ModelWrapper(MatformerModule):
         model = PL_ModelWrapper(ModelClass=ModelClass, config=config, tokenizer=tokenizer, device=map_location, train_config=None)  
         #model.load_state_dict(checkpoint['state_dict'])
         model.load_stable_state_dict(checkpoint['state_dict'], strict=False)
+        print("Found this config:")
+        print(config)
         return model,config   
         
 
