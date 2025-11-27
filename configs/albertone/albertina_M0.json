@@ -20,7 +20,6 @@
       "attention_type": [],
       "max_position_embeddings": 1024,
       "block_size_for_attention": 128,
-      "rope_theta": 10000.0,
       "compile_flexattn": false,
       "bias": false,
       "default_layer": {
@@ -35,7 +34,7 @@
     "custom_layers": {}
   },
   "training": {
-        "optimizer": "adamw",
+        "optimizer": "adam",
         "lr_scheduling": true,
         "lr": 5e-4,
         "final_lr":2e-5,
@@ -45,18 +44,18 @@
         "gradient_clip_val":1.0,
         "warmup_steps": 0.05,
         "max_epochs": 1,
-        "accumulate_grad_batches": 5,
+        "accumulate_grad_batches": 32,
         "seed": 27,
         "save_every_n_steps": 5000,
-        "checkpoint_name": "mini_albertina_001"
+        "checkpoint_name": "albertina_M0'"
     },
   "tokenizer": {
     "type": "huggingface",
-    "pretrained_name": "mrinaldi/Gettone",
-    "varlen_strategy": "unpadding"
+    "pretrained_name": "dbmdz/bert-base-italian-cased",
+    "varlen_strategy": "padding"
   },
   "data": {
-    "data_root": "/home/matteo/Albertone/Albertina/mini-albertina-2",
+    "data_root": "",
     "batch_size": 48,
     "num_workers": 1,
     "mdat_strategy":"Gettone_1024",
