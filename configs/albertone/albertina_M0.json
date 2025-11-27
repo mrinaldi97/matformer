@@ -55,7 +55,7 @@
     "varlen_strategy": "padding"
   },
   "data": {
-    "data_root": "",
+    "data_root": "/home/matteo/Albertone/Albertina/mini-albertina-2",
     "batch_size": 48,
     "num_workers": 1,
     "mdat_strategy":"Gettone_1024",
