@@ -179,10 +179,11 @@ class MultiHeadAttention(MatformerModule):
         wanted = normalize(wanted_from_kernel)
         current = normalize(tensor.tensor_order)        
         if current == wanted:
-            return tensor  # No change required, great!       
-        if current == wanted[0] + wanted[2] + wanted[1] + wanted[3:]:
+            return tensor  # No change required, great!  
+        if (current=='SHD' and wanted=='HSD') or (current=='HSD' and wanted == 'SHD'):  
             # It can be transposed
             return tensor.replace(tensor=tensor.tensor.transpose(1, 2), tensor_order='?' + wanted)     
+        print(f"Current: {current} Wanted: {wanted}")
         raise Exception
 
     def forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None):
