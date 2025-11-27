@@ -61,7 +61,7 @@
     "mdat_strategy":"Gettone_1024",
     "mdat_view": null
   },
-  "save_dir": "./checkpoints_albertone",
-  "wandb_project": "Albertone",
-  "wandb_run_name": "Mini-Albertina-2-001"
+  "save_dir": "./checkpoints_ablations",
+  "wandb_project": "Albertina_Ablation_Studies",
+  "wandb_run_name": "Albertina_M0"
 }
