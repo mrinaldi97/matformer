@@ -182,7 +182,7 @@ class MultiHeadAttention(MatformerModule):
             return tensor  # No change required, great!  
         if (current=='SHD' and wanted=='HSD') or (current=='HSD' and wanted == 'SHD'):  
             # It can be transposed
-            return tensor.replace(tensor=tensor.tensor.transpose(1, 2), tensor_order='?' + wanted)     
+            return replace(tensor, tensor=tensor.tensor.transpose(1,2), tensor_order='?' + wanted)   
         print(f"Current: {current} Wanted: {wanted}")
         raise Exception
 
