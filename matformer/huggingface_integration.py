@@ -339,7 +339,13 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
         super().__init__(config)
         self.matformer_model = None
         self.num_labels = config.num_labels
+
+    @classmethod
+    def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
         
+        instance = super()._load_from_checkpoint(checkpoint_path, config, map_location)
+        instance.matformer_model.model.change_num_labels(instance.num_labels)
+        return instance   
     
     def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
         if len(input_ids.shape) == 1:
@@ -366,6 +372,12 @@ class MatformerForTokenClassification(MatformerPreTrainedModel):
         self.matformer_model = None
         self.num_labels = config.num_labels
         
+    @classmethod
+    def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
+        
+        instance = super()._load_from_checkpoint(checkpoint_path, config, map_location)
+        instance.matformer_model.model.change_num_labels(instance.num_labels)
+        return instance
     
     def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
         if len(input_ids.shape) == 1:

@@ -707,6 +707,23 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         self.tokenizer = tokenizer
         self.pooling_type = pooling_type
         self.num_features = num_features
+    
+    def change_num_labels(self, new_num_labels):
+        """Change the number of output features of the classification head."""
+        self.num_labels = new_num_labels
+        self.classification_head = ModuleWrapper(self.cache.registry.create(
+            "linear", "linear", in_features=self.config.hidden_size, out_features=new_num_labels
+        ))
+
+        # Get device and dtype from existing parameters
+        reference_param = next(self.encoder.parameters())
+        device = reference_param.device
+        dtype = reference_param.dtype
+        
+        # Move to the same device and dtype as the model
+        self.classification_head = self.classification_head.to(device=device, dtype=dtype)
+
+        print(f"Number of labels changed to {new_num_labels}")
 
     def forward(self, x, attention_mask=None, **kwargs):
         hidden_states = self.encoder(x, **kwargs) # (B,S,D)
@@ -731,14 +748,15 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         return logits
 
 class TransformerWithTokenClassificationHead(TransformerWithEmbeddingHead):
-    def __init__(self, config: ModelConfig, tokenizer=None, num_features=2, device=None, cache=None):
+    def __init__(self, config: ModelConfig, tokenizer=None, num_labels=2, device=None, cache=None):
         super().__init__(config)
+        
         self.cache = ensure_cache_and_registry(cache)   
         cache=self.cache      
         self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)             
         self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)             
         self.classification_head = ModuleWrapper(self.cache.registry.create(
-            "linear", "linear", in_features=config.hidden_size, out_features=num_features
+            "linear", "linear", in_features=config.hidden_size, out_features=num_labels
         ))
 
         self.dropout = ModuleWrapper(self.cache.registry.create(
@@ -755,7 +773,24 @@ class TransformerWithTokenClassificationHead(TransformerWithEmbeddingHead):
    
         self.config = config
         self.tokenizer = tokenizer
-        self.num_features = num_features
+        self.num_labels = num_labels
+    
+    def change_num_labels(self, new_num_labels):
+        """Change the number of output features of the classification head."""
+        self.num_labels = new_num_labels
+        self.classification_head = ModuleWrapper(self.cache.registry.create(
+            "linear", "linear", in_features=self.config.hidden_size, out_features=new_num_labels
+        ))
+
+        # Get device and dtype from existing parameters
+        reference_param = next(self.encoder.parameters())
+        device = reference_param.device
+        dtype = reference_param.dtype
+        
+        # Move to the same device and dtype as the model
+        self.classification_head = self.classification_head.to(device=device, dtype=dtype)
+
+        print(f"Number of labels changed to {new_num_labels}")
 
     def forward(self, x, attention_mask=None, **kwargs):
         hidden_states = self.encoder(x, **kwargs).tensor # (B,S,D)
