@@ -800,7 +800,26 @@ class TransformerWithTokenClassificationHead(TransformerWithEmbeddingHead):
         return logits
         
         
-
+class TextDiffusionModel(BERTModel):
+    """
+    The definition of a model similar to LLada
+    """
+    def generate(
+        self,
+        prompt=None,
+        input_ids=None,
+        num_steps=50,
+        max_length=100,
+        min_length=0,
+        output_scores=False,
+        return_type='text'):
+        """
+        1. Mask the input prompt at 100%
+        2. 
+        """
+        raise NotImplementedError
+        
+        
 class BERTModel(TransformerWithLMHead):
     
     def init_training(self,config: ModelConfig,tokenizer=None,device=None,cache=None):

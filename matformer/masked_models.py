@@ -2,12 +2,12 @@
 matformer/masked_models.py
 """   
 import random
-from typing import Optional
+from typing import Optional, Union, List, Tuple
 import torch
 class Maskerator:
     def __init__(self,
                  mask_token:int,
-                 substitution_rate:float,
+                 substitution_rate: Union[float, Tuple[float, float], List[float], None],
                  pad_token_id:int,
                  cloze_prob:Optional[float]=1.0,
                  random_prob:Optional[float]=None,
@@ -32,7 +32,23 @@ class Maskerator:
           cloze_mask: bool mask (True where prediction required)
         """
         self.mask_token=mask_token
-        self.substitution_rate=substitution_rate # overall probability of masking
+        if isinstance(substitution_rate,float):
+            #Fixed substitution rate    
+            self.substitution_rate=substitution_rate # overall probability of masking
+            self.substitution_rate_lower=None
+            self.substitution_rate_upper=None
+            self.external_schedule=False
+        elif isinstance(substitution_rate,tuple) or isinstance(substitution_rate,list):
+            assert len(substitution_rate)==2
+            self.substitution_rate=None
+            self.substitution_rate_lower=substitution_rate[0]
+            self.substitution_rate_upper=substitution_rate[1]
+            self.external_schedule=False
+        elif substitution_rate==None: #The substitution rate is not set, the call function expects the substitution rate to be passed as argument
+            self.substitution_rate=None
+            self.substitution_rate_lower=None
+            self.substitution_rate_upper=None
+            self.external_schedule=True
         self.pad_token_id=pad_token_id
         self.vocab_size=vocab_size
         
@@ -49,7 +65,7 @@ class Maskerator:
             self.cloze_cutoff = cloze_prob
             self.random_cutoff = cloze_prob + random_p
         
-    def __call__(self,input_ids):
+    def __call__(self,input_ids,substitution_rate=None):
         """
             * If it receives a Nested Tensor, it will be unpacked and repacked
             * If it receives a Batch, the masking function will be applied to each batch's element
@@ -57,7 +73,16 @@ class Maskerator:
         """
         if not isinstance(input_ids, torch.Tensor):
             raise TypeError(f"Input must be a torch.Tensor, but got {type(input_ids)}")
-        
+            
+        if self.external_schedule: #The substitution rate is decided by the caller
+            if substitution_rate is None:
+                raise ValueError
+            else:
+                assert isintance(substitution_rate,float)
+                self.substitution_rate=substitution_rate
+        if self.substitution_rate_upper is not None: #The substitution rate is uniformly sampled between lower and upper bound
+            self.substitution_rate=random.uniform(self.substitution_rate_lower,self.substitution_rate_upper)
+            
         if input_ids.is_nested:
             # NestedTensors. At the moment old method.
             return self._iterative_call(input_ids)
@@ -177,7 +202,7 @@ class Maskerator:
                         output.append(self.mask_token)
                         cloze_mask_out.append(True)
                     elif r < self.random_cutoff:
-                        output.append(random.randint(0, self.max_positional_embeddings-1))
+                        output.append(random.randint(0, self.vocab_size-1))
                         cloze_mask_out.append(True)
                     else:  # same_token
                         output.append(tok)

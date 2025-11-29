@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Literal, Union, Dict, Callable
+from typing import List, Optional, Literal, Union, Dict, Callable, Tuple
 import torch.nn as nn
 import importlib
 
@@ -66,7 +66,7 @@ class BaseSubModelConfig:
     rope_theta: float = 10000.0
     # stuff for masked modeling:
     mask_token_id: Optional[int] = None
-    masked_substitution_rate: Optional[float] = None
+    masked_substitution_rate: Optional[Union[float, Tuple[float, float], List[float]]] = None #fixed rate (float)/ rate range (Tuple/List[float, float] lower_bound,upper_bound )
     cloze_probability: Optional[float] = None
     random_probability: Optional[float] = None
     same_probability: Optional[float] = None
