@@ -800,7 +800,7 @@ class TransformerWithTokenClassificationHead(TransformerWithEmbeddingHead):
         return logits
         
         
-class TextDiffusionModel(BERTModel):
+class TextDiffusionModel:
     """
     The definition of a model similar to LLada
     """

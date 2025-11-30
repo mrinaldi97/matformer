@@ -646,6 +646,7 @@ class MatformerDataset(IterableDataset):
         """Go to document index."""
         self.document_index = index
         if hasattr(self, '_shuffle_file') and self._shuffle_file:
+            print("Seeking into shuffle file...")
             self._shuffle_file.seek(index * self._shuffle_struct_size)
 
     def set_view(self, view_name):
@@ -744,6 +745,9 @@ class MatformerDataset(IterableDataset):
                 
                 submdat_id, doc_id = struct.unpack(self._shuffle_struct_format, data)
                 self.current_document = self.loaded_submdats[ds_map[submdat_id]][doc_id]
+                import json
+                with open("test_resume_training.jsonl","a") as f:
+                    f.write(f"{json.dumps(self.current_document)}\n")
                 self.document_index += 1
                 break
         else:
@@ -801,15 +805,25 @@ class MatformerDataset(IterableDataset):
     def __iter__(self):
         # Reset the iteration (ex. for a new epoch)     
         self.current_document = None
-        self.current_chunk_step = 0
-        self.document_index = 0
-        self._iteration_count = 0
-        
-        if hasattr(self, '_max_iterations'):
-            del self._max_iterations  # Force recalculation for new epoch
-        
-        if hasattr(self, '_shuffle_file') and self._shuffle_file is not None:
-            self._shuffle_file.seek(0)
+        if not hasattr(self,'_skip_reinit'):
+            self.current_chunk_step = 0
+            self.document_index = 0
+            self._iteration_count = 0
+            
+            if hasattr(self, '_max_iterations'):
+                del self._max_iterations  # Force recalculation for new epoch
+            
+            if hasattr(self, '_shuffle_file') and self._shuffle_file is not None:
+                self._shuffle_file.seek(0)
+        else:
+            print("MDAT is resuming training from external logic.")
+            print("Document index: ",self.document_index)
+            print("Chunk step: ", self.current_chunk_step)
+            shuffled=True #TODO
+            if shuffled:
+                if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
+                    self._init_shuffle_file()
+            self._seek_document_pointer(self.document_index)
         
         return self
     def __next__(self):
@@ -1059,6 +1073,8 @@ class MatformerDataset(IterableDataset):
                 return self.__len__() 
         else:
             return self.len
+
+
 # Exceptions
 if True:
      #This "if True" is just to easily collapse the exceptions in my editor, will be removed

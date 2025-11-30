@@ -93,11 +93,76 @@ class MatformerDataModule(pl.LightningDataModule):
             return self.mdat.get_distributed_length_before_training(num_devices=self.num_devices)
             
     def train_dataloader(self):
-        return DataLoader(
+        dataloader = DataLoader(
             self.mdat,
             batch_size=self.batch_size,
             num_workers=0,
-            collate_fn=self.collate_fn,  
-            shuffle=False  
+            collate_fn=self.collate_fn,
+            shuffle=False
         )
+        dataloader._is_resumable = True
+        return dataloader
+    def load_state_dict(self, state_dict):
+        per_rank = state_dict.get("per_rank", None)
+        if per_rank is None:
+            return  # checkpoint did not contain our data
 
+        # Determine current rank
+        is_dist = False
+        try:
+            import torch.distributed as dist
+            if dist.is_available() and dist.is_initialized():
+                is_dist = True
+        except Exception:
+            pass
+
+        rank = 0
+        if is_dist:
+            import torch.distributed as dist
+            rank = dist.get_rank()
+
+        # Stable mapping for any world size
+        state = per_rank[rank % len(per_rank)]
+
+        self.mdat.document_index = int(state["document_index"])
+        self.mdat.current_chunk_step = int(state["current_chunk_step"])
+        self.mdat._iteration_count = int(state["_iteration_count"])
+        self.mdat._skip_reinit=True
+        self.mdat._seek_document_pointer(self.mdat.document_index)
+        print("Si sta caricando load state dict? Boh")
+        print(self.mdat.document_index)
+        print(self.mdat.current_chunk_step)
+    def state_dict(self):
+        is_dist = False
+        try:
+            import torch.distributed as dist
+            if dist.is_available() and dist.is_initialized():
+                is_dist = True
+        except Exception:
+            pass
+
+        my_state = {
+            "document_index": getattr(self.mdat, "document_index", 0),
+            "current_chunk_step": getattr(self.mdat, "current_chunk_step", 0),
+            "_iteration_count": getattr(self.mdat, "_iteration_count", 0),
+        }
+
+        if not is_dist:
+            return {"per_rank": [my_state]}
+
+        import torch.distributed as dist
+
+        rank = dist.get_rank()
+        world_size = dist.get_world_size()
+
+        if rank == 0:
+            states = [None for _ in range(world_size)]
+            # rank 0 receives from all ranks (including itself)
+            dist.gather_object(my_state, object_gather_list=states, dst=0)
+            return {"per_rank": states}
+        else:
+            # non-zero ranks send to rank 0
+            dist.gather_object(my_state, dst=0)
+            return {}
+    
+    
