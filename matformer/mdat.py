@@ -745,9 +745,6 @@ class MatformerDataset(IterableDataset):
                 
                 submdat_id, doc_id = struct.unpack(self._shuffle_struct_format, data)
                 self.current_document = self.loaded_submdats[ds_map[submdat_id]][doc_id]
-                import json
-                with open("test_resume_training.jsonl","a") as f:
-                    f.write(f"{json.dumps(self.current_document)}\n")
                 self.document_index += 1
                 break
         else:
