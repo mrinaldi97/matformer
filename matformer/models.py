@@ -181,7 +181,7 @@ class PL_ModelWrapper(MatformerModule):
             targets = targets_flat[mask]
             acc = (preds == targets).float().mean()
             self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
-            self.log("train/masking_rate",masking_ratio,progress_bar=False,on_step=True,on_epoch=False,batch_size=self.batch_size)
+            self.log("train/masking_rate",masking_ratio,prog_bar=False,on_step=True,on_epoch=False,batch_size=self.batch_size)
             
 
          
