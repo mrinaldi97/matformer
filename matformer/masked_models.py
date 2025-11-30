@@ -2,13 +2,14 @@
 matformer/masked_models.py
 """   
 import random
-from typing import Optional, Union, List, Tuple
+from typing import Optional, Union, List, Tuple,Literal
 import torch
 class Maskerator:
     def __init__(self,
                  mask_token:int,
                  substitution_rate: Union[float, Tuple[float, float], List[float], None],
                  pad_token_id:int,
+                 variable_masking_rate:Literal['per_batch','per_document']='per_document',
                  cloze_prob:Optional[float]=1.0,
                  random_prob:Optional[float]=None,
                  same_prob:Optional[float]=None,
@@ -32,6 +33,7 @@ class Maskerator:
           cloze_mask: bool mask (True where prediction required)
         """
         self.mask_token=mask_token
+        self.variable_masking_rate=variable_masking_rate
         if isinstance(substitution_rate,float):
             #Fixed substitution rate    
             self.substitution_rate=substitution_rate # overall probability of masking
@@ -78,7 +80,7 @@ class Maskerator:
             if substitution_rate is None:
                 raise ValueError
             else:
-                assert isintance(substitution_rate,float)
+                assert isinstance(substitution_rate,float)
                 self.substitution_rate=substitution_rate
         if self.substitution_rate_upper is not None: #The substitution rate is uniformly sampled between lower and upper bound
             self.substitution_rate=random.uniform(self.substitution_rate_lower,self.substitution_rate_upper)
@@ -98,9 +100,21 @@ class Maskerator:
                 
     def _masking_function(self,input_ids):
         device = input_ids.device
-        
+        if (self.variable_masking_rate == "per_document"
+            and self.substitution_rate_upper is not None):
+            # One rate per document
+            B = input_ids.size(0)
+            rates = torch.empty(B, device=device).uniform_(
+                self.substitution_rate_lower,
+                self.substitution_rate_upper
+            )
+            # Broadcast to [B, L]
+            substitution_rate_matrix = rates[:, None]
+        else:
+            # single rate over the batch
+            substitution_rate_matrix = self.substitution_rate
         prob_matrix = torch.rand(input_ids.shape, device=device)
-        substitution_mask = (prob_matrix < self.substitution_rate)
+        substitution_mask = (prob_matrix < substitution_rate_matrix)
         
         # Dont't mask [PAD] tokens.
         non_pad_mask = (input_ids != self.pad_token_id)

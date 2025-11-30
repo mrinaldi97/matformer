@@ -81,8 +81,16 @@ class PL_ModelWrapper(MatformerModule):
 
         input_sequence=sequence
         if masked:
+            # If masking rate is variable and variable rate is per document, we need to be sure that the tensor has batch dimension
+            if isinstance(sequence,UnpaddedTensor):
+                repad=True
+                sequence=sequence.pad()
+            else:
+                repad=False
             masked_tokens,cloze_mask,masking_ratio=self.maskerator(sequence.tensor)
-            input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)      
+            input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)  
+            if repad:
+                input_sequence=input_sequence.unpad()    
         if self.config.loss_type=='fused':
             model_return_type = 'hidden'
             flattening_dimension = self.config.hidden_size
@@ -181,13 +189,13 @@ class PL_ModelWrapper(MatformerModule):
             targets = targets_flat[mask]
             acc = (preds == targets).float().mean()
             self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
-            self.log("train/masking_rate",masking_ratio,prog_bar=False,on_step=True,on_epoch=False,batch_size=self.batch_size)
+            #self.log("train/masking_rate",masking_ratio,prog_bar=False,on_step=True,on_epoch=False,batch_size=self.batch_size)
             
 
          
 
         # TODO: this part has to be revised and cleaned
-        additional_metrics=False
+        additional_metrics=True
         if additional_metrics:
             if self.global_step % 100 == 0:
                grad_norms, param_norms, grad_param_ratios = {}, {}, {}
