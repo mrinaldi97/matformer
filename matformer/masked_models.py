@@ -85,7 +85,7 @@ class Maskerator:
             
         if input_ids.is_nested:
             # NestedTensors. At the moment old method.
-            return self._iterative_call(input_ids)
+            return (*self._iterative_call(input_ids), self.substitution_rate)
         
         if input_ids.dim() == 1:
             # Input is a single tensor
@@ -94,7 +94,7 @@ class Maskerator:
         
         else:
             # Input is a batch of tokens
-            return self._masking_function(input_ids)
+            return (*self._masking_function(input_ids), self.substitution_rate)
                 
     def _masking_function(self,input_ids):
         device = input_ids.device
@@ -156,7 +156,7 @@ class Maskerator:
             output_ids[row_indices, col_indices] = input_ids[row_indices, col_indices]
             cloze_mask[row_indices, col_indices] = False
         """               
-        return output_ids, cloze_mask, self.substitution_rate
+        return output_ids, cloze_mask
 
     def _iterative_call(self, input_ids):
         
@@ -165,7 +165,7 @@ class Maskerator:
             masked_sequences, cloze_masks = zip(*[self._iterative_masking_function(seq) for seq in input_ids.unbind()])
             sequence = torch.nested.nested_tensor(torch.stack(masked_sequences), layout=torch.jagged)
             cloze_mask = torch.nested.nested_tensor(torch.stack(cloze_masks), layout=torch.jagged)
-            return sequence,cloze_mask,self.substitution_rate
+            return sequence,cloze_mask
             
         if isinstance(input_ids, torch.Tensor) and input_ids.dim() > 1:
             # Input is a batch of tokens
@@ -175,7 +175,7 @@ class Maskerator:
                 o, m = self._iterative_masking_function(row.tolist())
                 outs.append(torch.tensor(o, device=device))
                 masks.append(torch.tensor(m, device=device, dtype=torch.bool))
-            return torch.stack(outs), torch.stack(masks),self.substitution_rate
+            return torch.stack(outs), torch.stack(masks)
 
         if isinstance(input_ids, torch.Tensor):
             # Input is a single tensor
@@ -183,7 +183,7 @@ class Maskerator:
             device = input_ids.device
             output, mask = self._iterative_masking_function(tokens)
             return (torch.tensor(output, device=device),
-                    torch.tensor(mask, dtype=torch.bool, device=device), self.substitution_rate)            
+                    torch.tensor(mask, dtype=torch.bool, device=device))            
         else:
             tokens = list(input_ids)  # Input is a list of token
             return self._iterative_masking_function(tokens)
@@ -222,4 +222,4 @@ class Maskerator:
                 output[i] = tokens[i]
                 cloze_mask_out[i] = False
         """
-        return output, cloze_mask_out, self.substitution_rate
+        return output, cloze_mask_out
