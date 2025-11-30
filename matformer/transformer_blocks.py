@@ -910,7 +910,7 @@ class BERTModel(TransformerWithLMHead):
         else:
             sequence=tokens
         sequence = torch.tensor(sequence).to(self.device)
-        masked_list, cloze_list = self.maskerator(sequence)
+        masked_list, cloze_list, _ = self.maskerator(sequence)
         masked_list.to(self.device)
         masked_sequence = NormalTensor(tensor=masked_list.unsqueeze(0))
         model_input=deepcopy(masked_sequence)

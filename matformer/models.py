@@ -81,7 +81,7 @@ class PL_ModelWrapper(MatformerModule):
 
         input_sequence=sequence
         if masked:
-            masked_tokens,cloze_mask=self.maskerator(sequence.tensor)
+            masked_tokens,cloze_mask,masking_ratio=self.maskerator(sequence.tensor)
             input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)      
         if self.config.loss_type=='fused':
             model_return_type = 'hidden'
@@ -181,6 +181,8 @@ class PL_ModelWrapper(MatformerModule):
             targets = targets_flat[mask]
             acc = (preds == targets).float().mean()
             self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
+            self.log("train/masking_rate",masking_ratio,progress_bar=False,on_step=True,on_epoch=False,batch_size=self.batch_size)
+
          
 
         # TODO: this part has to be revised and cleaned
