@@ -9,7 +9,7 @@
     "eos_token_id": 6,
     "pad_token_id": 0,
     "mask_token_id": 4,
-    "masked_substitution_rate":(0.0,1.0),
+    "masked_substitution_rate":[0.0,1.0],
     "num_hidden_layers": 12,
     "num_attention_heads": 12,
     "tie_word_embeddings": false,
