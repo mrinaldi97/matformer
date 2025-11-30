@@ -331,7 +331,10 @@ def main():
             print("Checkpoint not saved.")
     
     #Rename last.ckpt with a better name
-    os.rename(os.path.join(save_dir,'last.ckpt'), os.path.join(save_dir,f'{checkpoint_name}_last.ckpt'))
+    try:
+        os.rename(os.path.join(save_dir,'last.ckpt'), os.path.join(save_dir,f'{checkpoint_name}_last.ckpt'))
+    except:
+        print("Last.ckpt non trovato, probabilmente già salvato con nome corretto.")
     
 if __name__ == '__main__':
     main()
