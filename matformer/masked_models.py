@@ -128,7 +128,7 @@ class Maskerator:
         
         
         # Avoid all masked or none mask to avoid problems such as NaN gradients
-        
+        """
         # Count non-pad tokens per sequence
         tokens_per_seq = (input_ids != self.pad_token_id).sum(dim=-1)
         # Count masks per sequence
@@ -155,7 +155,7 @@ class Maskerator:
             # Revert this token to its original value
             output_ids[row_indices, col_indices] = input_ids[row_indices, col_indices]
             cloze_mask[row_indices, col_indices] = False
-                        
+        """               
         return output_ids, cloze_mask
 
     def _iterative_call(self, input_ids):
@@ -210,7 +210,7 @@ class Maskerator:
             else:
                 output.append(tok)
                 cloze_mask_out.append(False)
-
+        """
         # Avoid all masked or none mask to avoid problems such as NaN gradients
         if len(tokens) > 1:
             if all(not x for x in cloze_mask_out):
@@ -221,4 +221,5 @@ class Maskerator:
                 i = random.randrange(len(tokens))
                 output[i] = tokens[i]
                 cloze_mask_out[i] = False
+        """
         return output, cloze_mask_out
