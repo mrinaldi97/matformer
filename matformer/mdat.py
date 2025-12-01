@@ -3295,16 +3295,6 @@ class split_and_tokenize_by_nltk_sentences_aligned:
     def align(self, sentencespans, encoding):
         tokenspans = []
         try:
-            if len(encoding["input_ids"])==0:
-                print("WARNING: Empty sequence.")
-                return tokenspans
-            if len(encoding["input_ids"])==1:
-                print("WARNING: Single-token sequence; skipped")
-                return tokenspans
-        except:
-            print("Conteggio token fallito.")
-            pass
-        try:
             mapping = np.array(encoding["offset_mapping"])
             starts = mapping[:, 0]
             ends = mapping[:, 1]
@@ -3384,7 +3374,15 @@ class split_and_tokenize_by_nltk_sentences_aligned:
         else:  # it's a BatchEncoding
             all_tokens = encoding["input_ids"]
             offset_mapping = encoding["offset_mapping"]
-
+        try:
+            if len(all_tokens) == 0:
+                print("WARNING: Empty sequence")
+            elif len(all_tokens) == 1:
+                print("WARNING: Sequence with just one token!")
+            else:
+                pass
+        except:
+            print(f"DEBUG: Conteggio token fallito! {all_tokens}")
         spans = self.get_sentence_spans(document)
         aligned_spans = self.align(spans, {"offset_mapping": offset_mapping})
         aligned_spans = self.trim_long_sequences(aligned_spans, self.max_tokens)
