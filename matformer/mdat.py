@@ -2235,8 +2235,9 @@ class SubMdat:
         # 4. Initialize the splitter
         # 5. What does the splitter wants from Submdats'databases? [Default: raw_data]
         # 6. Initialize the generator
+        progress_bar_generator=progress_bar if not parallel else False
         generator = self.get_generator(
-            progress_bar=progress_bar,
+            progress_bar=progress_bar_generator,
             wanted_from_dbs=strategy.wants_from_db,
             raw=strategy.wants_raw
         )
@@ -2342,17 +2343,22 @@ class SubMdat:
 
             with mp.Pool(processes=num_processes) as pool:
                 batch = []
+                total_docs = len(self)
+                pbar = tqdm(total=total_docs, desc="Pretokenizing", disable=not progress_bar)
                 
                 for key, doc in enumerate(generator):
                     batch.append((key, doc))
                     
                     if len(batch) >= batch_size * num_processes:
                         stats = process_batch_and_write(batch, stats)
+                        pbar.update(len(batch))
                         batch = []
                 
                 # Process remaining items
                 if batch:
                     stats = process_batch_and_write(batch, stats)
+                    pbar.update(len(batch))
+                pbar.close()
         # E. Close the DB and update the manifest
         self.add_strategy_end(strategy_name=strategy_name, stats=stats)
             
@@ -3288,6 +3294,16 @@ class split_and_tokenize_by_nltk_sentences_aligned:
 
     def align(self, sentencespans, encoding):
         tokenspans = []
+        try:
+            if len(encoding["input_ids"])==0:
+                print("WARNING: Empty sequence.")
+                return tokenspans
+            if len(encoding["input_ids"])==1:
+                print("WARNING: Single-token sequence; skipped")
+                return tokenspans
+        except:
+            print("Conteggio token fallito.")
+            pass
         try:
             mapping = np.array(encoding["offset_mapping"])
             starts = mapping[:, 0]
