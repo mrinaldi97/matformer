@@ -2660,7 +2660,6 @@ if USE_ZLIB:
     decompress_func = lambda data: zlib.decompress(data)
     COMPRESSION_BACKEND = "zlib"
 else:
-    try:
         import zstandard as zstd
         _zstd_compressors = {}  
         _zstd_decompressor = zstd.ZstdDecompressor()
@@ -2674,7 +2673,6 @@ else:
             return _zstd_decompressor.decompress(data)
         
         COMPRESSION_BACKEND = "zstd"
-    except ImportError
 
 class LMDBDataset:
     def __init__(self, path, readonly=True, lock=False, compressed=False, compression_level=0,map_size=1<<44,batch_size=50000):
