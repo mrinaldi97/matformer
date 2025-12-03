@@ -3597,6 +3597,7 @@ def cmd_batch_import(
     ok = 0
     for fp in files:
         name = Path(fp).stem
+        print(f"Adding file {fp}...")
         sub = ds.add_submdat(
             name,
             compression_levels={"data": data_compress, "meta": meta_compress},
@@ -3698,10 +3699,10 @@ def cmd_pretokenize_batch(
                 compression_level=compression,
             )
             results.append(submdat_name)
-            print(f"✓ Completed: {submdat_name}")
+            print(f"Completed: {submdat_name}")
         except Exception as e:
             failed.append((submdat_name, str(e)))
-            print(f"✗ Failed: {submdat_name} - {e}")
+            print(f"Failed: {submdat_name} - {e}")
     
     summary = f"\nBatch pretokenization complete: {len(results)}/{len(submdats)} succeeded"
     if failed:
@@ -3971,7 +3972,7 @@ class InteractiveShell:
             print("3. Batch import folder")
             print("4. Convert external data")
             print("5. Pretokenize (single)")
-            print("6. Pretokenize (batch)")  # NEW OPTION
+            print("6. Pretokenize (batch)")  
             print("0. Back to Main Menu")
             
             c = self.prompt("Select", cast=int)
