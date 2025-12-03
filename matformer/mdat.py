@@ -2647,11 +2647,34 @@ if True:
         pass
 
 # LMDBDataset's stuff (imports are here because probably it will be moved to a different file):
-import zlib
+import os
 import lmdb
 import orjson
 import pickle
-import os
+
+USE_ZLIB = os.environ.get('USE_ZLIB', 'false').lower() == 'true'
+
+if USE_ZLIB:
+    import zlib
+    compress_func = lambda data, level: zlib.compress(data, level)
+    decompress_func = lambda data: zlib.decompress(data)
+    COMPRESSION_BACKEND = "zlib"
+else:
+    try:
+        import zstandard as zstd
+        _zstd_compressors = {}  
+        _zstd_decompressor = zstd.ZstdDecompressor()
+        
+        def compress_func(data, level):
+            if level not in _zstd_compressors:
+                _zstd_compressors[level] = zstd.ZstdCompressor(level=level)
+            return _zstd_compressors[level].compress(data)
+        
+        def decompress_func(data):
+            return _zstd_decompressor.decompress(data)
+        
+        COMPRESSION_BACKEND = "zstd"
+    except ImportError,"ERROR: zstandard not installed")
 
 class LMDBDataset:
     def __init__(self, path, readonly=True, lock=False, compressed=False, compression_level=0,map_size=1<<44,batch_size=50000):
@@ -2672,7 +2695,8 @@ class LMDBDataset:
         self.compression_level=compression_level
         self.batch_size = batch_size
         self.batch_buffer = []
-        self.zlib_attempts=100 #Tyring to avoid zlib bug
+        self.compression_attempts=100 #Trying to avoid compression bugs
+        self.compression_backend = COMPRESSION_BACKEND
         with self.env.begin(write=False) as txn:
             try:
                 self.length = int(txn.get(b"__len__").decode())
@@ -2711,7 +2735,7 @@ class LMDBDataset:
             if not isinstance(data, bytes):
                 data = orjson.dumps(data)  # Serialize non-bytes objects, for example python dictionaries
             if self.compressed:
-                data = zlib.compress(data, self.compression_level)
+                data = compress_func(data, self.compression_level)
             self.batch_buffer.append((str(self.length).encode(), data))
             self.length += 1
             
@@ -2733,7 +2757,7 @@ class LMDBDataset:
                 if not isinstance(data, bytes):
                     data = orjson.dumps(data)
                 if self.compressed:
-                    data = zlib.compress(data, self.compression_level)
+                    data = compress_func(data, self.compression_level)
                 
                 # Add to batch buffer - this will auto-flush when batch_size is reached
                 self.batch_buffer.append((str(key).encode(), data))
@@ -2767,24 +2791,24 @@ class LMDBDataset:
             if self.compressed:
                 try:
                     #print("Attenzione! AL momento sqlite segna compresso ma dati non compressi. Facile da risolvere")
-                    return zlib.decompress(data)
+                    return decompress_func(data)
                 except:
                     safe_path = ''.join(c if c.isalnum() or c in '_-' else '_' for c in self.path)
                     print(f"LMDBDataset {self.path} WARNING: error loading data at index {key}.")
-                    print("It seems there is a bug with zlib.")
-                    print(f"First, let's try to load the data again {self.zlib_attempts} times.")
-                    for i in range(1,self.zlib_attempts):
+                    print(f"It seems there is a bug with {self.compression_backend}.")
+                    print(f"First, let's try to load the data again {self.compression_attempts} times.")
+                    for i in range(1,self.compression_attempts):
                         try:
-                            x=zlib.decompress(data)
+                            x=decompress_func(data)
                             print(f"It worked at attemp: {i}")
-                            with open(f"zlib_error_logs_{safe_path}.txt","a") as l:
-                                l.write(f"Zlib error at {i}. Recovered after {i}/{self.zlib_attempts} attempts.\n")
+                            with open(f"compression_error_logs_{safe_path}.txt","a") as l:
+                                l.write(f"{self.compression_backend} error at {i}. Recovered after {i}/{self.compression_attempts} attempts.\n")
                             return x
                         except:
                             pass
-                    print(f"It didn't worked after {self.zlib_attempts}. Returning a dummy structure to avoid breaking training. Event logged in ./zlib_error_logs_{safe_path}.txt")
-                    with open(f"zlib_error_logs_{safe_path}.txt","a") as l:
-                        l.write(f"Zlib error at {i}. Not recovered after {self.zlib_attempts} attempts.\n")
+                    print(f"It didn't worked after {self.compression_attempts}. Returning a dummy structure to avoid breaking training. Event logged in ./compression_error_logs_{safe_path}.txt")
+                    with open(f"compression_error_logs_{safe_path}.txt","a") as l:
+                        l.write(f"{self.compression_backend} error at {i}. Not recovered after {self.compression_attempts} attempts.\n")
                     return None
             else:
                 return data

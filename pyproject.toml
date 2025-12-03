@@ -16,6 +16,7 @@ license = { text = "MIT" }
 
 dependencies = [
     "torch>=2.6.0",
+    "zstandard",
     "pytorch-lightning>=2.5.0",
     "wandb",
     "einops>=0.8.1",
