@@ -2674,7 +2674,7 @@ else:
             return _zstd_decompressor.decompress(data)
         
         COMPRESSION_BACKEND = "zstd"
-    except ImportError,"ERROR: zstandard not installed"
+    except ImportError
 
 class LMDBDataset:
     def __init__(self, path, readonly=True, lock=False, compressed=False, compression_level=0,map_size=1<<44,batch_size=50000):
