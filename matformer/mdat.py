@@ -2833,40 +2833,54 @@ from tqdm import tqdm
 from multiprocessing import Pool, cpu_count
 from contextlib import nullcontext
 
-def _parse_bytes_orjson(line_bytes):
-    return orjson.loads(line_bytes)
+def _parse_chunk_worker(chunk_bytes):
+    results = []
+    lines = chunk_bytes.split(b'\n')
+    for line in lines:
+        if line:
+            try:
+                results.append(orjson.loads(line))
+            except Exception:
+                pass
+    return results
 
-class _DummyPbar:
-    def update(self, n): pass
+def _chunk_reader(file_obj, batch_size, pbar):
+    while True:
+        chunk = file_obj.read(batch_size)
+        if not chunk:
+            break
+        extra = file_obj.readline()
+        if extra:
+            chunk += extra
+        if pbar:
+            pbar.update(len(chunk))
+        yield chunk
 
-def JSONLIteratorFast(json_path, logger, dataset_args=None, progress_bar=True,
-                      batch_size_bytes=16 * 1024 * 1024):
+def JSONLIteratorFast(json_path, logger, dataset_args=None, progress_bar=True, batch_size_bytes=64 * 1024 * 1024):
     if dataset_args is None:
         dataset_args = {}
 
     file_size = os.path.getsize(json_path)
-
+    
     if progress_bar:
-        pbar_cm = lambda *a, **k: tqdm(*a, **k)
+        pbar = tqdm(total=file_size, unit="B", unit_scale=True, desc="Processing JSONL file...")
     else:
-        pbar_cm = lambda *a, **k: nullcontext(_DummyPbar())
+        pbar = None
 
-    n_workers = max(1, cpu_count())
+    n_workers = max(1, cpu_count() - 1)
 
-    with Pool(processes=n_workers) as pool:
-        with open(json_path, "rb", buffering=16 * 1024 * 1024) as f:
-            with pbar_cm(total=file_size, unit="B", unit_scale=True, desc="Processing JSONL file...") as pbar:
-                while True:
-                    block = f.readlines(batch_size_bytes)
-                    if not block:
-                        break
+    try:
+        with open(json_path, "rb", buffering=batch_size_bytes) as f:
+            reader_gen = _chunk_reader(f, batch_size_bytes, pbar)
+            
+            with Pool(processes=n_workers) as pool:
+                for batch_results in pool.imap(_parse_chunk_worker, reader_gen):
+                    for data in batch_results:
+                        yield data
+    finally:
+        if pbar:
+            pbar.close()
 
-                    chunksize = max(1, len(block) // (n_workers * 4))
-                    results_iter = pool.imap(_parse_bytes_orjson, block, chunksize=chunksize)
-
-                    for line_bytes, parsed in zip(block, results_iter):
-                        pbar.update(len(line_bytes))
-                        yield parsed
 
 def JSONIterator(json_path,logger,dataset_args={},progress_bar=True):
    file_size = os.path.getsize(json_path)
