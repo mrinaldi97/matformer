@@ -1930,7 +1930,7 @@ class SubMdat:
             self.storage_db={}
         else:
             pass
-    def _load_storage_db(self, _id=None, _type='storage', load_all=False, strategy=None, create=False, compression_level=None, disk_size=None, extra_data=None, db_type=None, batch_size=None, map_size=None): 
+    def _load_storage_db(self, _id=None, _type='storage', batch_size=50000, load_all=False, strategy=None, create=False, compression_level=None, disk_size=None, extra_data=None, db_type=None, map_size=None): 
         """
         An helper function that loads or creates a storage DB by getting its path from the meta-database and returns its pointer
         
@@ -1956,6 +1956,8 @@ class SubMdat:
             }
             if b_size:
                 params['batch_size'] = b_size
+            else:
+                params['batch_size']= 50000
             return LMDBDataset(path, **params)
         
         def _get_map_size(db_info):
@@ -1971,7 +1973,7 @@ class SubMdat:
         if _type == 'storage':
             if create:
                 path = os.path.join(self.submdat_path, db_type) + '.dat' if not strategy else os.path.join()
-                db_pointer = _create_lmdb(path, compression_level,map_size=self.default_map_size)
+                db_pointer = _create_lmdb(path, compression_level,map_size=self.default_map_size,b_size=batch_size)
                 db_id = self.db.add_database(_type='LMDB', compression_level=compression_level, map_size=self.default_map_size, disk_size=disk_size, extra_data=extra_data) 
                 return db_pointer, db_id
             
@@ -1979,7 +1981,7 @@ class SubMdat:
             for dbs in dbs_list:
                 db_type = 'data' if dbs['is_data'] else 'meta' if dbs['is_meta'] else (json.loads(dbs['is_extra']) if dbs['is_extra'] else 'extra')
                 db_path = os.path.join(self.submdat_path, db_type) + '.dat'
-                self.storage_db[db_type] = _create_lmdb(db_path, dbs['compression_level'], _get_map_size(dbs))
+                self.storage_db[db_type] = _create_lmdb(db_path, dbs['compression_level'], _get_map_size(dbs),b_size=batch_size)
         else: #type=='pretok'
             
             pretok_path = os.path.join(self.mdat.pretok_path, strategy, self.submdat_name)
@@ -2395,18 +2397,19 @@ class SubMdat:
         inferred_map_size=None
         if dataset_type == 'jsonl':
             #from datasets_iterators import JSONIterator
-            generator_fn = JSONIterator(json_path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger)
+            #generator_fn = JSONIterator(json_path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger_fn)
+            generator_fn = JSONLIteratorFast(json_path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger_fn)
             file_size=os.path.getsize(dataset_path)
-            inferred_map_size=file_size*1.2
+            inferred_map_size=max(1<<30,file_size*5)
         elif dataset_type == 'lmdb':
             #from datasets_iterators import LMDBIterator
-            generator_fn = LMDBIterator(dataset_path, dataset_args, data_key, progress_bar=progress_bar, logger=logger)
+            generator_fn = LMDBIterator(dataset_path, dataset_args, data_key, progress_bar=progress_bar, logger=logger_fn)
         elif dataset_type == 'hf':
-            generator_fn = HuggingFaceIterator(dataset_path, dataset_args, dataset_path, data_key, progress_bar=progress_bar, logger=logger)
+            generator_fn = HuggingFaceIterator(dataset_path, dataset_args, dataset_path, data_key, progress_bar=progress_bar, logger=logger_fn)
         elif dataset_type == 'sqlite':
             return
         elif dataset_type == 'atlas':
-            generator_fn = AtlasIterator(path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger)
+            generator_fn = AtlasIterator(path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger_fn)
         elif dataset_type == 'csv':
             return
         elif dataset_type == 'files':
@@ -2426,6 +2429,7 @@ class SubMdat:
         errors_counters['hasDataError'] = 0 
         errors_counters['generatorReturnedNone'] = 0
         errors_counters['missingDataKey'] = 0
+        errors_counters['data<=10']=0
         n_filtered = 0
         raw_data_bytes = 0
         raw_meta_bytes = 0
@@ -2439,20 +2443,31 @@ class SubMdat:
             if do_transform:
                 # item = transformer_function(item)
                 pass
-            if 'raw_content' in item:
-                data=item['raw_content']
             else:
                 if data_key not in item:
-                    warning = f"Data key '{data_key}' not found in item {i}. Item has keys {item.keys()}"
-                    logger_fn.warning(warning)
-                    errors_counters['missingDataKey'] += 1
-                    continue
-                data = item[data_key]
+                    if 'raw_content' in item:
+                         data=item['raw_content'] # Fix for redpajama TODO remove it
+                    else:
+                       warning = f"Data key '{data_key}' not found in item {i}. Item has keys {item.keys()}"
+                       logger_fn.warning(warning)
+                       errors_counters['missingDataKey'] += 1
+                       continue
+                else:
+                    data = item[data_key]
+
             if isinstance(data, str):
                 data = data.encode('utf-8')
             if not isinstance(data, bytes):
                 logger_fn.warning(f"Data is of types {type(data)} but it should be either string or bytes")
-            del item[data_key]
+            if len(data)<=10:
+                logger_fn.warning(f"Data is smaller than 10 bytes. Skipping")
+                errors_counters['data<=10']+=1
+                continue
+            try: # Fix for Redpajama, TODO Remove it 
+               del item[data_key]
+            except:
+               del item['raw_content']
+
             
             # Data can be passed through filters for selection (ex. language identification, quality metrics...)
             filtered = False
@@ -2811,7 +2826,47 @@ class LMDBDataset:
             else:
                 return data
 
-# Dataset's iterators for creating a new Submdat:
+
+import os
+import orjson
+from tqdm import tqdm
+from multiprocessing import Pool, cpu_count
+from contextlib import nullcontext
+
+def _parse_bytes_orjson(line_bytes):
+    return orjson.loads(line_bytes)
+
+class _DummyPbar:
+    def update(self, n): pass
+
+def JSONLIteratorFast(json_path, logger, dataset_args=None, progress_bar=True,
+                      batch_size_bytes=16 * 1024 * 1024):
+    if dataset_args is None:
+        dataset_args = {}
+
+    file_size = os.path.getsize(json_path)
+
+    if progress_bar:
+        pbar_cm = lambda *a, **k: tqdm(*a, **k)
+    else:
+        pbar_cm = lambda *a, **k: nullcontext(_DummyPbar())
+
+    n_workers = max(1, cpu_count())
+
+    with Pool(processes=n_workers) as pool:
+        with open(json_path, "rb", buffering=16 * 1024 * 1024) as f:
+            with pbar_cm(total=file_size, unit="B", unit_scale=True, desc="Processing JSONL file...") as pbar:
+                while True:
+                    block = f.readlines(batch_size_bytes)
+                    if not block:
+                        break
+
+                    chunksize = max(1, len(block) // (n_workers * 4))
+                    results_iter = pool.imap(_parse_bytes_orjson, block, chunksize=chunksize)
+
+                    for line_bytes, parsed in zip(block, results_iter):
+                        pbar.update(len(line_bytes))
+                        yield parsed
 
 def JSONIterator(json_path,logger,dataset_args={},progress_bar=True):
    file_size = os.path.getsize(json_path)
