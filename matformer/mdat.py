@@ -2397,8 +2397,8 @@ class SubMdat:
         inferred_map_size=None
         if dataset_type == 'jsonl':
             #from datasets_iterators import JSONIterator
-            #generator_fn = JSONIterator(json_path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger_fn)
-            generator_fn = JSONLIteratorFast(json_path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger_fn)
+            generator_fn = JSONIterator(json_path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger_fn)
+            #generator_fn = JSONLIteratorFast(json_path=dataset_path, dataset_args=dataset_args, progress_bar=progress_bar, logger=logger_fn)
             file_size=os.path.getsize(dataset_path)
             inferred_map_size=max(1<<30,file_size*5)
         elif dataset_type == 'lmdb':
@@ -2828,80 +2828,43 @@ class LMDBDataset:
 
 
 import os
-import orjson
 from tqdm import tqdm
-from multiprocessing import Pool, cpu_count
+import orjson
+import json
 from contextlib import nullcontext
 
-def _parse_chunk_worker(chunk_bytes):
-    results = []
-    lines = chunk_bytes.split(b'\n')
-    for line in lines:
-        if line:
-            try:
-                results.append(orjson.loads(line))
-            except Exception:
-                pass
-    return results
+def ToBeFixed():
+    return nullcontext()
 
-def _chunk_reader(file_obj, batch_size, pbar):
-    while True:
-        chunk = file_obj.read(batch_size)
-        if not chunk:
-            break
-        extra = file_obj.readline()
-        if extra:
-            chunk += extra
-        if pbar:
-            pbar.update(len(chunk))
-        yield chunk
-
-def JSONLIteratorFast(json_path, logger, dataset_args=None, progress_bar=True, batch_size_bytes=64 * 1024 * 1024):
-    if dataset_args is None:
-        dataset_args = {}
-
+def JSONIterator(json_path, logger, dataset_args={}, progress_bar=True, batch_size_bytes=16 * 1024 * 1024):
     file_size = os.path.getsize(json_path)
     
-    if progress_bar:
-        pbar = tqdm(total=file_size, unit="B", unit_scale=True, desc="Processing JSONL file...")
-    else:
-        pbar = None
+    ProgressBar = tqdm if progress_bar else lambda *args, **kwargs: ToBeFixed()
+    
+    with open(json_path, 'rb', buffering=batch_size_bytes) as f:
+        with ProgressBar(total=file_size, unit='B', unit_scale=True, desc="Processing JSONL file...") as pbar:
+            i = 0
+            while True:
+                batch_of_lines = f.readlines(batch_size_bytes)
+                if not batch_of_lines:
+                    break
 
-    n_workers = max(1, cpu_count() - 1)
+                for row_bytes in batch_of_lines:
+                    try:
+                        data = orjson.loads(row_bytes)
+                    except Exception as e:
+                        try:
+                            logger.warning(f"Row: {i} orjson failed: {e}, falling back to json.")
+                            data = json.loads(row_bytes)
+                        except Exception as e:
+                            logger.error(f"Row {i} Failed to parse JSON row: {e}")
+                            data = None
 
-    try:
-        with open(json_path, "rb", buffering=batch_size_bytes) as f:
-            reader_gen = _chunk_reader(f, batch_size_bytes, pbar)
-            
-            with Pool(processes=n_workers) as pool:
-                for batch_results in pool.imap(_parse_chunk_worker, reader_gen):
-                    for data in batch_results:
+                    if data is not None:
+                        pbar.update(len(row_bytes))
                         yield data
-    finally:
-        if pbar:
-            pbar.close()
-
-
-def JSONIterator(json_path,logger,dataset_args={},progress_bar=True):
-   file_size = os.path.getsize(json_path)
-   ProgressBar = tqdm if progress_bar else lambda *args, **kwargs: ToBeFixed() 
-   with open(json_path, 'r') as f:
-       with ProgressBar(total=file_size, unit='B', unit_scale=True, desc="Processing JSONL file...") as pbar:
-           for i,row in enumerate(f):
-               try:
-                   if orjson: 
-                       try:
-                           data = orjson.loads(row)
-                       except Exception as e:
-                           logger.warning(f"Row: {i} orjson failed: {e}, falling back to json.")
-                           data = json.loads(row)
-                   else:
-                       data = json.loads(row)
-               except Exception as e:
-                   logger.error(f"Row {i} Failed to parse JSON row: {e}")
-                   data = None
-               pbar.update(len(row.encode('utf-8')))
-               yield data
+                        
+                    i += 1
 
 def AtlasIterator(path,logger,dataset_args={},progress_bar=True):
    from torch_atlas_ds import AtlasDataset
