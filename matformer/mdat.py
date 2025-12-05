@@ -3798,7 +3798,7 @@ def cmd_pretokenize(
     strategy: str,
     parallel: bool = False,
     processes: Optional[int] = None,
-    compression: int = 0,
+    compression: int = 9,
     ds: Optional[MatformerDataset] = None,
 ):
     ds = ds or MatformerDataset.load_dataset(path, readonly=False)
@@ -3819,7 +3819,7 @@ def cmd_pretokenize_batch(
     strategy: str,
     parallel: bool = False,
     processes: Optional[int] = None,
-    compression: int = 0,
+    compression: int = 9,
     ds: Optional[MatformerDataset] = None,
 ):
     """Pretokenize multiple submdats with the same strategy."""
