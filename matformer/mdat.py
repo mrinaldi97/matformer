@@ -3350,7 +3350,7 @@ class SmallSplitter:
         if len(encoding['input_ids'])<=10:
             print(f"WARNING: Sequence has just {len(encoding['input_ids'])} tokens.")
             try:
-               print(self.tokenizer.decode(encoding['input_ids'])
+               print(self.tokenizer.decode(encoding['input_ids']))
             except:
                pass
         return encoding["input_ids"], encoding["offset_mapping"]
