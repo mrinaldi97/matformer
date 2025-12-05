@@ -2405,7 +2405,7 @@ class SubMdat:
             #from datasets_iterators import LMDBIterator
             generator_fn = LMDBIterator(dataset_path, dataset_args, data_key, progress_bar=progress_bar, logger=logger_fn)
         elif dataset_type == 'hf':
-            generator_fn= HuggingFaceIterator(dataset_path=dataset_path,logger=logger_fn,dataset_args=dataset_args,dataset_config=dataset_config,dataset_split='train',progress_bar=True,data_key=None):
+            generator_fn= HuggingFaceIterator(dataset_path=dataset_path,logger=logger_fn,dataset_args=dataset_args,dataset_config=dataset_config,dataset_split='train',progress_bar=True,data_key=None)
         elif dataset_type == 'sqlite':
             return
         elif dataset_type == 'atlas':
