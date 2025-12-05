@@ -2364,7 +2364,7 @@ class SubMdat:
         # E. Close the DB and update the manifest
         self.add_strategy_end(strategy_name=strategy_name, stats=stats)
             
-    def convert_to_submdat(self, dataset_type, dataset_path, dataset_args={}, data_key='text', modality='text', logger=False, progress_bar=True, do_transform=False, do_filtering=False,dataset_config=''): 
+    def convert_to_submdat(self, dataset_type, dataset_path, dataset_args={}, data_key='text', modality='text', logger=False, progress_bar=True, do_transform=False, do_filtering=False): 
         """
         A function to populate the submdat's databases with data coming from other datasets' formats
         """
@@ -2405,7 +2405,7 @@ class SubMdat:
             #from datasets_iterators import LMDBIterator
             generator_fn = LMDBIterator(dataset_path, dataset_args, data_key, progress_bar=progress_bar, logger=logger_fn)
         elif dataset_type == 'hf':
-            generator_fn= HuggingFaceIterator(dataset_path=dataset_path,logger=logger_fn,dataset_args=dataset_args,dataset_config=dataset_config,dataset_split='train',progress_bar=True,data_key=None):
+            generator_fn = HuggingFaceIterator(dataset_path, dataset_args, dataset_path, data_key, progress_bar=progress_bar, logger=logger_fn)
         elif dataset_type == 'sqlite':
             return
         elif dataset_type == 'atlas':
@@ -2835,11 +2835,7 @@ from contextlib import nullcontext
 
 def ToBeFixed():
     return nullcontext()
-def HuggingFaceIterator(dataset_path,logger,dataset_args,dataset_config='',dataset_split='train',progress_bar=True,data_key=None):
-     from datasets import load_dataset
-     ds=load_dataset(dataset_path,dataset_config)[dataset_split]
-     for item in tqdm(ds):
-       yield(item)
+
 def JSONIterator(json_path, logger, dataset_args={}, progress_bar=True, batch_size_bytes=16 * 1024 * 1024):
     file_size = os.path.getsize(json_path)
     
