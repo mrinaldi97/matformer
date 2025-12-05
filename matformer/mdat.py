@@ -3340,11 +3340,19 @@ class SmallSplitter:
 
     def _get_encoding_data(self, encoding) -> tuple:
         if hasattr(encoding, "ids"): 
-            if len(ids)<=10:
-               print(f"WARNING: Sequence (in batch) has just {len(ids)} tokens.")
+            if len(encoding.ids)<=10:
+               print(f"WARNING: Sequence (in batch) has just {len(encoding.ids)} tokens.")
+               try:
+                  print(self.tokenizer.decode(encoding.ids))
+               except:
+                  pass
             return encoding.ids, encoding.offsets
         if len(encoding['input_ids'])<=10:
-            print(f"WARNING: Sequence has just {len(ids)} tokens.")
+            print(f"WARNING: Sequence has just {len(encoding['input_ids'])} tokens.")
+            try:
+               print(self.tokenizer.decode(encoding['input_ids'])
+            except:
+               pass
         return encoding["input_ids"], encoding["offset_mapping"]
 
     def _process(self, text: str, encoding) -> Dict[str, Any]:
