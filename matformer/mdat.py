@@ -3343,7 +3343,7 @@ class SmallSplitter:
             if len(ids)<=10:
                print(f"WARNING: Sequence (in batch) has just {len(ids)} tokens.")
             return encoding.ids, encoding.offsets
-        if len(encoding['input_ids']<=10:
+        if len(encoding['input_ids'])<=10:
             print(f"WARNING: Sequence has just {len(ids)} tokens.")
         return encoding["input_ids"], encoding["offset_mapping"]
 
