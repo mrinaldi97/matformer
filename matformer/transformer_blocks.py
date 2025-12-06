@@ -392,7 +392,7 @@ class TransformerBlock(MatformerModule):
         self.config = config
         self.layer_config = layer_config
         self.norm_position = layer_config['normalization_position']
-        
+        self.layer_idx=layer_idx
         # Initialize normalization layers
         norm_kwargs = {
             "normalized_shape": config.hidden_size,
@@ -440,7 +440,7 @@ class TransformerBlock(MatformerModule):
         hooks = {}
         for name, hook_name in hook_specs.items():
             # Resolve hook implementation from registry
-            hook = self.cache.registry.create("hooks", hook_name,config=self.config, cache=self.cache)
+            hook = self.cache.registry.create("hooks", hook_name,config=self.config, cache=self.cache, layer_idx=self.layer_idx)
             # Register as submodule if it's a nn.Module
             if isinstance(hook, nn.Module):
                 self.add_module(f"hook_{name}", hook)

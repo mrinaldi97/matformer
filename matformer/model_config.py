@@ -158,7 +158,8 @@ class ModelConfig(BaseSubModelConfig):
             if len(parts) >= 3:
                 start, end = int(parts[-2]), int(parts[-1])
                 return start <= layer_idx < end
-        
+        elif pattern.isdigit():
+            return int(pattern)==int(layer_idx)
         return False
 
 @dataclass

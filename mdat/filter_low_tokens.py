@@ -16,7 +16,7 @@ print(docstring)
 
 import sys
 sys.path.append('../')
-from mdat import LMDBDataset, DatabaseManager
+from matformer.mdat import LMDBDataset, DatabaseManager
 import zlib
 import json
 import os
