@@ -59,7 +59,10 @@ def parse_chunks(stored_bytes):
         size = int(size)
         chunks.append((start, start + size))
         start += size
-    return chunks[-1][1], len(chunks)
+    try:
+          return chunks[-1][1], len(chunks)
+    except:
+          return 0,0
 
 def process_submdat(submdat):
     worker_position = submdats.index(submdat)
@@ -98,7 +101,10 @@ def process_submdat(submdat):
         for source_index in range(batch_start, batch_end):
             _object = source_db['chunks'][source_index]
             document_tokens, document_chunks = parse_chunks(_object)
-            
+            if document_tokens==0 and document_chunks==0:
+                #Error
+                with open(f"filtering_error_report_{submdat}.txt","a") as f:
+                    f.write(f"{source_index}\n")
             if document_tokens >= MIN_TOKENS:
                 batch_to_copy.append({
                     'source_index': source_index,
