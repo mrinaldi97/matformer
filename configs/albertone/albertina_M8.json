@@ -1,0 +1,67 @@
+{
+    "model_class": "BERTModel",
+    "model_config": {
+      "name": "Albertina_M8",
+      "hidden_size": 768,
+      "ffn_factor": 4.0,
+      "vocab_size": 32768,
+      "bos_token_id": 5,
+      "eos_token_id": 6,
+      "pad_token_id": 0,
+      "mask_token_id": 4,
+      "masked_substitution_rate":0.15,
+      "cloze_probability":1.0,
+      "random_probability":0.0,
+      "same_probability":0.0,
+      "num_hidden_layers": 12,
+      "num_attention_heads": 12,
+      "tie_word_embeddings": false,
+      "rms_norm_eps": 1e-6,
+      "attention_type": [],
+      "max_position_embeddings": 1024,
+      "block_size_for_attention": 128,
+      "compile_flexattn": false,
+      "bias": false,
+      "default_layer": {
+        "attn_impl": "flash",
+        "sliding_window_size": null,
+        "positional_encoding": "alibi",
+        "normalization":"rmsnorm",
+        "normalization_position":"pre",
+        "ffn_activation":"swiglu",
+        "hooks": {}
+      },
+    "custom_layers": {}
+  },
+  "training": {
+        "optimizer": "muon",
+        "lr_scheduling": true,
+        "lr": 5e-4,
+        "final_lr":2e-5,
+        "hold_steps":0.21,
+        "weight_decay": 0.01,
+        "scheduler": "custom",
+        "gradient_clip_val":1.0,
+        "warmup_steps": 0.05,
+        "max_epochs": 1,
+        "accumulate_grad_batches": 16,
+        "seed": 27,
+        "save_every_n_steps": 5000,
+        "checkpoint_name": "albertina_M8"
+    },
+  "tokenizer": {
+    "type": "huggingface",
+    "pretrained_name": "mrinaldi/Gettone",
+    "varlen_strategy": "padding"
+  },
+  "data": {
+    "data_root": "/home/matteo/Albertone/Albertina/mini-albertina-2",
+    "batch_size": 48,
+    "num_workers": 1,
+    "mdat_strategy":"Gettone_1024",
+    "mdat_view": null
+  },
+  "save_dir": "./checkpoints_ablations",
+  "wandb_project": "Albertina_Ablation_Studies",
+  "wandb_run_name": "Albertina_M8"
+}
