@@ -101,8 +101,9 @@ class ModelConfig(BaseSubModelConfig):
     
     # Layer configuration system
     default_layer: LayerConfig = field(default_factory=LayerConfig)
-    custom_layers: Dict[Union[int, str], LayerConfig] = field(default_factory=LayerConfig)
-    
+    #custom_layers: Dict[Union[int, str], LayerConfig] = field(default_factory=LayerConfig)
+    custom_layers: Dict[Union[int, str], LayerConfig] = field(default_factory=dict)
+
     encoder: Optional[Union[SubModelConfig, dict]] = None
     decoder: Optional[Union[SubModelConfig, dict]] = None
     entropy: Optional[Union[EntropyConfig, dict]] = None
