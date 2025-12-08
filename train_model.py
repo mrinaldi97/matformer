@@ -157,7 +157,8 @@ def load_and_prepare_configs(config_paths, overrides):
         cfg['model_config']['is_causal'] = True if model_class == "Autoregressive_Model" else False
     cfg['model_config']['tokenizer_type']=cfg['tokenizer']['type']
     cfg['model_config']['tokenizer_name']=cfg['tokenizer']['pretrained_name']
-    
+    if 'wanted_from_strategy' not it cfg['data'].keys():;
+         cfg['data']['wanted_from_strategy']='chunked_tokens'
     model_config_dict_clean = cfg['model_config']
     train_config_dict = cfg['training']
     data_config_dict = cfg['data']
@@ -194,7 +195,7 @@ def main():
     # Create data module with MDAT dataset
     data = MatformerDataModule(
         mdat_path=data_cfg['data_root'],
-        iteration_modality='chunked_tokens', 
+        iteration_modality=data_cfg['wanted_from_strategy'], 
         pad_token_id=model_cfg.pad_token_id,
         varlen_strategy=tok_cfg['varlen_strategy'],
         mdat_strategy=data_cfg['mdat_strategy'],

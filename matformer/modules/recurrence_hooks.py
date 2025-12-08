@@ -16,13 +16,14 @@ from matformer.matformer_registry import registry
 class RecurrenceSaver(nn.Module):
     def __init__(self, config, cache, layer_idx, detach_depth=1):
         super().__init__()
-        self.cache = cache
+        self.cache = cache.storage
         self.layer_idx = layer_idx
         self.detach_depth = detach_depth
-        self.cache.setdefault('for_recurrence', {})
-        self.cache.setdefault('recurrence_steps', {})
+        if 'for_recurrence' not in self.cache:
+            self.cache['for_recurrence'] = {}
+        if 'recurrence_steps' not in self.cache:
+            self.cache['recurrence_steps'] = {}
         self.cache['recurrence_steps'][layer_idx] = 0
-    
     def forward(self, x, *args, **kwargs):
         step = self.cache['recurrence_steps'][self.layer_idx]
         saved = replace(x, tensor=x.tensor.detach()) if step >= self.detach_depth else x
@@ -41,7 +42,7 @@ class RecurrenceSaver(nn.Module):
 class RecurrenceInjector(nn.Module):
     def __init__(self, config,cache,layer_idx,receive_from):
         super().__init__()
-        self.cache=cache
+        self.cache=cache.storage
         self.xattn=MultiHeadAttention(q_dim=config.hidden_size,k_dim=config.hidden_size,
                      v_dim=config.hidden_size,is_cross_attention=True,nheads=config.num_attention_heads,
                      positional_encoding='rope',is_causal=False)

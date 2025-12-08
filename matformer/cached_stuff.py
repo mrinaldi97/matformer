@@ -26,7 +26,7 @@ class CachedStuff:
         self.bias_cache = {}
         self.mask_cache = {}
         self.rotary_emb_cache = {}
-
+        self.storage={}
     # --------- ALiBi---------
     
     def _get_slopes(self, n):
