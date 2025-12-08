@@ -80,7 +80,8 @@ class RecurrenceInjector(nn.Module):
                 
             out_tensor[recurrence_mask] += update_val
 
-            result = replace(x, tensor=x.tensor+out_tensor)          
+            result = replace(x, tensor=out_tensor)          
             return result.unpad() if wasUnpadded else result
         except Exception as e:
             print(e)
+            return x
