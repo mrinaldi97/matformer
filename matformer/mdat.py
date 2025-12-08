@@ -738,7 +738,7 @@ class MatformerDataset(IterableDataset):
                     time.sleep(0.001)
                     continue
                 try:
-                    doc = _self._load_next_document(shuffled)
+                    doc = self._load_next_document(shuffled)
                 except StopIteration:
                     self._prefetch_queue.put(None)
                     return
