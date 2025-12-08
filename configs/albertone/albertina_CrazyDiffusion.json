@@ -1,7 +1,7 @@
 {
     "model_class": "BERTModel",
     "model_config": {
-      "name": "Albertina_M12",
+      "name": "Albertina_CrazyDiffusion",
       "hidden_size": 768,
       "ffn_factor": 4.0,
       "vocab_size": 32768,
@@ -9,18 +9,20 @@
       "eos_token_id": 6,
       "pad_token_id": 0,
       "mask_token_id": 4,
-      "masked_substitution_rate":[0.10,0.50],
+      "masked_substitution_rate":[0.0,1.0],
       "cloze_probability":1.0,
       "random_probability":0.0,
       "same_probability":0.0,
       "num_hidden_layers": 12,
       "num_attention_heads": 12,
-      "tie_word_embeddings": true,
+      "tie_word_embeddings": false,
       "rms_norm_eps": 1e-6,
       "attention_type": [],
       "max_position_embeddings": 1024,
       "block_size_for_attention": 128,
       "compile_flexattn": false,
+      "training_objective": "crazy",
+      "is_causal": false,
       "bias": false,
       "default_layer": {
         "attn_impl": "flash",
@@ -47,7 +49,7 @@
         "accumulate_grad_batches": 16,
         "seed": 27,
         "save_every_n_steps": 5000,
-        "checkpoint_name": "albertina_M12"
+        "checkpoint_name": "albertina_CrazyDiffusion"
     },
   "tokenizer": {
     "type": "huggingface",
@@ -56,12 +58,12 @@
   },
   "data": {
     "data_root": "/home/matteo/Albertone/Albertina/mini-albertina-2",
-    "batch_size": 48,
+    "batch_size": 36,
     "num_workers": 1,
     "mdat_strategy":"Gettone_1024",
     "mdat_view": null
   },
   "save_dir": "./checkpoints_ablations",
   "wandb_project": "Albertina_Ablation_Studies",
-  "wandb_run_name": "Albertina_M12"
+  "wandb_run_name": "Albertina_CrazyDiffusion"
 }

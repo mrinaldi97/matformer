@@ -12,8 +12,8 @@ class TensorDC:
     cloze_mask: Optional[torch.Tensor] = None # To be used for MLM objectives 
     document_mask: Optional[torch.Tensor] = None # Useful for BLT, Multimodal transformers...
     tensor_order: Optional[str] = None # Useful to keep track fof what is represented in the tensor (ex. heads in MHA)
-    extra_attributes: dict = field(default_factory=dict)
-        
+    extra_attributes: dict = field(default_factory=dict) # A free dict, but that can work in tandem with extra_follow_keys in case of tensors
+    extra_follow_keys: list = field(default_factory=list) # The extra_attributes that will follow padding/unpadding destiny 
     isUnpadded: ClassVar[bool] = False
     isPadded: ClassVar[bool] = False
     isNormal: ClassVar[bool] = True
@@ -74,7 +74,15 @@ class PaddedTensor(TensorDC):
 
         seqlens = mask.sum(dim=1, dtype=torch.int32)
         cu_seqlens = F.pad(torch.cumsum(seqlens, dim=0, dtype=torch.int32), (1, 0))
-
+		unpadded_extra = {}
+		for k, v in self.extra_attributes.items():
+			if k in self.extra_follow_keys and isinstance(v, torch.Tensor):
+				# v is shaped [b, s, ...] or [b, s]
+				flat = v.reshape(-1, *v.shape[2:]) if v.dim() > 2 else v.flatten()
+				unpadded_extra[k] = flat[indices]
+			else:
+				# keep unchanged
+				unpadded_extra[k] = v
         unpadded_cloze_mask = None
         if self.has_cloze_mask:
             assert self.cloze_mask.shape == self.padding_mask.shape, "Cloze mask must have the same shape as padding mask"
@@ -85,16 +93,18 @@ class PaddedTensor(TensorDC):
             assert self.document_mask.shape == self.padding_mask.shape, "Document mask must have the same shape as padding mask"
             unpadded_doc_mask = self.document_mask.flatten()[indices]
 
-        return UnpaddedTensor(
-            tensor=unpadded_x,
-            indices=indices,
-            cu_seqlens=cu_seqlens,
-            max_seq_len=int(seqlens.max()),
-            original_seq_len=self.padding_mask.shape[1],
-            batch_size=self.padding_mask.shape[0],
-            cloze_mask=unpadded_cloze_mask,
-            document_mask=unpadded_doc_mask
-        )
+		return UnpaddedTensor(
+			tensor=unpadded_x,
+			indices=indices,
+			cu_seqlens=cu_seqlens,
+			max_seq_len=int(seqlens.max()),
+			original_seq_len=self.padding_mask.shape[1],
+			batch_size=self.padding_mask.shape[0],
+			cloze_mask=unpadded_cloze_mask,
+			document_mask=unpadded_doc_mask,
+			extra_attributes=unpadded_extra,
+			extra_follow_keys=self.extra_follow_keys
+		)
 
 
 @dataclass(frozen=False,kw_only=True)
@@ -117,7 +127,17 @@ class UnpaddedTensor(TensorDC):
         
         padding_mask_flat = torch.ones(size=(self.batch_size * target_seq_len,), dtype=torch.bool, device=self.indices.device)
         padding_mask_flat[self.indices] = False
-
+		padded_extra = {}
+		for k, v in self.extra_attributes.items():
+			if k in self.extra_follow_keys and isinstance(v, torch.Tensor):
+				# v is indexed by the same flatten indices
+				flat = v
+				padded = flat.new_zeros(self.batch_size * target_seq_len, *flat.shape[1:])
+				padded[self.indices] = flat
+				padded_extra[k] = rearrange(padded, '(b s) ... -> b s ...',
+											b=self.batch_size, s=target_seq_len)
+			else:
+				padded_extra[k] = v
         padded_cloze_mask = None
         if self.has_cloze_mask:
             cloze_mask_flat = self.cloze_mask.new_zeros(self.batch_size * target_seq_len, dtype=self.cloze_mask.dtype)
@@ -134,7 +154,9 @@ class UnpaddedTensor(TensorDC):
             tensor=rearrange(out, '(b s) ... -> b s ...', b=self.batch_size, s=target_seq_len),
             padding_mask=rearrange(padding_mask_flat, '(b s) -> b s', b=self.batch_size, s=target_seq_len),
             cloze_mask=padded_cloze_mask,
-            document_mask=padded_doc_mask
+            document_mask=padded_doc_mask,
+            extra_attributes=padded_extra,
+            extra_follow_keys=self.extra_follow_keys
         )
 
 class ModuleWrapper(nn.Module):

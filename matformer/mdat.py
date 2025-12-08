@@ -94,6 +94,7 @@ class MatformerDataset(IterableDataset):
         instance.readonly = readonly
         instance._cached_length=None
         instance.dist=None
+        instance.batch_size=batch_size
         if instance._mdat_exists(instance.db_path): 
             instance.db = DatabaseManager(instance.db_path) 
             instance.db.connect() 
@@ -760,7 +761,7 @@ class MatformerDataset(IterableDataset):
                         return
                     current_pos += submdat_len
             raise StopIteration
-        
+        return self.current_document
     # Methods for the pretokenization-registry:
     # In the manifest, names of pretokenizations strategies should be saved
     # Each strategy will live in ds_root/pretok/strategy_name
@@ -823,58 +824,118 @@ class MatformerDataset(IterableDataset):
             self._seek_document_pointer(self.document_index)
         
         return self
-    def __next__(self):
-        if self.dist:
-            if not hasattr(self, '_iteration_count'):
-                self._iteration_count = 0
-            if not hasattr(self, '_max_iterations'):
-                self._max_iterations = len(self)  # Cache it once
-            if self._iteration_count >= self._max_iterations:
-                raise StopIteration
-        try:
-            if self.current_iteration_modality in ['document','tokens','chunks']:
-                self.load_next_document()
-                return self.current_document         
-            elif self.current_iteration_modality == 'chunked_tokens':
-                if not hasattr(self, 'current_chunk_step'):
-                    self.current_chunk_step = 0
-                    self.current_document = None
-                
-                while True:
-                    if (self.current_document is None or 
-                        'chunked_tokens' not in self.current_document or
-                        self.current_chunk_step >= len(self.current_document['chunked_tokens'])):
-                        self.load_next_document()
-                        self.current_chunk_step = 0
-                    
-                    chunks = self.current_document['chunked_tokens']
-                    end_step = min(self.current_chunk_step + self.chunk_multiplier, len(chunks))
-                    if end_step > self.current_chunk_step:
-                        selected_chunks = chunks[self.current_chunk_step:end_step]
-                        self.current_chunk_step = end_step
-                        chunk = np.concatenate(selected_chunks).tolist()
-                        if getattr(self, 'max_seq_len', None) is not None:
-                            if len(chunk) > self.max_seq_len:
-                                print(f"WARNING: A sequence is longer than max length ({len(chunk)} > {self.max_seq_len}) and it's truncated")
-                                chunk = chunk[:self.max_seq_len]
-                        result = chunk
-                        break
-            
-            if self.dist:
-                self._iteration_count += 1
-                self._last_item = result
-            return {"object":result,"worker_has_finished":None,"modality":"text"}
-        
-        except StopIteration:
-            if self.dist:
-                self._iteration_count += 1
-                return {"object":[0],"worker_has_finished":True,"modality":"text"}
-            else:
-                raise
 
+    def _get_next_chunk_from_document(self, document, chunk_step):
+            """
+            Helper method to extract the next chunk from a given document and update the step.
+            Returns: (chunk, next_chunk_step, has_more_chunks)
+            """
+            if document is None or 'chunked_tokens' not in document:
+                return None, 0, False
+            chunks_list = document['chunked_tokens']
+            total_chunks = len(chunks_list)
+            if chunk_step >= total_chunks:
+                return None, 0, False # Document exhausted
+            end_step = min(chunk_step + self.chunk_multiplier, total_chunks)          
+            selected_chunks = chunks_list[chunk_step:end_step]
+            new_chunk_step = end_step           
+            chunk = np.concatenate(selected_chunks).tolist()
+            if getattr(self, 'max_seq_len', None) is not None:
+                if len(chunk) > self.max_seq_len:
+                    print(f"WARNING: A sequence is longer than max length ({len(chunk)} > {self.max_seq_len}) and it's truncated")
+                    chunk = chunk[:self.max_seq_len]     
+            has_more_chunks = new_chunk_step < total_chunks      
+            return chunk, new_chunk_step, has_more_chunks
+
+    def __next__(self):
+            if not hasattr(self, '_iteration_count'):
+                    self._iteration_count = 0        
+            if self.dist:
+                if not hasattr(self, '_max_iterations'):
+                    self._max_iterations = len(self)
+                if self._iteration_count >= self._max_iterations:
+                    raise StopIteration
+            result = None
+            is_same_document = False 
+            
+            try:
+                if self.current_iteration_modality in ['document', 'tokens', 'chunks']: # Entire document
+                    self.load_next_document()
+                    result = self.current_document 
+                
+                elif self.current_iteration_modality == 'chunked_tokens': # Sequential chunked
+                    if not hasattr(self, 'current_chunk_step'):
+                        self.current_chunk_step = 0
+                        self.current_document = None
+                    
+                    while True:
+                        is_document_exhausted = (self.current_document is None or 
+                                                 'chunked_tokens' not in self.current_document or
+                                                 self.current_chunk_step >= len(self.current_document['chunked_tokens']))
+                        
+                        if is_document_exhausted:
+                            self.load_next_document()
+                            self.current_chunk_step = 0
+                            is_same_document = False 
+                        else:
+                            is_same_document = True
+
+                        result, self.current_chunk_step, has_more = self._get_next_chunk_from_document(self.current_document, self.current_chunk_step)
+                        if result is not None:
+                            break
+                
+                elif self.current_iteration_modality == 'chunked_for_recurrence': 
+                    if not hasattr(self, '_recurrent_documents'):
+                        self._recurrent_documents = [None] * self.batch_size
+                        self._recurrent_steps = [0] * self.batch_size
+                        for i in range(self.batch_size):
+                            self._recurrent_documents[i] = self.load_next_document()
+
+                    document_cell_index = self._iteration_count % self.batch_size
+                    current_document = self._recurrent_documents[document_cell_index]
+                    current_chunk_step = self._recurrent_steps[document_cell_index]
+
+                    is_document_exhausted = (current_document is None or 
+                                             'chunked_tokens' not in current_document or
+                                             current_chunk_step >= len(current_document['chunked_tokens']))
+
+                    if is_document_exhausted:
+                        self._recurrent_documents[document_cell_index] = self.load_next_document()
+                        self._recurrent_steps[document_cell_index] = 0
+                        is_same_document = False
+                    else:
+                        is_same_document = current_chunk_step > 0
+
+                    result, new_step, has_more = self._get_next_chunk_from_document(
+                        self._recurrent_documents[document_cell_index], 
+                        self._recurrent_steps[document_cell_index]
+                    )
+                    
+                    self._recurrent_steps[document_cell_index] = new_step
+                
+                else:
+                    raise ValueError(f"Unknown iteration modality: {self.current_iteration_modality}")
+                    
+                return_dict = {"object": result, "modality": "text"}
+                self._iteration_count += 1
+                if self.dist:
+                    return_dict["worker_has_finished"] = None
+                    self._last_item = result               
+                if self.current_iteration_modality == 'chunked_for_recurrence':
+                     return_dict["is_same_document"] = is_same_document
+                return return_dict
+            
+            except StopIteration:
+                if self.dist:
+                    self._iteration_count += 1
+                    if self.current_iteration_modality == 'chunked_for_recurrence':
+                        return {"object": [0], "worker_has_finished": True, "modality": "text", "is_same_document": False}    
+                    return {"object": [0], "worker_has_finished": True, "modality": "text"}
+                else:
+                    raise
 
     def set_iteration_modality(self, modality, with_meta=False, return_raw=False, add_special_tokens=True):
-        supported_modalities = ['document', 'tokens', 'chunked_tokens', 'strategy_default','chunks']
+        supported_modalities = ['document', 'tokens', 'chunked_tokens', 'strategy_default','chunks','chunked_for_recurrence']
         if modality in supported_modalities:
             self.current_iteration_modality = modality
         else:
@@ -891,10 +952,12 @@ class MatformerDataset(IterableDataset):
             wanted_from_strategy = ['chunks']
             wanted_from_dbs = []
             self.len = self.total_documents            
-        elif modality == 'chunked_tokens':
+        elif modality in ['chunked_tokens','chunked_for_recurrence']:
             wanted_from_strategy = ['chunked_tokens']
             wanted_from_dbs = []
             self.len = self.total_divided_chunks
+            if modality=='chunked_for_recurrence':
+                assert self.batch_size is not None
         elif modality == 'strategy_default':
             wanted_from_strategy = ['strategy_default']
             wanted_from_dbs = []

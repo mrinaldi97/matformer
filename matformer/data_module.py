@@ -43,36 +43,74 @@ class MatformerDataModule(pl.LightningDataModule):
             
         self.mdat.set_iteration_modality(self.iteration_modality, with_meta=self.with_meta)
         print(f"Len attuale: {len(self)}")
-    def collate_fn(self, batch):        
+    def collate_fn(self, batch):
         if batch is None:
             print("WARNING: GOT A None TOKEN SEQUENCES FROM THE DATALOADER!")
-            batch = [] 
-            
+            batch = []
+
         if self.varlen_strategy == 'nested':
             sequence = torch.nested.nested_tensor(batch, layout=torch.jagged)
             return sequence
+
         padded_ids = []
+        stacked_recurrence_masks = []
+        any_worker_finished = False
+
         for item in batch:
+            recurrent_same = None
+            worker_finished = False
             if isinstance(item, dict):
                 _object = item["object"]
-                if item.get("worker_has_finished", False):
-                    pass #WIP
+                worker_finished = bool(item.get("worker_has_finished", False))
+                recurrent_same = item.get("is_same_document", None)
             else:
                 _object = item
 
-            #padding
-            padded_ids.append(
-                _object + [self.pad_token_id] * (self.max_seq_len - len(_object))
-            )
+            any_worker_finished = any_worker_finished or worker_finished
 
+            if recurrent_same is True:
+                assert self.max_seq_len is not None
+                recurrence_mask = torch.ones(self.max_seq_len, dtype=torch.bool)
+                stacked_recurrence_masks.append(recurrence_mask)
+            elif recurrent_same is False:
+                assert self.max_seq_len is not None
+                recurrence_mask = torch.zeros(self.max_seq_len, dtype=torch.bool)
+                stacked_recurrence_masks.append(recurrence_mask)
+            else:
+                stacked_recurrence_masks.append(None)
+
+            assert self.max_seq_len is not None
+            padded = _object + [self.pad_token_id] * (self.max_seq_len - len(_object))
+            padded_ids.append(padded)
+        
+        # For recurrence
+        if any(mask is not None for mask in stacked_recurrence_masks):
+            stacked = [
+                m if m is not None else torch.zeros(self.max_seq_len, dtype=torch.bool)
+                for m in stacked_recurrence_masks
+            ]
+            recurrence_batch_mask = torch.stack(stacked, dim=0)  # shape [B, L], dtype bool
+            extra_attributes = {"recurrence_mask": recurrence_batch_mask}
+            extra_follow_keys="recurrence_mask"
+        else:
+            extra_attributes=None
+            extra_follow_keys=None
+
+        # padded ids -> tensor
         tensors = torch.tensor(padded_ids, dtype=torch.long)
         padding_masks = (tensors == self.pad_token_id)
-        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks)
+        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks, extra_attributes=extra_attributes, extra_follow_keys=extra_follow_keys)
+
+
 
         if self.varlen_strategy == "unpadding":
             sequence = sequence.unpad()
 
-        return {'sequence':sequence,"worker_has_finished":item.get("worker_has_finished")}        
+        return {
+            "sequence": sequence,
+            "worker_has_finished": any_worker_finished
+        }
+         
         """    
         # Pad sequences
         padded_ids = [ids + [self.pad_token_id] * (self.max_seq_len - len(ids)) for ids in batch]
