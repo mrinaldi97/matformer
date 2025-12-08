@@ -45,7 +45,7 @@ class RecurrenceInjector(nn.Module):
         self.cache=cache.storage
         self.xattn=MultiHeadAttention(q_dim=config.hidden_size,k_dim=config.hidden_size,
                      v_dim=config.hidden_size,is_cross_attention=True,nheads=config.num_attention_heads,
-                     positional_encoding='rope',is_causal=False)
+                     positional_encoding='rope',is_causal=False,cache=cache)
         #self.down_conv=nn.Conv1d(in_channels=config.hidden_size,out_channels=config.hidden_size//2,kernel_size=1)
         self.layer_idx=layer_idx
         self.receive_from=receive_from
