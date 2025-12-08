@@ -39,6 +39,10 @@ class TensorDC:
             self.cloze_mask = self.cloze_mask.to(*args, **kwargs)
         if self.document_mask is not None:
             self.document_mask = self.document_mask.to(*args, **kwargs)
+        if self.extra_attributes:
+            for k, v in self.extra_attributes.items():
+                if isinstance(v, torch.Tensor):
+                    self.extra_attributes[k] = v.to(*args, **kwargs)
         return self
         
         
