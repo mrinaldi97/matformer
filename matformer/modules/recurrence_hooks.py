@@ -58,6 +58,9 @@ class RecurrenceInjector(nn.Module):
             recurrence_mask = previous_state.extra_attributes['recurrence_mask']
             if recurrence_mask.device != x.tensor.device:
                 recurrence_mask = recurrence_mask.to(x.tensor.device)
+            if not recurrence_mask.any():
+                             print("No recurrency. Skipping")
+                             return x             
             wasUnpadded = False
             if isinstance(x, UnpaddedTensor):
                 wasUnpadded = True
