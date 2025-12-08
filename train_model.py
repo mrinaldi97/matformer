@@ -157,7 +157,7 @@ def load_and_prepare_configs(config_paths, overrides):
         cfg['model_config']['is_causal'] = True if model_class == "Autoregressive_Model" else False
     cfg['model_config']['tokenizer_type']=cfg['tokenizer']['type']
     cfg['model_config']['tokenizer_name']=cfg['tokenizer']['pretrained_name']
-    if 'wanted_from_strategy' not in cfg['data'].keys():;
+    if 'wanted_from_strategy' not in cfg['data'].keys():
          cfg['data']['wanted_from_strategy']='chunked_tokens'
     model_config_dict_clean = cfg['model_config']
     train_config_dict = cfg['training']
