@@ -727,6 +727,7 @@ class MatformerDataset(IterableDataset):
         """
         Starts a background thread that fills a queue with upcoming documents.
         """
+        self.ds_map = self.db.get_dsmap(key='id')
         if hasattr(self, "_prefetch_thread") and self._prefetch_thread is not None:
             return 
         self._prefetch_queue = queue.Queue(max_prefetch)
@@ -775,8 +776,7 @@ class MatformerDataset(IterableDataset):
         if not hasattr(self, 'document_index'):
             self.document_index = 0
         
-        ds_map = self.db.get_dsmap(key='id')
-        
+        ds_map=self.ds_map
         if shuffled:
             if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
                 self._init_shuffle_file()
