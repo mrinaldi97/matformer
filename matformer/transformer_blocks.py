@@ -247,8 +247,8 @@ class MultiHeadAttention(MatformerModule):
             q, k, v = None, None, None
         elif self.qkv_samedim and self.is_cross_attention and not self.force_separed_qkv:
             qkv_projected = None
-            w = torch.chunk(self.packed_proj.weight, 3, dim=0)
-            b = torch.chunk(self.packed_proj.bias, 3, dim=0) if self.bias else (None, None, None)
+            w = torch.chunk(self.packed_proj.inner.weight, 3, dim=0)
+            b = torch.chunk(self.packed_proj.inner.bias, 3, dim=0) if self.bias else (None, None, None)
             q = NormalTensor(tensor=F.linear(query_input.tensor, w[0], b[0]),tensor_order='?SD')
             k = NormalTensor(tensor=F.linear(key_input.tensor, w[1], b[1]),tensor_order='?SD')
             v = NormalTensor(tensor=F.linear(value_input.tensor, w[2], b[2]),tensor_order='?SD')

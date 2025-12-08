@@ -61,6 +61,10 @@ class MatformerDataModule(pl.LightningDataModule):
             worker_finished = False
             if isinstance(item, dict):
                 _object = item["object"]
+                if _object is None:
+                    print("WARNING: Get a None from the Mdat")
+                    print(item)
+                    continue
                 worker_finished = bool(item.get("worker_has_finished", False))
                 recurrent_same = item.get("is_same_document", None)
             else:
