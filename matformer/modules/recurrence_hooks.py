@@ -64,10 +64,9 @@ class RecurrenceInjector(nn.Module):
             selected_x = replace(x, tensor=x.tensor[recurrence_mask])
             selected_y = replace(previous_state, tensor=previous_state.tensor[recurrence_mask])
             processed_x = self.xattn(query_input=selected_x, key_input=selected_y, value_input=selected_y)
-
             result_tensor = torch.zeros_like(x.tensor)
-            result_tensor[recurrence_mask] = processed_x.tensor
-            result = replace(x, tensor=x.tensor + result_tensor)            
+            result_tensor[recurrence_mask] = processed_x.tensor.to(x.tensor.dtype).to(x.tensor.device)
+            result = replace(x, tensor=x.tensor + result_tensor)          
             return result.unpad() if wasUnpadded else result
         except Exception as e:
             print(e)
