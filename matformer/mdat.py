@@ -1089,7 +1089,7 @@ class MatformerDataset(IterableDataset):
         """
         assert self.current_view is not None
         assert self.current_strategy is not None
-        if self.current_iteration_modality=='chunked_tokens':
+        if self.current_iteration_modality in ['chunked_tokens','chunked_for_recurrence']:
             max_len=0
             for w in range(num_devices):
                 w_len=self.db.get_worker_length_distributed(target_num_workers=num_devices, target_worker_id=w, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name)
