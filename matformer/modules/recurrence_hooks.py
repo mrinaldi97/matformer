@@ -4,6 +4,8 @@ import torch.nn.functional as F
 from dataclasses import replace
 from matformer.tensors_dataclasses import TensorDC,UnpaddedTensor,PaddedTensor
 from matformer.transformer_blocks import MultiHeadAttention
+from matformer.matformer_registry import registry
+
 @registry.register(
     "hooks",
     "previous_state_saver",
