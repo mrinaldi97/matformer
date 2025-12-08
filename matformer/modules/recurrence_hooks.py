@@ -55,12 +55,13 @@ class RecurrenceInjector(nn.Module):
     def forward(self, x, *args, **kwargs):
         try:
             previous_state = self.cache['for_recurrence'][self.receive_from]
-            recurrence_mask = previous_state.extra_attributes['recurrence_mask']
+            recurrence_mask = previous_state.recurrence_mask
+            if recurrence_mask is None or not recurrence_mask.any():
+                             print("No recurrency. Skipping")
+                             return x               
             if recurrence_mask.device != x.tensor.device:
                 recurrence_mask = recurrence_mask.to(x.tensor.device)
-            if not recurrence_mask.any():
-                             print("No recurrency. Skipping")
-                             return x             
+          
             wasUnpadded = False
             if isinstance(x, UnpaddedTensor):
                 wasUnpadded = True
