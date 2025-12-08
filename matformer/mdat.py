@@ -906,13 +906,18 @@ class MatformerDataset(IterableDataset):
                     else:
                         is_same_document = current_chunk_step > 0
 
-                    result, new_step, has_more = self._get_next_chunk_from_document(
-                        self._recurrent_documents[document_cell_index], 
-                        self._recurrent_steps[document_cell_index]
-                    )
-                    
+                    while True:
+                        result, new_step, has_more = self._get_next_chunk_from_document(
+                            self._recurrent_documents[document_cell_index],
+                            self._recurrent_steps[document_cell_index]
+                        )
+                        if result is not None:
+                            break
+                        self._recurrent_documents[document_cell_index] = self.load_next_document()
+                        self._recurrent_steps[document_cell_index] = 0
+
                     self._recurrent_steps[document_cell_index] = new_step
-                
+                                    
                 else:
                     raise ValueError(f"Unknown iteration modality: {self.current_iteration_modality}")
                     
