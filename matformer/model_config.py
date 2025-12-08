@@ -13,7 +13,7 @@ class LayerConfig:
     normalization_position: Optional[Literal['pre','post']] = 'post'
     ffn_activation: Optional[Literal['gelu','swiglu']] = 'swiglu'
     
-    hooks: Dict[str, Union[str, nn.Module]] = field(default_factory=dict)
+    hooks: Dict[str, Union[str, Dict[str, Any]]] = field(default_factory=dict)
     def __getitem__(self, key):
         """Allow dict-like access to dataclass fields"""
         return getattr(self, key)

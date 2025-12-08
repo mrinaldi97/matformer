@@ -1,0 +1,71 @@
+import torch
+import torch.nn as nn
+import torch.nn.functional as F
+from dataclasses import replace
+from matformer.tensors_dataclasses import TensorDC,UnpaddedTensor,PaddedTensor
+from matformer.transformer_blocks import MultiHeadAttention
+@registry.register(
+    "hooks",
+    "previous_state_saver",
+    "default",
+    requires=["torch"],
+    priority=0,
+)
+class RecurrenceSaver(nn.Module):
+    def __init__(self, config, cache, layer_idx, detach_depth=1):
+        super().__init__()
+        self.cache = cache
+        self.layer_idx = layer_idx
+        self.detach_depth = detach_depth
+        self.cache.setdefault('for_recurrence', {})
+        self.cache.setdefault('recurrence_steps', {})
+        self.cache['recurrence_steps'][layer_idx] = 0
+    
+    def forward(self, x, *args, **kwargs):
+        step = self.cache['recurrence_steps'][self.layer_idx]
+        saved = replace(x, tensor=x.tensor.detach()) if step >= self.detach_depth else x
+        self.cache['for_recurrence'][self.layer_idx] = saved
+        self.cache['recurrence_steps'][self.layer_idx] += 1
+        return x
+        
+@registry.register(
+    "hooks",
+    "previous_state_injection",
+    "default",
+    requires=["torch"],
+    priority=0,
+)
+
+class RecurrenceInjector(nn.Module):
+    def __init__(self, config,cache,layer_idx,receive_from):
+        super().__init__()
+        self.cache=cache
+        self.xattn=MultiHeadAttention(q_dim=config.hidden_size,k_dim=config.hidden_size,
+                     v_dim=config.hidden_size,is_cross_attention=True,nheads=config.num_attention_heads,
+                     positional_encoding='rope',is_causal=False)
+        #self.down_conv=nn.Conv1d(in_channels=config.hidden_size,out_channels=config.hidden_size//2,kernel_size=1)
+        self.layer_idx=layer_idx
+        self.receive_from=receive_from
+        assert receive_from>=self.layer_idx
+    def forward(self, x, *args, **kwargs):
+        try:
+            previous_state = self.cache['for_recurrence'][self.receive_from]
+            recurrence_mask = previous_state.extra_attributes['recurrence_mask']
+            
+            wasUnpadded = False
+            if isinstance(x, UnpaddedTensor):
+                wasUnpadded = True
+                x = x.pad()
+                previous_state = previous_state.pad()
+            
+            selected_x = replace(x, tensor=x.tensor[recurrence_mask])
+            selected_y = replace(previous_state, tensor=previous_state.tensor[recurrence_mask])
+            processed_x = self.xattn(query_input=selected_x, key_input=selected_y, value_input=selected_y)
+
+            result_tensor = torch.zeros_like(x.tensor)
+            result_tensor[recurrence_mask] = processed_x.tensor
+            result = replace(x, tensor=x.tensor + result_tensor)            
+            return result.unpad() if wasUnpadded else result
+        except Exception as e:
+            print(e)
+            return(x)

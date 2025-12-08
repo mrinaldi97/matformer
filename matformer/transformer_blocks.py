@@ -433,15 +433,25 @@ class TransformerBlock(MatformerModule):
         self.hooks = self._init_hooks(layer_config.get('hooks', {}))
     
     def _init_hooks(self, hook_specs):
-        """Initialize hooks from layer config via registry."""
         if not hook_specs:
             return {}
         
         hooks = {}
-        for name, hook_name in hook_specs.items():
-            # Resolve hook implementation from registry
-            hook = self.cache.registry.create("hooks", hook_name,config=self.config, cache=self.cache, layer_idx=self.layer_idx)
-            # Register as submodule if it's a nn.Module
+        for name, hook_spec in hook_specs.items():
+            if isinstance(hook_spec, dict): #For extra arguments
+                hook_name = hook_spec['type']
+                extra_kwargs = {k: v for k, v in hook_spec.items() if k != 'type'}
+            else:
+                hook_name = hook_spec
+                extra_kwargs = {}
+            
+            hook = self.cache.registry.create(
+                "hooks", hook_name, 
+                config=self.config, 
+                cache=self.cache, 
+                layer_idx=self.layer_idx,
+                **extra_kwargs
+            )
             if isinstance(hook, nn.Module):
                 self.add_module(f"hook_{name}", hook)
             hooks[name] = hook

@@ -67,15 +67,10 @@ class MatformerDataModule(pl.LightningDataModule):
                 _object = item
 
             any_worker_finished = any_worker_finished or worker_finished
-
             if recurrent_same is True:
-                assert self.max_seq_len is not None
-                recurrence_mask = torch.ones(self.max_seq_len, dtype=torch.bool)
-                stacked_recurrence_masks.append(recurrence_mask)
+                stacked_recurrence_masks.append(True)
             elif recurrent_same is False:
-                assert self.max_seq_len is not None
-                recurrence_mask = torch.zeros(self.max_seq_len, dtype=torch.bool)
-                stacked_recurrence_masks.append(recurrence_mask)
+                stacked_recurrence_masks.append(False)
             else:
                 stacked_recurrence_masks.append(None)
 
@@ -86,20 +81,19 @@ class MatformerDataModule(pl.LightningDataModule):
         # For recurrence
         if any(mask is not None for mask in stacked_recurrence_masks):
             stacked = [
-                m if m is not None else torch.zeros(self.max_seq_len, dtype=torch.bool)
+                m if m is not None else False
                 for m in stacked_recurrence_masks
             ]
-            recurrence_batch_mask = torch.stack(stacked, dim=0)  # shape [B, L], dtype bool
+            recurrence_batch_mask = torch.tensor(stacked, dtype=torch.bool)  # shape [B]
             extra_attributes = {"recurrence_mask": recurrence_batch_mask}
-            extra_follow_keys="recurrence_mask"
         else:
-            extra_attributes=None
-            extra_follow_keys=None
+            extra_attributes={}
+            #extra_follow_keys=None
 
         # padded ids -> tensor
         tensors = torch.tensor(padded_ids, dtype=torch.long)
         padding_masks = (tensors == self.pad_token_id)
-        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks, extra_attributes=extra_attributes, extra_follow_keys=extra_follow_keys)
+        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks, extra_attributes=extra_attributes)
 
 
 
