@@ -11,6 +11,7 @@ class TensorDC:
     tensor: torch.Tensor
     cloze_mask: Optional[torch.Tensor] = None # To be used for MLM objectives 
     document_mask: Optional[torch.Tensor] = None # Useful for BLT, Multimodal transformers...
+    recurrence_mask: Optional[torch.Tensor] = None # WARNING! This will not be padded/unpadded but remains constant
     tensor_order: Optional[str] = None # Useful to keep track fof what is represented in the tensor (ex. heads in MHA)
     extra_attributes: dict = field(default_factory=dict) # A free dict, but that can work in tandem with extra_follow_keys in case of tensors
     extra_follow_keys: list = field(default_factory=list) # The extra_attributes that will follow padding/unpadding destiny 
@@ -39,6 +40,8 @@ class TensorDC:
             self.cloze_mask = self.cloze_mask.to(*args, **kwargs)
         if self.document_mask is not None:
             self.document_mask = self.document_mask.to(*args, **kwargs)
+        if self.recurrence_mask is not None:
+            self.recurrence_mask = self.recurrence_mask.to(*args, **kwargs)            
         if self.extra_attributes:
             for k, v in self.extra_attributes.items():
                 if isinstance(v, torch.Tensor):
@@ -105,6 +108,7 @@ class PaddedTensor(TensorDC):
             original_seq_len=self.padding_mask.shape[1],
             batch_size=self.padding_mask.shape[0],
             cloze_mask=unpadded_cloze_mask,
+            recurrence_mask=self.recurrence_mask,
             document_mask=unpadded_doc_mask,
             extra_attributes=unpadded_extra,
             extra_follow_keys=self.extra_follow_keys
@@ -159,6 +163,7 @@ class UnpaddedTensor(TensorDC):
             padding_mask=rearrange(padding_mask_flat, '(b s) -> b s', b=self.batch_size, s=target_seq_len),
             cloze_mask=padded_cloze_mask,
             document_mask=padded_doc_mask,
+            recurrence_mask=self.recurrence_mask,
             extra_attributes=padded_extra,
             extra_follow_keys=self.extra_follow_keys
         )

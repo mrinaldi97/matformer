@@ -89,15 +89,14 @@ class MatformerDataModule(pl.LightningDataModule):
                 for m in stacked_recurrence_masks
             ]
             recurrence_batch_mask = torch.tensor(stacked, dtype=torch.bool)  # shape [B]
-            extra_attributes = {"recurrence_mask": recurrence_batch_mask}
         else:
-            extra_attributes={}
+            recurrence_batch_mask=None
             #extra_follow_keys=None
 
         # padded ids -> tensor
         tensors = torch.tensor(padded_ids, dtype=torch.long)
         padding_masks = (tensors == self.pad_token_id)
-        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks, extra_attributes=extra_attributes)
+        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks, recurrence_mask=recurrence_batch_mask)
 
 
 
