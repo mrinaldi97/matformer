@@ -68,7 +68,8 @@
     "batch_size": 36,
     "num_workers": 1,
     "mdat_strategy":"Gettone_1024",
-    "mdat_view": null
+    "mdat_view": null,
+    "wanted_from_strategy":"chunked_for_recurrence"
   },
   "save_dir": "./checkpoints_ablations",
   "wandb_project": "Albertina_Ablation_Studies",
