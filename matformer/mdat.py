@@ -22,6 +22,10 @@ import multiprocessing as mp
 from functools import partial
 from torch.utils.data import IterableDataset
 from bisect import bisect_right
+import queue
+import threading
+import time
+
 class MatformerDataset(IterableDataset):
     DB_FILENAME = 'mdat.db'
     DEFAULT_DSMAP_BITS = 8
@@ -719,7 +723,53 @@ class MatformerDataset(IterableDataset):
             'min_chunks': min(worker_chunk_counts),
             'max_chunks': max(worker_chunk_counts)
         }        
-    def load_next_document(self, shuffled=True) -> None:
+    def start_prefetch(self, max_prefetch=16):
+        """
+        Starts a background thread that fills a queue with upcoming documents.
+        """
+        if hasattr(self, "_prefetch_thread") and self._prefetch_thread is not None:
+            return  # Already running
+
+        self._prefetch_queue = queue.Queue(max_prefetch)
+        self._prefetch_stop = threading.Event()
+
+        def _prefetch_loop():
+            while not self._prefetch_stop.is_set():
+                if self._prefetch_queue.full():
+                    time.sleep(0.001)
+                    continue
+                try:
+                    doc = self.load_next_document()
+                except StopIteration:
+                    # Signal end of dataset
+                    self._prefetch_queue.put(None)
+                    return
+                self._prefetch_queue.put(doc)
+
+        t = threading.Thread(target=_prefetch_loop, daemon=True)
+        t.start()
+        self._prefetch_thread = t
+    def stop_prefetch(self):
+
+        if not hasattr(self, "_prefetch_thread") or self._prefetch_thread is None:
+            return
+
+        self._prefetch_stop.set()
+        self._prefetch_thread.join(timeout=1.0)
+        self._prefetch_thread = None
+        self._prefetch_queue = None
+    def load_next_document(self,shuffled_True):
+        if not hasattr(self, "_prefetch_queue") or self._prefetch_queue is None:
+            print("Enable prefetch for faster dataset loading!")
+            return self._load_next_document()
+        try:
+            doc = self._prefetch_queue.get_nowait()
+        except queue.Empty:
+            return self._load_next_document()
+        if doc is None:
+            raise StopIteration
+        return doc
+    def _load_next_document(self, shuffled=True) -> None:
         """Load next document."""
         if shuffled and not getattr(self, '_active_view_shuffled', None):
             raise MDatNotShuffled(...)
@@ -801,13 +851,15 @@ class MatformerDataset(IterableDataset):
         return self.db.list_views()
         
     def __iter__(self):
-        # Reset the iteration (ex. for a new epoch)     
+        # Reset the iteration (ex. for a new epoch)  
+        self.start_prefetch(max_prefetch=256)
         self.current_document = None
         if not hasattr(self,'_skip_reinit'):
             self.current_chunk_step = 0
             self.document_index = 0
             self._iteration_count = 0
-            
+            self.stop_prefetch
+            self.start_prefetch(max_prefetch=256)
             if hasattr(self, '_max_iterations'):
                 del self._max_iterations  # Force recalculation for new epoch
             
