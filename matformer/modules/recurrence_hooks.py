@@ -54,28 +54,30 @@ class RecurrenceInjector(nn.Module):
 
     def forward(self, x, *args, **kwargs):
         try:
-        previous_state = self.cache['for_recurrence'][self.receive_from]
-        recurrence_mask = previous_state.extra_attributes['recurrence_mask']
-        if recurrence_mask.device != x.tensor.device:
-            recurrence_mask = recurrence_mask.to(x.tensor.device)
-        wasUnpadded = False
-        if isinstance(x, UnpaddedTensor):
-            wasUnpadded = True
-            x = x.pad()
-            previous_state = previous_state.pad()
-        
-        selected_x = replace(x, tensor=x.tensor[recurrence_mask])
-        selected_y = replace(previous_state, tensor=previous_state.tensor[recurrence_mask])
-        
-        processed_x = self.xattn(query_input=selected_x, key_input=selected_y, value_input=selected_y)
-        
-        out_tensor = x.tensor.clone()
-        
-        update_val = processed_x.tensor
-        if update_val.dtype != out_tensor.dtype:
-            update_val = update_val.to(out_tensor.dtype)
+            previous_state = self.cache['for_recurrence'][self.receive_from]
+            recurrence_mask = previous_state.extra_attributes['recurrence_mask']
+            if recurrence_mask.device != x.tensor.device:
+                recurrence_mask = recurrence_mask.to(x.tensor.device)
+            wasUnpadded = False
+            if isinstance(x, UnpaddedTensor):
+                wasUnpadded = True
+                x = x.pad()
+                previous_state = previous_state.pad()
             
-        out_tensor[recurrence_mask] += update_val
+            selected_x = replace(x, tensor=x.tensor[recurrence_mask])
+            selected_y = replace(previous_state, tensor=previous_state.tensor[recurrence_mask])
+            
+            processed_x = self.xattn(query_input=selected_x, key_input=selected_y, value_input=selected_y)
+            
+            out_tensor = x.tensor.clone()
+            
+            update_val = processed_x.tensor
+            if update_val.dtype != out_tensor.dtype:
+                update_val = update_val.to(out_tensor.dtype)
+                
+            out_tensor[recurrence_mask] += update_val
 
-        result = replace(x, tensor=x.tensor+out_tensor)          
-        return result.unpad() if wasUnpadded else result
+            result = replace(x, tensor=x.tensor+out_tensor)          
+            return result.unpad() if wasUnpadded else result
+        except Exception as e:
+            print(e)
