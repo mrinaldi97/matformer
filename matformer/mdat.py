@@ -723,13 +723,12 @@ class MatformerDataset(IterableDataset):
             'min_chunks': min(worker_chunk_counts),
             'max_chunks': max(worker_chunk_counts)
         }        
-    def start_prefetch(self, max_prefetch=16):
+    def start_prefetch(self, max_prefetch=16, shuffled=True):
         """
         Starts a background thread that fills a queue with upcoming documents.
         """
         if hasattr(self, "_prefetch_thread") and self._prefetch_thread is not None:
-            return  # Already running
-
+            return 
         self._prefetch_queue = queue.Queue(max_prefetch)
         self._prefetch_stop = threading.Event()
 
@@ -739,9 +738,8 @@ class MatformerDataset(IterableDataset):
                     time.sleep(0.001)
                     continue
                 try:
-                    doc = self.load_next_document()
+                    doc = _self._load_next_document(shuffled)
                 except StopIteration:
-                    # Signal end of dataset
                     self._prefetch_queue.put(None)
                     return
                 self._prefetch_queue.put(doc)
@@ -758,7 +756,7 @@ class MatformerDataset(IterableDataset):
         self._prefetch_thread.join(timeout=1.0)
         self._prefetch_thread = None
         self._prefetch_queue = None
-    def load_next_document(self,shuffled_True):
+    def load_next_document(self,shuffled=True):
         if not hasattr(self, "_prefetch_queue") or self._prefetch_queue is None:
             print("Enable prefetch for faster dataset loading!")
             return self._load_next_document()
