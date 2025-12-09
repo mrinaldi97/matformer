@@ -775,8 +775,9 @@ class MatformerDataset(IterableDataset):
         
         if not hasattr(self, 'document_index'):
             self.document_index = 0
-        
-        ds_map=self.ds_map
+        #self.ds_map = 
+        #ds_map=self.ds_map
+        ds_map=self.db.get_dsmap(key='id')
         if shuffled:
             if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
                 self._init_shuffle_file()
