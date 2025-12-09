@@ -1216,7 +1216,7 @@ class MatformerDataset(IterableDataset):
         2) If a view is specified, it computes the length according to the view
         3) If a pretokenization strategy is set, it returns the number of chunks according to max_seq_len (necessary for model training)
         """
-        if self.dist and self.current_iteration_modality == 'chunked_tokens':
+        if self.dist and self.current_iteration_modality in ['chunked_tokens','chunked_for_recurrence']:
             try:
                 if self._cached_length is not None:
                     return self._cached_length
