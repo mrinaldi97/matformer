@@ -78,7 +78,7 @@ class MatformerDataset(IterableDataset):
     @classmethod
     def load_dataset(cls, path: str, shuffle: bool = False, 
                       ds_view: Optional[str] = None, distributed: bool = False, 
-                      readonly: bool = False, create_if_not_existent: bool = False, batch_size: Optional[int] = None) -> 'MatformerDataset':
+                      readonly: bool = False, create_if_not_existent: bool = False, batch_size: Optional[int] = None,prefetch_buffer=32768 ) -> 'MatformerDataset':
         """
         Load an existing Mdat from a path. The loaded Mdat will have all the submdats, views and pretokenization strategies
         populated and ready to be used.
@@ -99,6 +99,7 @@ class MatformerDataset(IterableDataset):
         instance._cached_length=None
         instance.dist=None
         instance.batch_size=batch_size
+        instance.prefetch_buffer=prefetch_buffer
         if instance._mdat_exists(instance.db_path): 
             instance.db = DatabaseManager(instance.db_path) 
             instance.db.connect() 
@@ -723,65 +724,115 @@ class MatformerDataset(IterableDataset):
             'min_chunks': min(worker_chunk_counts),
             'max_chunks': max(worker_chunk_counts)
         }        
-    def start_prefetch(self, max_prefetch=16, shuffled=True):
-        """
-        Starts a background thread that fills a queue with upcoming documents.
-        """
-        self.ds_map = self.db.get_dsmap(key='id')
-        if hasattr(self, "_prefetch_thread") and self._prefetch_thread is not None:
-            return 
-        self._prefetch_queue = queue.Queue(max_prefetch)
-        self._prefetch_stop = threading.Event()
+    def start_prefetch(self, max_prefetch=32768, shuffled=True):
+            """
+            Starts a background thread that fills a queue with upcoming documents.
+            """
+            if hasattr(self, "_prefetch_thread") and self._prefetch_thread is not None:
+                return 
 
-        def _prefetch_loop():
-            while not self._prefetch_stop.is_set():
-                if self._prefetch_queue.full():
-                    time.sleep(0.001)
-                    continue
-                try:
-                    doc = self._load_next_document(shuffled)
-                except StopIteration:
-                    self._prefetch_queue.put(None)
-                    return
-                self._prefetch_queue.put(doc)
+            if shuffled and not getattr(self, '_active_view_shuffled', None):
+                 raise MDatNotShuffled("Dataset view is not shuffled.")
+            
+            if not hasattr(self, 'document_index'):
+                self.document_index = 0
+                
+            if shuffled:
+                if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
+                    self._init_shuffle_file()
+            
+            
+            ds_map = self.db.get_dsmap(key='id')
 
-        t = threading.Thread(target=_prefetch_loop, daemon=True)
-        t.start()
-        self._prefetch_thread = t
+
+            self._prefetch_queue = queue.Queue(max_prefetch)
+            self._prefetch_stop = threading.Event()
+
+            def _prefetch_loop():
+                while not self._prefetch_stop.is_set():
+                    if self._prefetch_queue.full():
+                        time.sleep(0.001)
+                        continue
+                    
+                    try:
+                        doc,self.document_index = self._load_next_document_inner(
+                            ds_map, 
+                            self.document_index, 
+                            shuffled
+                        )
+                                
+                        self._prefetch_queue.put(doc)
+                        
+                    except StopIteration:
+                        self._prefetch_queue.put(None) #Sentinel for exhausted dataset
+                        return
+                    except Exception as e:
+                        print(f"[Prefetch Thread Error] {e}")
+                        self._prefetch_queue.put(None)
+                        return
+
+            t = threading.Thread(target=_prefetch_loop, daemon=True)
+            t.start()
+            print(f"Prefetch thread {t} started with queue size {max_prefetch}. Increase or decrease this value according to your RAM to improve performance. ")
+            self._prefetch_thread = t
+            
     def stop_prefetch(self):
+            if not hasattr(self, "_prefetch_thread") or self._prefetch_thread is None:
+                return
 
-        if not hasattr(self, "_prefetch_thread") or self._prefetch_thread is None:
-            return
+            self._prefetch_stop.set()
+            
+            if hasattr(self, "_prefetch_queue") and self._prefetch_queue is not None:
+                while not self._prefetch_queue.empty(): #Draining the queue
+                    try:
+                        self._prefetch_queue.get_nowait()
+                    except queue.Empty:
+                        break
 
-        self._prefetch_stop.set()
-        self._prefetch_thread.join(timeout=1.0)
-        self._prefetch_thread = None
-        self._prefetch_queue = None
-    def _load_next_document(self,shuffled=True):
-        if not hasattr(self, "_prefetch_queue") or self._prefetch_queue is None:
-            print("Enable prefetch for faster dataset loading!")
-            return self._load_next_document()
-        try:
-            doc = self._prefetch_queue.get_nowait()
-        except queue.Empty:
-            return self._load_next_document()
-        if doc is None:
-            raise StopIteration
-        return doc
-    def load_next_document(self, shuffled=True) -> None:
+            self._prefetch_thread.join(timeout=2.0)
+            self._prefetch_thread = None
+            self._prefetch_queue = None
+            
+    def load_next_document(self, shuffled=True):
+            if shuffled and not getattr(self, '_active_view_shuffled', None):
+                 raise MDatNotShuffled("Dataset view is not shuffled.")
+            
+            if not hasattr(self, 'document_index'):
+                 self.document_index = 0
+                 
+            
+            if hasattr(self, "_prefetch_queue") and self._prefetch_queue is not None:
+                while True:
+                    try:
+                        doc = self._prefetch_queue.get(timeout=15)
+                        if doc is None:
+                            self.stop_prefetch()
+                            raise StopIteration
+                        return doc
+                    except queue.Empty:
+                        if self._prefetch_thread is None or not self._prefetch_thread.is_alive():
+                            self.stop_prefetch()
+                            raise RuntimeError("Prefetch thread died unexpectedly.")
+                        continue
+            else:
+                ds_map = self.db.get_dsmap(key='id')
+                
+                if shuffled:
+                    if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
+                        self._init_shuffle_file()
+                
+                current_document, self.document_index = self._load_next_document_inner(
+                    ds_map, 
+                    self.document_index, 
+                    shuffled
+                )
+                return current_document
+
+    def _load_next_document_inner(self, ds_map, document_index, shuffled=True, ) -> None:
         """Load next document."""
-        if shuffled and not getattr(self, '_active_view_shuffled', None):
-            raise MDatNotShuffled(...)
-        
-        if not hasattr(self, 'document_index'):
-            self.document_index = 0
-        #self.ds_map = 
-        #ds_map=self.ds_map
-        ds_map=self.db.get_dsmap(key='id')
         if shuffled:
             if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
-                self._init_shuffle_file()
-            
+                raise Exception   
             # skip until we find a document good for this worker
             while True:
                 data = self._shuffle_file.read(self._shuffle_struct_size)
@@ -789,13 +840,13 @@ class MatformerDataset(IterableDataset):
                     raise StopIteration
                 
                 if self.dist:
-                    if self.document_index % self.world_size != self.rank_size:
-                        self.document_index += 1
+                    if document_index % self.world_size != self.rank_size:
+                        document_index += 1
                         continue  # Skip this shuffle entry
                 
                 submdat_id, doc_id = struct.unpack(self._shuffle_struct_format, data)
-                self.current_document = self.loaded_submdats[ds_map[submdat_id]][doc_id]
-                self.document_index += 1
+                current_document = self.loaded_submdats[ds_map[submdat_id]][doc_id]
+                document_index += 1
                 break
         else:
             current_pos = 0
@@ -805,12 +856,12 @@ class MatformerDataset(IterableDataset):
                     submdat_len = len(self.loaded_submdats[submdat_name])
                     if self.document_index < current_pos + submdat_len:
                         doc_id = self.document_index - current_pos
-                        self.current_document = self.loaded_submdats[submdat_name][doc_id]
-                        self.document_index += 1
+                        current_document = self.loaded_submdats[submdat_name][doc_id]
+                        document_index += 1
                         return
                     current_pos += submdat_len
             raise StopIteration
-        return self.current_document
+        return current_document, document_index
     # Methods for the pretokenization-registry:
     # In the manifest, names of pretokenizations strategies should be saved
     # Each strategy will live in ds_root/pretok/strategy_name
@@ -848,33 +899,36 @@ class MatformerDataset(IterableDataset):
         return self.list_strategies() #a shortcut 
     def list_views(self):
         return self.db.list_views()
-        
     def __iter__(self):
-        # Reset the iteration (ex. for a new epoch)  
-        #self.start_prefetch(max_prefetch=256)
-        self.current_document = None
-        if not hasattr(self,'_skip_reinit'):
-            self.current_chunk_step = 0
-            self.document_index = 0
-            self._iteration_count = 0
-            #self.stop_prefetch
-            #self.start_prefetch(max_prefetch=256)
-            if hasattr(self, '_max_iterations'):
-                del self._max_iterations  # Force recalculation for new epoch
+            # Reset the iteration (ex. for a new epoch)  
+            self.stop_prefetch()
             
-            if hasattr(self, '_shuffle_file') and self._shuffle_file is not None:
-                self._shuffle_file.seek(0)
-        else:
-            print("MDAT is resuming training from external logic.")
-            print("Document index: ",self.document_index)
-            print("Chunk step: ", self.current_chunk_step)
-            shuffled=True #TODO
-            if shuffled:
-                if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
-                    self._init_shuffle_file()
-            self._seek_document_pointer(self.document_index)
-        
-        return self
+            # 2. Reset State
+            self.current_document = None
+            if not hasattr(self,'_skip_reinit'):
+                self.current_chunk_step = 0
+                self.document_index = 0
+                self._iteration_count = 0
+                
+                if hasattr(self, '_max_iterations'):
+                    del self._max_iterations
+                
+                # Reset file pointer for the new thread to use
+                if hasattr(self, '_shuffle_file') and self._shuffle_file is not None:
+                    self._shuffle_file.seek(0)
+                if self.prefetch_buffer is not None and self.prefetch_buffer>0:
+                    self.start_prefetch(max_prefetch=self.prefetch_buffer)
+            else:
+                print("MDAT is resuming training from external logic.")
+                print("Document index: ",self.document_index)
+                print("Chunk step: ", self.current_chunk_step)
+                shuffled=True #TODO
+                if shuffled:
+                    if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
+                        self._init_shuffle_file()
+                self._seek_document_pointer(self.document_index)
+            return self    
+                
 
     def _get_next_chunk_from_document(self, document, chunk_step):
             """
@@ -911,7 +965,7 @@ class MatformerDataset(IterableDataset):
             
             try:
                 if self.current_iteration_modality in ['document', 'tokens', 'chunks']: # Entire document
-                    self.load_next_document()
+                    self.current_document=self.load_next_document()
                     result = self.current_document 
                 
                 elif self.current_iteration_modality == 'chunked_tokens': # Sequential chunked
@@ -925,7 +979,7 @@ class MatformerDataset(IterableDataset):
                                                  self.current_chunk_step >= len(self.current_document['chunked_tokens']))
                         
                         if is_document_exhausted:
-                            self.load_next_document()
+                            self.current_document=self.load_next_document()
                             self.current_chunk_step = 0
                             is_same_document = False 
                         else:
