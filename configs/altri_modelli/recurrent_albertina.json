@@ -35,9 +35,19 @@
               "before_output": {"type": "previous_state_saver", "detach_depth": 1}
             }
           },
+          "10": {
+            "hooks": {
+              "before_output": {"type": "previous_state_saver", "detach_depth": 1}
+            }
+          },
           "3": {
             "hooks": {
               "pre_attn": {"type": "previous_state_injection", "receive_from": 9}
+            }
+          },
+          "4": {
+            "hooks": {
+              "pre_attn": {"type": "previous_state_injection", "receive_from": 10}
             }
           }
        }
