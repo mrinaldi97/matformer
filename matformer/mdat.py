@@ -757,7 +757,7 @@ class MatformerDataset(IterableDataset):
         self._prefetch_thread.join(timeout=1.0)
         self._prefetch_thread = None
         self._prefetch_queue = None
-    def load_next_document(self,shuffled=True):
+    def _load_next_document(self,shuffled=True):
         if not hasattr(self, "_prefetch_queue") or self._prefetch_queue is None:
             print("Enable prefetch for faster dataset loading!")
             return self._load_next_document()
@@ -768,7 +768,7 @@ class MatformerDataset(IterableDataset):
         if doc is None:
             raise StopIteration
         return doc
-    def _load_next_document(self, shuffled=True) -> None:
+    def load_next_document(self, shuffled=True) -> None:
         """Load next document."""
         if shuffled and not getattr(self, '_active_view_shuffled', None):
             raise MDatNotShuffled(...)
@@ -850,14 +850,14 @@ class MatformerDataset(IterableDataset):
         
     def __iter__(self):
         # Reset the iteration (ex. for a new epoch)  
-        self.start_prefetch(max_prefetch=256)
+        #self.start_prefetch(max_prefetch=256)
         self.current_document = None
         if not hasattr(self,'_skip_reinit'):
             self.current_chunk_step = 0
             self.document_index = 0
             self._iteration_count = 0
-            self.stop_prefetch
-            self.start_prefetch(max_prefetch=256)
+            #self.stop_prefetch
+            #self.start_prefetch(max_prefetch=256)
             if hasattr(self, '_max_iterations'):
                 del self._max_iterations  # Force recalculation for new epoch
             
