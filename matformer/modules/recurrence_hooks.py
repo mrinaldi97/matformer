@@ -153,21 +153,6 @@ class RecurrenceInjector(nn.Module):
         """
         super().__init__()
         self.cache = cache.storage
-        if injection_type!='attention_only':
-            self.attn_norm = ModuleWrapper(
-                self.cache.registry.create("norm", layer_config['normalization'], **norm_kwargs)
-            )
-            self.mlp_norm = ModuleWrapper(
-                self.cache.registry.create("norm", layer_config['normalization'], **norm_kwargs)
-            )
-            self.mlp = ModuleWrapper(
-                self.cache.registry.create(
-                    "mlp", 
-                    'swiglu',
-                    hidden_size=config.hidden_size,
-                    ffn_factor=2
-                )
-            )
         self.xattn = MultiHeadAttention(
             q_dim=config.hidden_size, k_dim=config.hidden_size,
             v_dim=config.hidden_size, is_cross_attention=True,
@@ -202,15 +187,6 @@ class RecurrenceInjector(nn.Module):
             selected_y = replace(previous_state, tensor=previous_state.tensor[recurrence_mask])
 
             processed_x = self.xattn(query_input=selected_x, key_input=selected_y, value_input=selected_y)
-            if self.injection_type!='attention_only':
-                processed_x=self.attn_norm(processed_x)
-                mlp_out=self.mlp(processed_x)          
-                processed_x=mlp_out+processed_x
-                processed_x=self.mlp_norm(x) 
-            if self.transfomer_layers==2:
-                xattn_x=self.second_xattention(query_input=processed_x,key_input=selected_y,value_input=selected_y)
-                mlp(with residual)
-                norm
             out_tensor = x.tensor.clone()
             
             update_val = processed_x.tensor
