@@ -495,7 +495,7 @@ class TransformerBlock(MatformerModule):
     def forward(self, x, block_mask=None, sliding=False):
         """Forward pass through transformer block.     
         If self.norm_position == pre:
-            pre_attn => norm => attn => residual => pre_mpl => norm => mlp => residual => output
+            pre_attn => norm => attn => residual => pre_mlp => norm => mlp => residual => output
         else (self.norm_position == post):
             pre_attn => attn => norm => residual => pre_mlp => mlp => norm => residual => output
 
