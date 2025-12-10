@@ -51,7 +51,11 @@ class MultiLayerRecurrenceInjector(nn.Module):
         self.injection_type = injection_type
         assert receive_from >= self.layer_idx
         self.layers = nn.ModuleList()
-
+        norm_kwargs = {
+            "normalized_shape": config.hidden_size,
+            "eps": config.rms_norm_eps,
+            "elementwise_affine": True
+        }
         for i in range(transformer_layers):
             layer_components = nn.ModuleDict()
             layer_components['xattn'] = MultiHeadAttention(
@@ -63,10 +67,10 @@ class MultiLayerRecurrenceInjector(nn.Module):
 
             if injection_type != 'attention_only':
                 layer_components['attn_norm'] = ModuleWrapper(
-                    cache.registry.create("norm", "layernorm")
+                    cache.registry.create("norm", "layernorm", **norm_kwargs)
                 )     
                 layer_components['mlp_norm'] = ModuleWrapper(
-                    cache.registry.create("norm", "layernorm")
+                    cache.registry.create("norm", "layernorm", **norm_kwargs)
                 )
                 layer_components['mlp'] = ModuleWrapper(
                     cache.registry.create(
