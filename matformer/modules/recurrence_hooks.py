@@ -46,7 +46,7 @@ class RecurrenceInjector(nn.Module):
             q_dim=config.hidden_size, k_dim=config.hidden_size,
             v_dim=config.hidden_size, is_cross_attention=True,
             nheads=config.num_attention_heads,
-            positional_encoding='rope', is_causal=False, cache=cache
+            positional_encoding='alibi', is_causal=False, cache=cache
         )
         self.layer_idx = layer_idx
         self.receive_from = receive_from
@@ -55,6 +55,9 @@ class RecurrenceInjector(nn.Module):
     def forward(self, x, *args, **kwargs):
         try:
             previous_state = self.cache['for_recurrence'][self.receive_from]
+            if previous_state is None:
+                      print("No recurrency (None), skipping")
+                      return x
             recurrence_mask = previous_state.recurrence_mask
             if recurrence_mask is None or not recurrence_mask.any():
                              print("No recurrency. Skipping")
@@ -84,5 +87,5 @@ class RecurrenceInjector(nn.Module):
             result = replace(x, tensor=out_tensor)          
             return result.unpad() if wasUnpadded else result
         except Exception as e:
-            print(e)
+            print(f"Caught exception: {e} in hook at layer {self.layer_idx}")
             return x
