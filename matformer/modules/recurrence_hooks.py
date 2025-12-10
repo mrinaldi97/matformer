@@ -63,10 +63,10 @@ class MultiLayerRecurrenceInjector(nn.Module):
 
             if injection_type != 'attention_only':
                 layer_components['attn_norm'] = ModuleWrapper(
-                    cache.registry.create("norm", config.normalization)
+                    cache.registry.create("norm", "layernorm")
                 )     
                 layer_components['mlp_norm'] = ModuleWrapper(
-                    cache.registry.create("norm", config.normalization)
+                    cache.registry.create("norm", "layernorm")
                 )
                 layer_components['mlp'] = ModuleWrapper(
                     cache.registry.create(
