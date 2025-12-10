@@ -911,7 +911,7 @@ class BERTModel(TransformerWithLMHead):
             raise ValueError(f"pooling_type must be 'cls' or 'mean', got {self.pooling_type}")
             
         return self.classification_head(pooled).tensor        
-    def inference_testing(self, input_text=None, masking_ratio=0.25,datatype=torch.bfloat16, tokens=None):
+    def inference_testing(self, input_text=None, masking_ratio=0.25,datatype=torch.bfloat16, tokens=None, recurrence_mask=None):
         #assert (is input_text or is_tokens)
         if not hasattr(self,'maskerator') or masking_ratio!=self.masking_ratio:
             self.init_maskerator(masking_ratio)
@@ -922,7 +922,10 @@ class BERTModel(TransformerWithLMHead):
         sequence = torch.tensor(sequence).to(self.device)
         masked_list, cloze_list, _ = self.maskerator(sequence)
         masked_list.to(self.device)
-        masked_sequence = NormalTensor(tensor=masked_list.unsqueeze(0))
+        if recurrence_mask is None:
+            masked_sequence = NormalTensor(tensor=masked_list.unsqueeze(0))
+        else:
+            masked_sequence = NormalTensor(tensor=masked_list.unsqueeze(0),recurrence_mask=torch.tensor([recurrence_mask]).to(self.model.device))
         model_input=deepcopy(masked_sequence)
         with torch.no_grad():
             logits = self(model_input)

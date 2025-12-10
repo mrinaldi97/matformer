@@ -136,7 +136,7 @@ if __name__ == "__main__":
         for i in range(num_chunks):
             chunk_tokens = tokens[i*chunk_size:(i+1)*chunk_size]
             decoded_chunk = model.model.tokenizer.decode(chunk_tokens)
-            acc, out_toks = model.model.inference_testing(input_text=None, masking_ratio=args.masking_ratio, tokens=chunk_tokens)
+            acc, out_toks = model.model.inference_testing(input_text=None, masking_ratio=args.masking_ratio, tokens=chunk_tokens, recurrence_mask=True)
             results.append({
                 "index": i,
                 "accuracy": acc,
