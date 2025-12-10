@@ -45,7 +45,7 @@ import torch.nn as nn
 class MultiLayerRecurrenceInjector(nn.Module):
     def __init__(self, config, cache, layer_idx, receive_from, injection_type='full_transformer', transformer_layers=2):
         super().__init__()
-        self.cache = cache.storage
+        self.cache = cache.storage #Todo change name
         self.layer_idx = layer_idx
         self.receive_from = receive_from
         self.injection_type = injection_type
@@ -63,13 +63,13 @@ class MultiLayerRecurrenceInjector(nn.Module):
 
             if injection_type != 'attention_only':
                 layer_components['attn_norm'] = ModuleWrapper(
-                    self.cache.registry.create("norm", config.normalization)
+                    cache.registry.create("norm", config.normalization)
                 )     
                 layer_components['mlp_norm'] = ModuleWrapper(
-                    self.cache.registry.create("norm", config.normalization)
+                    cache.registry.create("norm", config.normalization)
                 )
                 layer_components['mlp'] = ModuleWrapper(
-                    self.cache.registry.create(
+                    cache.registry.create(
                         "mlp", 
                         'swiglu',
                         hidden_size=config.hidden_size,
