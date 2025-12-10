@@ -2,7 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from dataclasses import replace
-from matformer.tensors_dataclasses import TensorDC,UnpaddedTensor,PaddedTensor
+from matformer.tensors_dataclasses import TensorDC,UnpaddedTensor,PaddedTensor, ModuleWrapper
 from matformer.transformer_blocks import MultiHeadAttention
 from matformer.matformer_registry import registry
 
