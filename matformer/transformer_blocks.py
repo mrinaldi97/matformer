@@ -925,7 +925,7 @@ class BERTModel(TransformerWithLMHead):
         if recurrence_mask is None:
             masked_sequence = NormalTensor(tensor=masked_list.unsqueeze(0))
         else:
-            masked_sequence = NormalTensor(tensor=masked_list.unsqueeze(0),recurrence_mask=torch.tensor([recurrence_mask]).to(self.model.device))
+            masked_sequence = NormalTensor(tensor=masked_list.unsqueeze(0),recurrence_mask=torch.tensor([recurrence_mask]).to(self.device))
         model_input=deepcopy(masked_sequence)
         with torch.no_grad():
             logits = self(model_input)
