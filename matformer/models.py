@@ -206,13 +206,14 @@ class PL_ModelWrapper(MatformerModule):
         # TODO: this part has to be revised and cleaned
         additional_metrics=True
         if additional_metrics:
-            if 'gate' in name and p.numel() == 1:
-                self.log(f"gates/{name}_value", p.item(), on_step=True, batch_size=self.batch_size)
-                self.log(f"gates/{name}_opening", torch.tanh(p).item(), on_step=True, batch_size=self.batch_size)
+
             if self.global_step % 100 == 0:
                grad_norms, param_norms, grad_param_ratios = {}, {}, {}
                all_grads = []
                for name, p in self.named_parameters():
+				   if 'gate' in name and p.numel() == 1:
+                        self.log(f"gates/{name}_value", p.item(), on_step=True, batch_size=self.batch_size)
+                        self.log(f"gates/{name}_opening", torch.tanh(p).item(), on_step=True, batch_size=self.batch_size)
                    if p.grad is not None:
                        grad_norm = p.grad.detach().norm(2).item()
                        param_norm = p.detach().norm(2).item()
