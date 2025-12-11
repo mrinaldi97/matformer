@@ -31,9 +31,90 @@ class RecurrenceSaver(nn.Module):
         self.cache['recurrence_steps'][self.layer_idx] += 1
         return x
 
-
 import torch
 import torch.nn as nn
+from matformer.matformer_registry import registry
+from dataclasses import replace
+
+@registry.register("hooks", "gated_bridge_injector", "default", requires=["torch"], priority=0, bridge_type='conv', additional_loss=True)
+class GatedBridgeInjector(nn.Module):
+    def __init__(self, config, cache, layer_idx, receive_from):
+        super().__init__()
+        self.cache = cache.storage
+        self.layer_idx = layer_idx
+        self.receive_from = receive_from
+        self.hidden_size = config.hidden_size
+        self.additional_loss=additional_loss
+        if bridge_type=='mlp':
+            self.bridge_mlp = nn.Sequential(
+                nn.Linear(self.hidden_size, self.hidden_size * 2),
+                nn.GELU(),
+                nn.Linear(self.hidden_size * 2, self.hidden_size),
+                nn.LayerNorm(self.hidden_size)
+            )
+        else:
+            self.bridge_conv = nn.Sequential(
+                nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, padding=1, groups=self.hidden_size),
+                nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=1),
+                nn.GELU(),
+                nn.LayerNorm(self.hidden_size) # requires [B, L, D] format
+            )        
+        self.xattn = MultiHeadAttention(
+            q_dim=config.hidden_size, k_dim=config.hidden_size, v_dim=config.hidden_size,
+            is_cross_attention=True, nheads=config.num_attention_heads,
+            positional_encoding='nope',
+            is_causal=False, cache=cache
+        )
+        self.post_attn_norm = nn.LayerNorm(self.hidden_size)
+        self.gate = nn.Parameter(torch.zeros(1))  # Initialized at zero
+
+    def forward(self, x, *args, **kwargs):
+        try:
+            previous_state = self.cache['for_recurrence'][self.receive_from]
+            if previous_state is None:
+                      print("No recurrency (None), skipping")
+                      return x
+            recurrence_mask = previous_state.recurrence_mask
+            if recurrence_mask is None or not recurrence_mask.any():
+                             print("No recurrency. Skipping")
+                             return x               
+            if recurrence_mask.device != x.tensor.device:
+                recurrence_mask = recurrence_mask.to(x.tensor.device)
+          
+            wasUnpadded = False
+            if isinstance(x, UnpaddedTensor):
+                wasUnpadded = True
+                x = x.pad()
+                previous_state = previous_state.pad()
+            
+        current_x = x.tensor[recurrence_mask] 
+        memory_raw = previous_state.tensor[recurrence_mask]
+        if self.bridge_type=='mlp':
+            memory_bridged = self.bridge_mlp(memory_raw)
+        else:
+            mem_transposed = memory_raw.transpose(1, 2) 
+            bridged_transposed = self.bridge_conv(mem_transposed)
+            memory_bridged = bridged_transposed.transpose(1, 2)
+        curr_x_obj = replace(x, tensor=current_x)
+        if self.additional_loss:
+            aux_loss = F.mse_loss(memory_bridged, current_x)
+            if 'aux_losses' not in self.cache:
+                self.cache['aux_losses'] = []
+            self.cache['aux_losses'].append(aux_loss)
+            
+        mem_obj = replace(previous_state, tensor=memory_bridged)
+        attn_out = self.xattn(query_input=curr_x_obj, key_input=mem_obj, value_input=mem_obj)
+        injection_signal = attn_out.tensor
+        injection_signal = self.post_attn_norm(injection_signal)
+        #for layer in self.processing_layers:
+        #    injection_signal = injection_signal + layer(injection_signal)
+        gated_signal = self.gate * torch.tanh(injection_signal)   
+        out_tensor = x.tensor.clone()
+        out_tensor[recurrence_mask] += gated_signal
+        result = replace(x, tensor=out_tensor)
+        return result.unpad() if wasUnpadded else result
+
+
 
 @registry.register(
     "hooks",
