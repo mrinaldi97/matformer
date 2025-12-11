@@ -36,9 +36,9 @@ import torch.nn as nn
 from matformer.matformer_registry import registry
 from dataclasses import replace
 
-@registry.register("hooks", "gated_bridge_injector", "default", requires=["torch"], priority=0, bridge_type='conv', additional_loss=True)
+@registry.register("hooks", "gated_bridge_injector", "default", requires=["torch"], priority=0)
 class GatedBridgeInjector(nn.Module):
-    def __init__(self, config, cache, layer_idx, receive_from):
+    def __init__(self, config, cache, layer_idx, receive_from, bridge_type='conv', additional_loss=True):
         super().__init__()
         self.cache = cache.storage
         self.layer_idx = layer_idx
