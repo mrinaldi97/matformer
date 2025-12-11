@@ -67,8 +67,9 @@ class GatedBridgeInjector(nn.Module):
             positional_encoding='nope',
             is_causal=False, cache=cache
         )
+        self.linear_post_attn = nn.Linear(hidden_size, hidden_size)
         self.post_attn_norm = nn.LayerNorm(self.hidden_size)
-        self.gate = nn.Parameter(torch.zeros(1))  # Initialized at zero
+        self.gate = nn.Parameter(torch.tensor(0.1)) #Initialized at 0.1
 
     def forward(self, x, *args, **kwargs):
         try:
@@ -111,7 +112,10 @@ class GatedBridgeInjector(nn.Module):
             injection_signal = self.post_attn_norm(injection_signal)
             #for layer in self.processing_layers:
             #    injection_signal = injection_signal + layer(injection_signal)
-            gated_signal = self.gate * torch.tanh(injection_signal)   
+            injection_signal = self.linear_post_attn(injection_signal)
+            g = torch.sigmoid(self.gate)
+            gated_signal = g * torch.tanh(injection_signal)
+            #gated_signal = self.gate * torch.tanh(injection_signal)   
             out_tensor = x.tensor.clone()
             out_tensor[recurrence_mask] += gated_signal
             result = replace(x, tensor=out_tensor)
