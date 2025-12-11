@@ -120,8 +120,8 @@ class GatedBridgeInjector(nn.Module):
             gate_per_token = torch.sigmoid(self.gating_layer(
                 torch.cat([current_x, memory_bridged], dim=-1)
             ))    
-            self.full_cache.additional_logs["gate{self.layer_idx}/mean"]=gate_per_token.mean().item()
-            self.full_cache.additional_logs["gate{self.layer_idx}/std"]=gate_per_token.std().item()              
+            self.full_cache.additional_logs[f"gate{self.layer_idx}/mean"]=gate_per_token.mean().item()
+            self.full_cache.additional_logs[f"gate{self.layer_idx}/std"]=gate_per_token.std().item()              
             gated_signal = gate_per_token * torch.tanh(injection_signal)
             #gated_signal = self.gate * torch.tanh(injection_signal)   
             out_tensor = x.tensor.clone()
