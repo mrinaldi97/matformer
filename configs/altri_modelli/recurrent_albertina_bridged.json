@@ -43,11 +43,13 @@
           "1": {
             "hooks": {
               "pre_mlp": {"type": "recurrence_bridge_injector", "receive_from": 9}
-            },       
+            }
+          },       
           "2": {
             "hooks": {
               "pre_mlp": {"type": "recurrence_bridge_injector", "receive_from": 9}
-            },
+            }
+           },
           "3": {
             "hooks": {
               "pre_mlp": {"type": "recurrence_bridge_injector", "receive_from": 10}
