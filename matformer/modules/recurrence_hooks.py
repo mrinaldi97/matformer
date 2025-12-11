@@ -45,7 +45,8 @@ class GatedBridgeInjector(nn.Module):
         self.receive_from = receive_from
         self.hidden_size = config.hidden_size
         self.additional_loss=additional_loss
-        if bridge_type=='mlp':
+        self.bridge_type=bridge_type
+        if self.bridge_type=='mlp':
             self.bridge_mlp = nn.Sequential(
                 nn.Linear(self.hidden_size, self.hidden_size * 2),
                 nn.GELU(),
