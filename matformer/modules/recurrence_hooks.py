@@ -87,33 +87,37 @@ class GatedBridgeInjector(nn.Module):
                 x = x.pad()
                 previous_state = previous_state.pad()
             
-        current_x = x.tensor[recurrence_mask] 
-        memory_raw = previous_state.tensor[recurrence_mask]
-        if self.bridge_type=='mlp':
-            memory_bridged = self.bridge_mlp(memory_raw)
-        else:
-            mem_transposed = memory_raw.transpose(1, 2) 
-            bridged_transposed = self.bridge_conv(mem_transposed)
-            memory_bridged = bridged_transposed.transpose(1, 2)
-        curr_x_obj = replace(x, tensor=current_x)
-        if self.additional_loss:
-            aux_loss = F.mse_loss(memory_bridged, current_x)
-            if 'aux_losses' not in self.cache:
-                self.cache['aux_losses'] = []
-            self.cache['aux_losses'].append(aux_loss)
-            
-        mem_obj = replace(previous_state, tensor=memory_bridged)
-        attn_out = self.xattn(query_input=curr_x_obj, key_input=mem_obj, value_input=mem_obj)
-        injection_signal = attn_out.tensor
-        injection_signal = self.post_attn_norm(injection_signal)
-        #for layer in self.processing_layers:
-        #    injection_signal = injection_signal + layer(injection_signal)
-        gated_signal = self.gate * torch.tanh(injection_signal)   
-        out_tensor = x.tensor.clone()
-        out_tensor[recurrence_mask] += gated_signal
-        result = replace(x, tensor=out_tensor)
-        return result.unpad() if wasUnpadded else result
-
+            current_x = x.tensor[recurrence_mask] 
+            memory_raw = previous_state.tensor[recurrence_mask]
+            if self.bridge_type=='mlp':
+                memory_bridged = self.bridge_mlp(memory_raw)
+            else:
+                mem_transposed = memory_raw.transpose(1, 2) 
+                bridged_transposed = self.bridge_conv(mem_transposed)
+                memory_bridged = bridged_transposed.transpose(1, 2)
+            curr_x_obj = replace(x, tensor=current_x)
+            if self.additional_loss:
+                aux_loss = F.mse_loss(memory_bridged, current_x)
+                if 'aux_losses' not in self.cache:
+                    self.cache['aux_losses'] = []
+                self.cache['aux_losses'].append(aux_loss)
+                
+            mem_obj = replace(previous_state, tensor=memory_bridged)
+            attn_out = self.xattn(query_input=curr_x_obj, key_input=mem_obj, value_input=mem_obj)
+            injection_signal = attn_out.tensor
+            injection_signal = self.post_attn_norm(injection_signal)
+            #for layer in self.processing_layers:
+            #    injection_signal = injection_signal + layer(injection_signal)
+            gated_signal = self.gate * torch.tanh(injection_signal)   
+            out_tensor = x.tensor.clone()
+            out_tensor[recurrence_mask] += gated_signal
+            result = replace(x, tensor=out_tensor)
+            return result.unpad() if wasUnpadded else result
+        except Exception as e:
+            print(f"Caught exception: {e} in hook at layer {self.layer_idx}")
+            import traceback
+            traceback.print_exc()
+            return x 
 
 
 @registry.register(
