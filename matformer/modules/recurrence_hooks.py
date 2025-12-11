@@ -67,7 +67,7 @@ class GatedBridgeInjector(nn.Module):
             positional_encoding='nope',
             is_causal=False, cache=cache
         )
-        self.linear_post_attn = nn.Linear(hidden_size, hidden_size)
+        self.linear_post_attn = nn.Linear(self.hidden_size, self.hidden_size)
         self.post_attn_norm = nn.LayerNorm(self.hidden_size)
         self.gate = nn.Parameter(torch.tensor(0.1)) #Initialized at 0.1
 
