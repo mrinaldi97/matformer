@@ -40,14 +40,22 @@
               "before_output": {"type": "previous_state_saver", "detach_depth": 1}
             }
           },
+          "1": {
+            "hooks": {
+              "pre_mlp": {"type": "recurrence_bridge_injector", "receive_from": 9}
+            }          
+          "2": {
+            "hooks": {
+              "pre_mlp": {"type": "recurrence_bridge_injector", "receive_from": 9}
+            }
           "3": {
             "hooks": {
-              "pre_mlp": {"type": "gated_bridge_injector", "receive_from": 9}
+              "pre_mlp": {"type": "recurrence_bridge_injector", "receive_from": 10}
             }
           },
           "4": {
             "hooks": {
-              "pre_mlp": {"type": "gated_bridge_injector", "receive_from": 10}
+              "pre_mlp": {"type": "recurrence_bridge_injector", "receive_from": 10}
             }
           }
        }

@@ -30,6 +30,101 @@ class RecurrenceSaver(nn.Module):
         self.cache['for_recurrence'][self.layer_idx] = saved
         self.cache['recurrence_steps'][self.layer_idx] += 1
         return x
+        
+@registry.register("hooks", "recurrence_bridge_injector", "default", requires=["torch"], priority=0)
+class RecurrenceBridgeInjector(nn.Module):
+    def __init__(self, config, cache, layer_idx, receive_from):
+        super().__init__()
+        self.full_cache = cache
+        self.cache = cache.storage
+        self.layer_idx = layer_idx
+        self.receive_from = receive_from
+        self.hidden_size = config.hidden_size
+        self.xattn1 = MultiHeadAttention(
+            q_dim=config.hidden_size, k_dim=config.hidden_size, v_dim=config.hidden_size,
+            is_cross_attention=True, nheads=config.num_attention_heads,
+            positional_encoding='nope', is_causal=False, cache=cache
+        )
+        self.xattn2 = MultiHeadAttention(
+            q_dim=config.hidden_size, k_dim=config.hidden_size, v_dim=config.hidden_size,
+            is_cross_attention=True, nheads=config.num_attention_heads,
+            positional_encoding='nope', is_causal=False, cache=cache
+        )
+        self.bridge = nn.Sequential(
+            nn.LayerNorm(self.hidden_size),
+            nn.Linear(self.hidden_size, 2 * self.hidden_size),
+            nn.GELU(),
+            nn.Linear(2 * self.hidden_size, self.hidden_size),
+            nn.LayerNorm(self.hidden_size)
+        )
+        self.post_attn_norm1 = nn.LayerNorm(self.hidden_size)
+        self.post_attn_linear1 = nn.Linear(self.hidden_size, self.hidden_size)
+        self.mlp1 = nn.Sequential(
+            nn.LayerNorm(self.hidden_size),
+            nn.Linear(self.hidden_size, 2 * self.hidden_size),
+            nn.GELU(),
+            nn.Linear(2 * self.hidden_size, self.hidden_size)
+        )
+        self.post_attn_norm2 = nn.LayerNorm(self.hidden_size)
+        self.post_attn_linear2 = nn.Linear(self.hidden_size, self.hidden_size)
+        self.mlp2 = nn.Sequential(
+            nn.LayerNorm(self.hidden_size),
+            nn.Linear(self.hidden_size, 2 * self.hidden_size),
+            nn.GELU(),
+            nn.Linear(2 * self.hidden_size, self.hidden_size)
+        )
+        self.post_injection_norm = nn.LayerNorm(self.hidden_size)
+
+    def forward(self, x, *args, **kwargs):
+        try:
+            previous_state = self.cache['for_recurrence'][self.receive_from]
+            if previous_state is None:
+                return x
+            recurrence_mask = previous_state.recurrence_mask
+            if recurrence_mask is None or not recurrence_mask.any():
+                return x
+            if recurrence_mask.device != x.tensor.device:
+                recurrence_mask = recurrence_mask.to(x.tensor.device)
+            wasUnpadded = False
+            if isinstance(x, UnpaddedTensor):
+                wasUnpadded = True
+                x = x.pad()
+                previous_state = previous_state.pad()
+            current_x = x.tensor[recurrence_mask]
+            memory_raw = previous_state.tensor[recurrence_mask]
+            memory_bridged = self.bridge(memory_raw)
+            curr_x_obj = replace(x, tensor=current_x)
+            mem_obj = replace(previous_state, tensor=memory_bridged)
+            attn_out1 = self.xattn1(query_input=curr_x_obj, key_input=mem_obj, value_input=mem_obj)
+            h1 = attn_out1.tensor
+            h1 = self.post_attn_norm1(h1)
+            h1 = self.post_attn_linear1(h1)
+            h1 = h1 + current_x
+            h1 = self.mlp1(h1)
+            attn_query_obj = replace(curr_x_obj, tensor=h1)
+            attn_out2 = self.xattn2(query_input=attn_query_obj, key_input=mem_obj, value_input=mem_obj)
+            h2 = attn_out2.tensor
+            h2 = self.post_attn_norm2(h2)
+            h2 = self.post_attn_linear2(h2)
+            h2 = h2 + h1
+            injection_signal = self.mlp2(h2)
+            injection_signal = self.post_injection_norm(injection_signal)
+            out_tensor = x.tensor.clone()
+            if injection_signal.dtype != out_tensor.dtype:
+                injection_signal = injection_signal.to(out_tensor.dtype)
+            out_tensor[recurrence_mask] += injection_signal
+            result = replace(x, tensor=out_tensor)
+            # logging
+            self.full_cache.additional_logs[f"recurrence/{self.layer_idx}/memory_norm_mean"] = memory_bridged.norm(dim=-1).mean().item()
+            self.full_cache.additional_logs[f"recurrence/{self.layer_idx}/injection_norm_mean"] = injection_signal.norm(dim=-1).mean().item()
+            self.full_cache.additional_logs[f"recurrence/{self.layer_idx}/injection_norm_std"] = injection_signal.norm(dim=-1).std().item()
+            self.full_cache.additional_logs[f"recurrence/{self.layer_idx}/used_fraction"] = float(recurrence_mask.float().mean().item())
+            return result.unpad() if wasUnpadded else result
+        except Exception as e:
+            print(f"Caught exception: {e} in hook at layer {self.layer_idx}")
+            import traceback
+            traceback.print_exc()
+            return x
 
 import torch
 import torch.nn as nn
