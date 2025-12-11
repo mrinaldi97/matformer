@@ -167,7 +167,7 @@ class PL_ModelWrapper(MatformerModule):
         if len(self.cache.additional_logs.items())>0:
             #Additional logs
             for k in self.cache.additional_logs.keys():
-                self.log(k,self.cache.additional_logs[v],on_step=True,batch_size=self.batch_size)
+                self.log(k,self.cache.additional_logs[k],on_step=True,batch_size=self.batch_size)
         
         #Trying to simplify the logic,now it by defaults pad everything again.It could be less efficient,we need some tiny test and benchmark
         #1) See if the loss makes sense directly with unpadding
