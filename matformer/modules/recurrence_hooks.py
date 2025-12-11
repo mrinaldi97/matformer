@@ -38,7 +38,7 @@ from dataclasses import replace
 
 @registry.register("hooks", "gated_bridge_injector", "default", requires=["torch"], priority=0)
 class GatedBridgeInjector(nn.Module):
-    def __init__(self, config, cache, layer_idx, receive_from, bridge_type='conv', additional_loss=True):
+    def __init__(self, config, cache, layer_idx, receive_from, bridge_type='adapter', additional_loss=False):
         super().__init__()
         self.full_cache=cache
         self.cache = cache.storage
@@ -54,6 +54,11 @@ class GatedBridgeInjector(nn.Module):
                 nn.Linear(self.hidden_size * 2, self.hidden_size),
                 nn.LayerNorm(self.hidden_size)
             )
+        elif self.bridge_type=='adapter':
+            bottleneck_dim = self.hidden_size // 2
+            self.bridge_down = nn.Linear(self.hidden_size, bottleneck_dim)
+            self.bridge_up = nn.Linear(bottleneck_dim, self.hidden_size)
+            self.bridge_norm = nn.LayerNorm(self.hidden_size)
         else:
             self.bridge_conv = nn.Sequential(
                 nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, padding=1, groups=self.hidden_size),
@@ -61,7 +66,7 @@ class GatedBridgeInjector(nn.Module):
                 nn.GELU(),
                 
             )  
-            self.conv_norm=nn.LayerNorm(self.hidden_size) # requires [B, L, D] format      
+            self.conv_norm=nn.LayerNorm(self.hidden_size)      
         self.xattn = MultiHeadAttention(
             q_dim=config.hidden_size, k_dim=config.hidden_size, v_dim=config.hidden_size,
             is_cross_attention=True, nheads=config.num_attention_heads,
@@ -70,8 +75,8 @@ class GatedBridgeInjector(nn.Module):
         )
         self.linear_post_attn = nn.Linear(self.hidden_size, self.hidden_size)
         self.post_attn_norm = nn.LayerNorm(self.hidden_size)
-        #self.gate = nn.Parameter(torch.tensor(0.8)) #Initialized at 0.8
         self.gating_layer = nn.Linear(2 * self.hidden_size, 1)
+        nn.init.constant_(self.gating_layer.bias, 2.2)
 
 
     def forward(self, x, *args, **kwargs):
@@ -97,6 +102,12 @@ class GatedBridgeInjector(nn.Module):
             memory_raw = previous_state.tensor[recurrence_mask]
             if self.bridge_type=='mlp':
                 memory_bridged = self.bridge_mlp(memory_raw)
+            elif self.bridge_type=='adapter':
+                residual = memory_raw
+                down = self.bridge_down(memory_raw)
+                down = F.gelu(down)
+                up = self.bridge_up(down)
+                memory_bridged = self.bridge_norm(residual + up)
             else:
                 mem_transposed = memory_raw.transpose(1, 2) 
                 bridged_transposed = self.bridge_conv(mem_transposed)
@@ -113,10 +124,7 @@ class GatedBridgeInjector(nn.Module):
             attn_out = self.xattn(query_input=curr_x_obj, key_input=mem_obj, value_input=mem_obj)
             injection_signal = attn_out.tensor
             injection_signal = self.post_attn_norm(injection_signal)
-            #for layer in self.processing_layers:
-            #    injection_signal = injection_signal + layer(injection_signal)
             injection_signal = self.linear_post_attn(injection_signal)
-            #gate_hyperparam = torch.sigmoid(self.gate)
             gate_per_token = torch.sigmoid(self.gating_layer(
                 torch.cat([current_x, memory_bridged], dim=-1)
             ))    
@@ -125,7 +133,6 @@ class GatedBridgeInjector(nn.Module):
             self.full_cache.additional_logs[f"gate/{self.layer_idx}/mean"]=gate_per_token.mean().item()
             self.full_cache.additional_logs[f"gate/{self.layer_idx}/std"]=gate_per_token.std().item()              
             gated_signal = gate_per_token * torch.tanh(injection_signal)
-            #gated_signal = self.gate * torch.tanh(injection_signal)   
             out_tensor = x.tensor.clone()
             out_tensor[recurrence_mask] += gated_signal
             result = replace(x, tensor=out_tensor)
@@ -134,8 +141,7 @@ class GatedBridgeInjector(nn.Module):
             print(f"Caught exception: {e} in hook at layer {self.layer_idx}")
             import traceback
             traceback.print_exc()
-            return x 
-
+            return x
 
 @registry.register(
     "hooks",
