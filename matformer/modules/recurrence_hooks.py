@@ -74,7 +74,6 @@ class GatedBridgeInjector(nn.Module):
         self.gating_layer = nn.Linear(2 * self.hidden_size, 1)
 
 
-        gated_signal = g * torch.tanh(injection_signal)
     def forward(self, x, *args, **kwargs):
         try:
             previous_state = self.cache['for_recurrence'][self.receive_from]
