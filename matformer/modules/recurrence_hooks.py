@@ -58,8 +58,9 @@ class GatedBridgeInjector(nn.Module):
                 nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=3, padding=1, groups=self.hidden_size),
                 nn.Conv1d(self.hidden_size, self.hidden_size, kernel_size=1),
                 nn.GELU(),
-                nn.LayerNorm(self.hidden_size) # requires [B, L, D] format
-            )        
+                
+            )  
+            self.conv_norm=nn.LayerNorm(self.hidden_size) # requires [B, L, D] format      
         self.xattn = MultiHeadAttention(
             q_dim=config.hidden_size, k_dim=config.hidden_size, v_dim=config.hidden_size,
             is_cross_attention=True, nheads=config.num_attention_heads,
@@ -96,6 +97,7 @@ class GatedBridgeInjector(nn.Module):
                 mem_transposed = memory_raw.transpose(1, 2) 
                 bridged_transposed = self.bridge_conv(mem_transposed)
                 memory_bridged = bridged_transposed.transpose(1, 2)
+                memory_bridged=self.conv_norm(memory_bridged)
             curr_x_obj = replace(x, tensor=current_x)
             if self.additional_loss:
                 aux_loss = F.mse_loss(memory_bridged, current_x)
