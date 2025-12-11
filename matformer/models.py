@@ -164,7 +164,10 @@ class PL_ModelWrapper(MatformerModule):
             base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
             cloze_mask_flat = torch.cat(cloze_mask.unbind()).to(logits_flat.device) if masked else None
         """
-        
+        if len(self.cache.additional_logs.items())>0:
+            #Additional logs
+            for k in self.cache.additional_logs.keys():
+                self.log(k,self.cache.additional_logs[v],on_step=True,batch_size=self.batch_size)
         
         #Trying to simplify the logic,now it by defaults pad everything again.It could be less efficient,we need some tiny test and benchmark
         #1) See if the loss makes sense directly with unpadding

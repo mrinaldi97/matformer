@@ -40,6 +40,7 @@ from dataclasses import replace
 class GatedBridgeInjector(nn.Module):
     def __init__(self, config, cache, layer_idx, receive_from, bridge_type='conv', additional_loss=True):
         super().__init__()
+        self.full_cache=cache
         self.cache = cache.storage
         self.layer_idx = layer_idx
         self.receive_from = receive_from
@@ -69,8 +70,11 @@ class GatedBridgeInjector(nn.Module):
         )
         self.linear_post_attn = nn.Linear(self.hidden_size, self.hidden_size)
         self.post_attn_norm = nn.LayerNorm(self.hidden_size)
-        self.gate = nn.Parameter(torch.tensor(0.1)) #Initialized at 0.1
+        #self.gate = nn.Parameter(torch.tensor(0.8)) #Initialized at 0.8
+        self.gating_layer = nn.Linear(2 * self.hidden_size, 1)
 
+
+        gated_signal = g * torch.tanh(injection_signal)
     def forward(self, x, *args, **kwargs):
         try:
             previous_state = self.cache['for_recurrence'][self.receive_from]
@@ -113,8 +117,13 @@ class GatedBridgeInjector(nn.Module):
             #for layer in self.processing_layers:
             #    injection_signal = injection_signal + layer(injection_signal)
             injection_signal = self.linear_post_attn(injection_signal)
-            g = torch.sigmoid(self.gate)
-            gated_signal = g * torch.tanh(injection_signal)
+            #gate_hyperparam = torch.sigmoid(self.gate)
+            gate_per_token = torch.sigmoid(self.gating_layer(
+                torch.cat([current_x, memory_bridged], dim=-1)
+            ))    
+            self.full_cache.additional_logs["gate{self.layer_idx}/mean"]=g.mean().item()
+            self.full_cache.additional_logs["gate{self.layer_idx}/std"]=g.std().item()              
+            gated_signal = gate_per_token * torch.tanh(injection_signal)
             #gated_signal = self.gate * torch.tanh(injection_signal)   
             out_tensor = x.tensor.clone()
             out_tensor[recurrence_mask] += gated_signal
