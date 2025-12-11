@@ -211,7 +211,7 @@ class PL_ModelWrapper(MatformerModule):
                grad_norms, param_norms, grad_param_ratios = {}, {}, {}
                all_grads = []
                for name, p in self.named_parameters():
-				   if 'gate' in name and p.numel() == 1:
+                   if 'gate' in name and p.numel() == 1:
                         self.log(f"gates/{name}_value", p.item(), on_step=True, batch_size=self.batch_size)
                         self.log(f"gates/{name}_opening", torch.tanh(p).item(), on_step=True, batch_size=self.batch_size)
                    if p.grad is not None:
