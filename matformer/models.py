@@ -303,6 +303,9 @@ class PL_ModelWrapper(MatformerModule):
                 for name, param in self.named_parameters():
                     if not param.requires_grad:
                         continue
+                    if "conv" in name:
+                        adamw_params.append(param)
+                        print(f"{name} (Convolutional) in AdamW (ndim={param.ndim})")                          
                     if "lm_head" in name or "embed_tokens" in name or param.ndim < 2:
                         adamw_params.append(param)
                         print(f"{name} in AdamW (ndim={param.ndim})")
