@@ -3,7 +3,7 @@
     "model_config": {
       "name": "Albertina_XL1",
       "hidden_size": 1024,
-      "ffn_factor": 4.0,
+      "ffn_factor": 3.0,
       "vocab_size": 32768,
       "bos_token_id": 5,
       "eos_token_id": 6,
