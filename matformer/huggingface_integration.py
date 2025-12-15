@@ -351,6 +351,12 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
         if len(input_ids.shape) == 1:
             input_ids = input_ids.unsqueeze(0)
         
+        if labels is not None:
+            if self.num_labels > 1 and (labels.dtype not in (torch.long, torch.int)):
+                problem_type = "multi_label_classification"
+            else:
+                problem_type = "single_label_classification"
+        
         # if not hasattr(self.matformer_model, "classification_head"):
             #we actually do not directly call the classification head but we still require it as a 'type check'
             # raise Exception("The underneath model of a MatformerForSequenceClassification needs to have an attr 'classification_head'")
@@ -360,7 +366,13 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
         
         loss = None
         if labels is not None:
-            loss = F.cross_entropy(logits, labels)
+            if problem_type == "single_label_classification":
+                loss = F.cross_entropy(logits, labels)
+            elif problem_type == "multi_label_classification":
+                loss_fct = nn.BCEWithLogitsLoss()
+                loss = loss_fct(logits, labels)
+            else:
+                raise ValueError("Unknown problem type for classification")
         
         return SequenceClassifierOutput(loss=loss, logits=logits)
 
