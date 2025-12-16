@@ -698,16 +698,18 @@ class MatformerDataset(IterableDataset):
         self.__iter__(with_prefetch=False)
         doc_index = 0
         
-        try:
-            while True:
-                doc = next(self)
-                worker_id = doc_index % num_workers
-                num_chunks = len(doc['chunks'])
-                chunks_yielded = num_chunks // self.chunk_multiplier
-                worker_chunk_counts[worker_id] += chunks_yielded
-                doc_index += 1
-        except StopIteration:
-            pass
+        with tqdm(total=len(self)) as pbar:
+            try:
+                while True:
+                    doc = next(self)
+                    worker_id = doc_index % num_workers
+                    num_chunks = len(doc['object']['chunks'])
+                    chunks_yielded = num_chunks // self.chunk_multiplier
+                    worker_chunk_counts[worker_id] += chunks_yielded
+                    doc_index += 1
+                    pbar.update(1)
+            except StopIteration:
+                pass
         
         self.set_iteration_modality(original_modality)
         
