@@ -681,7 +681,7 @@ class MatformerDataset(IterableDataset):
         self._active_view_shuffled = view_meta.get('shuffle_struct_format') is not None 
         # Load the actual submdats
         self._populate_submdat()
-    def precompute_chunks_distributed(self, num_workers=60):
+    def precompute_chunks_distributed(self, num_workers=120):
         """
         Precompute chunk counts for distributed training.
         
@@ -695,7 +695,7 @@ class MatformerDataset(IterableDataset):
         self.set_iteration_modality('chunks')
         
         worker_chunk_counts = [0] * num_workers
-        self.__iter__()
+        self.__iter__(with_prefetch=False)
         doc_index = 0
         
         try:
@@ -899,7 +899,7 @@ class MatformerDataset(IterableDataset):
         return self.list_strategies() #a shortcut 
     def list_views(self):
         return self.db.list_views()
-    def __iter__(self):
+    def __iter__(self,with_prefetch=True):
             # Reset the iteration (ex. for a new epoch)  
             self.stop_prefetch()
             
@@ -916,8 +916,9 @@ class MatformerDataset(IterableDataset):
                 # Reset file pointer for the new thread to use
                 if hasattr(self, '_shuffle_file') and self._shuffle_file is not None:
                     self._shuffle_file.seek(0)
-                if self.prefetch_buffer is not None and self.prefetch_buffer>0:
-                    self.start_prefetch(max_prefetch=self.prefetch_buffer)
+                if with_prefetch:
+                    if self.prefetch_buffer is not None and self.prefetch_buffer>0:
+                        self.start_prefetch(max_prefetch=self.prefetch_buffer)
             else:
                 print("MDAT is resuming training from external logic.")
                 print("Document index: ",self.document_index)
