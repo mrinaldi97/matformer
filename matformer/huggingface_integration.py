@@ -10,7 +10,7 @@ from transformers.generation import GenerationMixin
 import json
 import os
 from pathlib import Path
-
+from transformers import set_seed
 from matformer.models import PL_ModelWrapper
 from matformer.transformer_blocks import Autoregressive_Model, BERTModel, TransformerWithClassificationHead, TransformerWithTokenClassificationHead
 from matformer.model_config import ModelConfig
@@ -51,7 +51,8 @@ def from_dict(data: dict, target_class):
 class MatformerConfig(PretrainedConfig):
     model_type = "matformer"
 
-    def __init__(self, **kwargs):
+    def __init__(self, seed=42, **kwargs):
+        self.seed = seed
         self._matformer_config_dict = kwargs.pop('_matformer_config_dict', None)
         self._checkpoint_path = kwargs.pop('_checkpoint_path', None)
         self._model_class = kwargs.pop('_model_class', None)
@@ -128,6 +129,8 @@ class MatformerPreTrainedModel(PreTrainedModel):
         return cls._load_from_checkpoint(checkpoint_path, config, map_location)
     @classmethod
     def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
+        set_seed(config.seed)
+
         instance = cls(config)
         
         model_class_map = {
@@ -344,6 +347,7 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
     def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
         
         instance = super()._load_from_checkpoint(checkpoint_path, config, map_location)
+        set_seed(config.seed)
         instance.matformer_model.model.change_num_labels(instance.num_labels)
         return instance   
     
@@ -388,6 +392,7 @@ class MatformerForTokenClassification(MatformerPreTrainedModel):
     def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
         
         instance = super()._load_from_checkpoint(checkpoint_path, config, map_location)
+        set_seed(config.seed)
         instance.matformer_model.model.change_num_labels(instance.num_labels)
         return instance
     
