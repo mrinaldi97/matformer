@@ -44,7 +44,8 @@ def parse_args():
     parser.add_argument('--data_config', type=str, help="Path to data_config.json")
     parser.add_argument('--tokenizer_config', type=str, help="Path to tokenizer_config.json")
     parser.add_argument('--override', nargs='*', default=[], help="Override config parameters as key=value pairs")
-    parser.add_argument('--gpu', type=int, default=1, help="GPU device ID")
+    parser.add_argument('--gpu', type=int, default=1, help="Number of GPU(s)")
+    parser.add_argument('--nodes', type=int, default=1, help="Number of Node(s)")
     parser.add_argument('--checkpoint', type=str, default=None, help="Path to checkpoint file")
     parser.add_argument('--start-from-scratch', action='store_true', help="Start training from scratch")
     parser.add_argument('--simulate', action='store_true', help="Instantiate model and print state_dict shapes, then exit")
@@ -91,7 +92,7 @@ def parse_args():
         except ValueError:
             parser.error(f"Override '{item}' must be in key=value format")
     
-    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch,args.simulate,args.dump_json,args.debug_steps,args.compile
+    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch,args.simulate,args.dump_json,args.debug_steps,args.compile,args.nodes
 
 def get_model_class(model_class: str):
     module = import_module("matformer.transformer_blocks")
@@ -171,7 +172,7 @@ def main():
     #config_path, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json = parse_args()
     #cfg = apply_overrides(load_config(config_path), overrides)
     
-    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json, debug_steps,_compile = parse_args()
+    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json, debug_steps,_compile, num_nodes = parse_args()
     model_config_dict, train_cfg, data_cfg, tok_cfg, cfg = load_and_prepare_configs(config_paths, overrides)
     
     #model_cfg = ModelConfig(**cfg['model_config'])
@@ -297,7 +298,10 @@ def main():
         accumulate_grad_batches=train_cfg.get('accumulate_grad_batches', 1),
         default_root_dir=save_dir,
         max_epochs=max_epochs,
-        max_steps=max_steps
+        max_steps=max_steps,
+        strategy='ddp',
+        plugins=DDPPlugin(find_unused_parameters=False),
+        num_nodes=num_nodes
     )
     if _compile:
         try:
