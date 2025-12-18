@@ -14,7 +14,7 @@ from matformer.model_config import ModelConfig
 from matformer.models import PL_ModelWrapper
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
-from pytorch_lightning.plugins import DDPPlugin
+#from pytorch_lightning.plugins import DDPPlugin
 import math, os
 from datetime import datetime
 
@@ -301,7 +301,6 @@ def main():
         max_epochs=max_epochs,
         max_steps=max_steps,
         strategy='ddp',
-        plugins=DDPPlugin(find_unused_parameters=False),
         num_nodes=num_nodes
     )
     if _compile:
