@@ -14,6 +14,7 @@ from matformer.model_config import ModelConfig
 from matformer.models import PL_ModelWrapper
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
+from pytorch_lightning.plugins import DDPPlugin
 import math, os
 from datetime import datetime
 
