@@ -71,6 +71,7 @@ class MatformerDataModule(pl.LightningDataModule):
             ### To debug the resume of checkpoint
             debug_path = os.environ.get("DEBUG_DATALOADER_SAVE", None)
             if debug_path is not None:
+                import json
                 if not hasattr(self, "_debug_save_index"):
                     self._debug_save_index = 0
                 try:
