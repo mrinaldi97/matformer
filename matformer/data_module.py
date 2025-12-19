@@ -27,7 +27,6 @@ class MatformerDataModule(pl.LightningDataModule):
     def setup(self, stage=None):
         if dist.is_initialized():
             self.distributed_initialized=True
-        # Initialize dataset here for proper distributed handling
         self.mdat = MatformerDataset.load_dataset(
             path=self.mdat_path,
             readonly=True,
@@ -69,7 +68,33 @@ class MatformerDataModule(pl.LightningDataModule):
                 recurrent_same = item.get("is_same_document", None)
             else:
                 _object = item
-
+            ### To debug the resume of checkpoint
+            debug_path = os.environ.get("DEBUG_DATALOADER_SAVE", None)
+            if debug_path is not None:
+                if not hasattr(self, "_debug_save_index"):
+                    self._debug_save_index = 0
+                try:
+                    import torch.distributed as dist
+                    if dist.is_available() and dist.is_initialized():
+                        rank = dist.get_rank()
+                    else:
+                        rank = 0
+                except Exception:
+                    rank = 0
+                debug_file = f"{debug_path}_rank{rank}.jsonl"
+                def _to_serializable(x):
+                    if torch.is_tensor(x):
+                        return x.detach().cpu().tolist()
+                    return x
+                record = {
+                    "index": self._debug_save_index,
+                    "item": _to_serializable(item),
+                }
+                with open(debug_file, "a", encoding="utf-8") as f:
+                    f.write(json.dumps(record))
+                    f.write("\n")
+                self._debug_save_index += 1
+                
             any_worker_finished = any_worker_finished or worker_finished
             if recurrent_same is True:
                 stacked_recurrence_masks.append(True)
@@ -97,7 +122,7 @@ class MatformerDataModule(pl.LightningDataModule):
         tensors = torch.tensor(padded_ids, dtype=torch.long)
         padding_masks = (tensors == self.pad_token_id)
         sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks, recurrence_mask=recurrence_batch_mask)
-
+        
 
 
         if self.varlen_strategy == "unpadding":
@@ -133,71 +158,75 @@ class MatformerDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=0,
             collate_fn=self.collate_fn,
-            shuffle=False
+            shuffle=True
         )
         dataloader._is_resumable = True
         return dataloader
-    def load_state_dict(self, state_dict):
-        per_rank = state_dict.get("per_rank", None)
-        if per_rank is None:
-            return  # checkpoint did not contain our data
 
-        # Determine current rank
-        is_dist = False
-        try:
-            import torch.distributed as dist
-            if dist.is_available() and dist.is_initialized():
-                is_dist = True
-        except Exception:
-            pass
 
-        rank = 0
-        if is_dist:
-            import torch.distributed as dist
-            rank = dist.get_rank()
-
-        # Stable mapping for any world size
-        state = per_rank[rank % len(per_rank)]
-
-        self.mdat.document_index = int(state["document_index"])
-        self.mdat.current_chunk_step = int(state["current_chunk_step"])
-        self.mdat._iteration_count = int(state["_iteration_count"])
-        self.mdat._skip_reinit=True
-        self.mdat._seek_document_pointer(self.mdat.document_index)
-        print("Si sta caricando load state dict? Boh")
-        print(self.mdat.document_index)
-        print(self.mdat.current_chunk_step)
     def state_dict(self):
-        is_dist = False
         try:
             import torch.distributed as dist
-            if dist.is_available() and dist.is_initialized():
-                is_dist = True
+            is_dist = dist.is_available() and dist.is_initialized()
         except Exception:
-            pass
+            is_dist = False
 
-        my_state = {
-            "document_index": getattr(self.mdat, "document_index", 0),
-            "current_chunk_step": getattr(self.mdat, "current_chunk_step", 0),
-            "_iteration_count": getattr(self.mdat, "_iteration_count", 0),
-        }
+        this_rank_state = self.mdat.get_state_dict()
 
+        # Single GPU
         if not is_dist:
-            return {"per_rank": [my_state]}
+            return {"per_rank": [this_rank_state]}
 
-        import torch.distributed as dist
-
+        
+        # Distributed branch
         rank = dist.get_rank()
         world_size = dist.get_world_size()
 
         if rank == 0:
             states = [None for _ in range(world_size)]
             # rank 0 receives from all ranks (including itself)
-            dist.gather_object(my_state, object_gather_list=states, dst=0)
+            dist.gather_object(this_rank_state, object_gather_list=states, dst=0)
             return {"per_rank": states}
         else:
             # non-zero ranks send to rank 0
-            dist.gather_object(my_state, dst=0)
+            dist.gather_object(this_rank_state, dst=0)
             return {}
+
+
+    def load_state_dict(self, state_dict):
+        per_rank = state_dict.get("per_rank", None)
+        if per_rank is None:
+            return  # checkpoint did not contain data
+        try:
+            import torch.distributed as dist
+            is_dist = dist.is_available() and dist.is_initialized()
+            rank = dist.get_rank() if is_dist else 0
+            world_size = dist.get_world_size() if is_dist else 1
+        except Exception:
+            is_dist = False
+            rank = 0
+            world_size = 1
+
+        saved_world_size = state_dict.get("saved_world_size")
+        STRICT_WORLD_SIZE_CHECK = True #It will not work if GPU count changes
+        if is_dist and saved_world_size != world_size:
+            if STRICT_WORLD_SIZE_CHECK:
+                raise RuntimeError(
+                    f"Cannot restore dataset state: world size changed "
+                    f"(saved={saved_world_size}, current={world_size})."
+                )
+            else:
+                mapped_rank = rank % len(per_rank) #Rivedere la logica se si vuole supportare cambio numero GPU
+        else:
+            mapped_rank = rank if rank < len(per_rank) else rank % len(per_rank)
+            
+        state_dict_rank = per_rank[mapped_rank]
+        self.mdat.restore_state_dict(state_dict_rank)
+        print("Restoring state dict")
+        print(self.mdat.document_index)
+        print(self.mdat.current_chunk_step)
+        if is_dist:
+            dist.barrier()
+
     
     

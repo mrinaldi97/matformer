@@ -901,6 +901,37 @@ class MatformerDataset(IterableDataset):
         return self.list_strategies() #a shortcut 
     def list_views(self):
         return self.db.list_views()
+    def get_state_dict(self):
+        """
+        Return a dictionary with all the required pointers in order to restart training 
+        
+        """
+        state_dict={
+            "iteration_modality":self.iteration_modality,
+            "document_index":getattr(self,"document_index",0),
+            "current_chunk_step":getattr(self,"current_chunk_step",0),
+            "_iteration_count":getattr(self,"_iteration_count",0),
+            "_recurrent_documents":getattr(self,"_recurrent_documents",[]),
+            "_recurrent_steps":getattr(self,"_recurrent_steps",[]),
+            "_max_iteration":getattr(self,"_max_iterations",None),
+            "_cached_length":getattr(self,"_cached_length",None),
+            "saved_world_size":1 if not self.dist else self.world_size
+        }
+        return state_dict
+        pass
+    def restore_state_dict(self,state_dict):
+        self.document_index = int(state_dict["document_index"])
+        self.current_chunk_step = int(state_dict["current_chunk_step"])
+        self._iteration_count = int(state_dict["_iteration_count"])
+        self._recurrent_documents=list(state_dict["_recurrent_documents"]
+        self._recurrent_steps=list(state_dict["_recurrent_steps"]
+        self._max_iteration=None if state_dict["_max_iterations"] is None else int(state_dict['max_iterations']
+        self._cached_length=None if state_dict["_cached_length"] is None else int(state_dict['_cached_length']
+        
+        self._skip_reinit=True
+        self._seek_document_pointer(self.document_index)
+        
+        
     def __iter__(self,with_prefetch=True):
             # Reset the iteration (ex. for a new epoch)  
             self.stop_prefetch()
@@ -930,6 +961,9 @@ class MatformerDataset(IterableDataset):
                     if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
                         self._init_shuffle_file()
                 self._seek_document_pointer(self.document_index)
+                if with_prefetch:
+                    if self.prefetch_buffer is not None and self.prefetch_buffer>0:
+                        self.start_prefetch(max_prefetch=self.prefetch_buffer)                
             return self    
                 
 
