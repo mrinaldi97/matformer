@@ -923,10 +923,10 @@ class MatformerDataset(IterableDataset):
         self.document_index = int(state_dict["document_index"])
         self.current_chunk_step = int(state_dict["current_chunk_step"])
         self._iteration_count = int(state_dict["_iteration_count"])
-        self._recurrent_documents=list(state_dict["_recurrent_documents"]
-        self._recurrent_steps=list(state_dict["_recurrent_steps"]
-        self._max_iteration=None if state_dict["_max_iterations"] is None else int(state_dict['max_iterations']
-        self._cached_length=None if state_dict["_cached_length"] is None else int(state_dict['_cached_length']
+        self._recurrent_documents=list(state_dict["_recurrent_documents"])
+        self._recurrent_steps=list(state_dict["_recurrent_steps"])
+        self._max_iteration=None if state_dict["_max_iterations"] is None else int(state_dict['max_iterations'])
+        self._cached_length=None if state_dict["_cached_length"] is None else int(state_dict['_cached_length'])
         
         self._skip_reinit=True
         self._seek_document_pointer(self.document_index)
