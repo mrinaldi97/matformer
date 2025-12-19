@@ -277,9 +277,7 @@ class PL_ModelWrapper(MatformerModule):
             ))
             
             muon_config = MuonConfig(
-                unified_lr=False,
-                lr_muon=muon_lr,
-                lr_adam=base_lr,
+                lr=base_lr ###To check!!!
                 muon_beta=self.train_config.get("muon_momentum", 0.95),
                 muon_decay=self.train_config.get("weight_decay", 0.01),
                 ns_steps=self.train_config.get("muon_ns_steps", 5),
