@@ -260,88 +260,100 @@ class PL_ModelWrapper(MatformerModule):
                 self.log("diagnostics/post_clip_grad_norm", post_clip_norm, on_step=True, batch_size=self.batch_size)
                 
     def configure_optimizers(self):
-        if self.train_config["optimizer"] == "muon":
-            use_clip = False
+        if self.train_config["optimizer"] == "muonclip":
+            from muon import MuonClip, MuonConfig
+            base_lr = self.train_config["lr"]
             
-            if use_clip:
-                from muon import MuonClip, MuonConfig
-                base_lr = self.train_config["lr"]
-                
-                from types import SimpleNamespace
+            from types import SimpleNamespace
 
-                model_config = SimpleNamespace(
-                    num_key_value_heads=self.config.num_attention_heads,
-                    num_attention_heads=self.config.num_attention_heads,
-                    head_dim=self.config.hidden_size // self.config.num_attention_heads
-                )
-                
-                # adjust lr for muon
-                muon_lr = base_lr * 0.2 * math.sqrt(max(
-                    p.shape[0] for p in self.parameters() if p.ndim >= 2 and p.requires_grad
-                ))
-                
-                muon_config = MuonConfig(
-                    unified_lr=False,
-                    lr_muon=muon_lr,
-                    lr_adam=base_lr,
-                    muon_beta=self.train_config.get("muon_momentum", 0.95),
-                    muon_decay=self.train_config.get("weight_decay", 0.01),
-                    ns_steps=self.train_config.get("muon_ns_steps", 5),
-                    adam_betas=self.train_config.get("betas", (0.9, 0.95)),
-                    adam_decay=self.train_config.get("weight_decay", 0.01),
-                    adam_eps=self.train_config.get("eps", 1e-10),
-                    enable_clipping=True,
-                    clipping_layers_mapping={"q_proj": "packed_proj", "k_proj": "packed_proj"},
-                    clipping_threshold=self.train_config.get("clip_threshold", 50.0),
-                    clipping_alpha=self.train_config.get("clip_alpha", 0.5),
-                    log_max_logits=False,
-                    cans_ortho=False,
-                    estimate_lower_bound=False
-                )
-                
-                optimizer = MuonClip(self, model_config, muon_config)
-               
-            else:
-                muon_params = []
-                adamw_params = []
-                for name, param in self.named_parameters():
-                    if not param.requires_grad:
-                        continue
-                    if "conv" in name:
-                        adamw_params.append(param)
-                        print(f"{name} (Convolutional) in AdamW (ndim={param.ndim})")                          
-                    elif "lm_head" in name or "embed_tokens" in name or param.ndim < 2:
-                        adamw_params.append(param)
-                        print(f"{name} in AdamW (ndim={param.ndim})")
-                    else:
-                        muon_params.append(param)
-                        print(f"{name} in Muon")
-                
-                use_flash = self.train_config.get("use_flash_muon", False)
-                base_lr = self.train_config["lr"]
-                
-                if use_flash:
-                    from flash_muon import Muon as FlashMuon
-                    muon_lr = base_lr * 0.2 * math.sqrt(max(muon_params[0].shape[:2])) if muon_params else base_lr
-                    optimizer = [
-                        FlashMuon(muon_params, lr=muon_lr, 
-                                 momentum=self.train_config.get("muon_momentum", 0.95), rank=0, world_size=1),
-                        torch.optim.AdamW(adamw_params, lr=base_lr, 
-                                        betas=self.train_config.get("betas", (0.9, 0.95)),
-                                        weight_decay=self.train_config.get("weight_decay", 0.01))
-                    ]
+            model_config = SimpleNamespace(
+                num_key_value_heads=self.config.num_attention_heads,
+                num_attention_heads=self.config.num_attention_heads,
+                head_dim=self.config.hidden_size // self.config.num_attention_heads
+            )
+            
+            muon_lr = base_lr * 0.2 * math.sqrt(max(
+                p.shape[0] for p in self.parameters() if p.ndim >= 2 and p.requires_grad
+            ))
+            
+            muon_config = MuonConfig(
+                unified_lr=False,
+                lr_muon=muon_lr,
+                lr_adam=base_lr,
+                muon_beta=self.train_config.get("muon_momentum", 0.95),
+                muon_decay=self.train_config.get("weight_decay", 0.01),
+                ns_steps=self.train_config.get("muon_ns_steps", 5),
+                adam_betas=self.train_config.get("betas", (0.9, 0.95)),
+                adam_decay=self.train_config.get("weight_decay", 0.01),
+                adam_eps=self.train_config.get("eps", 1e-10),
+                enable_clipping=True,
+                clipping_layers_mapping={"q_proj": "packed_proj", "k_proj": "packed_proj"},
+                clipping_threshold=self.train_config.get("clip_threshold", 50.0),
+                clipping_alpha=self.train_config.get("clip_alpha", 0.5),
+                log_max_logits=False,
+                cans_ortho=False,
+                estimate_lower_bound=False
+            )
+            
+            optimizer = MuonClip(self, model_config, muon_config)
+            
+        elif self.train_config["optimizer"] == "muonflash":
+            muon_params = []
+            adamw_params = []
+            for name, param in self.named_parameters():
+                if not param.requires_grad:
+                    continue
+                if "conv" in name:
+                    adamw_params.append(param)
+                    print(f"{name} (Convolutional) in AdamW (ndim={param.ndim})")                          
+                elif "lm_head" in name or "embed_tokens" in name or param.ndim < 2:
+                    adamw_params.append(param)
+                    print(f"{name} in AdamW (ndim={param.ndim})")
                 else:
-                    optimizer = Muon(
-                        lr=base_lr,
-                        wd=self.train_config.get("weight_decay", 0.01),
-                        muon_params=muon_params,
-                        momentum=self.train_config.get("muon_momentum", 0.95),
-                        nesterov=self.train_config.get("muon_nesterov", True),
-                        ns_steps=self.train_config.get("muon_ns_steps", 5),
-                        adamw_params=adamw_params,
-                        adamw_betas=self.train_config.get("betas", (0.9, 0.95)),
-                        adamw_eps=self.train_config.get("eps", 1e-10),
-                    )
+                    muon_params.append(param)
+                    print(f"{name} in Muon")
+            
+            base_lr = self.train_config["lr"]
+            
+            from flash_muon import Muon as FlashMuon
+            muon_lr = base_lr * 0.2 * math.sqrt(max(muon_params[0].shape[:2])) if muon_params else base_lr
+            optimizer = [
+                FlashMuon(muon_params, lr=muon_lr, 
+                         momentum=self.train_config.get("muon_momentum", 0.95), rank=0, world_size=1),
+                torch.optim.AdamW(adamw_params, lr=base_lr, 
+                                betas=self.train_config.get("betas", (0.9, 0.95)),
+                                weight_decay=self.train_config.get("weight_decay", 0.01))
+            ]
+            
+        elif self.train_config["optimizer"] == "muon":
+            muon_params = []
+            adamw_params = []
+            for name, param in self.named_parameters():
+                if not param.requires_grad:
+                    continue
+                if "conv" in name:
+                    adamw_params.append(param)
+                    print(f"{name} (Convolutional) in AdamW (ndim={param.ndim})")                          
+                elif "lm_head" in name or "embed_tokens" in name or param.ndim < 2:
+                    adamw_params.append(param)
+                    print(f"{name} in AdamW (ndim={param.ndim})")
+                else:
+                    muon_params.append(param)
+                    print(f"{name} in Muon")
+            
+            base_lr = self.train_config["lr"]
+            
+            optimizer = Muon(
+                lr=base_lr,
+                wd=self.train_config.get("weight_decay", 0.01),
+                muon_params=muon_params,
+                momentum=self.train_config.get("muon_momentum", 0.95),
+                nesterov=self.train_config.get("muon_nesterov", True),
+                ns_steps=self.train_config.get("muon_ns_steps", 5),
+                adamw_params=adamw_params,
+                adamw_betas=self.train_config.get("betas", (0.9, 0.95)),
+                adamw_eps=self.train_config.get("eps", 1e-10),
+            )
             
         elif self.train_config["optimizer"] == "adamw":
             optimizer = AdamW(
