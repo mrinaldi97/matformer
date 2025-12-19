@@ -913,7 +913,7 @@ class MatformerDataset(IterableDataset):
             "_iteration_count":getattr(self,"_iteration_count",0),
             "_recurrent_documents":getattr(self,"_recurrent_documents",[]),
             "_recurrent_steps":getattr(self,"_recurrent_steps",[]),
-            "_max_iteration":getattr(self,"_max_iterations",None),
+            "_max_iterations":getattr(self,"_max_iterations",None),
             "_cached_length":getattr(self,"_cached_length",None),
             "saved_world_size":1 if not self.dist else self.world_size
         }
@@ -925,7 +925,7 @@ class MatformerDataset(IterableDataset):
         self._iteration_count = int(state_dict["_iteration_count"])
         self._recurrent_documents=list(state_dict["_recurrent_documents"])
         self._recurrent_steps=list(state_dict["_recurrent_steps"])
-        self._max_iteration=None if state_dict["_max_iterations"] is None else int(state_dict['max_iterations'])
+        self._max_iterations=None if state_dict["_max_iterations"] is None else int(state_dict['_max_iterations'])
         self._cached_length=None if state_dict["_cached_length"] is None else int(state_dict['_cached_length'])
         
         self._skip_reinit=True
