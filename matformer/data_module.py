@@ -158,7 +158,7 @@ class MatformerDataModule(pl.LightningDataModule):
             batch_size=self.batch_size,
             num_workers=0,
             collate_fn=self.collate_fn,
-            shuffle=True
+            shuffle=False
         )
         dataloader._is_resumable = True
         return dataloader
