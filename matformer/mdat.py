@@ -907,7 +907,7 @@ class MatformerDataset(IterableDataset):
         
         """
         state_dict={
-            "iteration_modality":self.iteration_modality,
+            "iteration_modality":self.current_iteration_modality,
             "document_index":getattr(self,"document_index",0),
             "current_chunk_step":getattr(self,"current_chunk_step",0),
             "_iteration_count":getattr(self,"_iteration_count",0),
