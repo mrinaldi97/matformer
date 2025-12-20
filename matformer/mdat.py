@@ -929,7 +929,7 @@ class MatformerDataset(IterableDataset):
         self._cached_length=None if state_dict["_cached_length"] is None else int(state_dict['_cached_length'])
         
         self._skip_reinit=True
-        self._seek_document_pointer(self.document_index)
+        #self._seek_document_pointer(self.document_index)
         
         
     def __iter__(self,with_prefetch=True):
@@ -956,6 +956,8 @@ class MatformerDataset(IterableDataset):
                 print("MDAT is resuming training from external logic.")
                 print("Document index: ",self.document_index)
                 print("Chunk step: ", self.current_chunk_step)
+                print("Max iterations: ",self._iteration_count)
+                print("Iteration count: ", self._iteration_count)
                 shuffled=True #TODO
                 if shuffled:
                     if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
