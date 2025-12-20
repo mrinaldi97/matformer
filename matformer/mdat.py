@@ -1030,7 +1030,7 @@ class MatformerDataset(IterableDataset):
                         result, self.current_chunk_step, has_more = self._get_next_chunk_from_document(self.current_document, self.current_chunk_step)
                         if result is not None:
                             break
-                elif self.current_iteration_modality == 'chunked_for_recurrence':
+                elif self.current_iteration_modality == 'chunked_for_recurrence_temp':
 
                     if not hasattr(self, '_recurrent_documents'):
                         self._recurrent_documents = [None] * self.batch_size
@@ -1066,7 +1066,7 @@ class MatformerDataset(IterableDataset):
 
                     self._recurrent_steps[cell] = new_step
                     self._recurrent_has_more[cell] = has_more                
-                elif self.current_iteration_modality == 'chunked_for_recurrence_old': 
+                elif self.current_iteration_modality == 'chunked_for_recurrence': 
                     if not hasattr(self, '_recurrent_documents'):
                         self._recurrent_documents = [None] * self.batch_size
                         self._recurrent_steps = [0] * self.batch_size
