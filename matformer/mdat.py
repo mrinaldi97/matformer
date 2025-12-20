@@ -1030,42 +1030,42 @@ class MatformerDataset(IterableDataset):
                         result, self.current_chunk_step, has_more = self._get_next_chunk_from_document(self.current_document, self.current_chunk_step)
                         if result is not None:
                             break
-            elif self.current_iteration_modality == 'chunked_for_recurrence':
+                elif self.current_iteration_modality == 'chunked_for_recurrence':
 
-                if not hasattr(self, '_recurrent_documents'):
-                    self._recurrent_documents = [None] * self.batch_size
-                    self._recurrent_steps = [0] * self.batch_size
-                    self._recurrent_has_more = [False] * self.batch_size
+                    if not hasattr(self, '_recurrent_documents'):
+                        self._recurrent_documents = [None] * self.batch_size
+                        self._recurrent_steps = [0] * self.batch_size
+                        self._recurrent_has_more = [False] * self.batch_size
 
-                    for i in range(self.batch_size):
+                        for i in range(self.batch_size):
+                            doc = self.load_next_document()
+                            self._recurrent_documents[i] = doc
+                            self._recurrent_steps[i] = 0
+                            self._recurrent_has_more[i] = True
+
+                    cell = self._iteration_count % self.batch_size
+                    doc = self._recurrent_documents[cell]
+                    step = self._recurrent_steps[cell]
+
+                    if not self._recurrent_has_more[cell]:
                         doc = self.load_next_document()
-                        self._recurrent_documents[i] = doc
-                        self._recurrent_steps[i] = 0
-                        self._recurrent_has_more[i] = True
+                        self._recurrent_documents[cell] = doc
+                        step = 0
+                        self._recurrent_steps[cell] = 0
+                        self._recurrent_has_more[cell] = True
+                        is_same_document = False
+                    else:
+                        is_same_document = (step > 0)
 
-                cell = self._iteration_count % self.batch_size
-                doc = self._recurrent_documents[cell]
-                step = self._recurrent_steps[cell]
+                    result, new_step, has_more = self._get_next_chunk_from_document(doc, step)
 
-                if not self._recurrent_has_more[cell]:
-                    doc = self.load_next_document()
-                    self._recurrent_documents[cell] = doc
-                    step = 0
-                    self._recurrent_steps[cell] = 0
-                    self._recurrent_has_more[cell] = True
-                    is_same_document = False
-                else:
-                    is_same_document = (step > 0)
+                    if result is None:
+                        raise RuntimeError(
+                            f"Document in cell {cell} returned empty chunk unexpectedly."
+                        )
 
-                result, new_step, has_more = self._get_next_chunk_from_document(doc, step)
-
-                if result is None:
-                    raise RuntimeError(
-                        f"Document in cell {cell} returned empty chunk unexpectedly."
-                    )
-
-                self._recurrent_steps[cell] = new_step
-                self._recurrent_has_more[cell] = has_more                
+                    self._recurrent_steps[cell] = new_step
+                    self._recurrent_has_more[cell] = has_more                
                 elif self.current_iteration_modality == 'chunked_for_recurrence_old': 
                     if not hasattr(self, '_recurrent_documents'):
                         self._recurrent_documents = [None] * self.batch_size
