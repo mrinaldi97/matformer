@@ -763,7 +763,7 @@ class MatformerDataset(IterableDataset):
                             shuffled
                         )
                                 
-                        self._prefetch_queue.put((prefetch_index,doc))
+                        self._prefetch_queue.put((self.prefetch_index,doc))
                         
                     except StopIteration:
                         self._prefetch_queue.put(None) #Sentinel for exhausted dataset
