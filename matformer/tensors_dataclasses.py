@@ -104,7 +104,7 @@ class PaddedTensor(TensorDC):
             tensor=unpadded_x,
             indices=indices,
             cu_seqlens=cu_seqlens,
-            max_seq_len=int(seqlens.max()),
+            max_seq_len=seqlens.max(),
             original_seq_len=self.padding_mask.shape[1],
             batch_size=self.padding_mask.shape[0],
             cloze_mask=unpadded_cloze_mask,
