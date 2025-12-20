@@ -736,8 +736,8 @@ class MatformerDataset(IterableDataset):
             if shuffled and not getattr(self, '_active_view_shuffled', None):
                  raise MDatNotShuffled("Dataset view is not shuffled.")
             
-            if not hasattr(self, 'document_index'):
-                self.document_index = 0
+            if not hasattr(self, 'prefetch_index'):
+                self.prefetch_index = self.document_index
                 
             if shuffled:
                 if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
@@ -757,13 +757,13 @@ class MatformerDataset(IterableDataset):
                         continue
                     
                     try:
-                        doc,self.document_index = self._load_next_document_inner(
+                        doc,self.prefetch_index = self._load_next_document_inner(
                             ds_map, 
-                            self.document_index, 
+                            self.prefetch_index, 
                             shuffled
                         )
                                 
-                        self._prefetch_queue.put(doc)
+                        self._prefetch_queue.put((prefetch_index,doc))
                         
                     except StopIteration:
                         self._prefetch_queue.put(None) #Sentinel for exhausted dataset
@@ -806,11 +806,14 @@ class MatformerDataset(IterableDataset):
             if hasattr(self, "_prefetch_queue") and self._prefetch_queue is not None:
                 while True:
                     try:
-                        doc = self._prefetch_queue.get(timeout=15)
-                        if doc is None:
+                        from_queue=self._prefetch_queue.get(timeout=15)
+                        if from_queue is None:
                             self.stop_prefetch()
                             raise StopIteration
-                        return doc
+                        else:
+                            prefetch_index,doc=from_queue
+                            self.document_index=prefetch_index #The global document index is updated here
+                            return doc
                     except queue.Empty:
                         if self._prefetch_thread is None or not self._prefetch_thread.is_alive():
                             self.stop_prefetch()
@@ -830,7 +833,7 @@ class MatformerDataset(IterableDataset):
                 )
                 return current_document
 
-    def _load_next_document_inner(self, ds_map, document_index, shuffled=True, ) -> None:
+    def _load_next_document_inner(self, ds_map, local_document_index, shuffled=True, ) -> None:
         """Load next document."""
         if shuffled:
             if not hasattr(self, '_shuffle_file') or self._shuffle_file is None:
@@ -842,13 +845,13 @@ class MatformerDataset(IterableDataset):
                     raise StopIteration
                 
                 if self.dist:
-                    if document_index % self.world_size != self.rank_size:
-                        document_index += 1
+                    if local_document_index % self.world_size != self.rank_size:
+                        local_document_index += 1
                         continue  # Skip this shuffle entry
                 
                 submdat_id, doc_id = struct.unpack(self._shuffle_struct_format, data)
                 current_document = self.loaded_submdats[ds_map[submdat_id]][doc_id]
-                document_index += 1
+                local_document_index += 1
                 break
         else:
             current_pos = 0
@@ -856,14 +859,14 @@ class MatformerDataset(IterableDataset):
                 submdat_name = ds_map[submdat_id] 
                 if submdat_name in self.loaded_submdats:
                     submdat_len = len(self.loaded_submdats[submdat_name])
-                    if self.document_index < current_pos + submdat_len:
-                        doc_id = self.document_index - current_pos
+                    if local_document_index < current_pos + submdat_len:
+                        doc_id = local_document_index - current_pos
                         current_document = self.loaded_submdats[submdat_name][doc_id]
-                        document_index += 1
+                        local_document_index += 1
                         return
                     current_pos += submdat_len
             raise StopIteration
-        return current_document, document_index
+        return current_document, local_document_index
     # Methods for the pretokenization-registry:
     # In the manifest, names of pretokenizations strategies should be saved
     # Each strategy will live in ds_root/pretok/strategy_name
@@ -956,7 +959,7 @@ class MatformerDataset(IterableDataset):
                 print("MDAT is resuming training from external logic.")
                 print("Document index: ",self.document_index)
                 print("Chunk step: ", self.current_chunk_step)
-                print("Max iterations: ",self._iteration_count)
+                print("Max iterations: ",self._max_iterations)
                 print("Iteration count: ", self._iteration_count)
                 shuffled=True #TODO
                 if shuffled:
