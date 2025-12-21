@@ -74,7 +74,7 @@ class Maskerator:
         * If it receives an UnpaddedTensor, it will mask directly without padding
         """
         # Handle UnpaddedTensor - mask directly without padding/unpadding
-        if isinstance(input_ids,UnpaddedTensor)
+        if isinstance(input_ids,UnpaddedTensor):
             return self._mask_unpadded_tensor(input_ids, substitution_rate)
         if isinstance(input_ids,PaddedTensor):
             tensor, cloze_mask, rate = self(input_ids.tensor, substitution_rate)
