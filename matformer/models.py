@@ -65,7 +65,7 @@ class PL_ModelWrapper(MatformerModule):
         
      
     def training_step(self, batch, batch_idx=None):
-        sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
+        input_sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
         if batch['worker_has_finished']:
             zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
             return zero_loss
@@ -79,7 +79,7 @@ class PL_ModelWrapper(MatformerModule):
                 if hasattr(m, 'attn_kernel') and hasattr(m.attn_kernel, 'is_causal'):
                     m.attn_kernel.is_causal = not masked
 
-        input_sequence=sequence
+        #input_sequence=sequence
         if masked:
             # If masking rate is variable and variable rate is per document, we need to be sure that the tensor has batch dimension
             #if isinstance(sequence,UnpaddedTensor):
@@ -91,7 +91,7 @@ class PL_ModelWrapper(MatformerModule):
             #input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)  
             #if repad:
             #    input_sequence=input_sequence.unpad()  
-            input_sequence,masking_ratio=self.maskerator(sequence)  
+            input_sequence,masking_ratio=self.maskerator(input_sequence)  
         if self.config.loss_type=='fused':
             model_return_type = 'hidden'
             flattening_dimension = self.config.hidden_size
@@ -110,7 +110,7 @@ class PL_ModelWrapper(MatformerModule):
 
         if is_unpadded:
             model_output_flat = model_output.tensor
-            targets_flat = sequence.unpad().tensor 
+            targets_flat = sequence.tensor 
             # If already unpadded, all tokens are valid
             base_mask = torch.ones_like(targets_flat, dtype=torch.bool)
             cloze_mask_flat = input_sequence.cloze_mask if masked else None
