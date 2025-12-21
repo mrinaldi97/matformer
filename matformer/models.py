@@ -91,7 +91,8 @@ class PL_ModelWrapper(MatformerModule):
             #input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)  
             #if repad:
             #    input_sequence=input_sequence.unpad()  
-            input_sequence,masking_ratio=self.maskerator(input_sequence)  
+            input_sequence,masking_ratio=self.maskerator(input_sequence) 
+            original_sequence=batch['sequence'] 
         if self.config.loss_type=='fused':
             model_return_type = 'hidden'
             flattening_dimension = self.config.hidden_size
@@ -110,7 +111,7 @@ class PL_ModelWrapper(MatformerModule):
 
         if is_unpadded:
             model_output_flat = model_output.tensor
-            targets_flat = sequence.tensor 
+            targets_flat = original_sequence.tensor 
             # If already unpadded, all tokens are valid
             base_mask = torch.ones_like(targets_flat, dtype=torch.bool)
             cloze_mask_flat = input_sequence.cloze_mask if masked else None

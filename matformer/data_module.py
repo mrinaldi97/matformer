@@ -6,7 +6,7 @@ from matformer.mdat import MatformerDataset
 import torch
 import torch.distributed as dist
 from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
-
+import torch.nn.functional as F
 
 class MatformerDataModule(pl.LightningDataModule):
     def __init__(self, mdat_path: str, iteration_modality, pad_token_id: int, 
