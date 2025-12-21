@@ -14,6 +14,8 @@ from matformer.model_config import ModelConfig
 from matformer.models import PL_ModelWrapper
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
+from pytorch_lightning.strategies import DDPStrategy    
+from pytorch_lightning.profilers import AdvancedProfiler
 #from pytorch_lightning.plugins import DDPPlugin
 import math, os
 from datetime import datetime
@@ -288,6 +290,7 @@ def main():
     else:
         max_steps=-1
     # Create trainer
+    strategy=DDPStrategy(gradient_as_bucket_view=True,static_graph=True,find_unused_parameters=False)
     trainer = pl.Trainer(
         logger=wandb_logger,
         callbacks=[checkpoint],
@@ -300,7 +303,7 @@ def main():
         default_root_dir=save_dir,
         max_epochs=max_epochs,
         max_steps=max_steps,
-        strategy='ddp',
+        strategy=strategy,
         num_nodes=num_nodes
     )
     if _compile:
