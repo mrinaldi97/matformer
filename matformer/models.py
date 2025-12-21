@@ -105,30 +105,32 @@ class PL_ModelWrapper(MatformerModule):
         
         ### Input al modello ###
         model_output = self(input_sequence, return_type=model_return_type) #Return type can be 'logits' or 'hidden' (required for fused loss)   
-        # 1. UnPad everything (must be checked)
-        model_output=model_output.unpad()
-        input_sequence=input_sequence.unpad()
-        original_unpadded = sequence.unpad()
-        # 2. Flattening
-        #model_output_flat = model_output.tensor.reshape(-1, flattening_dimension) #Per pad
-        #targets_flat = sequence.tensor.reshape(-1) #Per pad
-        model_output_flat = model_output.tensor
-        targets_flat = original_unpadded.tensor
-        base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
-        cloze_mask_flat = input_sequence.cloze_mask if masked else None
+        # 1. Flattening with type-safety
+        is_unpadded = isinstance(model_output, UnpaddedTensor)
 
-        # 3. Masking
-        #base_mask = (targets_flat != self.config.pad_token_id) #Per pad
-        #cloze_mask_flat = cloze_mask.reshape(-1) if masked else None #Per pad
-        # 4. Setting the training objective
+        if is_unpadded:
+            model_output_flat = model_output.tensor
+            targets_flat = sequence.tensor 
+            # If already unpadded, all tokens are valid
+            base_mask = torch.ones_like(targets_flat, dtype=torch.bool)
+            cloze_mask_flat = input_sequence.cloze_mask if masked else None
+        else:
+            # (B, S, H) -> 2D (B*S, H)
+            model_output_flat = model_output.tensor.view(-1, model_output.tensor.size(-1))
+            # (B, S) -> 1D (B*S)
+            targets_flat = sequence.tensor.view(-1)
+            base_mask = (targets_flat != self.config.pad_token_id)
+            cloze_mask_flat = input_sequence.cloze_mask.view(-1) if masked else None
+
+        # 2. Setting the training objective (remains the same)
         if masked:
             mask = cloze_mask_flat & base_mask
-            inputs=model_output_flat[mask]
-            targets=targets_flat[mask]
-        else: #Autoregressive
+            inputs = model_output_flat[mask]
+            targets = targets_flat[mask]
+        else: # Autoregressive
             mask = base_mask[1:]
-            inputs=model_output_flat[:-1][mask]
-            targets=targets_flat[1:][mask]
+            inputs = model_output_flat[:-1][mask]
+            targets = targets_flat[1:][mask]
         # 4. Getting the loss
         loss = self.cross_entropy_loss(inputs, targets, **loss_kwargs)  
         self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)      
