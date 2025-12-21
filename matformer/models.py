@@ -82,15 +82,16 @@ class PL_ModelWrapper(MatformerModule):
         input_sequence=sequence
         if masked:
             # If masking rate is variable and variable rate is per document, we need to be sure that the tensor has batch dimension
-            if isinstance(sequence,UnpaddedTensor):
-                repad=True
-                sequence=sequence.pad()
-            else:
-                repad=False
-            masked_tokens,cloze_mask,masking_ratio=self.maskerator(sequence.tensor)
-            input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)  
-            if repad:
-                input_sequence=input_sequence.unpad()    
+            #if isinstance(sequence,UnpaddedTensor):
+            #    repad=True
+            #    sequence=sequence.pad()
+            #else:
+            #    repad=False
+            #masked_tokens,cloze_mask,masking_ratio=self.maskerator(sequence.tensor)
+            #input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)  
+            #if repad:
+            #    input_sequence=input_sequence.unpad()  
+            input_sequence,masking_ratio=self.maskerator(sequence)  
         if self.config.loss_type=='fused':
             model_return_type = 'hidden'
             flattening_dimension = self.config.hidden_size
@@ -105,12 +106,11 @@ class PL_ModelWrapper(MatformerModule):
         
         ### Input al modello ###
         model_output = self(input_sequence, return_type=model_return_type) #Return type can be 'logits' or 'hidden' (required for fused loss)   
-        # 1. Flattening with type-safety
         is_unpadded = isinstance(model_output, UnpaddedTensor)
 
         if is_unpadded:
             model_output_flat = model_output.tensor
-            targets_flat = sequence.tensor 
+            targets_flat = sequence.unpad().tensor 
             # If already unpadded, all tokens are valid
             base_mask = torch.ones_like(targets_flat, dtype=torch.bool)
             cloze_mask_flat = input_sequence.cloze_mask if masked else None
@@ -122,7 +122,7 @@ class PL_ModelWrapper(MatformerModule):
             base_mask = (targets_flat != self.config.pad_token_id)
             cloze_mask_flat = input_sequence.cloze_mask.view(-1) if masked else None
 
-        # 2. Setting the training objective (remains the same)
+        # 2. Setting the training objective
         if masked:
             mask = cloze_mask_flat & base_mask
             inputs = model_output_flat[mask]

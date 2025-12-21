@@ -50,8 +50,8 @@ class MatformerDataModule(pl.LightningDataModule):
         if self.varlen_strategy == 'nested':
             sequence = torch.nested.nested_tensor(batch, layout=torch.jagged)
             return sequence
-
-        padded_ids = []
+        token_sequences=[]
+        #padded_ids = []
         stacked_recurrence_masks = []
         any_worker_finished = False
 
@@ -105,9 +105,9 @@ class MatformerDataModule(pl.LightningDataModule):
                 stacked_recurrence_masks.append(None)
 
             assert self.max_seq_len is not None
-            padded = _object + [self.pad_token_id] * (self.max_seq_len - len(_object))
-            padded_ids.append(padded)
-        
+            #padded = _object + [self.pad_token_id] * (self.max_seq_len - len(_object))
+            #padded_ids.append(padded)
+            token_sequences.append(_object)
         # For recurrence
         if any(mask is not None for mask in stacked_recurrence_masks):
             stacked = [
@@ -118,21 +118,69 @@ class MatformerDataModule(pl.LightningDataModule):
         else:
             recurrence_batch_mask=None
             #extra_follow_keys=None
-
-        # padded ids -> tensor
-        tensors = torch.tensor(padded_ids, dtype=torch.long)
-        padding_masks = (tensors == self.pad_token_id)
-        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks, recurrence_mask=recurrence_batch_mask)
-        
-
-
-        if self.varlen_strategy == "unpadding":
-            sequence = sequence.unpad()
+        if varlen_strategy == "unpadding":
+            # Build UnpaddedTensor directly
+            seqlens = torch.tensor([len(seq) for seq in token_sequences], dtype=torch.int32)
+            cu_seqlens = F.pad(torch.cumsum(seqlens, dim=0, dtype=torch.int32), (1, 0))
+            
+            # Concatenate all sequences
+            unpadded_tensor = torch.tensor(
+                [token for seq in token_sequences for token in seq], 
+                dtype=torch.long
+            )
+            
+            # Compute indices: position in flattened padded tensor (batch_size * original_seq_len)
+            indices = []
+            for batch_idx, seq_len in enumerate(seqlens):
+                base_offset = batch_idx * max_seq_len
+                indices.extend(range(base_offset, base_offset + seq_len))
+            indices = torch.tensor(indices, dtype=torch.long)
+            
+            # Handle empty batch edge case
+            max_seq_len_value = seqlens.max().item() if len(seqlens) > 0 else 0
+            
+            sequence = UnpaddedTensor(
+                tensor=unpadded_tensor,
+                indices=indices,
+                cu_seqlens=cu_seqlens,
+                max_seq_len=max_seq_len_value,
+                original_seq_len=max_seq_len,
+                batch_size=len(token_sequences),
+                recurrence_mask=recurrence_batch_mask
+            )
+        else:
+            # Build PaddedTensor as before
+            padded_ids = []
+            for seq in token_sequences:
+                padded = seq + [pad_token_id] * (max_seq_len - len(seq))
+                padded_ids.append(padded)
+            
+            tensors = torch.tensor(padded_ids, dtype=torch.long)
+            padding_masks = (tensors == pad_token_id)
+            sequence = PaddedTensor(
+                tensor=tensors, 
+                padding_mask=padding_masks, 
+                recurrence_mask=recurrence_batch_mask
+            )
 
         return {
             "sequence": sequence,
             "worker_has_finished": any_worker_finished
         }
+        # padded ids -> tensor
+        #tensors = torch.tensor(padded_ids, dtype=torch.long)
+        #padding_masks = (tensors == self.pad_token_id)
+        #sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks, recurrence_mask=recurrence_batch_mask)
+        
+
+
+        #if self.varlen_strategy == "unpadding":
+        #    sequence = sequence.unpad()
+
+        #return {
+        #    "sequence": sequence,
+        #    "worker_has_finished": any_worker_finished
+        #}
          
         """    
         # Pad sequences
