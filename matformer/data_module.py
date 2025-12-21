@@ -118,7 +118,7 @@ class MatformerDataModule(pl.LightningDataModule):
         else:
             recurrence_batch_mask=None
             #extra_follow_keys=None
-        if varlen_strategy == "unpadding":
+        if self.varlen_strategy == "unpadding":
             # Build UnpaddedTensor directly
             seqlens = torch.tensor([len(seq) for seq in token_sequences], dtype=torch.int32)
             cu_seqlens = F.pad(torch.cumsum(seqlens, dim=0, dtype=torch.int32), (1, 0))
@@ -136,7 +136,6 @@ class MatformerDataModule(pl.LightningDataModule):
                 indices.extend(range(base_offset, base_offset + seq_len))
             indices = torch.tensor(indices, dtype=torch.long)
             
-            # Handle empty batch edge case
             max_seq_len_value = seqlens.max().item() if len(seqlens) > 0 else 0
             
             sequence = UnpaddedTensor(
@@ -149,7 +148,6 @@ class MatformerDataModule(pl.LightningDataModule):
                 recurrence_mask=recurrence_batch_mask
             )
         else:
-            # Build PaddedTensor as before
             padded_ids = []
             for seq in token_sequences:
                 padded = seq + [pad_token_id] * (max_seq_len - len(seq))
