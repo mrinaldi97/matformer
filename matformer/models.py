@@ -270,9 +270,15 @@ class PL_ModelWrapper(MatformerModule):
             """
         except Exception as e:
             if not any(s in str(e).lower() for s in ("out of memory", "cuda out of memory", "cublas")):
+                print("--------- ALARM ---------")
+                print("CAUGHT EXCEPTION: ")
                 print(e)
+                print("Training will try to continue but this may be unreliable. Careful check what is happening")
                 self.log("train/EXCEPTIONS",1,on_step=True,on_epoch=False,batch_size=self.batch_size)
             else:
+                print("--------- ALARM ---------")
+                print("OUT OF MEMORY ERROR")
+                print("Training is continuing, but be sure that this happens very seldom or reduce the batch size.")
                 self.log(
                     "train/skipped_oom", 1,
                     on_step=True, on_epoch=False, batch_size=self.batch_size
