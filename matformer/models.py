@@ -212,56 +212,59 @@ class PL_ModelWrapper(MatformerModule):
         # TODO: this part has to be revised and cleaned
         additional_metrics=True
         if additional_metrics:
+            if self.global_step % 500 == 0:
+                with torch.no_grad():
+                    # 'inputs' is already flattened and filtered for the loss (works for GPT/BERT/Unpadded)
+                    # We sample the first 1024 tokens to keep the compute cost negligible
+                    sample_size = min(inputs.size(0), 1024)
+                    diag_data = inputs[:sample_size]
 
-            if self.global_step % 100 == 0:
-               grad_norms, param_norms, grad_param_ratios = {}, {}, {}
-               all_grads = []
-               for name, p in self.named_parameters():
-                   if 'gate' in name and p.numel() == 1:
-                        self.log(f"gates/{name}_value", p.item(), on_step=True, batch_size=self.batch_size)
-                        self.log(f"gates/{name}_opening", torch.tanh(p).item(), on_step=True, batch_size=self.batch_size)
-                   if p.grad is not None:
-                       grad_norm = p.grad.detach().norm(2).item()
-                       param_norm = p.detach().norm(2).item()
-                       
-                       grad_norms[f"grad_norm/{name}"] = grad_norm
-                       param_norms[f"param_norm/{name}"] = param_norm
-                       
-                       if param_norm > 1e-8:
-                           grad_param_ratios[f"grad_param_ratio/{name}"] = grad_norm / param_norm
-                       
-                       all_grads.append(p.grad.detach().flatten())
-                       
-                       if hasattr(self, '_prev_params') and name in self._prev_params:
-                           update_norm = (p.detach() - self._prev_params[name]).norm(2).item()
-                           self.log(f"param_update/{name}", update_norm, on_step=True, batch_size=self.batch_size)
-               
-               if all_grads:
-                   total_grad_norm = torch.norm(torch.cat(all_grads)).item()
-                   self.log("diagnostics/total_grad_norm", total_grad_norm, on_step=True, batch_size=self.batch_size)
-               
-               for metrics in [grad_norms, param_norms, grad_param_ratios]:
-                   for k, v in metrics.items():
-                       self.log(k, v, on_step=True, on_epoch=False, batch_size=self.batch_size)
-               
-               self._prev_params = {name: p.detach().clone() for name, p in self.named_parameters()}
-               
-               max_param = max(param_norms.values()) if param_norms else 0
-               min_param = min(param_norms.values()) if param_norms else 0
-               self.log("diagnostics/param_norm_spread", max_param - min_param, on_step=True, batch_size=self.batch_size)            
+                    if self.config.loss_type != 'fused':
+                        # 1. Logit Statistics (Saturation check)
+                        self.log("health/logits_max", diag_data.max(), on_step=True, batch_size=self.batch_size)
+                        self.log("health/logits_std", diag_data.std(), on_step=True, batch_size=self.batch_size)
+                        
+                        # 2. Entropy (Confidence check)
+                        probs = torch.softmax(diag_data, dim=-1)
+                        entropy = -torch.sum(probs * torch.log(probs + 1e-9), dim=-1).mean()
+                        self.log("health/entropy", entropy, on_step=True, batch_size=self.batch_size)
+                    else:
+                        # If fused, inputs are actually hidden states
+                        self.log("health/hidden_max", diag_data.max(), on_step=True, batch_size=self.batch_size)
+                        self.log("health/hidden_std", diag_data.std(), on_step=True, batch_size=self.batch_size)
+
+                    # 3. Gating Health (if the model has gates)
+                    for name, p in self.named_parameters():
+                        if 'gate' in name and p.numel() == 1:
+                            self.log(f"gates/{name}_val", p.item(), on_step=True, batch_size=self.batch_size)          
         return loss
         
     def on_before_optimizer_step(self, optimizer):
-        # This runs after gradient clipping but before optimizer step
-        if self.global_step % 100 == 0:
-            clipped_grads = []
-            for p in self.parameters():
-                if p.grad is not None:
-                    clipped_grads.append(p.grad.detach().flatten())
-            if clipped_grads:
-                post_clip_norm = torch.norm(torch.cat(clipped_grads)).item()
-                self.log("diagnostics/post_clip_grad_norm", post_clip_norm, on_step=True, batch_size=self.batch_size)
+        additional_metrics=True
+        if additional_metrics:
+            if self.global_step % 500 == 0:
+                grad_norm_sq = 0.0
+                weight_norm_sq = 0.0
                 
+                for p in self.parameters():
+                    if p.grad is not None:
+                        # Use .item() to move scalars to CPU immediately, preventing GPU sync overhead later
+                        grad_norm_sq += p.grad.detach().norm(2).item() ** 2
+                        weight_norm_sq += p.detach().norm(2).item() ** 2
+                
+                total_grad_norm = grad_norm_sq ** 0.5
+                total_weight_norm = weight_norm_sq ** 0.5
+                
+                self.log("health/total_grad_norm", total_grad_norm, on_step=True, batch_size=self.batch_size)
+
+                # 4. Update-to-Weight Ratio (The "Karpathy Metric")
+                try:
+                    lr = optimizer.param_groups[0]['lr']
+                    if total_weight_norm > 1e-8:
+                        ratio = (lr * total_grad_norm) / total_weight_norm
+                        self.log("health/update_weight_ratio", ratio, on_step=True, batch_size=self.batch_size)
+                except Exception:
+                    pass
     def configure_optimizers(self):
         if self.train_config.get("no_decay_for_embedding", False) and self.train_config["optimizer"] != "muon":
             raise ValueError("no_decay_for_embedding for optimizers different than Muon not implemented yet! (Altough it's easy). Please remove it ")
@@ -440,17 +443,6 @@ class PL_ModelWrapper(MatformerModule):
             "optimizer": optimizer,
             "lr_scheduler": {"scheduler": scheduler, "interval": "step", "frequency": 1},
         }
-
-    def debug_on_after_backward(self):
-        # Log dei gradienti per debug
-        for name, param in self.named_parameters():
-            if param.requires_grad and param.grad is None:
-                self.logger.experiment.log({"broken_grad/" + name: 1})
-            elif param.grad is not None:
-                grad_norm = param.grad.norm().item()
-                self.logger.experiment.log({f"grad/{name}": grad_norm})
-                self.log(f"grad_max/{name}", param.grad.abs().max().item(), on_step=True)
-                self.log(f"grad_min/{name}", param.grad.abs().min().item(), on_step=True)
 
     @staticmethod
     def load_from_checkpoint(checkpoint_path, ModelClass, config=None, map_location=None, tokenizer=None, overrides=None,varlen_strategy='padding'):
