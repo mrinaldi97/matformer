@@ -167,11 +167,12 @@ class PL_ModelWrapper(MatformerModule):
             base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
             cloze_mask_flat = torch.cat(cloze_mask.unbind()).to(logits_flat.device) if masked else None
         """
-        if len(self.cache.additional_logs.items())>0:
-            #Additional logs
-            for k in self.cache.additional_logs.keys():
-                self.log(k,self.cache.additional_logs[k],on_step=True,batch_size=self.batch_size)
-        
+        #if len(self.cache.additional_logs.items()) > 0:
+        #            for k, v in self.cache.additional_logs.items():
+        #                self.log(k, v, on_step=True, batch_size=self.batch_size)
+        #            self.cache.additional_logs.clear()
+                    
+               
         #Trying to simplify the logic,now it by defaults pad everything again.It could be less efficient,we need some tiny test and benchmark
         #1) See if the loss makes sense directly with unpadding
         #2) See if repadding causes a significant performances loss
@@ -213,7 +214,15 @@ class PL_ModelWrapper(MatformerModule):
         additional_metrics=True
         if additional_metrics:
             if self.global_step % 500 == 0:
+                
                 with torch.no_grad():
+                    if self.cache.additional_logs:
+                         keys = list(self.cache.additional_logs.keys())
+                         vals = [v if torch.is_tensor(v) else torch.tensor(v, device=self.device) for v in self.cache.additional_logs.values()]
+                         vals_cpu = torch.stack(vals).detach().cpu().float().tolist()
+                         log_dict = dict(zip(keys, vals_cpu))
+                         self.log_dict(log_dict, on_step=True, batch_size=self.batch_size)
+                         self.cache.additional_logs.clear()                         
                     # 'inputs' is already flattened and filtered for the loss (works for GPT/BERT/Unpadded)
                     # We sample the first 1024 tokens to keep the compute cost negligible
                     sample_size = min(inputs.size(0), 1024)

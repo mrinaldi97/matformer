@@ -315,7 +315,41 @@ class MultiHeadAttention(MatformerModule):
             q = self._transpose_for_kernel(q, kernel_input_order)
             k = self._transpose_for_kernel(k, kernel_input_order)
             v = self._transpose_for_kernel(v, kernel_input_order)
+        # --- Attention Logit Health Metric ---
+        if self.training and self.cache is not None:
+            with torch.no_grad():
+                # Get the relevant tensors
+                curr_qkv = qkv_projected.tensor if qkv_projected is not None else None
+                
+                # Determine sequence dimension (0 for Unpadded [S,H,D], 1 for Padded [B,S,H,D])
+                s_dim = 1 if (curr_qkv.ndim if curr_qkv is not None else q.tensor.ndim) == 4 else 0
+                sample_len = min((curr_qkv.shape[s_dim] if curr_qkv is not None else q.tensor.shape[s_dim]), 256)
 
+                # 1. Extract Samples
+                if qkv_projected is not None:
+                    # Order is ?S3HD. narrow sequence, then unbind '3'
+                    # s_dim+1 because '3' is right after 'S'
+                    q_s, k_s, _ = curr_qkv.narrow(s_dim, 0, sample_len).unbind(dim=s_dim+1)
+                else:
+                    q_s = q.tensor.narrow(s_dim, 0, sample_len)
+                    k_s = k.tensor.narrow(s_dim, 0, sample_len)
+
+                # 2. Compute Logits [..., Heads, S, S]
+                # We move Head dim to -3 to allow matmul on last two dims [S, D]
+                q_s_trans = q_s.transpose(s_dim, -2) 
+                k_s_trans = k_s.transpose(s_dim, -2)
+                logits = torch.matmul(q_s_trans, k_s_trans.transpose(-1, -2))
+                
+                # 3. Calculate metrics (Keep on GPU to avoid sync bottleneck!)
+                layer_max = logits.max() / self.head_dim
+                q_norm = q_s.norm(p=2, dim=-1).mean()
+
+                # 4. Update Cache (Store as Tensors, call .item() only once in training_step)
+                prev_max = self.cache.additional_logs.get('health/attn_logits_max', layer_max)
+                self.cache.additional_logs['health/attn_logits_max'] = torch.maximum(prev_max, layer_max)
+                
+                # Also log the last layer specifically as it's the most sensitive
+                self.cache.additional_logs['health/q_norm_last'] = q_norm
         # Attention computation
         attn_output = self.attn_kernel(
             qkv=qkv_projected.tensor if qkv_projected is not None else None,
