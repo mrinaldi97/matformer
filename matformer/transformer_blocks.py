@@ -316,97 +316,97 @@ class MultiHeadAttention(MatformerModule):
             k = self._transpose_for_kernel(k, kernel_input_order)
             v = self._transpose_for_kernel(v, kernel_input_order)
         # --- Attention Logit Health Metric ---
-                if self.training and self.cache is not None:
-                    with torch.no_grad():
-                        # Sample length for efficiency (limit to 256 tokens)
-                        sample_len = 256
-                        
-                        # Extract Q and K tensors based on whether we have packed or unpacked
-                        if qkv_projected is not None:
-                            # After _transpose_for_kernel, qkv_projected has the kernel's input order
-                            # For Flash: 'BS3HD' (padded) or 'S3HD' (unpadded)
-                            curr_tensor = qkv_projected.tensor
-                            
-                            # Determine dimensions based on actual shape
-                            if curr_tensor.ndim == 5:  # Padded: [B, S, 3, H, D]
-                                batch_dim = 0
-                                s_dim = 1
-                                three_dim = 2
-                                actual_seq_len = curr_tensor.shape[s_dim]
-                            elif curr_tensor.ndim == 4:  # Unpadded: [S, 3, H, D]
-                                s_dim = 0
-                                three_dim = 1
-                                actual_seq_len = curr_tensor.shape[s_dim]
-                            else:
-                                raise ValueError(f"Unexpected qkv tensor shape: {curr_tensor.shape}")
-                            
-                            # Limit sample length to actual sequence length
-                            sample_len = min(sample_len, actual_seq_len)
-                            
-                            # Narrow along sequence dimension
-                            narrowed = curr_tensor.narrow(s_dim, 0, sample_len)
-                            # Shape still: [B, S_sample, 3, H, D] or [S_sample, 3, H, D]
-                            
-                            # Unbind the '3' dimension which is at position 'three_dim'
-                            q_s, k_s, _ = narrowed.unbind(dim=three_dim)
-                            # Now q_s and k_s are [B, S_sample, H, D] or [S_sample, H, D]
-                            
-                        else:
-                            # Unpacked case: q, k, v are separate
-                            # After _transpose_for_kernel, they have kernel's input order
-                            # For Flash: 'BSHD' (padded) or 'SHD' (unpadded)
-                            q_tensor = q.tensor
-                            k_tensor = k.tensor
-                            
-                            # Determine dimensions
-                            if q_tensor.ndim == 4:  # Padded: [B, S, H, D]
-                                s_dim = 1
-                                h_dim = 2
-                                actual_seq_len = q_tensor.shape[s_dim]
-                            elif q_tensor.ndim == 3:  # Unpadded: [S, H, D]
-                                s_dim = 0
-                                h_dim = 1
-                                actual_seq_len = q_tensor.shape[s_dim]
-                            else:
-                                raise ValueError(f"Unexpected q tensor shape: {q_tensor.shape}")
-                            
-                            sample_len = min(sample_len, actual_seq_len)
-                            
-                            q_s = q_tensor.narrow(s_dim, 0, sample_len)
-                            k_s = k_tensor.narrow(s_dim, 0, sample_len)
-                            # Shape: [B, S_sample, H, D] or [S_sample, H, D]
+        if self.training and self.cache is not None:
+            with torch.no_grad():
+                # Sample length for efficiency (limit to 256 tokens)
+                sample_len = 256
+                
+                # Extract Q and K tensors based on whether we have packed or unpacked
+                if qkv_projected is not None:
+                    # After _transpose_for_kernel, qkv_projected has the kernel's input order
+                    # For Flash: 'BS3HD' (padded) or 'S3HD' (unpadded)
+                    curr_tensor = qkv_projected.tensor
+                    
+                    # Determine dimensions based on actual shape
+                    if curr_tensor.ndim == 5:  # Padded: [B, S, 3, H, D]
+                        batch_dim = 0
+                        s_dim = 1
+                        three_dim = 2
+                        actual_seq_len = curr_tensor.shape[s_dim]
+                    elif curr_tensor.ndim == 4:  # Unpadded: [S, 3, H, D]
+                        s_dim = 0
+                        three_dim = 1
+                        actual_seq_len = curr_tensor.shape[s_dim]
+                    else:
+                        raise ValueError(f"Unexpected qkv tensor shape: {curr_tensor.shape}")
+                    
+                    # Limit sample length to actual sequence length
+                    sample_len = min(sample_len, actual_seq_len)
+                    
+                    # Narrow along sequence dimension
+                    narrowed = curr_tensor.narrow(s_dim, 0, sample_len)
+                    # Shape still: [B, S_sample, 3, H, D] or [S_sample, 3, H, D]
+                    
+                    # Unbind the '3' dimension which is at position 'three_dim'
+                    q_s, k_s, _ = narrowed.unbind(dim=three_dim)
+                    # Now q_s and k_s are [B, S_sample, H, D] or [S_sample, H, D]
+                    
+                else:
+                    # Unpacked case: q, k, v are separate
+                    # After _transpose_for_kernel, they have kernel's input order
+                    # For Flash: 'BSHD' (padded) or 'SHD' (unpadded)
+                    q_tensor = q.tensor
+                    k_tensor = k.tensor
+                    
+                    # Determine dimensions
+                    if q_tensor.ndim == 4:  # Padded: [B, S, H, D]
+                        s_dim = 1
+                        h_dim = 2
+                        actual_seq_len = q_tensor.shape[s_dim]
+                    elif q_tensor.ndim == 3:  # Unpadded: [S, H, D]
+                        s_dim = 0
+                        h_dim = 1
+                        actual_seq_len = q_tensor.shape[s_dim]
+                    else:
+                        raise ValueError(f"Unexpected q tensor shape: {q_tensor.shape}")
+                    
+                    sample_len = min(sample_len, actual_seq_len)
+                    
+                    q_s = q_tensor.narrow(s_dim, 0, sample_len)
+                    k_s = k_tensor.narrow(s_dim, 0, sample_len)
+                    # Shape: [B, S_sample, H, D] or [S_sample, H, D]
 
-                        # 2. Compute Logits
-                        # We need to get to [..., H, S, D] for matmul
-                        # Current shape: [B, S, H, D] or [S, H, D]
-                        
-                        if q_s.ndim == 4:  # Padded [B, S, H, D]
-                            # Transpose to [B, H, S, D]
-                            q_s_trans = q_s.transpose(1, 2)
-                            k_s_trans = k_s.transpose(1, 2)
-                        elif q_s.ndim == 3:  # Unpadded [S, H, D]
-                            # Transpose to [H, S, D]
-                            q_s_trans = q_s.transpose(0, 1)
-                            k_s_trans = k_s.transpose(0, 1)
-                        else:
-                            raise ValueError(f"Unexpected q_s shape: {q_s.shape}")
-                        
-                        # Compute attention logits: [..., H, S, S]
-                        # [B, H, S, D] @ [B, H, D, S] -> [B, H, S, S]
-                        # or [H, S, D] @ [H, D, S] -> [H, S, S]
-                        logits = torch.matmul(q_s_trans, k_s_trans.transpose(-1, -2))
-                        
-                        # 3. Calculate metrics (scaled by sqrt(head_dim) for proper attention scale)
-                        scale = self.head_dim ** 0.5
-                        layer_max = logits.abs().max() / scale
-                        q_norm = q_s.norm(p=2, dim=-1).mean()
+                # 2. Compute Logits
+                # We need to get to [..., H, S, D] for matmul
+                # Current shape: [B, S, H, D] or [S, H, D]
+                
+                if q_s.ndim == 4:  # Padded [B, S, H, D]
+                    # Transpose to [B, H, S, D]
+                    q_s_trans = q_s.transpose(1, 2)
+                    k_s_trans = k_s.transpose(1, 2)
+                elif q_s.ndim == 3:  # Unpadded [S, H, D]
+                    # Transpose to [H, S, D]
+                    q_s_trans = q_s.transpose(0, 1)
+                    k_s_trans = k_s.transpose(0, 1)
+                else:
+                    raise ValueError(f"Unexpected q_s shape: {q_s.shape}")
+                
+                # Compute attention logits: [..., H, S, S]
+                # [B, H, S, D] @ [B, H, D, S] -> [B, H, S, S]
+                # or [H, S, D] @ [H, D, S] -> [H, S, S]
+                logits = torch.matmul(q_s_trans, k_s_trans.transpose(-1, -2))
+                
+                # 3. Calculate metrics (scaled by sqrt(head_dim) for proper attention scale)
+                scale = self.head_dim ** 0.5
+                layer_max = logits.abs().max() / scale
+                q_norm = q_s.norm(p=2, dim=-1).mean()
 
-                        # 4. Update Cache (Store as Tensors to avoid GPU->CPU sync during training)
-                        prev_max = self.cache.additional_logs.get('health/attn_logits_max', layer_max)
-                        self.cache.additional_logs['health/attn_logits_max'] = torch.maximum(prev_max, layer_max)
-                        
-                        # Log Q norm for detecting gradient issues
-                        self.cache.additional_logs['health/q_norm_last'] = q_norm
+                # 4. Update Cache (Store as Tensors to avoid GPU->CPU sync during training)
+                prev_max = self.cache.additional_logs.get('health/attn_logits_max', layer_max)
+                self.cache.additional_logs['health/attn_logits_max'] = torch.maximum(prev_max, layer_max)
+                
+                # Log Q norm for detecting gradient issues
+                self.cache.additional_logs['health/q_norm_last'] = q_norm
         # Attention computation
         attn_output = self.attn_kernel(
             qkv=qkv_projected.tensor if qkv_projected is not None else None,
