@@ -76,6 +76,7 @@ class Muon(torch.optim.Optimizer):
         adamw_params=None,
         adamw_betas=(0.9, 0.95),
         adamw_eps=1e-8,
+        no_decay_params=None
     ):
 
         defaults = dict(
@@ -92,6 +93,7 @@ class Muon(torch.optim.Optimizer):
         adamw_params = list(adamw_params) if adamw_params is not None else []
         params.extend(adamw_params)
         super().__init__(params, defaults)
+        no_decay_params = list(no_decay_params) if no_decay_params is not None else []
         # Sort parameters into those for which we will use Muon, and those for which we will not
         for p in muon_params:
             # Use Muon for every parameter in muon_params which is >= 2D and doesn't look like an embedding or head layer
@@ -100,7 +102,9 @@ class Muon(torch.optim.Optimizer):
         for p in adamw_params:
             # Do not use Muon for parameters in adamw_params
             self.state[p]["use_muon"] = False
-
+        for p in no_decay_params:
+            self.state[p]["no_decay"]=True
+            
     def adjust_lr_for_muon(self, lr, param_shape):
         A, B = param_shape[:2]
         # We adjust the learning rate and weight decay based on the size of the parameter matrix
@@ -195,7 +199,8 @@ class Muon(torch.optim.Optimizer):
                 bias_correction1 = 1 - beta1**step
                 bias_correction2 = 1 - beta2**step
                 scale = bias_correction1 / bias_correction2**0.5
-                p.data.mul_(1 - lr * weight_decay)
+                if not state.get("no_decay", False):          
+                    p.data.mul_(1 - lr * weight_decay)
                 p.data.add_(g, alpha=-lr / scale)
 
         return loss

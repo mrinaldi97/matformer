@@ -263,6 +263,9 @@ class PL_ModelWrapper(MatformerModule):
                 self.log("diagnostics/post_clip_grad_norm", post_clip_norm, on_step=True, batch_size=self.batch_size)
                 
     def configure_optimizers(self):
+        if self.train_config.get("no_decay_for_embedding", False) and self.train_config["optimizer"] != "muon":
+            raise ValueError("no_decay_for_embedding for optimizers different than Muon not implemented yet! (Altough it's easy). Please remove it ")
+
         if self.train_config["optimizer"] == "muonclip":
             from muon import MuonClip, MuonConfig
             base_lr = self.train_config["lr"]
@@ -329,19 +332,23 @@ class PL_ModelWrapper(MatformerModule):
         elif self.train_config["optimizer"] == "muon":
             muon_params = []
             adamw_params = []
+            no_decay_params = []
             for name, param in self.named_parameters():
                 if not param.requires_grad:
                     continue
                 if "conv" in name:
                     adamw_params.append(param)
-                    print(f"{name} (Convolutional) in AdamW (ndim={param.ndim})")                          
+                    print(f"{name} (Convolutional) in AdamW (ndim={param.ndim})")    
                 elif "lm_head" in name or "embed_tokens" in name or param.ndim < 2:
                     adamw_params.append(param)
                     print(f"{name} in AdamW (ndim={param.ndim})")
                 else:
                     muon_params.append(param)
                     print(f"{name} in Muon")
-            
+                if self.train_config.get("no_decay_for_embedding", False) and ("lm_head" in name or "embed_tokens" in name):
+                    no_decay_params.append(param)
+                    print(f"{name} has weight decay disabled.")
+                              
             base_lr = self.train_config["lr"]
             
             optimizer = Muon(
@@ -354,6 +361,7 @@ class PL_ModelWrapper(MatformerModule):
                 adamw_params=adamw_params,
                 adamw_betas=self.train_config.get("betas", (0.9, 0.95)),
                 adamw_eps=self.train_config.get("eps", 1e-10),
+                no_decay_params=no_decay_params
             )
             
         elif self.train_config["optimizer"] == "adamw":
