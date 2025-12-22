@@ -65,204 +65,235 @@ class PL_ModelWrapper(MatformerModule):
         
      
     def training_step(self, batch, batch_idx=None):
-        input_sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
-        # Un modo sporco per testare cosa succede se arrivano tutte sequenze lunghe
-        test_memory=False
-        if test_memory:
-            if isinstance(input_sequence, UnpaddedTensor):
-                max_len = self.config.max_position_embeddings
-                batch_size = input_sequence.batch_size
-                total_tokens = max_len * batch_size
-                input_sequence = replace(
-                    input_sequence, 
-                    tensor=torch.randint(0, self.config.vocab_size, (total_tokens,), device=input_sequence.tensor.device),
-                    cu_seqlens=torch.arange(0, total_tokens + 1, max_len, dtype=torch.int32, device=input_sequence.tensor.device),
-                    max_seq_len=max_len,
-                    indices=torch.arange(total_tokens, device=input_sequence.tensor.device),
-                    original_seq_len=max_len
-                )
-        batch['sequence'] = input_sequence
-            batch['sequence'] = input_sequence        
-        if batch['worker_has_finished']:
-            zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
-            return zero_loss
-        masked=True if self.config.training_objective=='masked' else False
-        if self.config.training_objective == 'crazy':
-            self.crazy_previous_state = not getattr(self, 'crazy_previous_state', False)
-            masked = self.crazy_previous_state
-            for m in self.model.modules():
-                if hasattr(m, 'is_causal'):
-                    m.is_causal = not masked
-                if hasattr(m, 'attn_kernel') and hasattr(m.attn_kernel, 'is_causal'):
-                    m.attn_kernel.is_causal = not masked
-
-        #input_sequence=sequence
-        if masked:
-            # If masking rate is variable and variable rate is per document, we need to be sure that the tensor has batch dimension
-            #if isinstance(sequence,UnpaddedTensor):
-            #    repad=True
-            #    sequence=sequence.pad()
-            #else:
-            #    repad=False
-            #masked_tokens,cloze_mask,masking_ratio=self.maskerator(sequence.tensor)
-            #input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)  
-            #if repad:
-            #    input_sequence=input_sequence.unpad()  
-            input_sequence,masking_ratio=self.maskerator(input_sequence) 
-            original_sequence=batch['sequence'] 
-        if self.config.loss_type=='fused':
-            model_return_type = 'hidden'
-            flattening_dimension = self.config.hidden_size
-            loss_kwargs = {"lm_head_weight": self.model.lm_head.module.inner.weight}
-            if hasattr(self.model.lm_head.module.inner, "bias"):
-                loss_kwargs["lm_head_bias"] = self.model.lm_head.module.inner.bias #TODO: Better way to access inner attributes of wrapped modules
-        else: #Normal loss
-            model_return_type='logits'
-            flattening_dimension=self.config.vocab_size
-            loss_kwargs={}
-        
-        
-        ### Input al modello ###
-        model_output = self(input_sequence, return_type=model_return_type) #Return type can be 'logits' or 'hidden' (required for fused loss)   
-        is_unpadded = isinstance(model_output, UnpaddedTensor)
-
-        if is_unpadded:
-            model_output_flat = model_output.tensor
-            targets_flat = original_sequence.tensor 
-            # If already unpadded, all tokens are valid
-            base_mask = torch.ones_like(targets_flat, dtype=torch.bool)
-            cloze_mask_flat = input_sequence.cloze_mask if masked else None
-        else:
-            # (B, S, H) -> 2D (B*S, H)
-            model_output_flat = model_output.tensor.view(-1, model_output.tensor.size(-1))
-            # (B, S) -> 1D (B*S)
-            targets_flat = sequence.tensor.view(-1)
-            base_mask = (targets_flat != self.config.pad_token_id)
-            cloze_mask_flat = input_sequence.cloze_mask.view(-1) if masked else None
-
-        # 2. Setting the training objective
-        if masked:
-            mask = cloze_mask_flat & base_mask
-            inputs = model_output_flat[mask]
-            targets = targets_flat[mask]
-        else: # Autoregressive
-            mask = base_mask[1:]
-            inputs = model_output_flat[:-1][mask]
-            targets = targets_flat[1:][mask]
-        # 4. Getting the loss
-        loss = self.cross_entropy_loss(inputs, targets, **loss_kwargs)  
-        self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)      
-        if 'aux_losses' in self.cache.storage:
-                    aux_losses = self.cache.storage['aux_losses']
-                    if aux_losses:
-                        total_aux_loss = torch.stack(aux_losses).sum()
-                        aux_weight = 0.1 
-                        loss += aux_weight * total_aux_loss
-                        self.log("train/aux_memory_loss", total_aux_loss.item(), on_step=True)
-                        self.log("train/total_loss",loss,batch_size=self.batch_size)
-                    self.cache.storage['aux_losses'] = []        
-        
-
-        
-        if self.config.training_objective == 'crazy':
-            self.log(f'train/loss_masked_{str(masked)}',loss, prog_bar=True,batch_size=self.batch_size)
         try:
-            current_lr = self.lr_schedulers().get_last_lr()[0]
-            self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
-        except:
-            pass                 
-        if masked: #Logging also the accuracy
-            preds = model_output_flat[mask].argmax(dim=-1)
-            targets = targets_flat[mask]
-            acc = (preds == targets).float().mean()
-            self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
-            #self.log("train/masking_rate",masking_ratio,prog_bar=False,on_step=True,on_epoch=False,batch_size=self.batch_size)
-        """ TODO Currently disabled
-        if self.nested:
-            logits_flat = torch.cat(logits.unbind())
-            targets_flat = torch.cat(sequence.unbind()).to(logits_flat.device)
-            base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
-            cloze_mask_flat = torch.cat(cloze_mask.unbind()).to(logits_flat.device) if masked else None
-        """
-        #if len(self.cache.additional_logs.items()) > 0:
-        #            for k, v in self.cache.additional_logs.items():
-        #                self.log(k, v, on_step=True, batch_size=self.batch_size)
-        #            self.cache.additional_logs.clear()
-                    
-               
-        #Trying to simplify the logic,now it by defaults pad everything again.It could be less efficient,we need some tiny test and benchmark
-        #1) See if the loss makes sense directly with unpadding
-        #2) See if repadding causes a significant performances loss
-        """
-        elif logits.isPadded:
-            vocab_size = logits.shape[-1]
-            logits_flat = logits.tensor.reshape(-1, vocab_size)
-            targets_flat = sequence.tensor.reshape(-1)
-            #print(f"Logits flat shape: {logits_flat.shape}")
-            #print(f"Targets flat shape: {targets_flat.shape}")
-            base_mask = (targets_flat != self.config.pad_token_id)
-        
-        
-            autoencoders_experimental=False
-            if autoencoders_experimental:
-                base_mask = (targets_flat.to(logits.tensor.device) != 259)   
-                fake_mask = ~logits.padding_mask.reshape(-1).to(logits.tensor.device )
-                base_mask = base_mask & fake_mask  
-                     
+            input_sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
+            # Un modo sporco per testare cosa succede se arrivano tutte sequenze lunghe
+            test_memory=False
+            if test_memory:
+                if isinstance(input_sequence, UnpaddedTensor):
+                    max_len = self.config.max_position_embeddings
+                    batch_size = input_sequence.batch_size
+                    total_tokens = max_len * batch_size
+                    input_sequence = replace(
+                        input_sequence, 
+                        tensor=torch.randint(0, self.config.vocab_size, (total_tokens,), device=input_sequence.tensor.device),
+                        cu_seqlens=torch.arange(0, total_tokens + 1, max_len, dtype=torch.int32, device=input_sequence.tensor.device),
+                        max_seq_len=max_len,
+                        indices=torch.arange(total_tokens, device=input_sequence.tensor.device),
+                        original_seq_len=max_len
+                    )
+            batch['sequence'] = input_sequence
+            if batch['worker_has_finished']:
+                zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
+                return zero_loss
+            masked=True if self.config.training_objective=='masked' else False
+            if self.config.training_objective == 'crazy':
+                self.crazy_previous_state = not getattr(self, 'crazy_previous_state', False)
+                masked = self.crazy_previous_state
+                for m in self.model.modules():
+                    if hasattr(m, 'is_causal'):
+                        m.is_causal = not masked
+                    if hasattr(m, 'attn_kernel') and hasattr(m.attn_kernel, 'is_causal'):
+                        m.attn_kernel.is_causal = not masked
+
+            #input_sequence=sequence
+            if masked:
+                # If masking rate is variable and variable rate is per document, we need to be sure that the tensor has batch dimension
+                #if isinstance(sequence,UnpaddedTensor):
+                #    repad=True
+                #    sequence=sequence.pad()
+                #else:
+                #    repad=False
+                #masked_tokens,cloze_mask,masking_ratio=self.maskerator(sequence.tensor)
+                #input_sequence=replace(sequence,tensor=masked_tokens,cloze_mask=cloze_mask)  
+                #if repad:
+                #    input_sequence=input_sequence.unpad()  
+                input_sequence,masking_ratio=self.maskerator(input_sequence) 
+                original_sequence=batch['sequence'] 
+            if self.config.loss_type=='fused':
+                model_return_type = 'hidden'
+                flattening_dimension = self.config.hidden_size
+                loss_kwargs = {"lm_head_weight": self.model.lm_head.module.inner.weight}
+                if hasattr(self.model.lm_head.module.inner, "bias"):
+                    loss_kwargs["lm_head_bias"] = self.model.lm_head.module.inner.bias #TODO: Better way to access inner attributes of wrapped modules
+            else: #Normal loss
+                model_return_type='logits'
+                flattening_dimension=self.config.vocab_size
+                loss_kwargs={}
             
-            cloze_mask_flat = cloze_mask.reshape(-1) if masked else None
-        else:
-            logits_flat = logits.tensor
-            targets_flat = sequence.tensor
-            base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
-            cloze_mask_flat = cloze_mask if masked else None
+            
+            ### Input al modello ###
+            model_output = self(input_sequence, return_type=model_return_type) #Return type can be 'logits' or 'hidden' (required for fused loss)   
+            is_unpadded = isinstance(model_output, UnpaddedTensor)
 
-        if masked:
-            mask = cloze_mask_flat & base_mask
-            loss = self.cross_entropy_loss(logits_flat[mask], targets_flat[mask])
-        else:
-            mask = base_mask[1:]
-            loss = self.cross_entropy_loss(logits_flat[:-1][mask], targets_flat[1:][mask])
-        """          
+            if is_unpadded:
+                model_output_flat = model_output.tensor
+                targets_flat = original_sequence.tensor 
+                # If already unpadded, all tokens are valid
+                base_mask = torch.ones_like(targets_flat, dtype=torch.bool)
+                cloze_mask_flat = input_sequence.cloze_mask if masked else None
+            else:
+                # (B, S, H) -> 2D (B*S, H)
+                model_output_flat = model_output.tensor.view(-1, model_output.tensor.size(-1))
+                # (B, S) -> 1D (B*S)
+                targets_flat = sequence.tensor.view(-1)
+                base_mask = (targets_flat != self.config.pad_token_id)
+                cloze_mask_flat = input_sequence.cloze_mask.view(-1) if masked else None
 
-         
+            # 2. Setting the training objective
+            if masked:
+                mask = cloze_mask_flat & base_mask
+                inputs = model_output_flat[mask]
+                targets = targets_flat[mask]
+            else: # Autoregressive
+                mask = base_mask[1:]
+                inputs = model_output_flat[:-1][mask]
+                targets = targets_flat[1:][mask]
+            # 4. Getting the loss
+            loss = self.cross_entropy_loss(inputs, targets, **loss_kwargs)  
+            self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)      
+            if 'aux_losses' in self.cache.storage:
+                        aux_losses = self.cache.storage['aux_losses']
+                        if aux_losses:
+                            total_aux_loss = torch.stack(aux_losses).sum()
+                            aux_weight = 0.1 
+                            loss += aux_weight * total_aux_loss
+                            self.log("train/aux_memory_loss", total_aux_loss.item(), on_step=True)
+                            self.log("train/total_loss",loss,batch_size=self.batch_size)
+                        self.cache.storage['aux_losses'] = []        
+            
 
-        # TODO: this part has to be revised and cleaned
-        additional_metrics=True
-        if additional_metrics:
-            if self.global_step % 100 == 0:         
-                with torch.no_grad():
-                    if self.cache.additional_logs:
-                         keys = list(self.cache.additional_logs.keys())
-                         vals = [v if torch.is_tensor(v) else torch.tensor(v, device=self.device) for v in self.cache.additional_logs.values()]
-                         vals_cpu = torch.stack(vals).detach().cpu().float().tolist()
-                         log_dict = dict(zip(keys, vals_cpu))
-                         self.log_dict(log_dict, on_step=True, batch_size=self.batch_size)
-                         self.cache.additional_logs.clear()                         
-                    # 'inputs' is already flattened and filtered for the loss (works for GPT/BERT/Unpadded)
-                    # We sample the first 1024 tokens to keep the compute cost negligible
-                    sample_size = min(inputs.size(0), 1024)
-                    diag_data = inputs[:sample_size]
-
-                    if self.config.loss_type != 'fused':
-                        # 1. Logit Statistics (Saturation check)
-                        self.log("health/logits_max", diag_data.max(), on_step=True, batch_size=self.batch_size)
-                        self.log("health/logits_std", diag_data.std(), on_step=True, batch_size=self.batch_size)
+            
+            if self.config.training_objective == 'crazy':
+                self.log(f'train/loss_masked_{str(masked)}',loss, prog_bar=True,batch_size=self.batch_size)
+            try:
+                current_lr = self.lr_schedulers().get_last_lr()[0]
+                self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
+            except:
+                pass                 
+            if masked: #Logging also the accuracy
+                preds = model_output_flat[mask].argmax(dim=-1)
+                targets = targets_flat[mask]
+                acc = (preds == targets).float().mean()
+                self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
+                #self.log("train/masking_rate",masking_ratio,prog_bar=False,on_step=True,on_epoch=False,batch_size=self.batch_size)
+            """ TODO Currently disabled
+            if self.nested:
+                logits_flat = torch.cat(logits.unbind())
+                targets_flat = torch.cat(sequence.unbind()).to(logits_flat.device)
+                base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
+                cloze_mask_flat = torch.cat(cloze_mask.unbind()).to(logits_flat.device) if masked else None
+            """
+            #if len(self.cache.additional_logs.items()) > 0:
+            #            for k, v in self.cache.additional_logs.items():
+            #                self.log(k, v, on_step=True, batch_size=self.batch_size)
+            #            self.cache.additional_logs.clear()
                         
-                        # 2. Entropy (Confidence check)
-                        probs = torch.softmax(diag_data, dim=-1)
-                        entropy = -torch.sum(probs * torch.log(probs + 1e-9), dim=-1).mean()
-                        self.log("health/entropy", entropy, on_step=True, batch_size=self.batch_size)
-                    else:
-                        # If fused, inputs are actually hidden states
-                        self.log("health/hidden_max", diag_data.max(), on_step=True, batch_size=self.batch_size)
-                        self.log("health/hidden_std", diag_data.std(), on_step=True, batch_size=self.batch_size)
+                   
+            #Trying to simplify the logic,now it by defaults pad everything again.It could be less efficient,we need some tiny test and benchmark
+            #1) See if the loss makes sense directly with unpadding
+            #2) See if repadding causes a significant performances loss
+            """
+            elif logits.isPadded:
+                vocab_size = logits.shape[-1]
+                logits_flat = logits.tensor.reshape(-1, vocab_size)
+                targets_flat = sequence.tensor.reshape(-1)
+                #print(f"Logits flat shape: {logits_flat.shape}")
+                #print(f"Targets flat shape: {targets_flat.shape}")
+                base_mask = (targets_flat != self.config.pad_token_id)
+            
+            
+                autoencoders_experimental=False
+                if autoencoders_experimental:
+                    base_mask = (targets_flat.to(logits.tensor.device) != 259)   
+                    fake_mask = ~logits.padding_mask.reshape(-1).to(logits.tensor.device )
+                    base_mask = base_mask & fake_mask  
+                         
+                
+                cloze_mask_flat = cloze_mask.reshape(-1) if masked else None
+            else:
+                logits_flat = logits.tensor
+                targets_flat = sequence.tensor
+                base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
+                cloze_mask_flat = cloze_mask if masked else None
 
-                    # 3. Gating Health (if the model has gates)
-                    for name, p in self.named_parameters():
-                        if 'gate' in name and p.numel() == 1:
-                            self.log(f"gates/{name}_val", p.item(), on_step=True, batch_size=self.batch_size)          
-        return loss
+            if masked:
+                mask = cloze_mask_flat & base_mask
+                loss = self.cross_entropy_loss(logits_flat[mask], targets_flat[mask])
+            else:
+                mask = base_mask[1:]
+                loss = self.cross_entropy_loss(logits_flat[:-1][mask], targets_flat[1:][mask])
+            """          
+
+             
+
+            # TODO: this part has to be revised and cleaned
+            additional_metrics=True
+            if additional_metrics:
+                if self.global_step % 100 == 0:         
+                    with torch.no_grad():
+                        if self.cache.additional_logs:
+                             keys = list(self.cache.additional_logs.keys())
+                             vals = [v if torch.is_tensor(v) else torch.tensor(v, device=self.device) for v in self.cache.additional_logs.values()]
+                             vals_cpu = torch.stack(vals).detach().cpu().float().tolist()
+                             log_dict = dict(zip(keys, vals_cpu))
+                             self.log_dict(log_dict, on_step=True, batch_size=self.batch_size)
+                             self.cache.additional_logs.clear()                         
+                        # 'inputs' is already flattened and filtered for the loss (works for GPT/BERT/Unpadded)
+                        # We sample the first 1024 tokens to keep the compute cost negligible
+                        sample_size = min(inputs.size(0), 1024)
+                        diag_data = inputs[:sample_size]
+
+                        if self.config.loss_type != 'fused':
+                            # 1. Logit Statistics (Saturation check)
+                            self.log("health/logits_max", diag_data.max(), on_step=True, batch_size=self.batch_size)
+                            self.log("health/logits_std", diag_data.std(), on_step=True, batch_size=self.batch_size)
+                            
+                            # 2. Entropy (Confidence check)
+                            probs = torch.softmax(diag_data, dim=-1)
+                            entropy = -torch.sum(probs * torch.log(probs + 1e-9), dim=-1).mean()
+                            self.log("health/entropy", entropy, on_step=True, batch_size=self.batch_size)
+                        else:
+                            # If fused, inputs are actually hidden states
+                            self.log("health/hidden_max", diag_data.max(), on_step=True, batch_size=self.batch_size)
+                            self.log("health/hidden_std", diag_data.std(), on_step=True, batch_size=self.batch_size)
+
+                        # 3. Gating Health (if the model has gates)
+                        for name, p in self.named_parameters():
+                            if 'gate' in name and p.numel() == 1:
+                                self.log(f"gates/{name}_val", p.item(), on_step=True, batch_size=self.batch_size)          
+            return loss
+            """
+            This exception must be only for extreme cases. To avoid breaking a large training if only a minor issue occurs,
+            ex a particularly long batch, the batch is skipped. The event will be logged. Be sure that this number is limited
+            to a very small amount of steps.
+            """
+        except Exception as e:
+            if not any(s in str(e).lower() for s in ("out of memory", "cuda out of memory", "cublas")):
+                print(e)
+                self.log("train/EXCEPTIONS",1,on_step=True,on_epoch=False,batch_size=self.batch_size)
+            else:
+                self.log(
+                    "train/skipped_oom", 1,
+                    on_step=True, on_epoch=False, batch_size=self.batch_size
+                )
+
+            try:
+                opts = self.optimizers()
+                for o in opts if isinstance(opts, list) else (opts,):
+                    o.zero_grad(set_to_none=True)
+            except Exception:
+                pass
+
+            if hasattr(self.cache, "storage"):
+                self.cache.storage.clear()
+
+            import gc
+            gc.collect()
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+
+            return sum(p.sum() for p in self.parameters()) * 0.0
         
     def on_before_optimizer_step(self, optimizer):
         additional_metrics=True
