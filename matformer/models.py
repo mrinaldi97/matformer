@@ -66,6 +66,12 @@ class PL_ModelWrapper(MatformerModule):
      
     def training_step(self, batch, batch_idx=None):
         input_sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
+        # Un modo sporco per testare cosa succede se arrivano tutte sequenze lunghe
+        test_memory=False
+        if test_memory:
+            if isinstance(input_sequence, UnpaddedTensor):
+                input_sequence = replace(input_sequence, tensor=torch.randint(0, self.config.vocab_size, (self.config.max_seq_len * input_sequence.batch_size,), device=input_sequence.tensor.device), cu_seqlens=torch.arange(0, self.config.max_seq_len * input_sequence.batch_size + 1, self.config.max_seq_len, device=input_sequence.tensor.device), max_seqlen=self.config.max_seq_len)
+            batch['sequence'] = input_sequence        
         if batch['worker_has_finished']:
             zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
             return zero_loss
@@ -213,8 +219,7 @@ class PL_ModelWrapper(MatformerModule):
         # TODO: this part has to be revised and cleaned
         additional_metrics=True
         if additional_metrics:
-            if self.global_step % 500 == 0:
-                
+            if self.global_step % 100 == 0:         
                 with torch.no_grad():
                     if self.cache.additional_logs:
                          keys = list(self.cache.additional_logs.keys())
@@ -251,7 +256,7 @@ class PL_ModelWrapper(MatformerModule):
     def on_before_optimizer_step(self, optimizer):
         additional_metrics=True
         if additional_metrics:
-            if self.global_step % 500 == 0:
+            if self.global_step % 100 == 0:
                 grad_norm_sq = 0.0
                 weight_norm_sq = 0.0
                 
