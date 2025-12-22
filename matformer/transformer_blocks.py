@@ -318,37 +318,71 @@ class MultiHeadAttention(MatformerModule):
         # --- Attention Logit Health Metric ---
         if self.training and self.cache is not None:
             with torch.no_grad():
-                # Get the relevant tensors
-                curr_qkv = qkv_projected.tensor if qkv_projected is not None else None
+                # Sample length for efficiency (limit to 256 tokens)
+                sample_len = 256
                 
-                # Determine sequence dimension (0 for Unpadded [S,H,D], 1 for Padded [B,S,H,D])
-                s_dim = 1 if (curr_qkv.ndim if curr_qkv is not None else q.tensor.ndim) == 4 else 0
-                sample_len = min((curr_qkv.shape[s_dim] if curr_qkv is not None else q.tensor.shape[s_dim]), 256)
-
-                # 1. Extract Samples
+                # Extract Q and K tensors based on whether we have packed or unpacked
                 if qkv_projected is not None:
-                    # Order is ?S3HD. narrow sequence, then unbind '3'
-                    # s_dim+1 because '3' is right after 'S'
-                    q_s, k_s, _ = curr_qkv.narrow(s_dim, 0, sample_len).unbind(dim=s_dim+1)
+                    # qkv_projected has order '?S3HD' or 'S3HD'
+                    curr_tensor = qkv_projected.tensor
+                    
+                    # Determine dimensions based on shape
+                    if curr_tensor.ndim == 4:  # Padded: [B, S, 3, H, D]
+                        s_dim = 1
+                        actual_seq_len = curr_tensor.shape[s_dim]
+                    else:  # Unpadded: [S, 3, H, D]
+                        s_dim = 0
+                        actual_seq_len = curr_tensor.shape[s_dim]
+                    
+                    # Limit sample length to actual sequence length
+                    sample_len = min(sample_len, actual_seq_len)
+                    
+                    # Narrow along sequence dimension, then unbind the '3' dimension
+                    # After narrow: still [?, S_sample, 3, H, D]
+                    # The '3' dimension is at s_dim + 1
+                    narrowed = curr_tensor.narrow(s_dim, 0, sample_len)
+                    q_s, k_s, _ = narrowed.unbind(dim=s_dim + 1)
+                    # Now q_s and k_s are [?, S_sample, H, D]
+                    
                 else:
-                    q_s = q.tensor.narrow(s_dim, 0, sample_len)
-                    k_s = k.tensor.narrow(s_dim, 0, sample_len)
+                    # Unpacked case: q, k, v are separate with order '?SHD' or 'SHD'
+                    q_tensor = q.tensor
+                    k_tensor = k.tensor
+                    
+                    # Determine dimensions
+                    if q_tensor.ndim == 4:  # Padded: [B, S, H, D]
+                        s_dim = 1
+                        actual_seq_len = q_tensor.shape[s_dim]
+                    else:  # Unpadded: [S, H, D]
+                        s_dim = 0
+                        actual_seq_len = q_tensor.shape[s_dim]
+                    
+                    sample_len = min(sample_len, actual_seq_len)
+                    
+                    q_s = q_tensor.narrow(s_dim, 0, sample_len)
+                    k_s = k_tensor.narrow(s_dim, 0, sample_len)
+                    # Shape: [?, S_sample, H, D]
 
-                # 2. Compute Logits [..., Heads, S, S]
-                # We move Head dim to -3 to allow matmul on last two dims [S, D]
-                q_s_trans = q_s.transpose(s_dim, -2) 
-                k_s_trans = k_s.transpose(s_dim, -2)
+                # 2. Compute Logits [..., H, S, S]
+                # Move Head dimension to -3 for matmul on last two dims
+                # From [?, S, H, D] -> [?, H, S, D]
+                q_s_trans = q_s.transpose(s_dim, s_dim + 1)
+                k_s_trans = k_s.transpose(s_dim, s_dim + 1)
+                
+                # Compute attention logits: [..., H, S, S]
                 logits = torch.matmul(q_s_trans, k_s_trans.transpose(-1, -2))
                 
-                # 3. Calculate metrics (Keep on GPU to avoid sync bottleneck!)
-                layer_max = logits.max() / self.head_dim
+                # 3. Calculate metrics (scaled by sqrt(head_dim) for interpretability)
+                scale = self.head_dim ** 0.5
+                layer_max = logits.abs().max() / scale
                 q_norm = q_s.norm(p=2, dim=-1).mean()
 
-                # 4. Update Cache (Store as Tensors, call .item() only once in training_step)
+                # 4. Update Cache (Store as Tensors to avoid GPU->CPU sync during training)
+                # Only convert to .item() in the training_step logging
                 prev_max = self.cache.additional_logs.get('health/attn_logits_max', layer_max)
                 self.cache.additional_logs['health/attn_logits_max'] = torch.maximum(prev_max, layer_max)
                 
-                # Also log the last layer specifically as it's the most sensitive
+                # Log Q norm for the last layer (helpful for detecting gradient issues)
                 self.cache.additional_logs['health/q_norm_last'] = q_norm
         # Attention computation
         attn_output = self.attn_kernel(
