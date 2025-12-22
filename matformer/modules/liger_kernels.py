@@ -133,8 +133,8 @@ class LigerCrossEntropyLossFused(nn.Module):
     #    return torch.cuda.is_available() 
     def forward(self, hidden, targets, **kwargs):
         return self.inner(
-            _input=hidden,
+            _input=hidden.float(),
             target=targets,
-            lin_weight=kwargs['lm_head_weight'],
+            lin_weight=kwargs['lm_head_weight'].float(),
             bias=kwargs.get("lm_head_bias", None)
         )
