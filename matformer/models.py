@@ -97,7 +97,7 @@ class PL_ModelWrapper(MatformerModule):
             model_return_type = 'hidden'
             flattening_dimension = self.config.hidden_size
             loss_kwargs = {"lm_head_weight": self.model.lm_head.module.inner.weight}
-            if hasattr(self.model.lm_head.inner, "bias"):
+            if hasattr(self.model.lm_head.module.inner, "bias"):
                 loss_kwargs["lm_head_bias"] = self.model.lm_head.module.inner.bias #TODO: Better way to access inner attributes of wrapped modules
         else: #Normal loss
             model_return_type='logits'
