@@ -70,7 +70,18 @@ class PL_ModelWrapper(MatformerModule):
         test_memory=False
         if test_memory:
             if isinstance(input_sequence, UnpaddedTensor):
-                input_sequence = replace(input_sequence, tensor=torch.randint(0, self.config.vocab_size, (self.config.max_position_embeddings * input_sequence.batch_size,), device=input_sequence.tensor.device), cu_seqlens=torch.arange(0, self.config.max_position_embeddings * input_sequence.batch_size + 1, self.config.max_position_embeddings, device=input_sequence.tensor.device), max_seqlen=self.config.max_position_embeddings)
+                max_len = self.config.max_position_embeddings
+                batch_size = input_sequence.batch_size
+                total_tokens = max_len * batch_size
+                input_sequence = replace(
+                    input_sequence, 
+                    tensor=torch.randint(0, self.config.vocab_size, (total_tokens,), device=input_sequence.tensor.device),
+                    cu_seqlens=torch.arange(0, total_tokens + 1, max_len, dtype=torch.int32, device=input_sequence.tensor.device),
+                    max_seq_len=max_len,
+                    indices=torch.arange(total_tokens, device=input_sequence.tensor.device),
+                    original_seq_len=max_len
+                )
+        batch['sequence'] = input_sequence
             batch['sequence'] = input_sequence        
         if batch['worker_has_finished']:
             zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
