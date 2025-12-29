@@ -969,7 +969,7 @@ class BERTModel(TransformerWithLMHead):
                         vocab_size=None
                 print(f"Setting up maskerator with {self.config.masked_substitution_rate}% substitution rate.")
                 self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
-                                           substitution_rate=self.config.masked_substitution_rate,
+                                           substitution_rate=self.masking_ratio,
                                            pad_token_id=self.config.pad_token_id,
                                            cloze_prob=cloze_prob,
                                            random_prob=random_prob,
