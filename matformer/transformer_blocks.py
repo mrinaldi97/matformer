@@ -946,10 +946,13 @@ class BERTModel(TransformerWithLMHead):
              self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masking_ratio)
              print(f"Masking ratio: {self.masking_ratio}")
         else: # We get the maskerator settings from the config
-            try:
-                self.masking_ratio=self.config.masked_substitution_rate
-            except:
-                self.masking_ratio=0.15
+            if masking_ratio is not None:
+                self.masking_ratio=masking_ratio
+            else:
+                try:
+                    self.masking_ratio=self.config.masked_substitution_rate
+                except:
+                    self.masking_ratio=0.15
             try:
                 try:
                     cloze_prob = self.config.get("cloze_prob", 1.0)
@@ -964,7 +967,7 @@ class BERTModel(TransformerWithLMHead):
                         vocab_size=self.config.vocab_size
                     except:
                         vocab_size=None
-                
+                print(f"Setting up maskerator with {self.config.masked_substitution_rate}% substitution rate.")
                 self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
                                            substitution_rate=self.config.masked_substitution_rate,
                                            pad_token_id=self.config.pad_token_id,
