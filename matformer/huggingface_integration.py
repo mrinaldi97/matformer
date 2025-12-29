@@ -113,14 +113,26 @@ class MatformerPreTrainedModel(PreTrainedModel):
             if config_path.exists():
                 config = MatformerConfig.from_pretrained(pretrained_model_name_or_path)
             else:
-                from huggingface_hub import hf_hub_download
-                config_file = hf_hub_download(repo_id=pretrained_model_name_or_path, filename="config.json")
-                config = MatformerConfig.from_pretrained(pretrained_model_name_or_path)
+                # Try to find config.json in parent directory
+                parent_config_path = Path(pretrained_model_name_or_path).parent / "config.json"
+                if parent_config_path.exists():
+                    config = MatformerConfig.from_pretrained(str(Path(pretrained_model_name_or_path).parent))
+                else:
+                    # Fall back to downloading from HuggingFace Hub
+                    from huggingface_hub import hf_hub_download
+                    config_file = hf_hub_download(repo_id=pretrained_model_name_or_path, filename="config.json")
+                    config = MatformerConfig.from_pretrained(pretrained_model_name_or_path)
         
         checkpoint_path = Path(pretrained_model_name_or_path) / "checkpoint.ckpt"
         if not checkpoint_path.exists():
-            from huggingface_hub import hf_hub_download
-            checkpoint_path = hf_hub_download(repo_id=pretrained_model_name_or_path, filename="checkpoint.ckpt")
+            base_path = Path(pretrained_model_name_or_path)
+            if base_path.is_dir():
+                ckpt_files = list(base_path.glob("*.ckpt"))
+                if ckpt_files:
+                    checkpoint_path = ckpt_files[0]
+            else:
+                from huggingface_hub import hf_hub_download
+                checkpoint_path = hf_hub_download(repo_id=pretrained_model_name_or_path, filename="checkpoint.ckpt")
         
         map_location = kwargs.pop("device_map", "cuda" if torch.cuda.is_available() else "cpu")
         if map_location == "auto":
