@@ -64,13 +64,15 @@ class PL_ModelWrapper(MatformerModule):
     def on_load_checkpoint(self, checkpoint):
         self._restored_from_ckpt = True       
         if self.load_mode in ["weights_only", "weights_and_optimizer"]:
-            # Common removals for both modes
-            for key in ["lr_schedulers", "epoch", "global_step", "loops", "callbacks"]:
-                checkpoint.pop(key, None)
-            
-            # Additional removal for weights_only
-            if self.load_mode == "weights_only":
-                checkpoint.pop("optimizer_states", None)        
+           checkpoint["lr_schedulers"] = [] 
+           checkpoint["epoch"] = 0
+           checkpoint["global_step"] = 0
+           checkpoint.pop("loops", None)
+           checkpoint.pop("MatformerDataModule",None)
+           checkpoint.pop("callbacks", None)
+        if self.load_mode == "weights_only":
+            checkpoint["optimizer_states"] = []
+       
      
     def training_step(self, batch, batch_idx=None):
         try:

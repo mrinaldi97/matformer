@@ -256,7 +256,7 @@ class MatformerDataModule(pl.LightningDataModule):
             world_size = 1
 
         saved_world_size = state_dict["per_rank"][0].get("saved_world_size")
-        STRICT_WORLD_SIZE_CHECK = True #It will not work if GPU count changes
+        STRICT_WORLD_SIZE_CHECK = False #If True, It will not work if GPU count changes
         if is_dist and saved_world_size != world_size:
             if STRICT_WORLD_SIZE_CHECK:
                 raise RuntimeError(
@@ -264,7 +264,9 @@ class MatformerDataModule(pl.LightningDataModule):
                     f"(saved={saved_world_size}, current={world_size})."
                 )
             else:
-                mapped_rank = rank % len(per_rank) #Rivedere la logica se si vuole supportare cambio numero GPU
+                print(f"WARNING: world size changed")
+                print(f"saved={saved_world_size}, current={world_size}")
+                mapped_rank = rank #Rivedere la logica se si vuole supportare cambio numero GPU
         else:
             mapped_rank = rank
             
