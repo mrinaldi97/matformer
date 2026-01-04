@@ -25,11 +25,12 @@ from copy import deepcopy
 from matformer.matformer_module import MatformerModule
 
 class PL_ModelWrapper(MatformerModule):
-    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False):
+    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False,load_mode="full"):
         super().__init__()
         self.config=config
         self.train_config=train_config
         self.save_hyperparameters()  
+        self.load_mode = load_mode
         # Initialize cache and set registry
         self.cache = CachedStuff()
         self.cache.registry = registry
@@ -44,7 +45,7 @@ class PL_ModelWrapper(MatformerModule):
             self.model.apply(init_transformer_weights_)
             
         self.batch_size=batch_size # Utile per il learning rate scheduling
-        
+        self.tokenizer=tokenizer
         # Maskerator setup
         self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
                                        substitution_rate=self.config.masked_substitution_rate,
@@ -62,7 +63,14 @@ class PL_ModelWrapper(MatformerModule):
         return self.model(_input.to(self.device),*args,**kwargs)
     def on_load_checkpoint(self, checkpoint):
         self._restored_from_ckpt = True       
-        
+        if self.load_mode in ["weights_only", "weights_and_optimizer"]:
+            # Common removals for both modes
+            for key in ["lr_schedulers", "epoch", "global_step", "loops", "callbacks"]:
+                checkpoint.pop(key, None)
+            
+            # Additional removal for weights_only
+            if self.load_mode == "weights_only":
+                checkpoint.pop("optimizer_states", None)        
      
     def training_step(self, batch, batch_idx=None):
         try:
