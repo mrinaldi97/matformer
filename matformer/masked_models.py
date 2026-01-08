@@ -5,6 +5,7 @@ import random
 from typing import Optional, Union, List, Tuple, Literal
 import torch
 from matformer.tensors_dataclasses import UnpaddedTensor,PaddedTensor
+from dataclasses import replace
 
 class Maskerator:
     def __init__(self, mask_token:int, substitution_rate: Union[float, Tuple[float, float], List[float], None], 
