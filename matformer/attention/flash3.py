@@ -1,3 +1,4 @@
+"""
 from matformer.matformer_registry import registry
 # attention/flash.py
 import torch
@@ -8,6 +9,7 @@ try:
     from flash_attn_interface import flash_attn_func,flash_attn_qkvpacked_func,flash_attn_varlen_func
 except:
     pass
+"""
 """
 WIP
 @registry.register(
@@ -23,6 +25,7 @@ WIP
         'supports_alibi': True,
     })
     """
+"""
 class FlashAttentionKernel(nn.Module):
     @staticmethod
     def is_available():
@@ -111,4 +114,4 @@ class FlashAttentionKernel(nn.Module):
                 causal=self.is_causal,
                 window_size=sliding_window
             )
-
+"""

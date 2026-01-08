@@ -316,7 +316,7 @@ class MultiHeadAttention(MatformerModule):
             k = self._transpose_for_kernel(k, kernel_input_order)
             v = self._transpose_for_kernel(v, kernel_input_order)
         # --- Attention Logit Health Metric ---
-        if self.training and self.cache is not None:
+        if False and self.training and self.cache is not None:
             with torch.no_grad():
                 # Sample length for efficiency (limit to 256 tokens)
                 sample_len = 256

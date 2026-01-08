@@ -238,7 +238,7 @@ class PL_ModelWrapper(MatformerModule):
              
 
             # TODO: this part has to be revised and cleaned
-            additional_metrics=True
+            additional_metrics=False
             if additional_metrics:
                 if self.global_step % 100 == 0:         
                     with torch.no_grad():
@@ -311,7 +311,7 @@ class PL_ModelWrapper(MatformerModule):
             return sum(p.sum() for p in self.parameters()) * 0.0
         
     def on_before_optimizer_step(self, optimizer):
-        additional_metrics=True
+        additional_metrics=False
         if additional_metrics:
             if self.global_step % 100 == 0:
                 grad_norm_sq = 0.0
