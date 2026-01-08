@@ -146,7 +146,7 @@ class PL_ModelWrapper(MatformerModule):
                 # (B, S, H) -> 2D (B*S, H)
                 model_output_flat = model_output.tensor.view(-1, model_output.tensor.size(-1))
                 # (B, S) -> 1D (B*S)
-                targets_flat = sequence.tensor.view(-1)
+                targets_flat = original_sequence.tensor.view(-1)
                 base_mask = (targets_flat != self.config.pad_token_id)
                 cloze_mask_flat = input_sequence.cloze_mask.view(-1) if masked else None
 
