@@ -155,7 +155,7 @@ class MatformerDataModule(pl.LightningDataModule):
                 padded_ids.append(padded)
             
             tensors = torch.tensor(padded_ids, dtype=torch.long)
-            padding_masks = (tensors == pad_token_id)
+            padding_masks = (tensors == self.pad_token_id)
             sequence = PaddedTensor(
                 tensor=tensors, 
                 padding_mask=padding_masks, 
