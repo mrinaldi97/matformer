@@ -151,7 +151,7 @@ class MatformerDataModule(pl.LightningDataModule):
         else:
             padded_ids = []
             for seq in token_sequences:
-                padded = seq + [pad_token_id] * (self.max_seq_len - len(seq))
+                padded = seq + [self.pad_token_id] * (self.max_seq_len - len(seq))
                 padded_ids.append(padded)
             
             tensors = torch.tensor(padded_ids, dtype=torch.long)
