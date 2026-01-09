@@ -383,13 +383,13 @@ class PL_ModelWrapper(MatformerModule):
                     continue
                 if "conv" in name:
                     adamw_params.append(param)
-                    print(f"{name} (Convolutional) in AdamW (ndim={param.ndim})")                          
+                    #print(f"{name} (Convolutional) in AdamW (ndim={param.ndim})")                          
                 elif "lm_head" in name or "embed_tokens" in name or param.ndim < 2:
                     adamw_params.append(param)
-                    print(f"{name} in AdamW (ndim={param.ndim})")
+                    #print(f"{name} in AdamW (ndim={param.ndim})")
                 else:
                     muon_params.append(param)
-                    print(f"{name} in Muon")
+                    #print(f"{name} in Muon")
             
             base_lr = self.train_config["lr"]
             
@@ -412,16 +412,16 @@ class PL_ModelWrapper(MatformerModule):
                     continue
                 if "conv" in name:
                     adamw_params.append(param)
-                    print(f"{name} (Convolutional) in AdamW (ndim={param.ndim})")    
+                    #print(f"{name} (Convolutional) in AdamW (ndim={param.ndim})")    
                 elif "lm_head" in name or "embed_tokens" in name or param.ndim < 2:
                     adamw_params.append(param)
-                    print(f"{name} in AdamW (ndim={param.ndim})")
+                    #print(f"{name} in AdamW (ndim={param.ndim})")
                 else:
                     muon_params.append(param)
-                    print(f"{name} in Muon")
+                    #print(f"{name} in Muon")
                 if self.train_config.get("no_decay_for_embedding", False) and ("lm_head" in name or "embed_tokens" in name):
                     no_decay_params.append(param)
-                    print(f"{name} has weight decay disabled.")
+                    #print(f"{name} has weight decay disabled.")
                               
             base_lr = self.train_config["lr"]
             
@@ -544,8 +544,8 @@ class PL_ModelWrapper(MatformerModule):
         model = PL_ModelWrapper(ModelClass=ModelClass, config=config, tokenizer=tokenizer, device=map_location, train_config=None)  
         #model.load_state_dict(checkpoint['state_dict'])
         model.load_stable_state_dict(checkpoint['state_dict'], strict=False)
-        print("Found this config:")
-        print(config)
+        #print("Found this config:")
+        #print(config)
         return model,config   
         
 

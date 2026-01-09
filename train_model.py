@@ -56,7 +56,8 @@ def parse_args():
     parser.add_argument('--debug-steps', type=int, default=None, help="If you choose this, train for one epoch on this number of steps")
     parser.add_argument('--compile', action='store_true', help="Torch.compile the whole model")
     parser.add_argument('--load-mode', type=str, choices=['full', 'weights_only', 'weights_and_optimizer'], 
-                        default='full', help="Checkpoint loading strategy")
+     parser.add_argument('--precision', type=str, choices=['16-mixed', 'bf16-mixed', '32','16','bf16','32-true','bf16-true','16-true','64-true','transformer-engine'], 
+                        default='bf16-mixed', help="Checkpoint loading strategy")
     args = parser.parse_args()
     
     separate_configs = {
@@ -97,7 +98,7 @@ def parse_args():
         except ValueError:
             parser.error(f"Override '{item}' must be in key=value format")
     
-    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch,args.simulate,args.dump_json,args.debug_steps,args.compile,args.nodes,args.load_mode
+    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch,args.simulate,args.dump_json,args.debug_steps,args.compile,args.nodes,args.load_mode,args.precision
 
 def get_model_class(model_class: str):
     module = import_module("matformer.transformer_blocks")
@@ -177,7 +178,7 @@ def main():
     #config_path, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json = parse_args()
     #cfg = apply_overrides(load_config(config_path), overrides)
     
-    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json, debug_steps,_compile, num_nodes, load_mode = parse_args()
+    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json, debug_steps,_compile, num_nodes, load_mode, precision = parse_args()
     model_config_dict, train_cfg, data_cfg, tok_cfg, cfg = load_and_prepare_configs(config_paths, overrides)
     
     #model_cfg = ModelConfig(**cfg['model_config'])
@@ -189,14 +190,11 @@ def main():
     # Detect device
     if torch.cuda.is_available():
         accelerator = 'gpu'
-        precision = '16-mixed'
         device_string = 'cuda'
     elif torch.backends.mps.is_available():
         accelerator = device_string = 'mps'
-        precision = '32'
     else:
         accelerator = device_string = 'cpu'
-        precision = '32'
     
     # Create data module with MDAT dataset
     data = MatformerDataModule(
@@ -263,6 +261,9 @@ def main():
             else:
                 print("No checkpoint found, starting from scratch.")
     
+    ####
+    ### Tutta la parte sui nomi dei checkpoint è INAFFIDABILE! ###
+    ####
     # Create timestamped checkpoint filename to avoid name clashes
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     checkpoint_name = train_cfg.get('checkpoint_name', 'model') # jerik
@@ -283,7 +284,9 @@ def main():
         filename=checkpoint_name,
         save_top_k=1,
         save_last=True,
-        every_n_train_steps=train_cfg.get("save_every_n_steps", None)  
+        every_n_train_steps=train_cfg.get("save_every_n_steps", None),
+        enable_version_counter=True,
+        save_on_train_epoch_end=True
     )
 
     torch.set_float32_matmul_precision('high')
@@ -328,25 +331,9 @@ def main():
         except:
             print("Compilation failed! Running non-compiled model")
 
-    try:
-        trainer.fit(model, data, ckpt_path=ckpt_path)
+    
+    trainer.fit(model, data, ckpt_path=ckpt_path)
 
-                
-    except KeyboardInterrupt:
-        response = input("\nTraining interrupted. Save model? (y/n): ").strip().lower()
-        if response == 'y':
-            interrupted_checkpoint = f"{save_dir}/interrupted_{timestamp}.ckpt"
-            trainer.save_checkpoint(interrupted_checkpoint)
-            print(f"Checkpoint saved as {interrupted_checkpoint}")
-        else:
-            print("Checkpoint not saved.")
-    
-    #Rename last.ckpt with a better name
-    try:
-        os.rename(os.path.join(save_dir,'last.ckpt'), os.path.join(save_dir,f'{checkpoint_name}_last.ckpt'))
-    except:
-        print("Last.ckpt non trovato, probabilmente già salvato con nome corretto.")
-    
 if __name__ == '__main__':
     main()
 

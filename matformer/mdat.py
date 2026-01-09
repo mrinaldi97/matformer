@@ -1206,7 +1206,6 @@ class MatformerDataset(IterableDataset):
                     else:
                         precomp = self.db.get_strategy_precomp(strategy_name=strategy, submdat_id=sbm_id, view=self.current_view,multiplier=self.chunk_multiplier)   
                         precomp = self.db.get_strategy_precomp(strategy_name=strategy, submdat_id=sbm_id, view=self.current_view,multiplier=1)   
-                print(f"[DEBUG] {sbm_id} ha ottenuto {precomp} (se fosse stato a multiplier 1, {appoggio} (tot={self.total_divided_chunks}))")
                 
                 if precomp: 
                     self.total_divided_chunks += precomp[0].get('precomputed_length', 0) 

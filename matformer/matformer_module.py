@@ -32,9 +32,9 @@ class ParametersRenamer:
         """Recursively scan entire module hierarchy."""
         self._parameters_mappings = {}
         self._scan_tree(self, "", "")
-        print(f"Mappings: {len(self._parameters_mappings)}")
-        if not self._parameters_mappings:
-            print("WARNING: No mappings found!")
+        #print(f"Mappings: {len(self._parameters_mappings)}")
+        #if not self._parameters_mappings:
+        #    print("WARNING: No mappings found!")
 
     def _scan_tree(self, module: nn.Module, stable_prefix: str, actual_prefix: str):
         """
@@ -50,14 +50,14 @@ class ParametersRenamer:
         
         # Get registry custom mappings for this module's parameters
         custom_maps = getattr(module, '_params_names', {})
-        if custom_maps:
-            print(f"   {module.__class__.__name__} => {custom_maps}")
+        #if custom_maps:
+        #    print(f"   {module.__class__.__name__} => {custom_maps}")
         
         # Process this module's direct parameters (respect custom maps)
         for param_name, _ in module.named_parameters(recurse=False):
             if param_name in custom_maps:
                 stable_name = custom_maps[param_name]
-                print(f" {param_name} => {stable_name}")
+                #print(f" {param_name} => {stable_name}")
             else:
                 # Strip generic prefixes from parameter name itself
                 parts = param_name.split('.')
@@ -68,7 +68,7 @@ class ParametersRenamer:
             full_actual = f"{actual_prefix}.{param_name}" if actual_prefix else param_name
             
             self._parameters_mappings[full_stable] = full_actual
-            print(f"{full_stable} => {full_actual}")
+            #print(f"{full_stable} => {full_actual}")
         # Process BUFFERS (add this block)
         for buffer_name, _ in module.named_buffers(recurse=False):
             # Use the same renaming logic as parameters
@@ -76,7 +76,7 @@ class ParametersRenamer:
             
             if buffer_name in custom_maps:  # Also respect _params_names for buffers
                 stable_name = custom_maps[buffer_name]
-                print(f"{buffer_name} => {stable_name}")
+                #print(f"{buffer_name} => {stable_name}")
             else:
                 stable_name = clean_name
             
@@ -84,7 +84,7 @@ class ParametersRenamer:
             full_actual = f"{actual_prefix}.{buffer_name}" if actual_prefix else buffer_name
             
             self._parameters_mappings[full_stable] = full_actual
-            print(f"Mapped buffer: {full_stable} => {full_actual}")        
+            #print(f"Mapped buffer: {full_stable} => {full_actual}")        
         # Recurse into children
         for child_name, child_module in module.named_children():
             # Check for annotation override (e.g., module: "param_name:mlp")
@@ -93,7 +93,7 @@ class ParametersRenamer:
                 ann = annotations[child_name]
                 if isinstance(ann, str) and ann.startswith('param_name:'):
                     override_name = ann.split(':', 1)[1]
-                    print(f"  {module.__class__.__name__}.{child_name} => {override_name}")
+                    #print(f"  {module.__class__.__name__}.{child_name} => {override_name}")
             
             # Determine stable child name:
             # - If annotation override exists: use it
