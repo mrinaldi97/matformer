@@ -681,7 +681,7 @@ class MatformerDataset(IterableDataset):
         self._active_view_shuffled = view_meta.get('shuffle_struct_format') is not None 
         # Load the actual submdats
         self._populate_submdat()
-    def precompute_chunks_distributed(self, num_workers=120):
+    def precompute_chunks_distributed(self, num_workers=840):
         """
         Precompute chunk counts for distributed training.
         
@@ -704,7 +704,7 @@ class MatformerDataset(IterableDataset):
                     doc = next(self)
                     worker_id = doc_index % num_workers
                     num_chunks = len(doc['object']['chunks'])
-                    chunks_yielded = num_chunks // self.chunk_multiplier
+                    chunks_yielded = math.ceil(num_chunks / self.chunk_multiplier) if num_chunks > 0 else 0
                     worker_chunk_counts[worker_id] += chunks_yielded
                     doc_index += 1
                     pbar.update(1)
@@ -716,6 +716,7 @@ class MatformerDataset(IterableDataset):
         self.db._store_distributed_precomputed_length(
             view_name=self.current_view,
             strategy_name=self.current_strategy.strategy_name,
+            chunk_multiplier=self.chunk_multiplier,
             num_workers=num_workers,
             worker_chunk_counts=worker_chunk_counts
         )
@@ -1189,6 +1190,7 @@ class MatformerDataset(IterableDataset):
         used_submdats=asking_view['preserved_submdats']+asking_view['partial_submdats']
         ds_map=self.db.get_dsmap(key='id')
         strategy=strategy_name #Sporco
+        print(f"Il multiplier è {self.chunk_multiplier}")
         for sbm_id in used_submdats:
             try:
                 sbm=self[ds_map[sbm_id]]
@@ -1200,8 +1202,12 @@ class MatformerDataset(IterableDataset):
                     #This strategy has token chunks, need precomputation to get actual length dependent on max_seq_len
                     if sbm_id in asking_view['preserved_submdats']:
                         precomp = self.db.get_strategy_precomp(strategy_name=strategy, submdat_id=sbm_id, multiplier=self.chunk_multiplier) 
+                        appoggio=self.db.get_strategy_precomp(strategy_name=strategy, submdat_id=sbm_id, multiplier=1) 
                     else:
                         precomp = self.db.get_strategy_precomp(strategy_name=strategy, submdat_id=sbm_id, view=self.current_view,multiplier=self.chunk_multiplier)   
+                        precomp = self.db.get_strategy_precomp(strategy_name=strategy, submdat_id=sbm_id, view=self.current_view,multiplier=1)   
+                print(f"[DEBUG] {sbm_id} ha ottenuto {precomp} (se fosse stato a multiplier 1, {appoggio} (tot={self.total_divided_chunks}))")
+                
                 if precomp: 
                     self.total_divided_chunks += precomp[0].get('precomputed_length', 0) 
             except SubMdatMissesStrategy:
@@ -1212,6 +1218,7 @@ class MatformerDataset(IterableDataset):
                 self.current_strategy = None 
             except Exception as e:
                print(e)
+            
     def export_view(self,output_file,view='default',wanted='document',data_field_name='text',with_meta=True,limiter=None):
         """
         A function (WIP) to export all the documents from a view into an output file
@@ -1279,7 +1286,7 @@ class MatformerDataset(IterableDataset):
         if self.current_iteration_modality in ['chunked_tokens','chunked_for_recurrence']:
             max_len=0
             for w in range(num_devices):
-                w_len=self.db.get_worker_length_distributed(target_num_workers=num_devices, target_worker_id=w, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name)
+                w_len=self.db.get_worker_length_distributed(target_num_workers=num_devices, target_worker_id=w, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name, chunk_multiplier=self.chunk_multiplier)
                 if w_len>max_len:
                     max_len=w_len
             return max_len
@@ -1299,7 +1306,7 @@ class MatformerDataset(IterableDataset):
                     return self._cached_length
                 # Get this worker's actual length
 
-                this_worker_length = self.db.get_worker_length_distributed(target_num_workers=self.world_size, target_worker_id=self.rank_size, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name)
+                this_worker_length = self.db.get_worker_length_distributed(target_num_workers=self.world_size, target_worker_id=self.rank_size, view_name=self.current_view, strategy_name=self.current_strategy.strategy_name, chunk_multiplier=self.chunk_multiplier)
                 print(f"WORKER {self.rank_size} got length {this_worker_length}")
                 # Broadcast maximum across all workers so everyone agrees
                 import torch.distributed as dist
@@ -1647,7 +1654,8 @@ class DatabaseManager:
             num_workers INTEGER NOT NULL CHECK (num_workers > 0),
             worker_id INTEGER NOT NULL CHECK (worker_id >= 0),
             chunk_count INTEGER NOT NULL CHECK (chunk_count >= 0),
-            PRIMARY KEY (strategy_name, view_name, num_workers, worker_id),
+            chunk_multiplier INTEGER NOT NULL CHECK (chunk_multiplier >= 0),
+            PRIMARY KEY (strategy_name, view_name, num_workers, worker_id, chunk_multiplier),
             FOREIGN KEY (strategy_name) REFERENCES pretok_strategy(strategy_name) ON DELETE CASCADE,
             FOREIGN KEY (view_name) REFERENCES view(view_name) ON DELETE CASCADE,
             CHECK (worker_id < num_workers)
@@ -2036,7 +2044,7 @@ class DatabaseManager:
         if not r:
             return {'document_number': 0, 'bytes_criteria': 0}
         return {'document_number': int(r[0] or 0), 'bytes_criteria': int(r[1] or 0)}
-    def _store_distributed_precomputed_length(self, view_name, strategy_name, num_workers, worker_chunk_counts):
+    def _store_distributed_precomputed_length(self, view_name, strategy_name, num_workers, worker_chunk_counts, chunk_multiplier):
         """
         Store precomputed chunk counts for distributed training.
         
@@ -2045,6 +2053,7 @@ class DatabaseManager:
             strategy_name: Name of the pretokenization strategy
             num_workers: Number of workers this was precomputed for
             worker_chunk_counts: List of chunk counts, one per worker
+            chunk_multiplier: the base sequence length multiplier
         """
         conn = self.connect()
         cur = conn.cursor()
@@ -2052,22 +2061,21 @@ class DatabaseManager:
         # Delete existing entries
         cur.execute("""
             DELETE FROM pretok_strategy_view_distributed_length 
-            WHERE view_name = ? AND strategy_name = ? AND num_workers = ?
-        """, (view_name, strategy_name, num_workers))
+            WHERE view_name = ? AND strategy_name = ? AND chunk_multiplier = ? AND num_workers = ?
+        """, (view_name, strategy_name, chunk_multiplier, num_workers))
         
         # Insert new entries
         for worker_id, chunk_count in enumerate(worker_chunk_counts):
             cur.execute("""
                 INSERT INTO pretok_strategy_view_distributed_length 
-                (view_name, strategy_name, num_workers, worker_id, chunk_count)
-                VALUES (?, ?, ?, ?, ?)
-            """, (view_name, strategy_name, num_workers, worker_id, chunk_count))
-        
+                (view_name, strategy_name, chunk_multiplier, num_workers, worker_id, chunk_count)
+                VALUES (?, ?, ?, ?, ?, ?)
+            """, (view_name, strategy_name, chunk_multiplier, num_workers, worker_id, chunk_count))
         conn.commit()
-        print(f"Stored precomputed lengths for {num_workers} workers in database")
+        print(f"Stored precomputed lengths for {num_workers} workers at chunk multiplier {chunk_multiplier} in database")
 
 
-    def get_worker_length_distributed(self, target_num_workers, target_worker_id, view_name, strategy_name):
+    def get_worker_length_distributed(self, target_num_workers, target_worker_id, view_name, strategy_name, chunk_multiplier):
         """
         Get the precomputed chunk count for a specific worker.
         If exact match exists, return it. If precomputed for a multiple, calculate from that.
@@ -2088,8 +2096,8 @@ class DatabaseManager:
         result = cur.execute("""
             SELECT chunk_count FROM pretok_strategy_view_distributed_length
             WHERE view_name = ? AND strategy_name = ? 
-            AND num_workers = ? AND worker_id = ?
-        """, (view_name, strategy_name, target_num_workers, target_worker_id)).fetchone()
+            AND num_workers = ? AND worker_id = ? AND chunk_multiplier = ?
+        """, (view_name, strategy_name, target_num_workers, target_worker_id, chunk_multiplier)).fetchone()
         
         if result:
             return result[0]
@@ -2097,9 +2105,9 @@ class DatabaseManager:
         # No exact match - try to find a precomputed multiple
         available = cur.execute("""
             SELECT DISTINCT num_workers FROM pretok_strategy_view_distributed_length
-            WHERE view_name = ? AND strategy_name = ?
+            WHERE view_name = ? AND strategy_name = ? AND chunk_multiplier = ?
             ORDER BY num_workers DESC
-        """, (view_name, strategy_name)).fetchall()
+        """, (view_name, strategy_name, chunk_multiplier)).fetchall()
         
         for (precomputed_workers,) in available:
             if precomputed_workers % target_num_workers == 0:
@@ -2108,9 +2116,9 @@ class DatabaseManager:
                 # Fetch all worker counts from the precomputed configuration
                 precomputed_counts = cur.execute("""
                     SELECT worker_id, chunk_count FROM pretok_strategy_view_distributed_length
-                    WHERE view_name = ? AND strategy_name = ? AND num_workers = ?
+                    WHERE view_name = ? AND strategy_name = ? AND chunk_multiplier = ? AND num_workers = ? 
                     ORDER BY worker_id
-                """, (view_name, strategy_name, precomputed_workers)).fetchall()
+                """, (view_name, strategy_name, chunk_multiplier, precomputed_workers)).fetchall()
                 
                 # Sum the relevant workers
                 total = 0
@@ -2121,9 +2129,9 @@ class DatabaseManager:
                 return total
         
         raise ValueError(
-            f"No precomputed length found for {target_num_workers} workers. "
+            f"No precomputed length found for {target_num_workers} workers at chunk multiplier {chunk_multiplier} "
             f"Available configurations: {[w[0] for w in available]}. "
-            f"Please run precompute_chunks_distributed() with a number divisible by {target_num_workers}"
+            f"Please run precompute_chunks_distributed() with a number divisible by {target_num_workers} and suitable for sequence length {chunk_multiplier} the base sequence length"
         )
 
         
