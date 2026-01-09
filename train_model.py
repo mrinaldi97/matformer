@@ -218,7 +218,7 @@ def main():
     if hasattr(data, '__len__') and len(data) > 0: #Nel caso di più GPU viene già divisa per numero di GPU (es. /4)
         num_batches = math.ceil(len(data) / data_cfg["batch_size"])
         accumulate_grad_batches = train_cfg.get("accumulate_grad_batches", 1)
-        total_steps = (num_batches // accumulate_grad_batches) * max_epochs
+        total_steps = (num_batches // accumulate_grad_batches) * max_epochs // num_nodes # Dividi anche per i nodi
         train_cfg["total_steps"] = total_steps
         train_cfg["num_batches"] = num_batches
     else:
