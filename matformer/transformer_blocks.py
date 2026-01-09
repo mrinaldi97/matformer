@@ -801,7 +801,7 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         self.encoder = TransformerWithEmbeddingHead(config, cache=self.cache)
         
         # Weight tying: share embeddings with output projection
-        if config.tie_word_embeddings:
+        if config.tie_word_embeddings and hasattr(self,"lm_head"):
             self.lm_head.weight = self.encoder.embed_tokens.module.inner.weight
    
         self.config = config
