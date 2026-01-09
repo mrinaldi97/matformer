@@ -55,9 +55,9 @@ def parse_args():
     parser.add_argument('--dump-json', type=str, default=None, help="Path to dump JSON state dict shapes")
     parser.add_argument('--debug-steps', type=int, default=None, help="If you choose this, train for one epoch on this number of steps")
     parser.add_argument('--compile', action='store_true', help="Torch.compile the whole model")
-    parser.add_argument('--load-mode', type=str, choices=['full', 'weights_only', 'weights_and_optimizer'], 
-     parser.add_argument('--precision', type=str, choices=['16-mixed', 'bf16-mixed', '32','16','bf16','32-true','bf16-true','16-true','64-true','transformer-engine'], 
-                        default='bf16-mixed', help="Checkpoint loading strategy")
+    parser.add_argument('--load-mode', type=str, choices=['full', 'weights_only', 'weights_and_optimizer'], default='full',help="Checkpoint loading strategy")
+    parser.add_argument('--precision', type=str, choices=['16-mixed', 'bf16-mixed', '32','16','bf16','32-true','bf16-true','16-true','64-true','transformer-engine'], 
+                        default='bf16-mixed', help="precision")
     args = parser.parse_args()
     
     separate_configs = {
