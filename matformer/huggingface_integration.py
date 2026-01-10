@@ -629,9 +629,9 @@ def push_to_hub(model, config_dict, repo_id, token=None, model_type='auto', clea
                 "state_dict":ckpt["state_dict"],
                 "hyper_parameters":ckpt["hyper_parameters"]
             }
-            checkpoint_temp="checkpoint_to_upload.ckpt"
-            torch.save(ckpt_clean,checkpoint_temp)            
-            print(f"Saved temporary {checkpoint_temp}")
+            checkpoint_source="checkpoint_to_upload.ckpt"
+            torch.save(ckpt_clean,checkpoint_source)            
+            print(f"Saved temporary {checkpoint_source}")
         else:
            checkpoint_source = model.config._checkpoint_path
         if checkpoint_source and Path(checkpoint_source).exists():
