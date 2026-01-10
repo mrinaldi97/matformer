@@ -626,8 +626,8 @@ def push_to_hub(model, config_dict, repo_id, token=None, model_type='auto', clea
         if clean_checkpoint:
             ckpt=torch.load(model.config._checkpoint_path,weights_only=False,map_location='cpu')
             for k in ckpt:
-                if k not in ['state_dict','hyper_parameters']
-                ckpt.pop(k)
+                if k not in ['state_dict','hyper_parameters']:
+                    ckpt.pop(k)
             checkpoint_temp="checkpoint_to_upload.ckpt"
             torch.save(ckpt,checkpoint_temp)            
             print(f"Saved temporary {checkpoint_temp}")
