@@ -649,6 +649,7 @@ def main():
     parser.add_argument("--config", required=True)
     parser.add_argument("--hf_name", required=True)
     parser.add_argument("--hf_token", default=None)
+    parser.add_argument("--weights_only",default=True, help="Upload only models'state dict and hyperparameters, ditch the rest (opt. state dict, dataloader, schedule)")
     parser.add_argument("--model_type", default="auto", choices=["auto", "causal", "masked", "classification"])
     parser.add_argument("--device", default="cuda")
     parser.add_argument("--num_labels", type=int, default=2)
@@ -663,7 +664,8 @@ def main():
         config_dict, 
         model_type=args.model_type,
         map_location=args.device,
-        num_labels=args.num_labels
+        num_labels=args.num_labels,
+        load_mode='publication' if args.weights_only else 'full'
     )
     
     push_to_hub(

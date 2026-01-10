@@ -72,7 +72,10 @@ class PL_ModelWrapper(MatformerModule):
            checkpoint.pop("callbacks", None)
         if self.load_mode == "weights_only":
             checkpoint["optimizer_states"] = []
-       
+        if self.load_mode == 'publication':
+            new_checkpoint=checkpoint['state_dict']
+            new_checkpoint=checkpoint['hyper_parameters']
+            
      
     def training_step(self, batch, batch_idx=None):
         try:
