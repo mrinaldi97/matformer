@@ -678,7 +678,7 @@ def main():
         args.hf_name, 
         token=args.hf_token,
         model_type=args.model_type,
-        clean_checkpoint=args.weight_only
+        clean_checkpoint=args.weights_only
     )
 
 
