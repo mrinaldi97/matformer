@@ -625,7 +625,7 @@ def push_to_hub(model, config_dict, repo_id, token=None, model_type='auto', clea
             json.dump(config_dict, f, indent=2)
         if clean_checkpoint:
             ckpt=torch.load(model.config._checkpoint_path,weights_only=False,map_location='cpu')
-            for k in ckpt:
+            for k in ckpt.keys():
                 if k not in ['state_dict','hyper_parameters']:
                     ckpt.pop(k)
             checkpoint_temp="checkpoint_to_upload.ckpt"
