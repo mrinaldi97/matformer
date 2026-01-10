@@ -624,9 +624,13 @@ def push_to_hub(model, config_dict, repo_id, token=None, model_type='auto', clea
         with open(temp_dir / "matformer_config.json", "w") as f:
             json.dump(config_dict, f, indent=2)
         if clean_checkpoint:
-            checkpoint_source="checkpoint_to_upload.ckpt"
-            torch.save(model,checkpoint_source)
-            print(f"Saved temporary {checkpoint_source}")
+            ckpt=torch.load(model.config._checkpoint_path,weights_only=False,map_location='cpu')
+            for k in ckpt:
+                if k not in ['state_dict','hyper_parameters']
+                ckpt.pop(k)
+            checkpoint_temp="checkpoint_to_upload.ckpt"
+            torch.save(ckpt,checkpoint_temp)            
+            print(f"Saved temporary {checkpoint_temp}")
         else:
            checkpoint_source = model.config._checkpoint_path
         if checkpoint_source and Path(checkpoint_source).exists():
