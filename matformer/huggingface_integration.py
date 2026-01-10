@@ -579,7 +579,7 @@ import torch
 '''
 
 
-def push_to_hub(model, config_dict, repo_id, token=None, model_type='auto'):
+def push_to_hub(model, config_dict, repo_id, token=None, model_type='auto', clean_checkpoint=True):
     from huggingface_hub import HfApi, create_repo
     import shutil
     
@@ -623,8 +623,12 @@ def push_to_hub(model, config_dict, repo_id, token=None, model_type='auto'):
         
         with open(temp_dir / "matformer_config.json", "w") as f:
             json.dump(config_dict, f, indent=2)
-        
-        checkpoint_source = model.config._checkpoint_path
+        if clean_checkpoint:
+            checkpoint_source="checkpoint_to_upload.ckpt"
+            torch.save(model,checkpoint_source)
+            print(f"Saved temporary {checkpoint_source}")
+        else:
+           checkpoint_source = model.config._checkpoint_path
         if checkpoint_source and Path(checkpoint_source).exists():
             shutil.copy(checkpoint_source, temp_dir / "checkpoint.ckpt")
         
@@ -651,7 +655,7 @@ def main():
     parser.add_argument("--hf_token", default=None)
     parser.add_argument("--weights_only",default=True, help="Upload only models'state dict and hyperparameters, ditch the rest (opt. state dict, dataloader, schedule)")
     parser.add_argument("--model_type", default="auto", choices=["auto", "causal", "masked", "classification"])
-    parser.add_argument("--device", default="cuda")
+    parser.add_argument("--device", default="cpu")
     parser.add_argument("--num_labels", type=int, default=2)
     
     args = parser.parse_args()
@@ -673,7 +677,8 @@ def main():
         config_dict, 
         args.hf_name, 
         token=args.hf_token,
-        model_type=args.model_type
+        model_type=args.model_type,
+        clean_checkpoint=args.weight_only
     )
 
 
