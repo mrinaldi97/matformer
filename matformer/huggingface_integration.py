@@ -650,6 +650,27 @@ def push_to_hub(model, config_dict, repo_id, token=None, model_type='auto', clea
             shutil.rmtree(temp_dir)
 
 
+def upload_to_huggingface(checkpoint,config,hf_name,hf_token=None,weights_only=True,model_type='auto',device='cpu',num_labels=2):
+    with open(config) as f:
+        config_dict = json.load(f)
+    model = load_matformer_model(
+        checkpoint, 
+        config_dict, 
+        model_type=model_type,
+        map_location=device,
+        num_labels=num_labels,
+        load_mode='publication' if weights_only else 'full'
+    )
+    
+    push_to_hub(
+        model, 
+        config_dict, 
+        hf_name, 
+        token=hf_token,
+        model_type=model_type,
+        clean_checkpoint=weights_only
+    )	
+
 def main():
     import argparse
     
@@ -664,27 +685,20 @@ def main():
     parser.add_argument("--num_labels", type=int, default=2)
     
     args = parser.parse_args()
-    
-    with open(args.config) as f:
-        config_dict = json.load(f)
-    
-    model = load_matformer_model(
-        args.checkpoint, 
-        config_dict, 
+    upload_to_huggingface(
+        args.checkpoint,
+        args.config,
+        args.hf_name,
+        hf_token=args.hf_token,
+        weights_only=args.weights_only,
         model_type=args.model_type,
-        map_location=args.device,
-        num_labels=args.num_labels,
-        load_mode='publication' if args.weights_only else 'full'
+        device=args.device,
+        num_labels=args.num_labels
     )
     
-    push_to_hub(
-        model, 
-        config_dict, 
-        args.hf_name, 
-        token=args.hf_token,
-        model_type=args.model_type,
-        clean_checkpoint=args.weights_only
-    )
+
+    
+
 
 
 if __name__ == "__main__":
