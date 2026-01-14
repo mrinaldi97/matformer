@@ -11,7 +11,7 @@ class Maskerator:
     def __init__(self, mask_token:int, substitution_rate: Union[float, Tuple[float, float], List[float], None], 
                  pad_token_id:int, variable_masking_rate:Literal['per_batch','per_document']='per_document', 
                  cloze_prob:Optional[float]=1.0, random_prob:Optional[float]=None, 
-                 same_prob:Optional[float]=None, vocab_size:Optional[int]=None):
+                 same_prob:Optional[float]=None, vocab_size:Optional[int]=None, random_seed=None):
         """
         The maskerator has three modalities:
         - cloze_mask : replace with <mask>
@@ -25,14 +25,23 @@ class Maskerator:
             pad_token_id: The token ID for [PAD]. This needs to avoid masking padding
             cloze_prob, random_prob, same_prob: proportions of different strategies, sum must be 1
             vocab_size: Required if random_prob > 0.
+            random_seed: for reproducibility, allow for a random seed to be used. If None, the seed is randomly generated. 
 
         Returns:
             output_ids: masked tensor
             cloze_mask: bool mask (True where prediction required)
         """
+        
+        self.rng = random.Random(random_seed if random_seed is not None else random.getrandbits(32))
+        self.torch_rng = torch.Generator()
+        if random_seed is not None:
+            self.torch_rng.manual_seed(random_seed)        
+        
         self.mask_token=mask_token
         self.variable_masking_rate=variable_masking_rate
-        
+        self.random_prob=random_prob
+        self.same_prob=same_prob
+        self.cloze_prob=cloze_prob
         if isinstance(substitution_rate,float):
             #Fixed substitution rate
             self.substitution_rate=substitution_rate # overall probability of masking
@@ -93,7 +102,7 @@ class Maskerator:
         
         if self.substitution_rate_upper is not None:
             #The substitution rate is uniformly sampled between lower and upper bound
-            self.substitution_rate=random.uniform(self.substitution_rate_lower,self.substitution_rate_upper)
+            self.substitution_rate=self.rng.uniform(self.substitution_rate_lower,self.substitution_rate_upper)
         
         if input_ids.is_nested:
             # NestedTensors. At the moment old method.
@@ -122,7 +131,7 @@ class Maskerator:
         
         if self.substitution_rate_upper is not None:
             #The substitution rate is uniformly sampled between lower and upper bound
-            self.substitution_rate = random.uniform(self.substitution_rate_lower, self.substitution_rate_upper)
+            self.substitution_rate = self.rng.uniform(self.substitution_rate_lower, self.substitution_rate_upper)
         
         input_ids = unpadded_tensor.tensor
         device = input_ids.device
@@ -132,7 +141,7 @@ class Maskerator:
             # One rate per document
             B = unpadded_tensor.batch_size
             rates = torch.empty(B, device=device).uniform_(
-                self.substitution_rate_lower, self.substitution_rate_upper
+                self.substitution_rate_lower, self.substitution_rate_upper, generator=self.torch_rng
             )
             # Broadcast to each token in its document using cu_seqlens
             substitution_rate_vector = torch.zeros(input_ids.shape[0], device=device)
@@ -158,7 +167,7 @@ class Maskerator:
         Core masking logic extracted for reuse between padded and unpadded paths.
         Works on any shaped tensor (1D, 2D, etc.) as long as substitution_rate broadcasts correctly.
         """
-        prob_matrix = torch.rand(input_ids.shape, device=device)
+        prob_matrix = torch.rand(input_ids.shape, device=device, generator=self.torch_rng)
         substitution_mask = (prob_matrix < substitution_rate)
         
         # Dont't mask [PAD] tokens.
@@ -171,7 +180,7 @@ class Maskerator:
             output_ids.masked_fill_(cloze_mask, self.mask_token)
         else:
             # Multiple strategies
-            mask_decision_matrix = torch.rand(input_ids.shape, device=device)
+            mask_decision_matrix = torch.rand(input_ids.shape, device=device, generator=self.torch_rng)
             
             # [MASK]
             mask_token_mask = (mask_decision_matrix < self.cloze_cutoff) & cloze_mask
@@ -180,7 +189,7 @@ class Maskerator:
             # Random token
             random_token_mask = (mask_decision_matrix >= self.cloze_cutoff) & (mask_decision_matrix < self.random_cutoff) & cloze_mask
             if random_token_mask.any():
-                random_tokens = torch.randint(0, self.vocab_size, input_ids.shape, device=device, dtype=input_ids.dtype)
+                random_tokens = torch.randint(0, self.vocab_size, input_ids.shape, device=device, dtype=input_ids.dtype, generator=self.torch_rng)
                 output_ids[random_token_mask] = random_tokens[random_token_mask]
         
         return output_ids, cloze_mask
@@ -192,7 +201,7 @@ class Maskerator:
             # One rate per document
             B = input_ids.size(0)
             rates = torch.empty(B, device=device).uniform_(
-                self.substitution_rate_lower, self.substitution_rate_upper
+                self.substitution_rate_lower, self.substitution_rate_upper,generator=self.torch_rng
             )
             # Broadcast to [B, L]
             substitution_rate_matrix = rates[:, None]
@@ -235,8 +244,8 @@ class Maskerator:
     def _iterative_masking_function(self,tokens):
         output, cloze_mask_out = [], []
         for tok in tokens:
-            if random.random() < self.substitution_rate:
-                r = random.random()
+            if self.rng.random() < self.substitution_rate:
+                r = self.rng.random()
                 if (self.random_prob is None) and (self.same_prob is None):
                     # only mask mode
                     output.append(self.mask_token)
@@ -246,7 +255,7 @@ class Maskerator:
                         output.append(self.mask_token)
                         cloze_mask_out.append(True)
                     elif r < self.random_cutoff:
-                        output.append(random.randint(0, self.vocab_size-1))
+                        output.append(self.rng.randint(0, self.vocab_size-1))
                         cloze_mask_out.append(True)
                     else:
                         # same_token
