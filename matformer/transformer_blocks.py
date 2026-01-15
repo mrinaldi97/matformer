@@ -943,7 +943,11 @@ class BERTModel(TransformerWithLMHead):
         if masking_ratio is not None: # The bert model was not istantiated with the config, masking ratio parameter has to be passed as argument (case for inference)
              assert masking_ratio is not None
              self.masking_ratio=masking_ratio
-             self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masking_ratio,random_seed=random_seed)
+             self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
+                    substitution_rate=masking_ratio,
+                    random_seed=random_seed,
+                    pad_token_id=self.config.pad_token_id,
+                    vocab_size=self.config.vocab_size)
              print(f"Masking ratio: {self.masking_ratio}")
         else: # We get the maskerator settings from the config
             if masking_ratio is not None:
