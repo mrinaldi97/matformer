@@ -1004,7 +1004,7 @@ class BERTModel(TransformerWithLMHead):
             raise ValueError(f"pooling_type must be 'cls' or 'mean', got {self.pooling_type}")
             
         return self.classification_head(pooled).tensor        
-    def inference_testing(self, input_text=None, masking_ratio=0.25,datatype=torch.bfloat16, tokens=None, recurrence_mask=None,random_seed=random_seed):
+    def inference_testing(self, input_text=None, masking_ratio=0.25,datatype=torch.bfloat16, tokens=None, recurrence_mask=None,random_seed=None):
         #assert (is input_text or is_tokens)
         if not hasattr(self,'maskerator') or masking_ratio!=self.masking_ratio:
             self.init_maskerator(masking_ratio, random_seed=random_seed)
