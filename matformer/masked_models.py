@@ -34,8 +34,7 @@ class Maskerator:
         
         self.rng = random.Random(random_seed if random_seed is not None else random.getrandbits(32))
         self.torch_random_generators = {}    
-        if random_seed is not None:
-            self.torch_rng.manual_seed(random_seed)        
+        self.random_seed=random_seed       
         
         self.mask_token=mask_token
         self.variable_masking_rate=variable_masking_rate
@@ -79,8 +78,8 @@ class Maskerator:
         device_str = str(device)
         if device_str not in self.torch_random_generators:
             gen = torch.Generator(device=device)
-            if self.seed is not None:
-                gen.manual_seed(self.seed)
+            if self.random_seed is not None:
+                gen.manual_seed(self.random_seed)
             self.torch_random_generators[device_str] = gen
         return self.torch_random_generators[device_str]
         
