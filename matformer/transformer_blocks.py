@@ -1033,12 +1033,19 @@ class BERTModel(TransformerWithLMHead):
         total = mask.sum().item()
         accuracy = correct / total if total > 0 else 0.0
         out_tokens=list()
-        for i,token in enumerate(masked_sequence.tensor.squeeze().tolist()):
+        squeezed_tensor = masked_sequence.tensor.squeeze()
+        if squeezed_tensor.dim() == 0:
+            print("WARNING: sequence had length 1!")
+            token_list = [squeezed_tensor.item()]
+        else:
+            token_list = squeezed_tensor.tolist()
+        for i,token in enumerate(token_list):        
             if token != self.config.mask_token_id:
                 out_tokens.append(self.tokenizer.decode(token))
             else:
                 out_tokens.append(f"[ {self.tokenizer.decode(predictions.squeeze()[i])} ]")
-        log_probs = F.log_softmax(logits, dim=-1)
+        #ppl
+        log_probs = F.log_softmax(logits.tensor, dim=-1)
         nll_loss = F.nll_loss(
             log_probs.squeeze(0)[mask],
             targets[mask],
