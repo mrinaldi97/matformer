@@ -33,7 +33,7 @@ class Maskerator:
         """
         
         self.rng = random.Random(random_seed if random_seed is not None else random.getrandbits(32))
-        self.torch_rng = torch.Generator()
+        self.torch_random_generators = {}    
         if random_seed is not None:
             self.torch_rng.manual_seed(random_seed)        
         
@@ -75,7 +75,16 @@ class Maskerator:
             # Pre-calculate cumulative probabilities
             self.cloze_cutoff = cloze_prob
             self.random_cutoff = cloze_prob + random_p
-
+            
+	def _get_rng(self, device):
+		device_str = str(device)
+		if device_str not in self.torch_random_generators:
+			gen = torch.Generator(device=device)
+			if self.seed is not None:
+				gen.manual_seed(self.seed)
+			self.torch_random_generators[device_str] = gen
+		return self.torch_random_generators[device_str]
+		
     def __call__(self, input_ids, substitution_rate=None):
         """
         * If it receives a Nested Tensor, it will be unpacked and repacked
@@ -135,13 +144,14 @@ class Maskerator:
         
         input_ids = unpadded_tensor.tensor
         device = input_ids.device
+        rng = self._get_rng(device)
         
         # Compute per-token substitution rates (flattened version of per_document logic)
         if (self.variable_masking_rate == "per_document" and self.substitution_rate_upper is not None):
             # One rate per document
             B = unpadded_tensor.batch_size
             rates = torch.empty(B, device=device).uniform_(
-                self.substitution_rate_lower, self.substitution_rate_upper, generator=self.torch_rng
+                self.substitution_rate_lower, self.substitution_rate_upper, generator=rng
             )
             # Broadcast to each token in its document using cu_seqlens
             substitution_rate_vector = torch.zeros(input_ids.shape[0], device=device)
@@ -167,7 +177,8 @@ class Maskerator:
         Core masking logic extracted for reuse between padded and unpadded paths.
         Works on any shaped tensor (1D, 2D, etc.) as long as substitution_rate broadcasts correctly.
         """
-        prob_matrix = torch.rand(input_ids.shape, device=device, generator=self.torch_rng)
+        rng = self._get_rng(device)
+        prob_matrix = torch.rand(input_ids.shape, device=device, generator=rng)
         substitution_mask = (prob_matrix < substitution_rate)
         
         # Dont't mask [PAD] tokens.
@@ -180,7 +191,7 @@ class Maskerator:
             output_ids.masked_fill_(cloze_mask, self.mask_token)
         else:
             # Multiple strategies
-            mask_decision_matrix = torch.rand(input_ids.shape, device=device, generator=self.torch_rng)
+            mask_decision_matrix = torch.rand(input_ids.shape, device=device, generator=rng)
             
             # [MASK]
             mask_token_mask = (mask_decision_matrix < self.cloze_cutoff) & cloze_mask
@@ -189,19 +200,19 @@ class Maskerator:
             # Random token
             random_token_mask = (mask_decision_matrix >= self.cloze_cutoff) & (mask_decision_matrix < self.random_cutoff) & cloze_mask
             if random_token_mask.any():
-                random_tokens = torch.randint(0, self.vocab_size, input_ids.shape, device=device, dtype=input_ids.dtype, generator=self.torch_rng)
+                random_tokens = torch.randint(0, self.vocab_size, input_ids.shape, device=device, dtype=input_ids.dtype, generator=rng)
                 output_ids[random_token_mask] = random_tokens[random_token_mask]
         
         return output_ids, cloze_mask
 
     def _masking_function(self, input_ids):
         device = input_ids.device
-        
+        rng = self._get_rng(device)
         if (self.variable_masking_rate == "per_document" and self.substitution_rate_upper is not None):
             # One rate per document
             B = input_ids.size(0)
             rates = torch.empty(B, device=device).uniform_(
-                self.substitution_rate_lower, self.substitution_rate_upper,generator=self.torch_rng
+                self.substitution_rate_lower, self.substitution_rate_upper,generator=rng
             )
             # Broadcast to [B, L]
             substitution_rate_matrix = rates[:, None]
