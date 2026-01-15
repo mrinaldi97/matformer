@@ -937,13 +937,13 @@ class BERTModel(TransformerWithLMHead):
         else:
             pass
    
-    def init_maskerator(self, masking_ratio=None):
+    def init_maskerator(self, masking_ratio=None, random_seed=None):
         from matformer.masked_models import Maskerator
         # Maskerator setup
-        if not hasattr(self,'config'): # The bert model was not istantiated with the config, masking ratio parameter has to be passed as argument (case for inference)
+        if masking_ratio is not None: # The bert model was not istantiated with the config, masking ratio parameter has to be passed as argument (case for inference)
              assert masking_ratio is not None
              self.masking_ratio=masking_ratio
-             self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masking_ratio)
+             self.maskerator=Maskerator(mask_token=self.config.mask_token_id,substitution_rate=masking_ratio,random_seed=random_seed)
              print(f"Masking ratio: {self.masking_ratio}")
         else: # We get the maskerator settings from the config
             if masking_ratio is not None:
@@ -1004,10 +1004,10 @@ class BERTModel(TransformerWithLMHead):
             raise ValueError(f"pooling_type must be 'cls' or 'mean', got {self.pooling_type}")
             
         return self.classification_head(pooled).tensor        
-    def inference_testing(self, input_text=None, masking_ratio=0.25,datatype=torch.bfloat16, tokens=None, recurrence_mask=None):
+    def inference_testing(self, input_text=None, masking_ratio=0.25,datatype=torch.bfloat16, tokens=None, recurrence_mask=None,random_seed=random_seed):
         #assert (is input_text or is_tokens)
         if not hasattr(self,'maskerator') or masking_ratio!=self.masking_ratio:
-            self.init_maskerator(masking_ratio)
+            self.init_maskerator(masking_ratio, random_seed=random_seed)
         if not tokens:
             sequence = self.tokenizer.encode(input_text)
         else:
@@ -1034,8 +1034,15 @@ class BERTModel(TransformerWithLMHead):
                 out_tokens.append(self.tokenizer.decode(token))
             else:
                 out_tokens.append(f"[ {self.tokenizer.decode(predictions.squeeze()[i])} ]")
-        
-        return accuracy, out_tokens
+        log_probs = F.log_softmax(logits, dim=-1)
+        nll_loss = F.nll_loss(
+            log_probs.squeeze(0)[mask],
+            targets[mask],
+            reduction='mean'
+        )
+        pseudo_perplexity = torch.exp(nll_loss).item()
+                
+        return accuracy, out_tokens, pseudo_perplexity
 
 class Autoregressive_Model(TransformerWithLMHead):
     def generate(
