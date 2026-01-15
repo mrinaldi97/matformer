@@ -1031,7 +1031,10 @@ class BERTModel(TransformerWithLMHead):
         mask = cloze_list.squeeze().bool()
         correct = (predictions.squeeze()[mask] == targets[mask]).sum().item()
         total = mask.sum().item()
-        accuracy = correct / total if total > 0 else 0.0
+        if total==0:
+            print("WARNING: No tokens were masked")
+            return None,None,None
+        accuracy = correct / total
         out_tokens=list()
         squeezed_tensor = masked_sequence.tensor.squeeze()
         if squeezed_tensor.dim() == 0:
