@@ -74,17 +74,16 @@ class Maskerator:
             assert abs(total - 1.0) < 1e-6, "The proportions (cloze, random, same) must sum to 1"
             # Pre-calculate cumulative probabilities
             self.cloze_cutoff = cloze_prob
-            self.random_cutoff = cloze_prob + random_p
-            
-	def _get_rng(self, device):
-		device_str = str(device)
-		if device_str not in self.torch_random_generators:
-			gen = torch.Generator(device=device)
-			if self.seed is not None:
-				gen.manual_seed(self.seed)
-			self.torch_random_generators[device_str] = gen
-		return self.torch_random_generators[device_str]
-		
+            self.random_cutoff = cloze_prob + random_p          
+    def _get_rng(self, device):
+        device_str = str(device)
+        if device_str not in self.torch_random_generators:
+            gen = torch.Generator(device=device)
+            if self.seed is not None:
+                gen.manual_seed(self.seed)
+            self.torch_random_generators[device_str] = gen
+        return self.torch_random_generators[device_str]
+        
     def __call__(self, input_ids, substitution_rate=None):
         """
         * If it receives a Nested Tensor, it will be unpacked and repacked
