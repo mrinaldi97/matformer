@@ -1045,14 +1045,17 @@ class BERTModel(TransformerWithLMHead):
             else:
                 out_tokens.append(f"[ {self.tokenizer.decode(predictions.squeeze()[i])} ]")
         #ppl
-        log_probs = F.log_softmax(logits.tensor, dim=-1)
-        nll_loss = F.nll_loss(
-            log_probs.squeeze(0)[mask],
-            targets[mask],
-            reduction='mean'
-        )
-        pseudo_perplexity = torch.exp(nll_loss).item()
-                
+        try:
+            log_probs = F.log_softmax(logits.tensor, dim=-1)
+            nll_loss = F.nll_loss(
+                log_probs.squeeze(0)[mask],
+                targets[mask],
+                reduction='mean'
+            )
+            pseudo_perplexity = torch.exp(nll_loss).item()
+        except:
+            print("WARNING: It was impossible to compute pseudo perplexity. Very short sequence?")
+            pseudo_perplexity=float("inf")
         return accuracy, out_tokens, pseudo_perplexity
 
 class Autoregressive_Model(TransformerWithLMHead):
