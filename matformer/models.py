@@ -548,7 +548,7 @@ class PL_ModelWrapper(MatformerModule):
 
     @staticmethod
     def load_from_checkpoint(checkpoint_path, ModelClass, config=None, map_location=None, tokenizer=None, overrides=None,varlen_strategy='padding'):
-        checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
+        checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False, external_mapping=None)
 
         if config is None:
             if 'hyper_parameters' in checkpoint and 'config' in checkpoint['hyper_parameters']:
@@ -576,7 +576,7 @@ class PL_ModelWrapper(MatformerModule):
 
         model = PL_ModelWrapper(ModelClass=ModelClass, config=config, tokenizer=tokenizer, device=map_location, train_config=None)  
         #model.load_state_dict(checkpoint['state_dict'])
-        model.load_stable_state_dict(checkpoint['state_dict'], strict=False)
+        model.load_stable_state_dict(checkpoint['state_dict'], strict=False, external_mapping=external_mapping))
         #print("Found this config:")
         #print(config)
         return model,config   
