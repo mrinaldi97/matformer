@@ -38,58 +38,92 @@ def extract_config_from_checkpoint(checkpoint_path):
   checkpoint = torch.load(checkpoint_path, weights_only=False)
   return checkpoint['hyper_parameters']['config']
 
+# Build checkpoint key mapping
+def build_checkpoint_mapping(num_layers=28):
+    mapping = {
+        'encoder.embed_tokens.weight': 'embed_tokens.weight',
+        'encoder.blocks.norm.weight': 'blocks.norm.weight',
+    }
+    
+    for i in range(num_layers):
+        layer_maps = {
+            f'encoder.blocks.layers.{i}.attn_norm.weight': f'blocks.layers.{i}.attn_norm.weight',
+            f'encoder.blocks.layers.{i}.mlp_norm.weight': f'blocks.layers.{i}.mlp_norm.weight',
+            f'encoder.blocks.layers.{i}.attn.qkv_proj.weight': f'blocks.layers.{i}.self_attn.packed_proj.weight',
+            f'encoder.blocks.layers.{i}.attn.o_proj.weight': f'blocks.layers.{i}.self_attn.out_proj.weight',
+            f'encoder.blocks.layers.{i}.mlp.gate_proj.weight': f'blocks.layers.{i}.mlp.gate_proj.weight',
+            f'encoder.blocks.layers.{i}.mlp.up_proj.weight': f'blocks.layers.{i}.mlp.up_proj.weight',
+            f'encoder.blocks.layers.{i}.mlp.down_proj.weight': f'blocks.layers.{i}.mlp.down_proj.weight',
+        }
+        mapping.update(layer_maps)
+    
+    return mapping
+  
+  
 def load_model_from_checkpoint(checkpoint_path, config, num_classes, task, map_location='cpu', tokenizer=None):
     """
-    Load classification model with pretrained encoder weights.
+    Load classification model with pretrained encoder weights using PL_ModelWrapper.
     
     Args:
         checkpoint_path: Path to pretrained checkpoint
-        config: ModelConfig object
+        config: ModelConfig object (or path to config JSON)
         num_classes: Number of output classes
         task: "sentence-level" or "token-level"
         map_location: Device to load model on
-        tokenizer: Optional tokenizer
+        tokenizer: Tokenizer name or instance
     """
+    # Add classification-specific config
+    config.num_labels = num_classes
+    config.classifier_dropout_p = 0.1
+    config.classifier_dropout_inplace = False
     
-    checkpoint = torch.load(checkpoint_path, weights_only=True, map_location=map_location)
-    
-    if isinstance(checkpoint, dict):
-        state_dict = checkpoint.get('state_dict', checkpoint)
-    else:
-        state_dict = checkpoint
-    
-    # Initialize classification model
+    # Select model class based on task
     if task == "sentence-level":
-        model = TransformerWithClassificationHead(
-            config, 
-            tokenizer=tokenizer,
-            num_features=num_classes
-        )
+        ModelClass = TransformerWithClassificationHead
+        config.pooling_type = 'cls'  # or 'mean'
     elif task == "token-level":
-        model = TransformerWithTokenClassificationHead(
-            config,
-            tokenizer=tokenizer, 
-            num_labels=num_classes
-        )
+        ModelClass = TransformerWithTokenClassificationHead
     else:
         raise ValueError(f"task must be 'sentence-level' or 'token-level', got {task}")
     
-    # Load encoder weights (strict=False ignores missing classification head)
-    missing_keys, unexpected_keys = model.encoder.load_state_dict(state_dict, strict=False)
+    # Build checkpoint key mapping for pretrained weights
+    checkpoint_mapping = build_checkpoint_mapping(num_layers=config.num_hidden_layers)
     
-    # Log what was loaded
+    # Load using PL_ModelWrapper
+    model, config = PL_ModelWrapper.load_from_checkpoint(
+        checkpoint_path=checkpoint_path,
+        ModelClass=ModelClass,
+        config=config,
+        map_location=map_location,
+        tokenizer=tokenizer,
+        varlen_strategy='padding',
+        external_mapping=checkpoint_mapping  # Handle key name mismatch
+    )
+    
     print(f"Loaded pretrained encoder from {checkpoint_path}")
-    if unexpected_keys:
-        print(f"Ignored keys from checkpoint: {len(unexpected_keys)} (e.g., lm_head)")
-        print(f"Unexpected: {unexpected_keys}")
-    if missing_keys:
-        print(f"Randomly initialized: {len(missing_keys)} (e.g., classification_head)")
-        print(f"Missing: {missing_keys}")
+    print(f"Model: {config.name}, {config.num_hidden_layers} layers")
+    print(f"Task: {task}, {num_classes} classes")
     
-    model = model.to(map_location).to(torch.bfloat16).eval()
-    for module in model.modules():
-        if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
-            module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
+    # === VERIFICATION ===
+    print(f"\n--- Loading Verification ---")
+    
+    # 1. Check encoder has non-random weights
+    first_layer_weight = model.model.encoder.blocks.layers[0].self_attn.packed_proj.inner.weight
+    weight_std = first_layer_weight.std().item()
+    weight_mean = first_layer_weight.abs().mean().item()
+    
+    print(f"First layer weight stats: mean={weight_mean:.4f}, std={weight_std:.4f}")
+    assert weight_std > 0.01, "Encoder weights look uninitialized (std too low)"
+    
+    # 2. Verify forward pass works
+    dummy_input = torch.randint(0, config.vocab_size, (2, 64)).to(map_location)
+    with torch.no_grad():
+        output = model(dummy_input)
+        print(f"Forward pass output shape: {output.shape}")
+        expected_shape = (2, num_classes) if task == "sentence-level" else (2, 64, num_classes)
+        assert output.shape == expected_shape, f"Expected {expected_shape}, got {output.shape}"
+    
+    print(f"Loading verified successfully\n")
     
     return model
   
