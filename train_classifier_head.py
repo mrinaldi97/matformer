@@ -7,7 +7,7 @@ objective: making it the most general and easiest at the same time
 the target are linguists and researchers that should be able to use
 their own data
 """
-
+from typing import Literal
 import argparse, json, torch, pytorch_lightning as pl, wandb
 from pathlib import Path
 from importlib import import_module
@@ -25,15 +25,42 @@ from pytorch_lightning.profilers import AdvancedProfiler
 import math, os
 from datetime import datetime
 
-from inference import load_inference_model as load_from_checkpoint
-from matformer.transformer_blocks import BERTModel
+from matformer.transformer_blocks import BERTModel, TransformerWithEmbeddingHead, TransformerWithClassificationHead, TransformerWithTokenClassificationHead
 from matformer.classification_training_data_loader import ClassificationTrainingDataLoader
 from matformer.classification_data_module import ClassificationDataset, ClassificationDataModule
+from matformer.tensors_dataclasses import PaddedTensor, UnpaddedTensor
+import torch.serialization as serialization
 
+serialization.add_safe_globals([BERTModel, TransformerWithEmbeddingHead,TransformerWithClassificationHead, TransformerWithTokenClassificationHead, ModelConfig])
+
+def extract_config_from_checkpoint(checkpoint_path):
+  checkpoint = torch.load(checkpoint_path, weights_only=False)
+  return checkpoint['hyper_parameters']['config']
+
+def load_model_from_checkpoint(checkpoint_path, config, num_classes, task=Literal["token-level", "sentence-level"]):
+  
+  checkpoint = torch.load(checkpoint_path, weights_only=True, map_location='cpu')
+  
+  if task == "sentence-level":
+    model = TransformerWithClassificationHead(config, num_features=num_classes)
+  else:
+    model = TransformerWithTokenClassificationHead(config, num_features=num_classes)
+    
+  try:
+    model.encoder.load_state_dict(checkpoint, strict=False)
+  except:
+    model.encoder.load_state_dict(checkpoint['state_dict'], strict=False)
+  
+  device = "cpu"
+  model = model.to(device).to(torch.bfloat16).eval()
+  for module in model.modules():
+    if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
+      module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
+  return model
+            
 def load_config(path):
     with open(path, "r") as f:
         return json.load(f)
-
 
 def apply_overrides(cfg, overrides):
     for key, val in overrides.items():
@@ -272,29 +299,83 @@ def load_and_prepare_configs(config_paths, overrides):
 
 def main():
     print("hi!")
-    # load modello
-    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-    tok_arg = 'bytes'
-    ModelClass = BERTModel
-    checkpoint_path = "/mnt/llmdata/data/FINALE_32768.ckpt"
-    model, cfg = load_from_checkpoint(checkpoint_path=checkpoint_path, ModelClass=ModelClass, map_location=device, tokenizer=tok_arg)
-    print("loaded")
     
     train_loader = ClassificationTrainingDataLoader(filepath="utils/data.csv", text_column="text", label_column="is_profane")
+
+    checkpoint_path = "/mnt/llmdata/data/FINALE_32768.ckpt"
+    ### config
+    config = extract_config_from_checkpoint(checkpoint_path)
+    # Add classification-specific fields
+    config.classifier_dropout_p = 0.1
+    config.classifier_dropout_inplace = False
+    
+    model = load_model_from_checkpoint(
+      checkpoint_path=checkpoint_path,
+      task="sentence-level",
+      config=config,
+      num_classes=train_loader.get_num_labels())
+    
+    print("model loaded")
 
     dm = ClassificationDataModule(
         data_loader=train_loader,
         tokenizer=model.tokenizer,
         max_seq_len=1024, #cfg.max_seq_len,
-        pad_token_id=model.tokenizer.pad_token_id, 
+        pad_token_id=config.pad_token_id , 
         batch_size=32,
         num_devices=1
     )
         
     print("data loader ready!")
-    dm.setup()
-    print(dm.__len__())
-    print(dm.params())
+    
+    
+    
+    ### Test dataloader
+    ##dataloader = dm.train_dataloader()
+    ##print(f"Dataloader created, batches: {len(dataloader)}")
+    ##
+    ### Get one batch
+    ##batch = next(iter(dataloader))
+    ##print(f"\nBatch keys: {batch.keys()}")
+    ##print(f"Input IDs shape: {batch['input_ids'].shape}")
+    ##print(f"Attention mask shape: {batch['attention_mask'].shape}")
+    ##print(f"Labels shape: {batch['labels'].shape}")
+    ##print(f"Labels unique values: {batch['labels'].unique()}")
+    ##
+    ### Test model forward pass
+    ##print("\nTesting model forward pass...")
+    ##model = model.to(device).eval()
+    ##
+    ##with torch.no_grad():
+    ##    # Create PaddedTensor from batch
+    ##    sequence = PaddedTensor(
+    ##        tensor=batch['input_ids'].to(device),
+    ##        padding_mask=(batch['attention_mask'] == 0).to(device)
+    ##    )
+    ##    
+    ##    # Test hidden states output
+    ##    hidden_states = model(sequence, return_type='hidden')
+    ##    print(f"Hidden states type: {type(hidden_states)}")
+    ##    if isinstance(hidden_states, UnpaddedTensor):
+    ##        print(f"Hidden states tensor shape: {hidden_states.tensor.shape}")
+    ##    else:
+    ##        print(f"Hidden states shape: {hidden_states.tensor.shape}")
+    ##    
+    ##    # Extract [CLS] representations
+    ##    if isinstance(hidden_states, UnpaddedTensor):
+    ##        cls_hidden = []
+    ##        cu_seqlens = hidden_states.cu_seqlens
+    ##        for i in range(len(cu_seqlens) - 1):
+    ##            start_idx = cu_seqlens[i]
+    ##            cls_hidden.append(hidden_states.tensor[start_idx])
+    ##        cls_hidden = torch.stack(cls_hidden)
+    ##    else:
+    ##        cls_hidden = hidden_states.tensor[:, 0, :]
+    ##    
+    ##    print(f"CLS hidden shape: {cls_hidden.shape}")
+    ##    print(f"Expected: [batch_size={batch['input_ids'].shape[0]}, hidden_size={cfg.hidden_size}]")
+    ##
+    ##print("\nAll tests passed!")
 
 
 if __name__ == "__main__":

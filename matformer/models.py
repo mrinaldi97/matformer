@@ -78,6 +78,83 @@ class PL_ModelWrapper(MatformerModule):
             
      
     def training_step(self, batch, batch_idx=None):
+        if 'labels' in batch:                          # Classification task
+            return self._classification_step(batch)
+        else:                                          # Pretraining task
+            return self._pretraining_step(batch)
+          
+    def _classification_step(self, batch):
+        """
+        Training step for sequence classification tasks.
+        
+        Expected batch format:
+        {
+            'input_ids': torch.Tensor [batch_size, seq_len],
+            'attention_mask': torch.Tensor [batch_size, seq_len],
+            'labels': torch.Tensor [batch_size]
+        }
+        """
+        input_ids = batch['input_ids']
+        attention_mask = batch['attention_mask']
+        labels = batch['labels']
+        
+        # Convert to PaddedTensor format for model compatibility
+        sequence = PaddedTensor(
+            tensor=input_ids,
+            padding_mask=(attention_mask == 0)  # padding_mask is True where padded
+        )
+        
+        # Get model output (hidden states from last layer)
+        # Use return_type='hidden' to get representations before lm_head
+        hidden_states = self(sequence, return_type='hidden')
+        
+        # TODO: when this works add option to use other methods apart from CLS
+        # Extract [CLS] token representation (first token)
+        # Handle both padded and unpadded formats
+        if isinstance(hidden_states, UnpaddedTensor):
+            # For unpadded: extract first token of each sequence using cu_seqlens
+            cls_hidden = []
+            cu_seqlens = hidden_states.cu_seqlens
+            for i in range(len(cu_seqlens) - 1):
+                start_idx = cu_seqlens[i]
+                cls_hidden.append(hidden_states.tensor[start_idx])
+            cls_hidden = torch.stack(cls_hidden)  # [batch_size, hidden_size]
+        else:
+            # For padded: just take first token
+            cls_hidden = hidden_states.tensor[:, 0, :]  # [batch_size, hidden_size]
+        
+        # Classification head (create if doesn't exist)
+        if not hasattr(self, 'classification_head'):
+            self.classification_head = torch.nn.Linear(
+                self.config.hidden_size, 
+                self.config.num_labels
+            ).to(self.device)
+        
+        # Forward through classification head
+        logits = self.classification_head(cls_hidden)  # [batch_size, num_labels]
+        
+        # Compute classification loss
+        loss = torch.nn.functional.cross_entropy(logits, labels)
+        
+        # Logging
+        self.log('train/classification_loss', loss, prog_bar=True, batch_size=len(labels))
+        
+        # Compute accuracy
+        with torch.no_grad():
+            preds = logits.argmax(dim=-1)
+            acc = (preds == labels).float().mean()
+            self.log('train/classification_accuracy', acc, prog_bar=True, on_step=True, on_epoch=True, batch_size=len(labels))
+        
+        # Log learning rate
+        try:
+            current_lr = self.lr_schedulers().get_last_lr()[0]
+            self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False, batch_size=len(labels))
+        except:
+            pass
+        
+        return loss
+     
+    def _pretraining_step(self, batch, batch_idx=None):
         try:
             input_sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
             # Un modo sporco per testare cosa succede se arrivano tutte sequenze lunghe
@@ -189,56 +266,7 @@ class PL_ModelWrapper(MatformerModule):
                 targets = targets_flat[mask]
                 acc = (preds == targets).float().mean()
                 self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size)
-                #self.log("train/masking_rate",masking_ratio,prog_bar=False,on_step=True,on_epoch=False,batch_size=self.batch_size)
-            """ TODO Currently disabled
-            if self.nested:
-                logits_flat = torch.cat(logits.unbind())
-                targets_flat = torch.cat(sequence.unbind()).to(logits_flat.device)
-                base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
-                cloze_mask_flat = torch.cat(cloze_mask.unbind()).to(logits_flat.device) if masked else None
-            """
-            #if len(self.cache.additional_logs.items()) > 0:
-            #            for k, v in self.cache.additional_logs.items():
-            #                self.log(k, v, on_step=True, batch_size=self.batch_size)
-            #            self.cache.additional_logs.clear()
-                        
-                   
-            #Trying to simplify the logic,now it by defaults pad everything again.It could be less efficient,we need some tiny test and benchmark
-            #1) See if the loss makes sense directly with unpadding
-            #2) See if repadding causes a significant performances loss
-            """
-            elif logits.isPadded:
-                vocab_size = logits.shape[-1]
-                logits_flat = logits.tensor.reshape(-1, vocab_size)
-                targets_flat = sequence.tensor.reshape(-1)
-                #print(f"Logits flat shape: {logits_flat.shape}")
-                #print(f"Targets flat shape: {targets_flat.shape}")
-                base_mask = (targets_flat != self.config.pad_token_id)
-            
-            
-                autoencoders_experimental=False
-                if autoencoders_experimental:
-                    base_mask = (targets_flat.to(logits.tensor.device) != 259)   
-                    fake_mask = ~logits.padding_mask.reshape(-1).to(logits.tensor.device )
-                    base_mask = base_mask & fake_mask  
-                         
-                
-                cloze_mask_flat = cloze_mask.reshape(-1) if masked else None
-            else:
-                logits_flat = logits.tensor
-                targets_flat = sequence.tensor
-                base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
-                cloze_mask_flat = cloze_mask if masked else None
-
-            if masked:
-                mask = cloze_mask_flat & base_mask
-                loss = self.cross_entropy_loss(logits_flat[mask], targets_flat[mask])
-            else:
-                mask = base_mask[1:]
-                loss = self.cross_entropy_loss(logits_flat[:-1][mask], targets_flat[1:][mask])
-            """          
-
-             
+                #self.log("train/masking_rate",masking_ratio,prog_bar=False,on_step=True,on_epoch=False,batch_size=self.batch_size)             
 
             # TODO: this part has to be revised and cleaned
             additional_metrics=False

@@ -42,12 +42,11 @@ class ClassificationDataModule(pl.LightningDataModule):
         self.pad_token_id = pad_token_id
         self.num_devices = num_devices
         self.val_data_loader = val_data_loader
+        self.num_labels = data_loader.get_num_labels()
     
     def setup(self, stage=None):
         
         texts, labels, ids = self.data_loader.get_data()
-            
-        self.num_labels = self.data_loader.get_num_labels()
         
         # Tokenize and create examples
         train_examples = []
@@ -165,14 +164,6 @@ class ClassificationDataModule(pl.LightningDataModule):
         if self.train_dataset is not None:
             return len(self.train_dataset)
         return 0
-    
-    def state_dict(self):
-        """Save state for checkpoint resume (optional)"""
-        return {}
-    
-    def load_state_dict(self, state_dict):
-        """Load state from checkpoint (optional)"""
-        pass
       
     def params(self):
       return {
