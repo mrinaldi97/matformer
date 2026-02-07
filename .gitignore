@@ -9,3 +9,4 @@ char_autoencoder/checkpoints/
 char_autoencoder/data/
 __pycache__*
 utils/
+.venv/

@@ -12,7 +12,6 @@ from matformer.matformer_tokenizers import MatformerTokenizer
 from matformer.data_module import MatformerDataModule
 from matformer.model_config import ModelConfig
 from matformer.models import PL_ModelWrapper
-from inference import load_inference_model
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
 from pytorch_lightning.strategies import DDPStrategy
@@ -22,6 +21,8 @@ from pytorch_lightning.profilers import AdvancedProfiler
 import math, os
 from datetime import datetime
 
+from inference import load_inference_model
+from matformer.transformer_blocks import BERTModel
 
 def load_config(path):
     with open(path, "r") as f:
@@ -265,6 +266,13 @@ def load_and_prepare_configs(config_paths, overrides):
 
 def main():
     print("hi!")
+    # load modello
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+    tok_arg = 'bytes'
+    ModelClass = BERTModel
+    checkpoint_path = "/mnt/llmdata/data/FINALE_32768.ckpt"
+    load_inference_model(checkpoint_path=checkpoint_path, ModelClass=ModelClass, map_location=device, tokenizer=tok_arg)
+    print("loaded")
 
 
 if __name__ == "__main__":

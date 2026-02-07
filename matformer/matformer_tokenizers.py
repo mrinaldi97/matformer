@@ -15,7 +15,7 @@ class MatformerTokenizer:
     """
     def __init__(self, tokenizer=None,tokenizer_type=None, tokenizer_name=None, tokenizer_args=None, varlen_strategy=None, config=None):
         self.config = config
-        tokenizer=tokenizer_type #[kept for compatibility, deprecated]
+        #tokenizer=tokenizer_type #[kept for compatibility, deprecated]
         if tokenizer == 'bytes':
             self.tokenizer = ByteLevelTokenizer(config)
             self.tokenizer_modality='bytes'
