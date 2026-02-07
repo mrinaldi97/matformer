@@ -210,122 +210,33 @@ class TokenClassificationConfig(ModelConfig):
     freeze_encoder: bool = False
     pretrained_checkpoint: Optional[str] = None
 
-def validate_config_compatibility(checkpoint_config, task_config):
-    """
-    Compare checkpoint config with task config.
-    Raises error for incompatible architecture params.
-    Warns for different runtime params.
-    """
+def load_and_validate_classification_config_from_dict(config_dict: dict) -> ClassificationConfig:
+    """Parse and validate config dict into ClassificationConfig."""
     
-    # Critical params from BaseSubModelConfig that define weight shapes
-    critical_params = [
-        'hidden_size',
-        'num_hidden_layers', 
-        'num_attention_heads',
-        'vocab_size',
-        'ffn_factor',
-        'max_position_embeddings',
-        'rms_norm_eps',
-        'bias',
-        'rope_theta'
-    ]
+    # Validate required fields
+    required = ['hidden_size', 'num_hidden_layers', 'num_attention_heads', 
+                'vocab_size', 'num_labels', 'default_layer']
+    missing = [f for f in required if f not in config_dict]
+    if missing:
+        raise ValueError(f"Missing required fields: {missing}")
     
-    # Architectural params that should match but are in LayerConfig
-    layer_architectural_params = [
-        'normalization',
-        'normalization_position',
-        'ffn_activation',
-        'positional_encoding',
-        'attn_impl'
-    ]
+    # Convert default_layer if dict
+    if isinstance(config_dict['default_layer'], dict):
+        config_dict['default_layer'] = LayerConfig(**config_dict['default_layer'])
     
-    # Params specific to pretraining that can be missing in task config
-    pretraining_only_params = [
-        'mask_token_id',
-        'masked_substitution_rate',
-        'cloze_probability',
-        'random_probability',
-        'same_probability'
-    ]
+    # Set defaults
+    config_dict.setdefault('custom_layers', {})
     
-    # Task-specific params that can be missing in checkpoint
-    task_only_params = [
-        'num_labels',
-        'pooling_type',
-        'classifier_dropout_p',
-        'classifier_dropout_inplace',
-        'freeze_encoder',
-        'pretrained_checkpoint'
-    ]
+    # Separate training/data config from model config
+    extra_fields = {k: config_dict.pop(k) for k in ['training', 'data', 'save_dir', 
+                    'wandb_project', 'wandb_run_name'] if k in config_dict}
     
-    errors = []
-    warnings = []
+    # Create config and attach extras
+    config = ClassificationConfig(**config_dict)
+    for k, v in extra_fields.items():
+        setattr(config, k, v)
     
-    # Check critical params
-    for param in critical_params:
-        ckpt_val = getattr(checkpoint_config, param, None)
-        task_val = getattr(task_config, param, None)
-        
-        if ckpt_val is not None and task_val is not None and ckpt_val != task_val:
-            errors.append(
-                f"Critical mismatch: {param} "
-                f"(checkpoint={ckpt_val}, task_config={task_val})"
-            )
+    print(f"Loaded: {config.num_hidden_layers}L x {config.hidden_size}d × {config.num_attention_heads}h, "
+          f"{config.num_labels} classes, {config.pooling_type} pooling")
     
-    # Check default_layer configs
-    if hasattr(checkpoint_config, 'default_layer') and hasattr(task_config, 'default_layer'):
-        ckpt_layer = checkpoint_config.default_layer
-        task_layer = task_config.default_layer
-        
-        for param in layer_architectural_params:
-            ckpt_val = getattr(ckpt_layer, param, None)
-            task_val = getattr(task_layer, param, None)
-            
-            if ckpt_val is not None and task_val is not None and ckpt_val != task_val:
-                warnings.append(
-                    f"Layer config difference: default_layer.{param} "
-                    f"(checkpoint={ckpt_val}, task_config={task_val}). "
-                    "Ensure this is intentional."
-                )
-    
-    # Check custom_layers exist in both if defined
-    if hasattr(checkpoint_config, 'custom_layers') and hasattr(task_config, 'custom_layers'):
-        ckpt_custom = checkpoint_config.custom_layers
-        task_custom = task_config.custom_layers
-        
-        if set(ckpt_custom.keys()) != set(task_custom.keys()):
-            warnings.append(
-                f"Custom layers mismatch: "
-                f"checkpoint has {set(ckpt_custom.keys())}, "
-                f"task_config has {set(task_custom.keys())}"
-            )
-    
-    # Warn about token IDs if they differ
-    token_params = ['pad_token_id', 'bos_token_id', 'eos_token_id']
-    for param in token_params:
-        ckpt_val = getattr(checkpoint_config, param, None)
-        task_val = getattr(task_config, param, None)
-        
-        if ckpt_val is not None and task_val is not None and ckpt_val != task_val:
-            warnings.append(
-                f"Token ID difference: {param} "
-                f"(checkpoint={ckpt_val}, task_config={task_val})"
-            )
-    
-    # Report results
-    print("~"*40)
-    print("config check")
-    print("~"*40)
-    if errors:
-        error_msg = "Config compatibility errors:\n" + "\n".join(f"  - {e}" for e in errors)
-        raise ValueError(error_msg)
-    
-    if warnings:
-        import warnings as warn_module
-        warn_msg = "Config compatibility warnings:\n" + "\n".join(f"  - {w}" for w in warnings)
-        warn_module.warn(warn_msg, UserWarning)
-    
-    print("~"*40)
-    print("Config validation passed")
-    print("~"*40)
-    return True
+    return config

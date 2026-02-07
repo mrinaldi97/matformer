@@ -8,13 +8,14 @@ the target are linguists and researchers that should be able to use
 their own data
 """
 from typing import Literal
+import sys
 import argparse, json, torch, pytorch_lightning as pl, wandb
 from pathlib import Path
 from importlib import import_module
 from transformers import AutoTokenizer
 from matformer.matformer_tokenizers import MatformerTokenizer
 from matformer.data_module import MatformerDataModule
-from matformer.model_config import ModelConfig
+from matformer.model_config import ModelConfig, LayerConfig, ClassificationConfig, TokenClassificationConfig, load_and_validate_classification_config_from_dict
 from matformer.models import PL_ModelWrapper
 from pytorch_lightning.loggers import WandbLogger
 from pytorch_lightning.callbacks import Callback, ModelCheckpoint
@@ -33,10 +34,6 @@ from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
 import torch.serialization as serialization
 
 serialization.add_safe_globals([BERTModel, TransformerWithEmbeddingHead,TransformerWithClassificationHead, TransformerWithTokenClassificationHead, ModelConfig])
-
-def extract_config_from_checkpoint(checkpoint_path):
-  checkpoint = torch.load(checkpoint_path, weights_only=False)
-  return checkpoint['hyper_parameters']['config']
 
 # Build checkpoint key mapping
 def build_checkpoint_mapping(num_layers=28):
@@ -58,7 +55,6 @@ def build_checkpoint_mapping(num_layers=28):
         mapping.update(layer_maps)
     
     return mapping
-  
   
 def load_model_from_checkpoint(checkpoint_path, config, num_classes, task, map_location='cpu', tokenizer=None):
     """
@@ -137,256 +133,92 @@ def load_tokenizer(config=None, tokenizer="bytes", varlen_strategy=None):
         )     
   return tokenizer
             
-def load_config(path):
-    with open(path, "r") as f:
-        return json.load(f)
+def load_classification_config(
+    task_config_path: str,
+    checkpoint_path: str = None,
+    inherit_from_checkpoint: bool = True
+) -> ClassificationConfig:
+    """
+    Load classification config with optional checkpoint inheritance.
+    
+    Args:
+        task_config_path: Path to task config JSON
+        checkpoint_path: Path to pretrained checkpoint (optional if in task config)
+        inherit_from_checkpoint: If True, fill missing fields from checkpoint config
+        validate_compatibility: If True, validate config compatibility
+    
+    Returns:
+        ClassificationConfig with merged settings
+    """
+    # Load task config
+    if not Path(task_config_path).exists():
+        raise FileNotFoundError(f"Config file not found: {task_config_path}")
+    
+    with open(task_config_path, 'r') as f:
+        task_dict = json.load(f)
+    
+    # Determine checkpoint path
+    if checkpoint_path is None:
+        checkpoint_path = task_dict.get('pretrained_checkpoint')
+    
+    if not checkpoint_path:
+        raise ValueError("checkpoint_path must be provided or in config as 'pretrained_checkpoint'")
+    
+    if not Path(checkpoint_path).exists():
+        raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
+    
+    # Load checkpoint config if inheriting
+    checkpoint_config = None
+    if inherit_from_checkpoint:
+        print(f"Loading checkpoint config from: {checkpoint_path}")
+        checkpoint_config = extract_config_from_checkpoint(checkpoint_path)
+    
+    # Build final config dict
+    if inherit_from_checkpoint and checkpoint_config:
+        # Start with checkpoint config as base
+        final_dict = vars(checkpoint_config).copy()
+        
+        # Track what gets overridden
+        inherited_fields = set(final_dict.keys())
+        overridden_fields = set(task_dict.keys()) & inherited_fields
+        new_fields = set(task_dict.keys()) - inherited_fields
 
-def apply_overrides(cfg, overrides):
-    for key, val in overrides.items():
-        keys = key.split(".")
-        d = cfg
-        for k in keys[:-1]:
-            d = d.setdefault(k, {})
-        try:
-            d[keys[-1]] = eval(val)
-        except:
-            d[keys[-1]] = val
-    return cfg
+        # Override with task config (task config takes priority)
+        final_dict.update(task_dict)
 
-
-import argparse
-import sys
-
-
-def parse_args():
-    parser = argparse.ArgumentParser(description="Train a Matformer model")
-    parser.add_argument(
-        "--config", type=str, help="Path to single combined config file"
-    )
-    parser.add_argument("--model_config", type=str, help="Path to model_config.json")
-    parser.add_argument("--training_config", type=str, help="Path to train_config.json")
-    parser.add_argument("--data_config", type=str, help="Path to data_config.json")
-    parser.add_argument(
-        "--tokenizer_config", type=str, help="Path to tokenizer_config.json"
-    )
-    parser.add_argument(
-        "--override",
-        nargs="*",
-        default=[],
-        help="Override config parameters as key=value pairs",
-    )
-    parser.add_argument("--gpu", type=int, default=1, help="Number of GPU(s)")
-    parser.add_argument("--nodes", type=int, default=1, help="Number of Node(s)")
-    parser.add_argument(
-        "--checkpoint", type=str, default=None, help="Path to checkpoint file"
-    )
-    parser.add_argument(
-        "--start-from-scratch", action="store_true", help="Start training from scratch"
-    )
-    parser.add_argument(
-        "--simulate",
-        action="store_true",
-        help="Instantiate model and print state_dict shapes, then exit",
-    )
-    parser.add_argument(
-        "--dump-json",
-        type=str,
-        default=None,
-        help="Path to dump JSON state dict shapes",
-    )
-    parser.add_argument(
-        "--debug-steps",
-        type=int,
-        default=None,
-        help="If you choose this, train for one epoch on this number of steps",
-    )
-    parser.add_argument(
-        "--compile", action="store_true", help="Torch.compile the whole model"
-    )
-    parser.add_argument(
-        "--load-mode",
-        type=str,
-        choices=["full", "weights_only", "weights_and_optimizer"],
-        default="full",
-        help="Checkpoint loading strategy",
-    )
-    parser.add_argument(
-        "--precision",
-        type=str,
-        choices=[
-            "16-mixed",
-            "bf16-mixed",
-            "32",
-            "16",
-            "bf16",
-            "32-true",
-            "bf16-true",
-            "16-true",
-            "64-true",
-            "transformer-engine",
-        ],
-        default="bf16-mixed",
-        help="precision",
-    )
-    args = parser.parse_args()
-
-    separate_configs = {
-        "model_config": args.model_config,
-        "training_config": args.training_config,
-        "data_config": args.data_config,
-        "tokenizer_config": args.tokenizer_config,
-    }
-    separate_count = sum(1 for v in separate_configs.values() if v is not None)
-
-    # Enforce exclusive requirement
-    if args.config is not None and separate_count > 0:
-        parser.error(
-            "Cannot specify both --config and individual config files. Choose ONE approach."
-        )
-
-    if args.config is None and separate_count == 0:
-        parser.error(
-            "Must specify either --config OR all four individual config files (--model_config, --training_config, --data_config, --tokenizer_config)"
-        )
-
-    if args.config is None and separate_count != 4:
-        missing = [k for k, v in separate_configs.items() if v is None]
-        parser.error(
-            f"Missing {len(missing)} individual config file(s): {', '.join(missing)}"
-        )
-
-    # Build config_paths dictionary
-    if args.config is not None:
-        config_paths = args.config
+        # Print inheritance info
+        if inherited_fields:
+            print(f"Inherited {len(inherited_fields)} fields from checkpoint\n")
+        if overridden_fields:
+            print(f"Overridden {len(overridden_fields)} fields: {sorted(overridden_fields)}\n")
+        if new_fields:
+            print(f"Added {len(new_fields)} new fields: {sorted(new_fields)}\n")
     else:
-        config_paths = {
-            "model_config": args.model_config,
-            "training": args.training_config,
-            "data": args.data_config,
-            "tokenizer": args.tokenizer_config,
-        }
-
-    overrides = {}
-    for item in args.override:
-        try:
-            k, v = item.split("=", 1)  # Split on first '=' only
-            overrides[k] = v
-        except ValueError:
-            parser.error(f"Override '{item}' must be in key=value format")
-
-    return (
-        config_paths,
-        overrides,
-        args.gpu,
-        args.checkpoint,
-        args.start_from_scratch,
-        args.simulate,
-        args.dump_json,
-        args.debug_steps,
-        args.compile,
-        args.nodes,
-        args.load_mode,
-        args.precision,
-    )
+        # Use only task config
+        final_dict = task_dict.copy()
+    
+    # Ensure pretrained_checkpoint is set
+    final_dict['pretrained_checkpoint'] = checkpoint_path
+    
+    # Parse into ClassificationConfig
+    config = load_and_validate_classification_config_from_dict(final_dict)
+    
+    return config
 
 
-def get_model_class(model_class: str):
-    module = import_module("matformer.transformer_blocks")
-    return getattr(module, model_class)
-
-
-def extract_state_dict_shapes(state_dict):
-    """
-    Extracts a dict of param_name -> shape string
-    """
-    shapes = {}
-    for k, v in state_dict.items():
-        shapes[k] = "x".join(str(d) for d in v.shape)
-    return shapes
-
-
-def save_state_dict_json(state_dict, path):
-    shapes = extract_state_dict_shapes(state_dict)
-    with open(path, "w") as f:
-        json.dump(shapes, f, indent=2)
-
-
-def load_and_prepare_configs(config_paths, overrides):
-    """
-    Loads multiple separate JSON configs, merges them, applies overrides,
-    and derives any dependent configuration properties (like is_causal).
-    """
-    if isinstance(config_paths, dict):  # Multiple config files
-        model_cfg_dict = load_config(config_paths["model_config"])
-        train_cfg_dict = load_config(config_paths["training"])
-        data_cfg_dict = load_config(config_paths["data"])
-        tok_cfg_dict = load_config(config_paths["tokenizer"])
-        cfg = {
-            "model_class": model_cfg_dict.pop("model_class", None),
-            "save_dir": model_cfg_dict.pop("save_dir", "./checkpoints"),
-            "wandb_project": model_cfg_dict.pop("wandb_project", "default_project"),
-            "wandb_run_name": model_cfg_dict.pop("wandb_run_name", "default_run"),
-            "model_config": model_cfg_dict,
-            "training": train_cfg_dict,
-            "data": data_cfg_dict,
-            "tokenizer": tok_cfg_dict,
-        }
-
-    else:  # Single config file
-        json_config = load_config(config_paths)
-        cfg = {
-            "model_class": json_config["model_class"],
-            "save_dir": json_config.pop("save_dir", "./checkpoints"),
-            "wandb_project": json_config.pop("wandb_project", "default_project"),
-            "wandb_run_name": json_config.pop("wandb_run_name", "default_run"),
-            "model_config": json_config["model_config"],
-            "training": json_config["training"],
-            "data": json_config["data"],
-            "tokenizer": json_config["tokenizer"],
-            "training_objective": json_config.pop("training_objective", None),
-            "is_causal": json_config.pop("is_causal", None),
-        }
-
-    cfg = apply_overrides(cfg, overrides)
-
-    model_class = cfg["model_class"]
-    if getattr(cfg["model_config"], "training_objective", None) is None:
-        cfg["model_config"]["training_objective"] = (
-            "autoregressive" if model_class == "Autoregressive_Model" else "masked"
-        )
-    if getattr(cfg["model_config"], "is_causal", None) is None:
-        cfg["model_config"]["is_causal"] = (
-            True if model_class == "Autoregressive_Model" else False
-        )
-    cfg["model_config"]["tokenizer_type"] = cfg["tokenizer"]["type"]
-    cfg["model_config"]["tokenizer_name"] = cfg["tokenizer"]["pretrained_name"]
-    if "wanted_from_strategy" not in cfg["data"].keys():
-        cfg["data"]["wanted_from_strategy"] = "chunked_tokens"
-    model_config_dict_clean = cfg["model_config"]
-    train_config_dict = cfg["training"]
-    data_config_dict = cfg["data"]
-    tok_config_dict = cfg["tokenizer"]
-
-    return (
-        model_config_dict_clean,
-        train_config_dict,
-        data_config_dict,
-        tok_config_dict,
-        cfg,
-    )
-
+def extract_config_from_checkpoint(checkpoint_path):
+  checkpoint = torch.load(checkpoint_path, weights_only=False)
+  return checkpoint['hyper_parameters']['config']  
 
 def main():
-    print("hi!")
-    
-    train_loader = ClassificationTrainingDataLoader(filepath="utils/data.csv", text_column="text", label_column="is_profane")
-
     checkpoint_path = "/mnt/llmdata/data/FINALE_32768.ckpt"
-    ### config
-    config = extract_config_from_checkpoint(checkpoint_path)
-    # Add classification-specific fields
-    config.classifier_dropout_p = 0.1
-    config.classifier_dropout_inplace = False
+    config_path = "configs/classification_head/config.json"
+  
+    # config
+    print("\n --- Config ---")
+    config = load_classification_config(config_path, checkpoint_path)
+    print("\n"+ "-"*40+"\n")
+    train_loader = ClassificationTrainingDataLoader(filepath="utils/data.csv", text_column="text", label_column="is_profane")
     
     tokenizer = load_tokenizer(config=config)
     
@@ -411,55 +243,6 @@ def main():
     )
         
     print("data loader ready!")
-    
-    
-    
-    ### Test dataloader
-    ##dataloader = dm.train_dataloader()
-    ##print(f"Dataloader created, batches: {len(dataloader)}")
-    ##
-    ### Get one batch
-    ##batch = next(iter(dataloader))
-    ##print(f"\nBatch keys: {batch.keys()}")
-    ##print(f"Input IDs shape: {batch['input_ids'].shape}")
-    ##print(f"Attention mask shape: {batch['attention_mask'].shape}")
-    ##print(f"Labels shape: {batch['labels'].shape}")
-    ##print(f"Labels unique values: {batch['labels'].unique()}")
-    ##
-    ### Test model forward pass
-    ##print("\nTesting model forward pass...")
-    ##model = model.to(device).eval()
-    ##
-    ##with torch.no_grad():
-    ##    # Create PaddedTensor from batch
-    ##    sequence = PaddedTensor(
-    ##        tensor=batch['input_ids'].to(device),
-    ##        padding_mask=(batch['attention_mask'] == 0).to(device)
-    ##    )
-    ##    
-    ##    # Test hidden states output
-    ##    hidden_states = model(sequence, return_type='hidden')
-    ##    print(f"Hidden states type: {type(hidden_states)}")
-    ##    if isinstance(hidden_states, UnpaddedTensor):
-    ##        print(f"Hidden states tensor shape: {hidden_states.tensor.shape}")
-    ##    else:
-    ##        print(f"Hidden states shape: {hidden_states.tensor.shape}")
-    ##    
-    ##    # Extract [CLS] representations
-    ##    if isinstance(hidden_states, UnpaddedTensor):
-    ##        cls_hidden = []
-    ##        cu_seqlens = hidden_states.cu_seqlens
-    ##        for i in range(len(cu_seqlens) - 1):
-    ##            start_idx = cu_seqlens[i]
-    ##            cls_hidden.append(hidden_states.tensor[start_idx])
-    ##        cls_hidden = torch.stack(cls_hidden)
-    ##    else:
-    ##        cls_hidden = hidden_states.tensor[:, 0, :]
-    ##    
-    ##    print(f"CLS hidden shape: {cls_hidden.shape}")
-    ##    print(f"Expected: [batch_size={batch['input_ids'].shape[0]}, hidden_size={cfg.hidden_size}]")
-    ##
-    ##print("\nAll tests passed!")
 
 
 if __name__ == "__main__":

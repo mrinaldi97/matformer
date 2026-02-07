@@ -1,31 +1,12 @@
 {
+  "name": "Albertone_Classification",
   "model_class": "TransformerWithClassificationHead",
-  "model_config": {
-    "name": "Albertone_Classification",
-    "hidden_size": 768,
-    "ffn_factor": 4.0,
-    "vocab_size": 32768,
-    "bos_token_id": 5,
-    "eos_token_id": 6,
-    "pad_token_id": 0,
-    "num_hidden_layers": 28,
-    "num_attention_heads": 12,
-    "tie_word_embeddings": false,
-    "rms_norm_eps": 1e-6,
-    "max_position_embeddings": 1024,
-    "bias": false,
-    "classifier_dropout_p": 0.1,
-    "classifier_dropout_inplace": false,
-    "default_layer": {
-      "attn_impl": "flash",
-      "sliding_window_size": null,
-      "positional_encoding": "alibi",
-      "normalization": "layernorm",
-      "normalization_position": "post",
-      "ffn_activation": "gelu",
-      "hooks": {}
-    }
-  },
+  "num_labels": 2,
+  "pooling_type": "cls",
+  "classifier_dropout_p": 0.1,
+  "classifier_dropout_inplace": false,
+  "freeze_encoder": false,
+  "pretrained_checkpoint": "path/to/albertone_pretrained.pt",
   "training": {
     "optimizer": "adamw",
     "lr": 2e-5,
@@ -36,18 +17,14 @@
     "batch_size": 32,
     "accumulate_grad_batches": 1,
     "save_every_n_steps": 500,
-    "freeze_encoder": false
-  },
-  "task": {
-    "type": "sequence_classification",
-    "num_labels": 2,
-    "pooling_type": "cls"
+    "seed": 42
   },
   "data": {
     "train_file": "path/to/train.json",
     "val_file": "path/to/val.json",
     "num_workers": 4
   },
-  "pretrained_checkpoint": "path/to/albertone_pretrained.pt",
-  "save_dir": "./checkpoints_classification"
+  "save_dir": "./checkpoints_classification",
+  "wandb_project": "Albertone_Classification",
+  "wandb_run_name": "Albertone_SeqClass"
 }
