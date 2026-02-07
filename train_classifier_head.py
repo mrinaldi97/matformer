@@ -29,6 +29,7 @@ from matformer.transformer_blocks import BERTModel, TransformerWithEmbeddingHead
 from matformer.classification_training_data_loader import ClassificationTrainingDataLoader
 from matformer.classification_data_module import ClassificationDataset, ClassificationDataModule
 from matformer.tensors_dataclasses import PaddedTensor, UnpaddedTensor
+from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
 import torch.serialization as serialization
 
 serialization.add_safe_globals([BERTModel, TransformerWithEmbeddingHead,TransformerWithClassificationHead, TransformerWithTokenClassificationHead, ModelConfig])
@@ -37,26 +38,70 @@ def extract_config_from_checkpoint(checkpoint_path):
   checkpoint = torch.load(checkpoint_path, weights_only=False)
   return checkpoint['hyper_parameters']['config']
 
-def load_model_from_checkpoint(checkpoint_path, config, num_classes, task=Literal["token-level", "sentence-level"]):
-  
-  checkpoint = torch.load(checkpoint_path, weights_only=True, map_location='cpu')
-  
-  if task == "sentence-level":
-    model = TransformerWithClassificationHead(config, num_features=num_classes)
-  else:
-    model = TransformerWithTokenClassificationHead(config, num_features=num_classes)
+def load_model_from_checkpoint(checkpoint_path, config, num_classes, task, map_location='cpu', tokenizer=None):
+    """
+    Load classification model with pretrained encoder weights.
     
-  try:
-    model.encoder.load_state_dict(checkpoint, strict=False)
-  except:
-    model.encoder.load_state_dict(checkpoint['state_dict'], strict=False)
+    Args:
+        checkpoint_path: Path to pretrained checkpoint
+        config: ModelConfig object
+        num_classes: Number of output classes
+        task: "sentence-level" or "token-level"
+        map_location: Device to load model on
+        tokenizer: Optional tokenizer
+    """
+    
+    checkpoint = torch.load(checkpoint_path, weights_only=True, map_location=map_location)
+    
+    if isinstance(checkpoint, dict):
+        state_dict = checkpoint.get('state_dict', checkpoint)
+    else:
+        state_dict = checkpoint
+    
+    # Initialize classification model
+    if task == "sentence-level":
+        model = TransformerWithClassificationHead(
+            config, 
+            tokenizer=tokenizer,
+            num_features=num_classes
+        )
+    elif task == "token-level":
+        model = TransformerWithTokenClassificationHead(
+            config,
+            tokenizer=tokenizer, 
+            num_labels=num_classes
+        )
+    else:
+        raise ValueError(f"task must be 'sentence-level' or 'token-level', got {task}")
+    
+    # Load encoder weights (strict=False ignores missing classification head)
+    missing_keys, unexpected_keys = model.encoder.load_state_dict(state_dict, strict=False)
+    
+    # Log what was loaded
+    print(f"Loaded pretrained encoder from {checkpoint_path}")
+    if unexpected_keys:
+        print(f"Ignored keys from checkpoint: {len(unexpected_keys)} (e.g., lm_head)")
+        print(f"Unexpected: {unexpected_keys}")
+    if missing_keys:
+        print(f"Randomly initialized: {len(missing_keys)} (e.g., classification_head)")
+        print(f"Missing: {missing_keys}")
+    
+    model = model.to(map_location).to(torch.bfloat16).eval()
+    for module in model.modules():
+        if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
+            module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
+    
+    return model
   
-  device = "cpu"
-  model = model.to(device).to(torch.bfloat16).eval()
-  for module in model.modules():
-    if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
-      module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
-  return model
+# taken from models.py
+def load_tokenizer(config=None, tokenizer="bytes", varlen_strategy=None):
+  tokenizer = MatformerTokenizer(
+            config=config,
+            tokenizer=tokenizer,
+            tokenizer_name=tokenizer,
+            varlen_strategy=varlen_strategy
+        )     
+  return tokenizer
             
 def load_config(path):
     with open(path, "r") as f:
@@ -309,17 +354,22 @@ def main():
     config.classifier_dropout_p = 0.1
     config.classifier_dropout_inplace = False
     
+    tokenizer = load_tokenizer(config=config)
+    
     model = load_model_from_checkpoint(
-      checkpoint_path=checkpoint_path,
-      task="sentence-level",
-      config=config,
-      num_classes=train_loader.get_num_labels())
+        checkpoint_path=checkpoint_path,
+        config=config,
+        num_classes=train_loader.get_num_labels(),
+        task="sentence-level",
+        map_location="cuda",
+        tokenizer=tokenizer
+    )
     
     print("model loaded")
 
     dm = ClassificationDataModule(
         data_loader=train_loader,
-        tokenizer=model.tokenizer,
+        tokenizer=tokenizer,
         max_seq_len=1024, #cfg.max_seq_len,
         pad_token_id=config.pad_token_id , 
         batch_size=32,
