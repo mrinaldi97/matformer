@@ -1,7 +1,11 @@
 """
-A function to train a generic model using the matformer library
+A function to train the classifier head using the matformer library
 A JSON config file must be provided
 But each argument can be overridden from the CLI
+
+objective: making it the most general and easiest at the same time 
+the target are linguists and researchers that should be able to use
+their own data
 """
 
 import argparse, json, torch, pytorch_lightning as pl, wandb
@@ -21,8 +25,10 @@ from pytorch_lightning.profilers import AdvancedProfiler
 import math, os
 from datetime import datetime
 
-from inference import load_inference_model
+from inference import load_inference_model as load_from_checkpoint
 from matformer.transformer_blocks import BERTModel
+from matformer.classification_training_data_loader import ClassificationTrainingDataLoader
+from matformer.classification_data_module import ClassificationDataset, ClassificationDataModule
 
 def load_config(path):
     with open(path, "r") as f:
@@ -271,8 +277,24 @@ def main():
     tok_arg = 'bytes'
     ModelClass = BERTModel
     checkpoint_path = "/mnt/llmdata/data/FINALE_32768.ckpt"
-    load_inference_model(checkpoint_path=checkpoint_path, ModelClass=ModelClass, map_location=device, tokenizer=tok_arg)
+    model, cfg = load_from_checkpoint(checkpoint_path=checkpoint_path, ModelClass=ModelClass, map_location=device, tokenizer=tok_arg)
     print("loaded")
+    
+    train_loader = ClassificationTrainingDataLoader(filepath="utils/data.csv", text_column="text", label_column="is_profane")
+
+    dm = ClassificationDataModule(
+        data_loader=train_loader,
+        tokenizer=model.tokenizer,
+        max_seq_len=1024, #cfg.max_seq_len,
+        pad_token_id=model.tokenizer.pad_token_id, 
+        batch_size=32,
+        num_devices=1
+    )
+        
+    print("data loader ready!")
+    dm.setup()
+    print(dm.__len__())
+    print(dm.params())
 
 
 if __name__ == "__main__":
