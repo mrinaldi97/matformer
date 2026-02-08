@@ -48,6 +48,8 @@ class ClassificationDataModule(pl.LightningDataModule):
         
         texts, labels, ids = self.data_loader.get_data()
         
+        print(f"\n! max_seq_len = {self.max_seq_len}!\nThis could cause troncation of samples, choose the value accordingly!\n")
+        
         # Tokenize and create examples
         train_examples = []
         for text, label in zip(texts, labels):
@@ -126,16 +128,16 @@ class ClassificationDataModule(pl.LightningDataModule):
             num_workers=0
         )
 
-def train_dataloader(self):
-    """Create training dataloader with optional distributed sampling"""
-    return self._create_dataloader(self.train_dataset, shuffle=True)
+    def train_dataloader(self):
+        """Create training dataloader with optional distributed sampling"""
+        return self._create_dataloader(self.train_dataset, shuffle=True)
 
-def val_dataloader(self):
-    """Create validation dataloader if validation data exists"""
-    if self.val_dataset is None:
-        return None
-    
-    return self._create_dataloader(self.val_dataset, shuffle=False)
+    def val_dataloader(self):
+        """Create validation dataloader if validation data exists"""
+        if self.val_dataset is None:
+            return None
+        
+        return self._create_dataloader(self.val_dataset, shuffle=False)
     
     def __len__(self):
         """Return dataset length"""
