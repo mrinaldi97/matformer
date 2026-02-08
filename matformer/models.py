@@ -84,54 +84,12 @@ class PL_ModelWrapper(MatformerModule):
             return self._pretraining_step(batch)
           
     def _classification_step(self, batch):
-        """
-        Training step for sequence classification tasks.
-        
-        Expected batch format:
-        {
-            'input_ids': torch.Tensor [batch_size, seq_len],
-            'attention_mask': torch.Tensor [batch_size, seq_len],
-            'labels': torch.Tensor [batch_size]
-        }
-        """
         input_ids = batch['input_ids']
         attention_mask = batch['attention_mask']
         labels = batch['labels']
         
-        # Convert to PaddedTensor format for model compatibility
-        sequence = PaddedTensor(
-            tensor=input_ids,
-            padding_mask=(attention_mask == 0)  # padding_mask is True where padded
-        )
-        
-        # Get model output (hidden states from last layer)
-        # Use return_type='hidden' to get representations before lm_head
-        hidden_states = self(sequence, return_type='hidden')
-        
-        # TODO: when this works add option to use other methods apart from CLS
-        # Extract [CLS] token representation (first token)
-        # Handle both padded and unpadded formats
-        if isinstance(hidden_states, UnpaddedTensor):
-            # For unpadded: extract first token of each sequence using cu_seqlens
-            cls_hidden = []
-            cu_seqlens = hidden_states.cu_seqlens
-            for i in range(len(cu_seqlens) - 1):
-                start_idx = cu_seqlens[i]
-                cls_hidden.append(hidden_states.tensor[start_idx])
-            cls_hidden = torch.stack(cls_hidden)  # [batch_size, hidden_size]
-        else:
-            # For padded: just take first token
-            cls_hidden = hidden_states.tensor[:, 0, :]  # [batch_size, hidden_size]
-        
-        # Classification head (create if doesn't exist)
-        if not hasattr(self, 'classification_head'):
-            self.classification_head = torch.nn.Linear(
-                self.config.hidden_size, 
-                self.config.num_labels
-            ).to(self.device)
-        
-        # Forward through classification head
-        logits = self.classification_head(cls_hidden)  # [batch_size, num_labels]
+        # TransformerWithClassificationHead returns logits directly
+        logits = self(input_ids, attention_mask=attention_mask)  # [batch_size, num_labels]
         
         # Compute classification loss
         loss = torch.nn.functional.cross_entropy(logits, labels)
