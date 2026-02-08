@@ -87,20 +87,6 @@ class ClassificationTrainingDataLoader:
         
         return texts, labels, ids
     
-    def get_dataframe(self, columns: Optional[List[str]] = None) -> pd.DataFrame:
-        """Return DataFrame with specified columns or all loaded columns."""
-        if columns:
-            return self.df[columns].copy()
-        
-        cols = [self.text_column]
-        if self.label_column:
-            cols.append(self.label_column)
-        if self.id_column:
-            cols.append(self.id_column)
-        cols.extend(self.additional_columns)
-        
-        return self.df[cols].copy()
-    
     def __len__(self) -> int:
         return len(self.df)
     
@@ -125,15 +111,3 @@ class ClassificationTrainingDataLoader:
         """Convenience method to get only the count of unique labels."""
         _, num_labels = self.get_label_info()
         return num_labels
-      
-    def get_label_distribution(self) -> Tuple[np.ndarray, np.ndarray]:
-        """
-        Returns:
-            unique_labels: Sorted array of unique label values
-            counts: Frequency of each label
-        """
-        if self.label_column is None:
-            raise ValueError("Cannot get label distribution: label_column not specified")
-        
-        unique_labels, counts = np.unique(self.df[self.label_column].values, return_counts=True)
-        return unique_labels, counts
