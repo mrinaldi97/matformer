@@ -40,7 +40,9 @@ class ClassificationTrainingDataLoader:
         try:
             suffix = self.filepath.suffix.lower()
             
-            if suffix == '.csv':
+            if suffix in ['.conllu', '.conll']:
+                self.df = self._load_conll(suffix == '.conllu')
+            elif suffix == '.csv':
                 self.df = pd.read_csv(self.filepath)
             elif suffix == '.tsv':
                 self.df = pd.read_csv(self.filepath, sep='\t')
@@ -73,6 +75,47 @@ class ClassificationTrainingDataLoader:
         dropped = initial_len - len(self.df)
         if dropped > 0:
             print(f"Dropped {dropped} rows with missing values in critical columns")
+    
+    def _load_conll(self, is_conllu: bool):
+        """Parse CoNLL-U or CoNLL-X to DataFrame with tokens and labels per sentence."""
+        sentences = []
+        tokens, labels = [], []
+        
+        with open(self.filepath, 'r', encoding='utf-8') as f:
+            for line in f:
+                line = line.strip()
+                
+                # Skip comments and metadata
+                if not line or line.startswith('#'):
+                    if tokens:  # End of sentence
+                        sentences.append({
+                            self.text_column: tokens,
+                            self.label_column: labels
+                        })
+                        tokens, labels = [], []
+                    continue
+                
+                parts = line.split('\t')
+                
+                # Skip multiword tokens (CoNLL-U: IDs like "1-2")
+                if '-' in parts[0]:
+                    continue
+                
+                # Extract token (column 1) and POS tag (column 3 for UPOS in CoNLL-U, column 4 in CoNLL-X)
+                token = parts[1]
+                pos_tag = parts[3] if is_conllu else parts[4]
+                
+                tokens.append(token)
+                labels.append(pos_tag)
+        
+        # Add final sentence if exists
+        if tokens:
+            sentences.append({
+                self.text_column: tokens,
+                self.label_column: labels
+            })
+        
+        return pd.DataFrame(sentences)
     
     def get_data(self) -> Tuple[np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
         """
