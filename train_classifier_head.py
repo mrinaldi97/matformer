@@ -69,9 +69,17 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config,num_classes
         tokenizer: Tokenizer name or instance
     """
     # Add classification-specific config
-    config.num_labels = num_classes
     config.classifier_dropout_p = 0.1
     config.classifier_dropout_inplace = False
+    
+    try:
+      config_classes = getattr(config, "num_labels")
+    except:
+      config.num_labels = num_classes
+      
+    if config_classes != num_classes:
+      raise Exception("num classes specified not consistent with config")
+    
     
     # Select model class based on task
     if task == "sentence-level":
@@ -100,6 +108,9 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config,num_classes
     print(f"Loaded pretrained encoder from {checkpoint_path}")
     print(f"Model: {config.name}, {config.num_hidden_layers} layers")
     print(f"Task: {task}, {num_classes} classes")
+    
+    if config.num_labels != 2:
+      model.change_num_labels(config.num_labels)
     
     # === VERIFICATION ===
     print(f"\n--- Loading Verification ---")
@@ -237,7 +248,8 @@ def main():
     else:
         accelerator = device_string = 'cpu'
     
-    train_loader = ClassificationTrainingDataLoader(filepath="utils/data.csv", text_column="text", label_column="is_profane")
+    train_loader = ClassificationTrainingDataLoader(filepath=getattr(config,"data")["train_file"], text_column=getattr(config,"data")["text_label"], label_column=getattr(config,"data")["target_label"])
+    val_loader = ClassificationTrainingDataLoader(filepath=getattr(config,"data")["val_file"], text_column=getattr(config,"data")["text_label"], label_column=getattr(config,"data")["target_label"])
     tokenizer = load_tokenizer(config=config)
 
     print("\nLoading model..")    
@@ -254,10 +266,11 @@ def main():
     print("\nLoading data loader..")
     dm = ClassificationDataModule(
         data_loader=train_loader,
+        val_data_loader = val_loader,
         tokenizer=tokenizer,
         max_seq_len=1024, #cfg.max_seq_len,
         pad_token_id=config.pad_token_id , 
-        batch_size=getattr(config,"batch_size"),
+        batch_size=getattr(config,"training")["batch_size"],
         num_devices=1
     )   
     
