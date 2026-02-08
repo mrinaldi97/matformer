@@ -20,8 +20,10 @@
     "seed": 42
   },
   "data": {
-    "train_file": "utils/data.csv",
-    "val_file": null,
+    "train_file": "test_data/hatexplain/train.json",
+    "val_file": "test_data/hatexplain/val.json",
+    "text_label": "full_text",
+    "target_label": "final_label",
     "num_workers": 1
   },
   "save_dir": "./checkpoints_classification",
