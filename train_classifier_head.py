@@ -221,7 +221,8 @@ def main():
     train_loader = ClassificationTrainingDataLoader(filepath="utils/data.csv", text_column="text", label_column="is_profane")
     
     tokenizer = load_tokenizer(config=config)
-    
+
+    print("\nLoading model..")    
     model = load_model_from_checkpoint(
         checkpoint_path=checkpoint_path,
         config=config,
@@ -231,8 +232,7 @@ def main():
         tokenizer=tokenizer
     )
     
-    print("model loaded")
-
+    print("\nLoading data loader..")
     dm = ClassificationDataModule(
         data_loader=train_loader,
         tokenizer=tokenizer,
@@ -241,8 +241,6 @@ def main():
         batch_size=32,
         num_devices=1
     )
-        
-    print("data loader ready!")
 
 
 if __name__ == "__main__":

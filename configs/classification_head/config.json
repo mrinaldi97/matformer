@@ -6,7 +6,7 @@
   "classifier_dropout_p": 0.1,
   "classifier_dropout_inplace": false,
   "freeze_encoder": false,
-  "pretrained_checkpoint": "path/to/albertone_pretrained.pt",
+  "pretrained_checkpoint": "/mnt/llmdata/data/FINALE_32768.ckpt",
   "training": {
     "optimizer": "adamw",
     "lr": 2e-5,
@@ -20,8 +20,8 @@
     "seed": 42
   },
   "data": {
-    "train_file": "path/to/train.json",
-    "val_file": "path/to/val.json",
+    "train_file": "utils/data.csv",
+    "val_file": null,
     "num_workers": 4
   },
   "save_dir": "./checkpoints_classification",
