@@ -827,6 +827,8 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         print(f"Number of labels changed to {new_num_labels}")
 
     def forward(self, x, attention_mask=None, **kwargs):
+        # Remove return_type before passing to encoder
+        kwargs.pop('return_type', None)
         hidden_states = self.encoder(x, **kwargs) # (B,S,D)
 
         if self.pooling_type == 'cls':

@@ -368,7 +368,7 @@ class PL_ModelWrapper(MatformerModule):
                 except Exception:
                     pass
     def configure_optimizers(self):
-        if self.train_config.get("no_decay_for_embedding", False) and self.train_config["optimizer"] != "muon":
+        if getattr(self.train_config, "no_decay_for_embedding", False) and self.train_config["optimizer"] != "muon":
             raise ValueError("no_decay_for_embedding for optimizers different than Muon not implemented yet! (Altough it's easy). Please remove it ")
 
         if self.train_config["optimizer"] == "muonclip":
@@ -389,16 +389,16 @@ class PL_ModelWrapper(MatformerModule):
             
             muon_config = MuonConfig(
                 lr=base_lr, ###To check!!!
-                muon_beta=self.train_config.get("muon_momentum", 0.95),
-                muon_decay=self.train_config.get("weight_decay", 0.01),
-                ns_steps=self.train_config.get("muon_ns_steps", 5),
-                adam_betas=self.train_config.get("betas", (0.9, 0.95)),
-                adam_decay=self.train_config.get("weight_decay", 0.01),
-                adam_eps=self.train_config.get("eps", 1e-10),
+                muon_beta=getattr(self.train_config,"muon_momentum", 0.95),
+                muon_decay=getattr(self.train_config,"weight_decay", 0.01),
+                ns_steps=getattr(self.train_config,"muon_ns_steps", 5),
+                adam_betas=getattr(self.train_config,"betas", (0.9, 0.95)),
+                adam_decay=getattr(self.train_config,"weight_decay", 0.01),
+                adam_eps=getattr(self.train_config,"eps", 1e-10),
                 enable_clipping=True,
                 clipping_layers_mapping={"q_proj": "packed_proj", "k_proj": "packed_proj"},
-                clipping_threshold=self.train_config.get("clip_threshold", 50.0),
-                clipping_alpha=self.train_config.get("clip_alpha", 0.5),
+                clipping_threshold=getattr(self.train_config,"clip_threshold", 50.0),
+                clipping_alpha=getattr(self.train_config,"clip_alpha", 0.5),
                 log_max_logits=False,
                 cans_ortho=False,
                 estimate_lower_bound=False
@@ -428,10 +428,10 @@ class PL_ModelWrapper(MatformerModule):
             muon_lr = base_lr * 0.2 * math.sqrt(max(muon_params[0].shape[:2])) if muon_params else base_lr
             optimizer = [
                 FlashMuon(muon_params, lr=muon_lr, 
-                         momentum=self.train_config.get("muon_momentum", 0.95), rank=0, world_size=1),
+                         momentum=getattr(self.train_config,"muon_momentum", 0.95), rank=0, world_size=1),
                 torch.optim.AdamW(adamw_params, lr=base_lr, 
-                                betas=self.train_config.get("betas", (0.9, 0.95)),
-                                weight_decay=self.train_config.get("weight_decay", 0.01))
+                                betas=getattr(self.train_config,"betas", (0.9, 0.95)),
+                                weight_decay=getattr(self.train_config,"weight_decay", 0.01))
             ]
             
         elif self.train_config["optimizer"] == "muon":
@@ -450,7 +450,7 @@ class PL_ModelWrapper(MatformerModule):
                 else:
                     muon_params.append(param)
                     #print(f"{name} in Muon")
-                if self.train_config.get("no_decay_for_embedding", False) and ("lm_head" in name or "embed_tokens" in name):
+                if getattr(self.train_config,"no_decay_for_embedding", False) and ("lm_head" in name or "embed_tokens" in name):
                     no_decay_params.append(param)
                     #print(f"{name} has weight decay disabled.")
                               
@@ -458,14 +458,14 @@ class PL_ModelWrapper(MatformerModule):
             
             optimizer = Muon(
                 lr=base_lr,
-                wd=self.train_config.get("weight_decay", 0.01),
+                wd=getattr(self.train_config,"weight_decay", 0.01),
                 muon_params=muon_params,
-                momentum=self.train_config.get("muon_momentum", 0.95),
-                nesterov=self.train_config.get("muon_nesterov", True),
-                ns_steps=self.train_config.get("muon_ns_steps", 5),
+                momentum=getattr(self.train_config,"muon_momentum", 0.95),
+                nesterov=getattr(self.train_config,"muon_nesterov", True),
+                ns_steps=getattr(self.train_config,"muon_ns_steps", 5),
                 adamw_params=adamw_params,
-                adamw_betas=self.train_config.get("betas", (0.9, 0.95)),
-                adamw_eps=self.train_config.get("eps", 1e-10),
+                adamw_betas=getattr(self.train_config,"betas", (0.9, 0.95)),
+                adamw_eps=getattr(self.train_config,"eps", 1e-10),
                 no_decay_params=no_decay_params
             )
             
@@ -473,29 +473,29 @@ class PL_ModelWrapper(MatformerModule):
             optimizer = AdamW(
                 self.parameters(),
                 lr=self.train_config["lr"],
-                weight_decay=self.train_config.get("weight_decay", 0.01),
+                weight_decay=getattr(self.train_config,"weight_decay", 0.01),
             )
         elif self.train_config["optimizer"] == "adam":
             optimizer = Adam(
                 self.parameters(),
                 lr=self.train_config["lr"],
-                weight_decay=self.train_config.get("weight_decay", 0.01),
+                weight_decay=getattr(self.train_config,"weight_decay", 0.01),
             )
 
         # === Scheduler ===
-        if not self.train_config.get("lr_scheduling", False):
+        if not getattr(self.train_config,"lr_scheduling", False):
             return optimizer
 
 
-        total_steps = self.train_config.get("total_steps") 
+        total_steps = getattr(self.train_config,"total_steps") 
         
         self.total_training_steps = total_steps
         
         def create_scheduler(opt):
-            if self.train_config.get("scheduler") == "custom":
-                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps) 
-                hold = int(self.train_config.get("hold_steps", 0.10) * total_steps)
-                target = self.train_config.get("final_lr", 0.0)
+            if getattr(self.train_config,"scheduler") == "custom":
+                warmup = int(getattr(self.train_config,"warmup_steps", 0.05) * total_steps) 
+                hold = int(getattr(self.train_config,"hold_steps", 0.10) * total_steps)
+                target = getattr(self.train_config,"final_lr", 0.0)
                 base_lr = opt.param_groups[0]["lr"]
                 factor = target / base_lr if base_lr > 0 else 0.0
 
@@ -509,18 +509,18 @@ class PL_ModelWrapper(MatformerModule):
 
                 return torch.optim.lr_scheduler.LambdaLR(opt, lr_schedule, last_epoch=-1)
 
-            elif self.train_config.get("scheduler") == "cosine_decay":
+            elif getattr(self.train_config,"scheduler") == "cosine_decay":
                 from transformers import get_cosine_schedule_with_warmup
-                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
+                warmup = int(getattr(self.train_config,"warmup_steps", 0.05) * total_steps)
                 return get_cosine_schedule_with_warmup(
                     optimizer=opt,
                     num_warmup_steps=warmup,
                     num_training_steps=total_steps
                 )
 
-            elif self.train_config.get("scheduler") == "linear_decay":
+            elif getattr(self.train_config,"scheduler") == "linear_decay":
                 from transformers import get_linear_schedule_with_warmup
-                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
+                warmup = int(getattr(self.train_config,"warmup_steps", 0.05) * total_steps)
                 return get_linear_schedule_with_warmup(
                     optimizer=opt,
                     num_warmup_steps=warmup,
@@ -528,9 +528,9 @@ class PL_ModelWrapper(MatformerModule):
                 )
 
             else:
-                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
+                warmup = int(getattr(self.train_config,"warmup_steps", 0.05) * total_steps)
                 return get_scheduler(
-                    name=self.train_config.get("scheduler", "linear"),
+                    name=getattr(self.train_config,"scheduler", "linear"),
                     optimizer=opt,
                     num_warmup_steps=warmup,
                     num_training_steps=total_steps
@@ -547,7 +547,7 @@ class PL_ModelWrapper(MatformerModule):
         }
 
     @staticmethod
-    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, map_location=None, tokenizer=None, overrides=None,varlen_strategy='padding', external_mapping=None):
+    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, train_config=None, map_location=None, tokenizer=None, overrides=None,varlen_strategy='padding', external_mapping=None):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
 
         if config is None:
@@ -574,7 +574,7 @@ class PL_ModelWrapper(MatformerModule):
             varlen_strategy=varlen_strategy
         )     
 
-        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, tokenizer=tokenizer, device=map_location, train_config=None)  
+        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, train_config=train_config, tokenizer=tokenizer, device=map_location)  
         #model.load_state_dict(checkpoint['state_dict'])
         model.load_stable_state_dict(checkpoint['state_dict'], strict=False, external_mapping=external_mapping)
         #print("Found this config:")

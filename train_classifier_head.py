@@ -56,7 +56,7 @@ def build_checkpoint_mapping(num_layers=28):
     
     return mapping
   
-def load_model_from_checkpoint(checkpoint_path, config, num_classes, task, map_location='cpu', tokenizer=None):
+def load_model_from_checkpoint(checkpoint_path, config, train_config,num_classes, task, map_location='cpu', tokenizer=None):
     """
     Load classification model with pretrained encoder weights using PL_ModelWrapper.
     
@@ -90,6 +90,7 @@ def load_model_from_checkpoint(checkpoint_path, config, num_classes, task, map_l
         checkpoint_path=checkpoint_path,
         ModelClass=ModelClass,
         config=config,
+        train_config=train_config,
         map_location=map_location,
         tokenizer=tokenizer,
         varlen_strategy='padding',
@@ -211,21 +212,39 @@ def extract_config_from_checkpoint(checkpoint_path):
   return checkpoint['hyper_parameters']['config']  
 
 def main():
+  
+    print("\nINIZIO")
+    print(torch.cuda.memory_allocated() / 1e9, "GB allocated")
+    print(torch.cuda.memory_reserved() / 1e9, "GB reserved")
+
     checkpoint_path = "/mnt/llmdata/data/FINALE_32768.ckpt"
     config_path = "configs/classification_head/config.json"
+    start_scratch = True
   
     # config
     print("\n --- Config ---")
     config = load_classification_config(config_path, checkpoint_path)
     print("\n"+ "-"*40+"\n")
-    train_loader = ClassificationTrainingDataLoader(filepath="utils/data.csv", text_column="text", label_column="is_profane")
     
+    save_dir = getattr(config, 'save_dir', './checkpoints')
+    pl.seed_everything(getattr(config, 'seed', 27))
+    # Detect device
+    if torch.cuda.is_available():
+        accelerator = 'gpu'
+        device_string = 'cuda'
+    elif torch.backends.mps.is_available():
+        accelerator = device_string = 'mps'
+    else:
+        accelerator = device_string = 'cpu'
+    
+    train_loader = ClassificationTrainingDataLoader(filepath="utils/data.csv", text_column="text", label_column="is_profane")
     tokenizer = load_tokenizer(config=config)
 
     print("\nLoading model..")    
     model = load_model_from_checkpoint(
         checkpoint_path=checkpoint_path,
         config=config,
+        train_config=getattr(config,'training'),
         num_classes=train_loader.get_num_labels(),
         task="sentence-level",
         map_location="cuda",
@@ -241,6 +260,66 @@ def main():
         batch_size=32,
         num_devices=1
     )
+    
+    
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    checkpoint_name = getattr(config, 'name', 'name')
+    run_name = getattr(config, 'wandb_run_name', 'training-run')
+    # Setup logging
+    wandb_logger = WandbLogger(
+        name=f"{run_name}_{timestamp}",
+        project=getattr(config, 'wandb_project', 'matformer'),
+        config=config
+    )
+    
+    checkpoint = ModelCheckpoint(
+        dirpath=save_dir,
+        filename=checkpoint_name,
+        save_top_k=1,
+        save_last=True,
+        every_n_train_steps=getattr(config, "save_every_n_steps", None),
+        enable_version_counter=True,
+        save_on_train_epoch_end=True
+    )
+    torch.set_float32_matmul_precision('high')
+    
+    strategy=DDPStrategy(gradient_as_bucket_view=True,static_graph=True,find_unused_parameters=False)
+    trainer = pl.Trainer(
+        logger=wandb_logger,
+        callbacks=[checkpoint],
+        precision=getattr(config, 'precision', 'bf16-mixed'),
+        gradient_clip_val=getattr(config, 'gradient_clip_val', 1),
+        accelerator=accelerator,
+        devices=1,
+        log_every_n_steps=10,
+        accumulate_grad_batches=getattr(config, 'accumulate_grad_batches', 1),
+        default_root_dir=save_dir,
+        max_epochs=getattr(config, 'max_epochs',5),
+        max_steps=getattr(config, 'max_steps',-1),
+        strategy=strategy,
+        num_nodes=1
+    )
+    
+    print("\nTRAINER")
+    print(torch.cuda.memory_allocated() / 1e9, "GB allocated")
+    print(torch.cuda.memory_reserved() / 1e9, "GB reserved")
+    
+    # Handle checkpoint loading
+    ckpt_path = None
+    if not start_scratch:
+        if ckpt_arg and os.path.exists(ckpt_arg):
+            ckpt_path = ckpt_arg
+        else:
+            last_ckpt = Path(save_dir) / "last.ckpt"
+            if last_ckpt.exists():
+                print(f"Resuming training from {last_ckpt}")
+                ckpt_path = str(last_ckpt)
+            else:
+                print("No checkpoint found, starting from scratch.")
+    
+    trainer.fit(model, dm, ckpt_path=ckpt_path)
+    
+    
 
 
 if __name__ == "__main__":
