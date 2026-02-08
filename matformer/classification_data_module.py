@@ -101,63 +101,41 @@ class ClassificationDataModule(pl.LightningDataModule):
             "labels": labels_tensor
         }
     
-    def train_dataloader(self):
-        """Create training dataloader with optional distributed sampling"""
-        # Check if distributed training is initialized
-        is_distributed = dist.is_available() and dist.is_initialized()
-        
-        if is_distributed:
-            sampler = DistributedSampler(
-                self.train_dataset,
-                shuffle=True
-            )
-            dataloader = DataLoader(
-                self.train_dataset,
-                batch_size=self.batch_size,
-                sampler=sampler,
-                collate_fn=self.collate_fn,
-                num_workers=0
-            )
-        else:
-            dataloader = DataLoader(
-                self.train_dataset,
-                batch_size=self.batch_size,
-                shuffle=True,
-                collate_fn=self.collate_fn,
-                num_workers=0
-            )
-        
-        return dataloader
+    def _create_dataloader(self, dataset, shuffle):
+    """Helper method to create dataloader with optional distributed sampling"""
+    is_distributed = dist.is_available() and dist.is_initialized()
     
-    def val_dataloader(self):
-        """Create validation dataloader if validation data exists"""
-        if self.val_dataset is None:
-            return None
-        
-        is_distributed = dist.is_available() and dist.is_initialized()
-        
-        if is_distributed:
-            sampler = DistributedSampler(
-                self.val_dataset,
-                shuffle=False
-            )
-            dataloader = DataLoader(
-                self.val_dataset,
-                batch_size=self.batch_size,
-                sampler=sampler,
-                collate_fn=self.collate_fn,
-                num_workers=0
-            )
-        else:
-            dataloader = DataLoader(
-                self.val_dataset,
-                batch_size=self.batch_size,
-                shuffle=False,
-                collate_fn=self.collate_fn,
-                num_workers=0
-            )
-        
-        return dataloader
+    if is_distributed:
+        sampler = DistributedSampler(
+            dataset,
+            shuffle=shuffle
+        )
+        return DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            sampler=sampler,
+            collate_fn=self.collate_fn,
+            num_workers=0
+        )
+    else:
+        return DataLoader(
+            dataset,
+            batch_size=self.batch_size,
+            shuffle=shuffle,
+            collate_fn=self.collate_fn,
+            num_workers=0
+        )
+
+def train_dataloader(self):
+    """Create training dataloader with optional distributed sampling"""
+    return self._create_dataloader(self.train_dataset, shuffle=True)
+
+def val_dataloader(self):
+    """Create validation dataloader if validation data exists"""
+    if self.val_dataset is None:
+        return None
+    
+    return self._create_dataloader(self.val_dataset, shuffle=False)
     
     def __len__(self):
         """Return dataset length"""
