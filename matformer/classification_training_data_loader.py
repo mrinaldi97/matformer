@@ -5,7 +5,7 @@ import numpy as np
 from datasets import Dataset, Features, Value, ClassLabel, Sequence
 
 class ClassificationTrainingDataLoader:
-    """Load and validate CSV data for model training with custom column mapping."""
+    """Load and validate data for model training with custom column mapping."""
     
     def __init__(
         self,
@@ -17,7 +17,7 @@ class ClassificationTrainingDataLoader:
     ):
         """
         Args:
-            filepath: Path to CSV file
+            filepath: Path to file
             text_column: Name of column containing text data
             label_column: Name of column containing labels (optional for inference)
             id_column: Name of column containing IDs (optional)
@@ -33,7 +33,7 @@ class ClassificationTrainingDataLoader:
         self._validate_and_load()
     
     def _validate_and_load(self):
-        """Load CSV and validate required columns exist."""
+        """Load CSV,TSV,JSON,CONLLU,CONLLX and validate required columns exist."""
         if not self.filepath.exists():
             raise FileNotFoundError(f"File not found: {self.filepath}")
         
