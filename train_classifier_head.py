@@ -257,10 +257,9 @@ def main():
         tokenizer=tokenizer,
         max_seq_len=1024, #cfg.max_seq_len,
         pad_token_id=config.pad_token_id , 
-        batch_size=32,
+        batch_size=getattr(config,"batch_size"),
         num_devices=1
-    )
-    
+    )   
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     checkpoint_name = getattr(config, 'name', 'name')
@@ -316,6 +315,29 @@ def main():
                 ckpt_path = str(last_ckpt)
             else:
                 print("No checkpoint found, starting from scratch.")
+                
+    # After dm initialization, before trainer.fit():
+    print("\n=== DATA BATCH CHECK ===")
+    dm.setup()
+    sample_batch = next(iter(dm.train_dataloader()))
+    print(f"Batch input_ids shape: {sample_batch['input_ids'].shape}")
+    print(f"Batch labels shape: {sample_batch['labels'].shape}")
+    print(f"Memory after batch: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
+
+    # Test forward pass manually
+    print("\n=== MANUAL FORWARD TEST ===")
+    model = model.cuda()
+    print(f"Memory after model.cuda(): {torch.cuda.memory_allocated() / 1e9:.2f} GB")
+
+    with torch.no_grad():
+        sample_batch = {k: v.cuda() for k, v in sample_batch.items()}
+        print(f"Memory after batch.cuda(): {torch.cuda.memory_allocated() / 1e9:.2f} GB")
+        
+        output = model(sample_batch['input_ids'])
+        print(f"Output shape: {output.shape}")
+        print(f"Memory after forward: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
+
+    print("\n=== Starting trainer.fit() ===")
     
     trainer.fit(model, dm, ckpt_path=ckpt_path)
     
