@@ -34,6 +34,9 @@ class ClassificationTrainingDataLoader:
     
     def _validate_and_load(self):
         """Load CSV,TSV,JSON,CONLLU,CONLLX and validate required columns exist."""
+        
+        print("\n--- WARNING ---\nAs of now, the loader loads all data in memory\n\n")
+        
         if not self.filepath.exists():
             raise FileNotFoundError(f"File not found: {self.filepath}")
         
