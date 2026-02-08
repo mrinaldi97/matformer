@@ -83,6 +83,14 @@ class PL_ModelWrapper(MatformerModule):
         else:                                          # Pretraining task
             return self._pretraining_step(batch)
           
+          
+    """
+    Manca però la loss pesata in base alle classi (es. per contrastare dataset sbilanciata), 
+    bisogna vedere se ci sono altre loss interessanti da aggiungere, e soprattutto
+    al momento è limitato a label discrete per le quali giustamente si usa la cross-entropy. 
+    Sarebbe fico renderlo funzionante anche per task di regressione, quindi con una label float
+    e una loss diversa (MSE? Se ce ne sono varie, sarebbe utile renderle selezionabili). 
+    """
     def _classification_step(self, batch):
         input_ids = batch['input_ids']
         attention_mask = batch['attention_mask']

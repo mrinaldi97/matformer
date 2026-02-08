@@ -830,6 +830,7 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         print(f"Input x shape: {x.shape if isinstance(x, torch.Tensor) else 'not tensor'}")
         print(f"attention_mask shape: {attention_mask.shape if attention_mask is not None else 'None'}")
         # Remove return_type before passing to encoder
+        # TODO: perchè?
         kwargs.pop('return_type', None)
         hidden_states = self.encoder(x, **kwargs) # (B,S,D)
 

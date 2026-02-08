@@ -71,6 +71,10 @@ class ClassificationDataModule(pl.LightningDataModule):
                 val_examples.append((input_ids, int(label)))
             self.val_dataset = ClassificationDataset(val_examples)
     
+    
+    """
+    La collate_fn restituisce un dizionario input_ids, attention_mask, labels. Sta quindi passando degli oggetti torch.Tensor; È possibile con molta facilità integrare in questo punto la logica padding/unpadding di matformer in modo da armonizzarlo con il codice usato in addestramento;
+    """
     def collate_fn(self, batch):
         """
         Collate function to pad sequences and create batches
