@@ -35,28 +35,7 @@ import torch.serialization as serialization
 
 serialization.add_safe_globals([BERTModel, TransformerWithEmbeddingHead,TransformerWithClassificationHead, TransformerWithTokenClassificationHead, ModelConfig])
 
-# Build checkpoint key mapping
-def build_checkpoint_mapping(num_layers=28):
-    mapping = {
-        'encoder.embed_tokens.weight': 'embed_tokens.weight',
-        'encoder.blocks.norm.weight': 'blocks.norm.weight',
-    }
-    
-    for i in range(num_layers):
-        layer_maps = {
-            f'encoder.blocks.layers.{i}.attn_norm.weight': f'blocks.layers.{i}.attn_norm.weight',
-            f'encoder.blocks.layers.{i}.mlp_norm.weight': f'blocks.layers.{i}.mlp_norm.weight',
-            f'encoder.blocks.layers.{i}.attn.qkv_proj.weight': f'blocks.layers.{i}.self_attn.packed_proj.weight',
-            f'encoder.blocks.layers.{i}.attn.o_proj.weight': f'blocks.layers.{i}.self_attn.out_proj.weight',
-            f'encoder.blocks.layers.{i}.mlp.gate_proj.weight': f'blocks.layers.{i}.mlp.gate_proj.weight',
-            f'encoder.blocks.layers.{i}.mlp.up_proj.weight': f'blocks.layers.{i}.mlp.up_proj.weight',
-            f'encoder.blocks.layers.{i}.mlp.down_proj.weight': f'blocks.layers.{i}.mlp.down_proj.weight',
-        }
-        mapping.update(layer_maps)
-    
-    return mapping
-  
-def load_model_from_checkpoint(checkpoint_path, config, train_config,num_classes, task, map_location='cpu', tokenizer=None):
+def load_model_from_checkpoint(checkpoint_path, config, train_config, num_classes, task, map_location='cpu', tokenizer=None):
     """
     Load classification model with pretrained encoder weights using PL_ModelWrapper.
     
@@ -80,18 +59,15 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config,num_classes
     if config_classes != num_classes:
       raise Exception("num classes specified not consistent with config")
     
-    
     # Select model class based on task
     if task == "sentence-level":
         ModelClass = TransformerWithClassificationHead
-        config.pooling_type = 'cls'  # or 'mean'
+        model_kwargs = {'num_features': num_classes, 'pooling_type': 'cls'}
     elif task == "token-level":
         ModelClass = TransformerWithTokenClassificationHead
+        model_kwargs = {'num_labels': num_classes}
     else:
         raise ValueError(f"task must be 'sentence-level' or 'token-level', got {task}")
-    
-    # Build checkpoint key mapping for pretrained weights
-    checkpoint_mapping = build_checkpoint_mapping(num_layers=config.num_hidden_layers)
     
     # Load using PL_ModelWrapper
     model, config = PL_ModelWrapper.load_from_checkpoint(
@@ -102,7 +78,8 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config,num_classes
         map_location=map_location,
         tokenizer=tokenizer,
         varlen_strategy='padding',
-        external_mapping=checkpoint_mapping  # Handle key name mismatch
+        load_encoder_only=True,  # Auto-prefix 'encoder.' to pretrained weights
+        **model_kwargs
     )
     
     print(f"Loaded pretrained encoder from {checkpoint_path}")

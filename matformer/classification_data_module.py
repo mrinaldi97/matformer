@@ -108,29 +108,29 @@ class ClassificationDataModule(pl.LightningDataModule):
         }
     
     def _create_dataloader(self, dataset, shuffle):
-    """Helper method to create dataloader with optional distributed sampling"""
-    is_distributed = dist.is_available() and dist.is_initialized()
-    
-    if is_distributed:
-        sampler = DistributedSampler(
-            dataset,
-            shuffle=shuffle
-        )
-        return DataLoader(
-            dataset,
-            batch_size=self.batch_size,
-            sampler=sampler,
-            collate_fn=self.collate_fn,
-            num_workers=0
-        )
-    else:
-        return DataLoader(
-            dataset,
-            batch_size=self.batch_size,
-            shuffle=shuffle,
-            collate_fn=self.collate_fn,
-            num_workers=0
-        )
+        """Helper method to create dataloader with optional distributed sampling"""
+        is_distributed = dist.is_available() and dist.is_initialized()
+        
+        if is_distributed:
+            sampler = DistributedSampler(
+                dataset,
+                shuffle=shuffle
+            )
+            return DataLoader(
+                dataset,
+                batch_size=self.batch_size,
+                sampler=sampler,
+                collate_fn=self.collate_fn,
+                num_workers=0
+            )
+        else:
+            return DataLoader(
+                dataset,
+                batch_size=self.batch_size,
+                shuffle=shuffle,
+                collate_fn=self.collate_fn,
+                num_workers=0
+            )
 
     def train_dataloader(self):
         """Create training dataloader with optional distributed sampling"""
