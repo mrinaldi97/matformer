@@ -2,7 +2,6 @@ import pandas as pd
 from pathlib import Path
 from typing import Optional, Union, List, Tuple
 import numpy as np
-from datasets import Dataset, Features, Value, ClassLabel, Sequence
 
 class ClassificationTrainingDataLoader:
     """Load and validate data for model training with custom column mapping."""
@@ -158,75 +157,3 @@ class ClassificationTrainingDataLoader:
         """Convenience method to get only the count of unique labels."""
         _, num_labels = self.get_label_info()
         return num_labels
-      
-    def to_hf_dataset(self) -> "Dataset":
-        """
-        Convert loaded data to HuggingFace Dataset format.
-        
-        Returns:
-            Dataset object compatible with HuggingFace transformers
-        """    
-        
-        if self.label_column is None:
-            raise ValueError("Cannot create HF dataset: label_column not specified")
-        
-        # Determine task type and get configuration
-        first_text = self.df[self.text_column].iloc[0]
-        is_token_level = isinstance(first_text, list)
-        
-        if is_token_level:
-            unique_labels, data_dict, features = self._prepare_token_classification()
-        else:
-            unique_labels, data_dict, features = self._prepare_sequence_classification()
-        
-        # Add ID column if present
-        if self.id_column:
-            data_dict["id"] = self.df[self.id_column].tolist()
-            features["id"] = Value("string")
-        
-        # Create dataset with label mappings
-        label2id = {label: idx for idx, label in enumerate(unique_labels)}
-        dataset = Dataset.from_dict(data_dict, features=features)
-        dataset.label2id = label2id
-        dataset.id2label = {idx: label for label, idx in label2id.items()}
-        
-        return dataset
-
-    def _prepare_token_classification(self):
-        """Helper for token-level tasks (POS, NER)."""
-        # Get all unique labels across all sentences
-        all_labels = [label for labels in self.df[self.label_column] for label in labels]
-        unique_labels = sorted(set(all_labels))
-        label2id = {label: idx for idx, label in enumerate(unique_labels)}
-        
-        data_dict = {
-            "tokens": self.df[self.text_column].tolist(),
-            "tags": [
-                [label2id[label] for label in labels]
-                for labels in self.df[self.label_column]
-            ]
-        }
-        
-        features = Features({
-            "tokens": Sequence(Value("string")),
-            "tags": Sequence(ClassLabel(names=unique_labels))
-        })
-        
-        return unique_labels, data_dict, features
-
-    def _prepare_sequence_classification(self):
-        """Helper for sequence-level tasks (sentiment, topic)."""
-        unique_labels = sorted(self.df[self.label_column].unique())
-        label2id = {label: idx for idx, label in enumerate(unique_labels)}
-        
-        data_dict = {
-            "text": self.df[self.text_column].tolist(),
-            "label": [label2id[label] for label in self.df[self.label_column]]
-        }
-        
-        features = Features({
-            "text": Value("string"),
-            "label": ClassLabel(names=unique_labels)
-        })
-        
-        return unique_labels, data_dict, features
