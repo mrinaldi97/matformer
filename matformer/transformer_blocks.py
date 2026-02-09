@@ -859,12 +859,18 @@ class TransformerWithClassificationHead(MatformerModule):
 
         print(f"Number of labels changed to {new_num_labels}")
 
-    def forward(self, x, attention_mask=None, **kwargs):
+    def forward(self, x, **kwargs):
         # Remove return_type before passing to encoder
         # TODO: perchè?
         kwargs.pop('return_type', None)
         hidden_states = self.encoder(x, **kwargs) # (B,S,D)
-
+        
+        # Extract mask from PaddedTensor for pooling
+        if isinstance(x, PaddedTensor):
+            attention_mask = ~x.padding_mask  # True for real tokens
+        else:
+            attention_mask = None
+        
         if self.pooling_type == 'cls':
             # [CLS] in pos. 0
             pooled_output = hidden_states.tensor[:, 0, :]

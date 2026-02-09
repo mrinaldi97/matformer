@@ -100,28 +100,26 @@ class PL_ModelWrapper(MatformerModule):
     """
     def _classification_step(self, batch):
         input_ids = batch['input_ids']
-        attention_mask = batch['attention_mask']
         labels = batch['labels']
         
-        # TransformerWithClassificationHead returns logits directly
-        logits = self(input_ids, attention_mask=attention_mask)  # [batch_size, num_labels]
-        
-        # Compute classification loss
+        logits = self(input_ids)
         loss = torch.nn.functional.cross_entropy(logits, labels)
         
-        # Logging
-        self.log('train/classification_loss', loss, prog_bar=True, batch_size=len(labels))
+        batch_size = len(labels)
+        self.log('train/classification_loss', loss, prog_bar=True, batch_size=batch_size)
         
         # Compute accuracy
         with torch.no_grad():
             preds = logits.argmax(dim=-1)
             acc = (preds == labels).float().mean()
-            self.log('train/classification_accuracy', acc, prog_bar=True, on_step=True, on_epoch=True, batch_size=len(labels))
+            self.log('train/classification_accuracy', acc, prog_bar=True, 
+                    on_step=True, on_epoch=True, batch_size=batch_size)
         
         # Log learning rate
         try:
             current_lr = self.lr_schedulers().get_last_lr()[0]
-            self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False, batch_size=len(labels))
+            self.log("lr", current_lr, prog_bar=True, on_step=True, 
+                    on_epoch=False, batch_size=batch_size)
         except:
             pass
         

@@ -5,6 +5,7 @@ import torch.distributed as dist
 from torch.utils.data.distributed import DistributedSampler
 import json
 import csv
+from matformer.tensors_dataclasses import PaddedTensor
 
 class ClassificationDataset(Dataset):
     def __init__(self, examples):
@@ -76,34 +77,22 @@ class ClassificationDataModule(pl.LightningDataModule):
     La collate_fn restituisce un dizionario input_ids, attention_mask, labels. Sta quindi passando degli oggetti torch.Tensor; È possibile con molta facilità integrare in questo punto la logica padding/unpadding di matformer in modo da armonizzarlo con il codice usato in addestramento;
     """
     def collate_fn(self, batch):
-        """
-        Collate function to pad sequences and create batches
-        
-        Args:
-            batch: List of (input_ids, label) tuples
-        
-        Returns:
-            Dict with input_ids, attention_mask, and labels tensors
-        """
         input_ids_list = []
         labels_list = []
         
         for input_ids, label in batch:
-            # Pad to max_seq_len
             padded = input_ids + [self.pad_token_id] * (self.max_seq_len - len(input_ids))
             input_ids_list.append(padded)
             labels_list.append(label)
         
-        # Convert to tensors
         input_ids_tensor = torch.tensor(input_ids_list, dtype=torch.long)
         labels_tensor = torch.tensor(labels_list, dtype=torch.long)
         
-        # Create attention mask (1 for real tokens, 0 for padding)
-        attention_mask = (input_ids_tensor != self.pad_token_id).long()
+        padding_mask = (input_ids_tensor == self.pad_token_id)
+        padded_sequence = PaddedTensor(tensor=input_ids_tensor, padding_mask=padding_mask)
         
         return {
-            "input_ids": input_ids_tensor,
-            "attention_mask": attention_mask,
+            "input_ids": padded_sequence,
             "labels": labels_tensor
         }
     
