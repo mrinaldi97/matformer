@@ -215,7 +215,7 @@ def load_and_validate_classification_config_from_dict(config_dict: dict) -> Clas
     
     # Validate required fields
     required = ['hidden_size', 'num_hidden_layers', 'num_attention_heads', 
-                'vocab_size', 'num_labels', 'default_layer']
+                'vocab_size', 'default_layer']
     missing = [f for f in required if f not in config_dict]
     if missing:
         raise ValueError(f"Missing required fields: {missing}")
