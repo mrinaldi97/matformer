@@ -91,7 +91,7 @@ class MatformerConfig(PretrainedConfig):
 
 class MatformerPreTrainedModel(PreTrainedModel):
     config_class = MatformerConfig
-    base_model_prefix = "matformer"
+    base_model_prefix = "matformer_model"
     supports_gradient_checkpointing = False
     _no_split_modules = ["TransformerBlock"]
 
@@ -147,8 +147,8 @@ class MatformerPreTrainedModel(PreTrainedModel):
         model_class_map = {
             'MatformerForCausalLM': Autoregressive_Model,
             'MatformerForMaskedLM': BERTModel,
-            'MatformerForSequenceClassification': TransformerWithClassificationHead,
-            'MatformerForTokenClassification': TransformerWithTokenClassificationHead,
+            'MatformerForSequenceClassification': BERTModel,
+            'MatformerForTokenClassification': BERTModel,
             'MatformerModel': eval(config._model_class) if config._model_class else Autoregressive_Model
         }
         
@@ -349,17 +349,33 @@ class MatformerForMaskedLM(MatformerPreTrainedModel):
 
 
 class MatformerForSequenceClassification(MatformerPreTrainedModel):
-    def __init__(self, config: MatformerConfig):
+    def __init__(self, config: MatformerConfig, pooling_type='cls', dropout_rate=0.1):
         super().__init__(config)
         self.matformer_model = None
         self.num_labels = config.num_labels
-
+        self.classifier = None
+        self.pooling_type = pooling_type
+        self.dropout = nn.Dropout(dropout_rate)
     @classmethod
     def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
         
         instance = super()._load_from_checkpoint(checkpoint_path, config, map_location)
         #set_seed(config.seed)
-        instance.matformer_model.model.change_num_labels(instance.num_labels)
+        #instance.matformer_model.model.change_num_labels(instance.num_labels)
+        if hasattr(instance.matformer_model.model, 'hidden_size'):
+            hidden_size = instance.matformer_model.model.hidden_size
+        elif hasattr(instance.config, 'hidden_size'):
+            hidden_size = instance.config.hidden_size
+        else:
+            # Default fallback
+            hidden_size = 768
+        
+        # Create classification head: dropout + linear layer
+        instance.classifier = nn.Sequential(
+            # nn.Dropout(0.1), #there are two dropouts in the original code, one in the model and one in the head, we keep both for now
+            nn.Linear(hidden_size, config.num_labels)
+        ).to(map_location).to(torch.bfloat16)
+
         return instance   
     
     def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
@@ -376,8 +392,24 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
             #we actually do not directly call the classification head but we still require it as a 'type check'
             # raise Exception("The underneath model of a MatformerForSequenceClassification needs to have an attr 'classification_head'")
         
-        logits = self.matformer_model(input_ids, 
-                                            attention_mask=attention_mask)
+        hidden_states = self.matformer_model(input_ids, return_type='hidden')
+        if self.pooling_type == 'cls':
+            # [CLS] in pos. 0
+            pooled_output = hidden_states.tensor[:, 0, :]
+        elif self.pooling_type == 'mean':
+            #TODO: check if the mask works
+            if attention_mask is None:
+                pooled_output = hidden_states.tensor.mean(dim=1)
+            else:
+                mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.tensor.size()).to(hidden_states.dtype)
+                sum_hidden = torch.sum(hidden_states.tensor * mask_expanded, dim=1)
+                sum_mask = torch.clamp(mask_expanded.sum(dim=1), min=1e-9)
+                pooled_output = sum_hidden / sum_mask
+        else:
+            raise ValueError(f"{self.pooling_type} not in 'cls','mean'")
+
+        pooled_output = self.dropout(pooled_output)
+        logits = self.classifier(pooled_output)
         
         loss = None
         if labels is not None:
@@ -394,17 +426,24 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
 
 
 class MatformerForTokenClassification(MatformerPreTrainedModel):
-    def __init__(self, config: MatformerConfig):
+    def __init__(self, config: MatformerConfig, dropout_rate=0.1, **kwargs):
         super().__init__(config)
         self.matformer_model = None
         self.num_labels = config.num_labels
+        self.classifier = None
+        self.dropout = nn.Dropout(dropout_rate)
         
     @classmethod
     def _load_from_checkpoint(cls, checkpoint_path, config, map_location):
         
         instance = super()._load_from_checkpoint(checkpoint_path, config, map_location)
+        instance.classifier = nn.Sequential(
+            # nn.Dropout(0.1),
+            nn.Linear(config.hidden_size, config.num_labels)
+        ).to(map_location).to(torch.bfloat16)
+
         #set_seed(config.seed)
-        instance.matformer_model.model.change_num_labels(instance.num_labels)
+        #instance.matformer_model.model.change_num_labels(instance.num_labels)
         return instance
     
     def forward(self, input_ids, attention_mask=None, labels=None, **kwargs):
@@ -415,8 +454,10 @@ class MatformerForTokenClassification(MatformerPreTrainedModel):
             #we actually do not directly call the classification head but we still require it as a 'type check'
             # raise Exception("The underneath model of a MatformerForSequenceClassification needs to have an attr 'classification_head'")
         
-        logits = self.matformer_model(input_ids, 
-                                            attention_mask=attention_mask)
+        hidden_states = self.matformer_model(input_ids, return_type='hidden')
+        pooled_output = self.dropout(hidden_states.tensor)
+        logits = self.classifier(pooled_output)
+        
         
         loss = None
         if labels is not None:
