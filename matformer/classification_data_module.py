@@ -78,7 +78,7 @@ class ClassificationDataModule(pl.LightningDataModule):
     """
     def collate_fn(self, batch):
       
-        print(f"[COLLATE] Batch length: {len(batch)}")
+        #print(f"[COLLATE] Batch length: {len(batch)}")
     
         input_ids_list = []
         labels_list = []
@@ -91,11 +91,11 @@ class ClassificationDataModule(pl.LightningDataModule):
         input_ids_tensor = torch.tensor(input_ids_list, dtype=torch.long)
         labels_tensor = torch.tensor(labels_list, dtype=torch.long)
         
-        print(f"[COLLATE] input_ids_tensor.shape: {input_ids_tensor.shape}")
-        print(f"[COLLATE] labels_tensor.shape: {labels_tensor.shape}")
+        #print(f"[COLLATE] input_ids_tensor.shape: {input_ids_tensor.shape}")
+        #print(f"[COLLATE] labels_tensor.shape: {labels_tensor.shape}")
     
         padding_mask = (input_ids_tensor == self.pad_token_id)
-        print(f"[COLLATE] padding_mask.shape: {padding_mask.shape}")
+        #print(f"[COLLATE] padding_mask.shape: {padding_mask.shape}")
         padded_sequence = PaddedTensor(tensor=input_ids_tensor, padding_mask=padding_mask)
         
         return {

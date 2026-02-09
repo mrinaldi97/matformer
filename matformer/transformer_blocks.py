@@ -866,10 +866,10 @@ class TransformerWithClassificationHead(MatformerModule):
             attention_mask: Optional explicit mask. If None, extracted from PaddedTensor
         """
       
-        print(f"[FORWARD] x type: {type(x)}")
-        if isinstance(x, PaddedTensor):
-            print(f"[FORWARD] x.tensor.shape: {x.tensor.shape}")
-            print(f"[FORWARD] x.padding_mask.shape: {x.padding_mask.shape}")
+        #print(f"[FORWARD] x type: {type(x)}")
+        #if isinstance(x, PaddedTensor):
+        #    print(f"[FORWARD] x.tensor.shape: {x.tensor.shape}")
+        #    print(f"[FORWARD] x.padding_mask.shape: {x.padding_mask.shape}")
       
         # Remove return_type before passing to encoder
         # TODO: perchè?
