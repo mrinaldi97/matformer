@@ -77,6 +77,9 @@ class ClassificationDataModule(pl.LightningDataModule):
     La collate_fn restituisce un dizionario input_ids, attention_mask, labels. Sta quindi passando degli oggetti torch.Tensor; È possibile con molta facilità integrare in questo punto la logica padding/unpadding di matformer in modo da armonizzarlo con il codice usato in addestramento;
     """
     def collate_fn(self, batch):
+      
+        print(f"[COLLATE] Batch length: {len(batch)}")
+    
         input_ids_list = []
         labels_list = []
         
@@ -88,7 +91,11 @@ class ClassificationDataModule(pl.LightningDataModule):
         input_ids_tensor = torch.tensor(input_ids_list, dtype=torch.long)
         labels_tensor = torch.tensor(labels_list, dtype=torch.long)
         
+        print(f"[COLLATE] input_ids_tensor.shape: {input_ids_tensor.shape}")
+        print(f"[COLLATE] labels_tensor.shape: {labels_tensor.shape}")
+    
         padding_mask = (input_ids_tensor == self.pad_token_id)
+        print(f"[COLLATE] padding_mask.shape: {padding_mask.shape}")
         padded_sequence = PaddedTensor(tensor=input_ids_tensor, padding_mask=padding_mask)
         
         return {
