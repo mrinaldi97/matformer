@@ -235,6 +235,10 @@ def main():
     )
     tokenizer = load_tokenizer(config=config)
 
+    print("\n--- Labels distribution ---")
+    print(train_loader.get_label_distribution())
+    print("\n"+ "-"*20)
+    
     print("\nLoading model..")    
     model = load_model_from_checkpoint(
         checkpoint_path=checkpoint_path,
