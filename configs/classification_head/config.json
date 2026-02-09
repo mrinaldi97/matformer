@@ -19,10 +19,9 @@
     "seed": 42
   },
   "data": {
-    "train_file": "test_data/hatexplain/train.json",
-    "val_file": "test_data/hatexplain/val.json",
+    "train_file": "test_data/fake/data.json",
     "text_label": "full_text",
-    "target_label": "final_label",
+    "target_label": "is_profane",
     "num_workers": 1
   },
   "save_dir": "./checkpoints_classification",

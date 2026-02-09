@@ -1,0 +1,32 @@
+id,full_text,is_profane,random_number
+1,"Have a wonderful day!",0,0.8231
+2,"You are extremely stupid.",1,0.1145
+3,"The weather is nice today.",0,0.6543
+4,"I hate you, you idiot.",1,0.9921
+5,"Can you help me with this?",0,0.4321
+6,"This service is terrible and you suck.",1,0.1234
+7,"Please send the files by noon.",0,0.7654
+8,"Go away, loser.",1,0.5567
+9,"I really appreciate your help.",0,0.8876
+10,"You're a complete moron.",1,0.2233
+11,"What is the status of the project?",0,0.3344
+12,"Shut up and leave me alone.",1,0.6677
+13,"Let's schedule a meeting for tomorrow.",0,0.9988
+14,"Don't be such a jerk.",1,0.1122
+15,"The presentation went very well.",0,0.4455
+16,"You are garbage.",1,0.7788
+17,"Looking forward to seeing you.",0,0.2211
+18,"Nobody likes you, fool.",1,0.5544
+19,"Is there any update on the ticket?",0,0.8899
+20,"You are the worst person ever.",1,0.3322
+21,"Thanks for the quick response.",0,0.6655
+22,"Get lost, creep.",1,0.9911
+23,"Could you clarify this point?",0,0.1299
+24,"You're disgusting.",1,0.4588
+25,"Happy birthday!",0,0.7811
+26,"I can't stand your face.",1,0.3456
+27,"Where is the nearest library?",0,0.6789
+28,"You are pathetic.",1,0.9012
+29,"Great job on the report.",0,0.2345
+30,"Damn it, this is broken.",1,0.5678
+,, ,
