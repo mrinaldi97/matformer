@@ -349,6 +349,12 @@ class MatformerForMaskedLM(MatformerPreTrainedModel):
 
 
 class MatformerForSequenceClassification(MatformerPreTrainedModel):
+
+    _tied_weights_keys = [
+        "matformer_model.model.lm_head.weight",
+        "matformer_model.model.encoder.embed_tokens.module.inner.weight",
+    ]
+     
     def __init__(self, config: MatformerConfig, pooling_type='cls', dropout_rate=0.1):
         super().__init__(config)
         self.matformer_model = None
@@ -426,6 +432,13 @@ class MatformerForSequenceClassification(MatformerPreTrainedModel):
 
 
 class MatformerForTokenClassification(MatformerPreTrainedModel):
+
+    _tied_weights_keys = [
+        "matformer_model.model.lm_head.weight",
+        "matformer_model.model.encoder.embed_tokens.module.inner.weight",
+    ]
+     
+     
     def __init__(self, config: MatformerConfig, dropout_rate=0.1, **kwargs):
         super().__init__(config)
         self.matformer_model = None
