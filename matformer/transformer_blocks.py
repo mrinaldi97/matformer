@@ -781,7 +781,7 @@ class TransformerWithLMHead(MatformerModule):
         
         return sequence
 
-class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
+class TransformerWithClassificationHead(MatformerModule):
   
     # Stable parameter names
     encoder: "param_name:encoder"
@@ -801,7 +801,7 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         self.num_features = num_features
         
         # Transformer with embeddings
-        self.encoder = TransformerWithEmbeddingHead(config, cache=self.cache)
+        self.encoder = TransformerWithEmbeddingHead(config=config, cache=self.cache)
         
         # Classification components
         self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)             
@@ -888,7 +888,7 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
         
         return output
 
-class TransformerWithTokenClassificationHead(TransformerWithEmbeddingHead):
+class TransformerWithTokenClassificationHead(MatformerModule):
     
     # Stable parameter names
     encoder: "param_name:encoder"
@@ -908,7 +908,7 @@ class TransformerWithTokenClassificationHead(TransformerWithEmbeddingHead):
         self.cache = ensure_cache_and_registry(cache)
         
         # Encoder (pretrained part)
-        self.encoder = TransformerWithEmbeddingHead(config, cache=self.cache)
+        self.encoder = TransformerWithEmbeddingHead(config=config, cache=self.cache)
         
         # Token classification components
         self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)
