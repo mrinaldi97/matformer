@@ -25,7 +25,8 @@ from copy import deepcopy
 from matformer.matformer_module import MatformerModule
 
 class PL_ModelWrapper(MatformerModule):
-    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False,load_mode="full"):
+    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,
+                 train_config=None,inference=False,load_mode="full", **model_kwargs):
         super().__init__()
         self.config=config
         self.train_config=train_config
@@ -34,7 +35,13 @@ class PL_ModelWrapper(MatformerModule):
         # Initialize cache and set registry
         self.cache = CachedStuff()
         self.cache.registry = registry
-        self.model = ModelClass(config,tokenizer=tokenizer,device=device,cache=self.cache)    
+        self.model = ModelClass(
+          config,
+          tokenizer=tokenizer,
+          device=device,
+          cache=self.cache,
+          **model_kwargs
+        )    
         self.nested = None  
         if self.config.loss_type=='fused':
             self.cross_entropy_loss = self.cache.registry.create("loss", "cross_entropy_loss_fused", *[], **{"ignore_index":config.pad_token_id})
@@ -513,7 +520,7 @@ class PL_ModelWrapper(MatformerModule):
         }
 
     @staticmethod
-    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, train_config=None, map_location=None, tokenizer=None, overrides=None,varlen_strategy='padding', external_mapping=None):
+    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, train_config=None, map_location=None, tokenizer=None, overrides=None,varlen_strategy='padding', external_mapping=None, **model_kwargs):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
 
         if config is None:
@@ -540,7 +547,7 @@ class PL_ModelWrapper(MatformerModule):
             varlen_strategy=varlen_strategy
         )     
 
-        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, train_config=train_config, tokenizer=tokenizer, device=map_location)  
+        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, train_config=train_config, tokenizer=tokenizer, device=map_location, **model_kwargs)  
         #model.load_state_dict(checkpoint['state_dict'])
         model.load_stable_state_dict(checkpoint['state_dict'], strict=False, external_mapping=external_mapping)
         #print("Found this config:")
