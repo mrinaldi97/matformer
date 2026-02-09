@@ -2,17 +2,21 @@ import pandas as pd
 from pathlib import Path
 from typing import Optional, Union, List, Tuple
 import numpy as np
+from datasets import load_dataset, Dataset
 
 class ClassificationTrainingDataLoader:
     """Load and validate data for model training with custom column mapping."""
     
     def __init__(
         self,
-        filepath: Union[str, Path],
+        filepath: Optional[Union[str, Path]] = None,
         text_column: str,
-        label_column: Optional[str] = None,
+        label_column: str,
         id_column: Optional[str] = None,
         additional_columns: Optional[List[str]] = None,
+        hf_dataset: Optional[str] = None,
+        hf_split: str = "train",            
+        hf_config: Optional[str] = None,    
     ):
         """
         Args:
@@ -21,13 +25,26 @@ class ClassificationTrainingDataLoader:
             label_column: Name of column containing labels (optional for inference)
             id_column: Name of column containing IDs (optional)
             additional_columns: List of other columns to load (optional)
+            hf_dataset: HuggingFace dataset name (alternative to filepath)
+            hf_split: HuggingFace split to load (default: "train")
+            hf_config: HuggingFace dataset configuration (optional)
         """
-        self.filepath = Path(filepath)
+        self.filepath = Path(filepath) if filepath else None
         
         self.text_column = text_column
         self.label_column = label_column
         self.id_column = id_column
         self.additional_columns = additional_columns or []
+        
+        self.hf_dataset = hf_dataset
+        self.hf_split = hf_split
+        self.hf_config = hf_config
+        
+        # Validate source specification
+        if not self.hf_dataset and not self.filepath:
+            raise ValueError("Must specify either 'filepath' or 'hf_dataset'")
+        if self.hf_dataset and self.filepath:
+            raise ValueError("Cannot specify both 'filepath' and 'hf_dataset'")
         
         self._validate_and_load()
     
@@ -36,30 +53,37 @@ class ClassificationTrainingDataLoader:
         
         print("\n--- WARNING ---\nAs of now, the loader loads all data in memory\n\n")
         
-        if not self.filepath.exists():
-            raise FileNotFoundError(f"File not found: {self.filepath}")
+        if self.hf_dataset:
+            try:
+                dataset = load_dataset(
+                    self.hf_dataset,
+                    name=self.hf_config,
+                    split=self.hf_split
+                )
+                self.df = dataset.to_pandas()
+            except Exception as e:
+                raise ValueError(f"Failed to load HF dataset '{self.hf_dataset}': {e}") from e
         
-        # Load file
-        try:
-            suffix = self.filepath.suffix.lower()
-            
-            if suffix in ['.conllu', '.conll']:
-                self.df = self._load_conll(suffix == '.conllu')
-            elif suffix == '.csv':
-                self.df = pd.read_csv(self.filepath)
-            elif suffix == '.tsv':
-                self.df = pd.read_csv(self.filepath, sep='\t')
-            elif suffix == '.json':
-                self.df = pd.read_json(self.filepath)
-            else:
-                raise ValueError(f"Unsupported format: {suffix}")
-        except (pd.errors.ParserError, FileNotFoundError) as e:
-            raise ValueError(f"Failed to load {self.filepath}: {e}") from e
+        # Load from file
+        else:
+            try:
+                suffix = self.filepath.suffix.lower()
+                
+                if suffix in ['.conllu', '.conll']:
+                    self.df = self._load_conll(suffix == '.conllu')
+                elif suffix == '.csv':
+                    self.df = pd.read_csv(self.filepath)
+                elif suffix == '.tsv':
+                    self.df = pd.read_csv(self.filepath, sep='\t')
+                elif suffix == '.json':
+                    self.df = pd.read_json(self.filepath)
+                else:
+                    raise ValueError(f"Unsupported format: {suffix}")
+            except (pd.errors.ParserError, FileNotFoundError) as e:
+                raise ValueError(f"Failed to load {self.filepath}: {e}") from e
         
         # Validate columns
-        required = [self.text_column]
-        if self.label_column:
-            required.append(self.label_column)
+        required = [self.text_column, self.label_column]
         if self.id_column:
             required.append(self.id_column)
         required.extend(self.additional_columns)
@@ -68,16 +92,12 @@ class ClassificationTrainingDataLoader:
         if missing:
             raise ValueError(f"Missing columns: {missing}. Available: {list(self.df.columns)}")
         
-        # Remove rows with NaN in critical columns
-        critical = [self.text_column]
-        if self.label_column:
-            critical.append(self.label_column)
-        
+        # Remove rows with NaN in required columns  
         initial_len = len(self.df)
-        self.df = self.df.dropna(subset=critical)
+        self.df = self.df.dropna(subset=required)
         dropped = initial_len - len(self.df)
         if dropped > 0:
-            print(f"Dropped {dropped} rows with missing values in critical columns")
+            print(f"Dropped {dropped} rows with missing values in required columns")
     
     def _load_conll(self, is_conllu: bool):
         """Parse CoNLL-U or CoNLL-X to DataFrame with tokens and labels per sentence."""
@@ -120,11 +140,11 @@ class ClassificationTrainingDataLoader:
         
         return pd.DataFrame(sentences)
     
-    def get_data(self) -> Tuple[np.ndarray, Optional[np.ndarray], Optional[np.ndarray]]:
+    def get_data(self) -> Tuple[np.ndarray, np.ndarray, Optional[np.ndarray]]:
         """
         Returns:
             texts: Array of text strings
-            labels: Array of labels (None if label_column not specified)
+            labels: Array of labels
             ids: Array of IDs (None if id_column not specified)
         """
         texts = self.df[self.text_column].values
@@ -137,17 +157,15 @@ class ClassificationTrainingDataLoader:
         return len(self.df)
     
     def __repr__(self) -> str:
-        return f"TrainingDataLoader(file={self.filepath.name}, samples={len(self)}, columns={list(self.df.columns)})"
-      
+        source = f"hf={self.hf_dataset}" if self.hf_dataset else f"file={self.filepath.name}"
+        return f"TrainingDataLoader({source}, samples={len(self)}, columns={list(self.df.columns)})"
+ 
     def get_label_info(self) -> Tuple[np.ndarray, int]:
         """
         Returns:
             unique_labels: Sorted array of unique label values
             num_labels: Count of unique labels
-        """
-        if self.label_column is None:
-            raise ValueError("Cannot get label info: label_column not specified")
-        
+        """       
         unique_labels = np.sort(self.df[self.label_column].unique())
         num_labels = len(unique_labels)
         
@@ -157,3 +175,5 @@ class ClassificationTrainingDataLoader:
         """Convenience method to get only the count of unique labels."""
         _, num_labels = self.get_label_info()
         return num_labels
+      
+    
