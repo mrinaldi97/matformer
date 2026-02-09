@@ -4,7 +4,6 @@
   "pooling_type": "cls",
   "classifier_dropout_p": 0.1,
   "classifier_dropout_inplace": false,
-  "freeze_encoder": false,
   "pretrained_checkpoint": "/mnt/llmdata/data/FINALE_32768.ckpt",
   "training": {
     "optimizer": "adamw",

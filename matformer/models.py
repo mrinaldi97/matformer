@@ -441,11 +441,19 @@ class PL_ModelWrapper(MatformerModule):
             )
             
         elif self.train_config["optimizer"] == "adamw":
+            # Filter only trainable parameters
+            trainable_params = [p for p in self.parameters() if p.requires_grad]
+            
+            if len(trainable_params) == 0:
+                raise ValueError("No trainable parameters found!")
+            
             optimizer = AdamW(
-                self.parameters(),
+                trainable_params,
                 lr=self.train_config["lr"],
-                weight_decay=getattr(self.train_config,"weight_decay", 0.01),
+                weight_decay=self.train_config.get("weight_decay", 0.01),
             )
+            
+            print(f"Optimizer initialized with {sum(p.numel() for p in trainable_params):,} trainable params")
         elif self.train_config["optimizer"] == "adam":
             optimizer = Adam(
                 self.parameters(),

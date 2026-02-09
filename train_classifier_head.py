@@ -67,6 +67,22 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_featur
     print(f"Model: {config.name}, {config.num_hidden_layers} layers")
     print(f"Task: {task}, {num_features} classes")
 
+    print("\n--- Freezing encoder ---")
+    model.model.freeze_encoder()
+
+    # Verify freezing
+    encoder_params = sum(p.numel() for p in model.model.encoder.parameters())
+    encoder_trainable = sum(p.numel() for p in model.model.encoder.parameters() if p.requires_grad)
+    head_trainable = sum(p.numel() for p in model.model.classification_head.parameters() if p.requires_grad)
+    total_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+    print(f"Encoder params: {encoder_params:,} (trainable: {encoder_trainable:,})")
+    print(f"Head params: {head_trainable:,}")
+    print(f"Total trainable: {total_trainable:,}")
+
+    assert encoder_trainable == 0, "Encoder should have 0 trainable params"
+    assert head_trainable > 0, "Classification head should be trainable"
+
     # === VERIFICATION ===
     print(f"\n--- Loading Verification ---")
     
