@@ -117,7 +117,8 @@ class ClassificationDataModule(pl.LightningDataModule):
                 batch_size=self.batch_size,
                 sampler=sampler,
                 collate_fn=self.collate_fn,
-                num_workers=0
+                num_workers=0,
+                drop_last=True
             )
         else:
             return DataLoader(
@@ -125,7 +126,8 @@ class ClassificationDataModule(pl.LightningDataModule):
                 batch_size=self.batch_size,
                 shuffle=shuffle,
                 collate_fn=self.collate_fn,
-                num_workers=0
+                num_workers=0,
+                drop_last=True
             )
 
     def train_dataloader(self):
