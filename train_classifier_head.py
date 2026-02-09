@@ -203,8 +203,20 @@ def main():
     else:
         accelerator = device_string = 'cpu'
     
-    train_loader = ClassificationTrainingDataLoader(filepath=getattr(config,"data")["train_file"], text_column=getattr(config,"data")["text_label"], label_column=getattr(config,"data")["target_label"])
-    val_loader = ClassificationTrainingDataLoader(filepath=getattr(config,"data")["val_file"], text_column=getattr(config,"data")["text_label"], label_column=getattr(config,"data")["target_label"])
+    train_loader = ClassificationTrainingDataLoader(
+      filepath=getattr(config,"data")["train_file"],
+      text_column=getattr(config,"data")["text_label"],
+      label_column=getattr(config,"data")["target_label"]
+    )
+    val_loader = (
+        ClassificationTrainingDataLoader(
+            filepath=getattr(config,"data")["val_file"],
+            text_column=getattr(config,"data")["text_label"],
+            label_column=getattr(config,"data")["target_label"]
+        )
+        if "val_file" in getattr(config, "data", {})
+        else None
+    )
     tokenizer = load_tokenizer(config=config)
 
     print("\nLoading model..")    
@@ -298,7 +310,7 @@ def main():
     print(f"Memory after model.cuda(): {torch.cuda.memory_allocated() / 1e9:.2f} GB")
 
     with torch.no_grad():
-        sample_batch = {k: v.cuda() for k, v in sample_batch.items()}
+        sample_batch = move_batch_to_device(sample_batch, 'cuda')  # FIX HERE
         print(f"Memory after batch.cuda(): {torch.cuda.memory_allocated() / 1e9:.2f} GB")
         
         output = model(sample_batch['input_ids'])
@@ -309,7 +321,17 @@ def main():
     
     trainer.fit(model, dm, ckpt_path=ckpt_path)
     
-    
+def move_batch_to_device(batch, device):
+    moved = {}
+    for k, v in batch.items():
+        if isinstance(v, PaddedTensor):
+            moved[k] = PaddedTensor(
+                tensor=v.tensor.to(device),
+                padding_mask=v.padding_mask.to(device)
+            )
+        else:
+            moved[k] = v.to(device)
+    return moved    
 
 
 if __name__ == "__main__":
