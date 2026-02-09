@@ -9,9 +9,9 @@ class ClassificationTrainingDataLoader:
     
     def __init__(
         self,
-        filepath: Optional[Union[str, Path]] = None,
         text_column: str,
         label_column: str,
+        filepath: Optional[Union[str, Path]] = None,
         id_column: Optional[str] = None,
         additional_columns: Optional[List[str]] = None,
         hf_dataset: Optional[str] = None,
@@ -166,14 +166,20 @@ class ClassificationTrainingDataLoader:
             unique_labels: Sorted array of unique label values
             num_labels: Count of unique labels
         """       
-        unique_labels = np.sort(self.df[self.label_column].unique())
+        labels = self.df[self.label_column]
+            
+        # Check if labels are lists (token classification) or scalars (sequence classification)
+        if isinstance(labels.iloc[0], (list, np.ndarray)):
+          all_labels = [label for label_list in labels for label in label_list]
+          unique_labels = np.sort(np.unique(all_labels))
+        else:
+          unique_labels = np.sort(labels.unique())
+            
         num_labels = len(unique_labels)
-        
+            
         return unique_labels, num_labels
 
     def get_num_labels(self) -> int:
         """Convenience method to get only the count of unique labels."""
         _, num_labels = self.get_label_info()
         return num_labels
-      
-    
