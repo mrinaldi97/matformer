@@ -789,16 +789,20 @@ class TransformerWithClassificationHead(MatformerModule):
     dropout: "param_name:dropout"
       
     def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='cls',
-                 num_features=2, device=None, cache=None):
+                 num_features=None, device=None, cache=None):
         super().__init__()
         
-        self.cache = ensure_cache_and_registry(cache)   
-        cache=self.cache
+        self.cache = ensure_cache_and_registry(cache)
         
         self.config = config
         self.tokenizer = tokenizer
         self.pooling_type = pooling_type
-        self.num_features = num_features
+        # Precedence: explicit param > config > default
+        self.num_features = (
+            num_features or 
+            getattr(config, 'num_features', None) or 
+            2 
+        )
         
         # Transformer with embeddings
         self.encoder = TransformerWithEmbeddingHead(config=config, cache=self.cache)
@@ -853,8 +857,6 @@ class TransformerWithClassificationHead(MatformerModule):
         print(f"Number of labels changed to {new_num_labels}")
 
     def forward(self, x, attention_mask=None, **kwargs):
-        print(f"Input x shape: {x.shape if isinstance(x, torch.Tensor) else 'not tensor'}")
-        print(f"attention_mask shape: {attention_mask.shape if attention_mask is not None else 'None'}")
         # Remove return_type before passing to encoder
         # TODO: perchè?
         kwargs.pop('return_type', None)
@@ -880,13 +882,7 @@ class TransformerWithClassificationHead(MatformerModule):
         pooled_output = self.dropout(pooled_output)
         logits = self.classification_head(pooled_output)
         
-        output = {'logits': logits}
-        
-        if labels is not None:
-            loss = F.cross_entropy(logits, labels)
-            output['loss'] = loss
-        
-        return output
+        return logits
 
 class TransformerWithTokenClassificationHead(MatformerModule):
     
@@ -895,17 +891,20 @@ class TransformerWithTokenClassificationHead(MatformerModule):
     classification_head: "param_name:classifier"
     dropout: "param_name:dropout"
     
-    def __init__(self, config: ModelConfig, tokenizer=None, num_labels=2,
+    def __init__(self, config: ModelConfig, tokenizer=None, num_features=None,
                  device=None, cache=None):
         super().__init__()
         
-        self.cache = ensure_cache_and_registry(cache)   
-        cache=self.cache    
+        self.cache = ensure_cache_and_registry(cache)
         
         self.config = config
         self.tokenizer = tokenizer
-        self.num_features = num_labels
-        self.cache = ensure_cache_and_registry(cache)
+        # Precedence: explicit param > config > default
+        self.num_features = (
+            num_features or 
+            getattr(config, 'num_features', None) or 
+            2
+        )
         
         # Encoder (pretrained part)
         self.encoder = TransformerWithEmbeddingHead(config=config, cache=self.cache)
@@ -970,18 +969,7 @@ class TransformerWithTokenClassificationHead(MatformerModule):
         hidden_states = self.dropout(hidden_states)
         logits = self.classification_head(hidden_states)
         
-        output = {'logits': logits}
-        
-        if labels is not None:
-            loss = F.cross_entropy(
-                logits.view(-1, self.num_labels),
-                labels.view(-1),
-                ignore_index=-100
-            )
-            output['loss'] = loss
-        
-        return output
-        
+        return logits        
         
 class TextDiffusionModel:
     """
