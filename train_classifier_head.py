@@ -35,41 +35,22 @@ import torch.serialization as serialization
 
 serialization.add_safe_globals([BERTModel, TransformerWithEmbeddingHead,TransformerWithClassificationHead, TransformerWithTokenClassificationHead, ModelConfig])
 
-def load_model_from_checkpoint(checkpoint_path, config, train_config, num_classes, task, map_location='cpu', tokenizer=None):
-    """
-    Load classification model with pretrained encoder weights using PL_ModelWrapper.
+def load_model_from_checkpoint(checkpoint_path, config, train_config, num_features, 
+                               task, map_location='cpu', tokenizer=None):
+    """Load classification model with pretrained encoder weights."""
     
-    Args:
-        checkpoint_path: Path to pretrained checkpoint
-        config: ModelConfig object (or path to config JSON)
-        num_classes: Number of output classes
-        task: "sentence-level" or "token-level"
-        map_location: Device to load model on
-        tokenizer: Tokenizer name or instance
-    """
     # Add classification-specific config
     config.classifier_dropout_p = 0.1
     config.classifier_dropout_inplace = False
     
-    try:
-      config_classes = getattr(config, "num_labels")
-    except:
-      config.num_labels = num_classes
-      
-    if config_classes != num_classes:
-      raise Exception("num classes specified not consistent with config")
-    
-    # Select model class based on task
     if task == "sentence-level":
         ModelClass = TransformerWithClassificationHead
-        model_kwargs = {'num_features': num_classes, 'pooling_type': 'cls'}
     elif task == "token-level":
         ModelClass = TransformerWithTokenClassificationHead
-        model_kwargs = {'num_labels': num_classes}
     else:
         raise ValueError(f"task must be 'sentence-level' or 'token-level', got {task}")
     
-    # Load using PL_ModelWrapper
+    # Load model
     model, config = PL_ModelWrapper.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
         ModelClass=ModelClass,
@@ -78,17 +59,14 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_classe
         map_location=map_location,
         tokenizer=tokenizer,
         varlen_strategy='padding',
-        load_encoder_only=True,  # Auto-prefix 'encoder.' to pretrained weights
-        **model_kwargs
+        external_mapping=None,
+        num_features=num_features
     )
     
     print(f"Loaded pretrained encoder from {checkpoint_path}")
     print(f"Model: {config.name}, {config.num_hidden_layers} layers")
-    print(f"Task: {task}, {num_classes} classes")
-    
-    if config.num_labels != 2:
-      model.change_num_labels(config.num_labels)
-    
+    print(f"Task: {task}, {num_features} classes")
+
     # === VERIFICATION ===
     print(f"\n--- Loading Verification ---")
     
@@ -105,7 +83,7 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_classe
     with torch.no_grad():
         output = model(dummy_input)
         print(f"Forward pass output shape: {output.shape}")
-        expected_shape = (2, num_classes) if task == "sentence-level" else (2, 64, num_classes)
+        expected_shape = (2, num_features) if task == "sentence-level" else (2, 64, num_features)
         assert output.shape == expected_shape, f"Expected {expected_shape}, got {output.shape}"
     
     print(f"Loading verified successfully\n")
@@ -234,7 +212,7 @@ def main():
         checkpoint_path=checkpoint_path,
         config=config,
         train_config=getattr(config,'training'),
-        num_classes=train_loader.get_num_labels(),
+        num_features=train_loader.get_num_labels(),
         task="sentence-level",
         map_location="cuda",
         tokenizer=tokenizer
