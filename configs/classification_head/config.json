@@ -1,7 +1,6 @@
 {
   "name": "Albertone_Classification",
   "model_class": "TransformerWithClassificationHead",
-  "num_labels": 3,
   "pooling_type": "cls",
   "classifier_dropout_p": 0.1,
   "classifier_dropout_inplace": false,

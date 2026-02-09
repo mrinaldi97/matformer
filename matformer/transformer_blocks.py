@@ -798,6 +798,9 @@ class TransformerWithClassificationHead(MatformerModule):
         self.tokenizer = tokenizer
         self.pooling_type = pooling_type
         # Precedence: explicit param > config > default
+        # for current train code, the param is always 
+        # automatically calculated by the loader and passed
+        # so the config is never used
         self.num_features = (
             num_features or 
             getattr(config, 'num_features', None) or 
