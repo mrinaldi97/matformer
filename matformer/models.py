@@ -24,6 +24,11 @@ from matformer.cached_stuff import CachedStuff
 from copy import deepcopy
 from matformer.matformer_module import MatformerModule
 
+## to be deleted
+import sys
+log_file = open('classification_debug.log', 'a')
+##
+
 class PL_ModelWrapper(MatformerModule):
     def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,
                  train_config=None,inference=False,load_mode="full", **model_kwargs):
@@ -98,12 +103,21 @@ class PL_ModelWrapper(MatformerModule):
     Sarebbe fico renderlo funzionante anche per task di regressione, quindi con una label float
     e una loss diversa (MSE? Se ce ne sono varie, sarebbe utile renderle selezionabili). 
     """
-    def _classification_step(self, batch):
+    def _classification_step(self, batch):  
         input_ids = batch['input_ids']
         labels = batch['labels']
         
         logits = self(input_ids)
+        
+        # Debug prints
+        print(f"Step: {self.global_step}", file=log_file)
+        print(f"Logits shape: {logits.shape}, Labels shape: {labels.shape}", file=log_file)
+        print(f"Logits - min: {logits.min().item():.4f}, max: {logits.max().item():.4f}, mean: {logits.mean().item():.4f}, std: {logits.std().item():.4f}", file=log_file)
+        print(f"Labels - unique: {labels.unique().tolist()}, counts: {[(l.item(), (labels==l).sum().item()) for l in labels.unique()]}", file=log_file)
+        
         loss = torch.nn.functional.cross_entropy(logits, labels)
+        
+        print(f"Loss: {loss.item():.6f}", file=log_file)
         
         batch_size = len(labels)
         self.log('train/classification_loss', loss, prog_bar=True, batch_size=batch_size)
@@ -111,6 +125,17 @@ class PL_ModelWrapper(MatformerModule):
         # Compute accuracy
         with torch.no_grad():
             preds = logits.argmax(dim=-1)
+            
+            print(f"Predictions: {preds.tolist()}", file=log_file)
+            print(f"True labels: {labels.tolist()}", file=log_file)
+            print(f"Correct: {(preds == labels).sum().item()}/{len(labels)}", file=log_file)
+            
+            # Per-class logit stats
+            for cls in labels.unique():
+                cls_mask = labels == cls
+                cls_logits = logits[cls_mask, cls]
+                print(f"Class {cls.item()} logits - mean: {cls_logits.mean().item():.4f}, std: {cls_logits.std().item():.4f}", file=log_file)
+        
             acc = (preds == labels).float().mean()
             self.log('train/classification_accuracy', acc, prog_bar=True, 
                     on_step=True, on_epoch=True, batch_size=batch_size)

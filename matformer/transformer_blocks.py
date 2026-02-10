@@ -865,7 +865,9 @@ class TransformerWithClassificationHead(MatformerModule):
             x: Input tensor or PaddedTensor
             attention_mask: Optional explicit mask. If None, extracted from PaddedTensor
         """
-      
+        
+        print(f"Encoder output - min: {encoder_output.min().item():.4f}, max: {encoder_output.max().item():.4f}, mean: {encoder_output.mean().item():.4f}", file=log_file)
+        
         #print(f"[FORWARD] x type: {type(x)}")
         #if isinstance(x, PaddedTensor):
         #    print(f"[FORWARD] x.tensor.shape: {x.tensor.shape}")

@@ -307,18 +307,7 @@ def main():
     
     trainer.fit(model, dm, ckpt_path=ckpt_path)
     
-def move_batch_to_device(batch, device):
-    moved = {}
-    for k, v in batch.items():
-        if isinstance(v, PaddedTensor):
-            moved[k] = PaddedTensor(
-                tensor=v.tensor.to(device),
-                padding_mask=v.padding_mask.to(device)
-            )
-        else:
-            moved[k] = v.to(device)
-    return moved    
-
+    log_file.close()
 
 if __name__ == "__main__":
     main()
