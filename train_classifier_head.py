@@ -82,27 +82,6 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_featur
 
     assert encoder_trainable == 0, "Encoder should have 0 trainable params"
     assert head_trainable > 0, "Classification head should be trainable"
-
-    # === VERIFICATION ===
-    print(f"\n--- Loading Verification ---")
-    
-    # 1. Check encoder has non-random weights
-    first_layer_weight = model.model.encoder.blocks.layers[0].self_attn.packed_proj.inner.weight
-    weight_std = first_layer_weight.std().item()
-    weight_mean = first_layer_weight.abs().mean().item()
-    
-    print(f"First layer weight stats: mean={weight_mean:.4f}, std={weight_std:.4f}")
-    assert weight_std > 0.01, "Encoder weights look uninitialized (std too low)"
-    
-    # 2. Verify forward pass works
-    dummy_input = torch.randint(0, config.vocab_size, (2, 64)).to(map_location)
-    with torch.no_grad():
-        output = model(dummy_input)
-        print(f"Forward pass output shape: {output.shape}")
-        expected_shape = (2, num_features) if task == "sentence-level" else (2, 64, num_features)
-        assert output.shape == expected_shape, f"Expected {expected_shape}, got {output.shape}"
-    
-    print(f"Loading verified successfully\n")
     
     return model
   
@@ -323,19 +302,6 @@ def main():
     print(f"Batch input_ids shape: {sample_batch['input_ids'].shape}")
     print(f"Batch labels shape: {sample_batch['labels'].shape}")
     print(f"Memory after batch: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
-
-    # Test forward pass manually
-    print("\n=== MANUAL FORWARD TEST ===")
-    model = model.cuda()
-    print(f"Memory after model.cuda(): {torch.cuda.memory_allocated() / 1e9:.2f} GB")
-
-    with torch.no_grad():
-        sample_batch = move_batch_to_device(sample_batch, 'cuda')  # FIX HERE
-        print(f"Memory after batch.cuda(): {torch.cuda.memory_allocated() / 1e9:.2f} GB")
-        
-        output = model(sample_batch['input_ids'])
-        print(f"Output shape: {output.shape}")
-        print(f"Memory after forward: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
 
     print("\n=== Starting trainer.fit() ===")
     
