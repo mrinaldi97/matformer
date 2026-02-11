@@ -39,10 +39,6 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_featur
                                task, map_location='cpu', tokenizer=None):
     """Load classification model with pretrained encoder weights."""
     
-    # Add classification-specific config
-    config.classifier_dropout_p = 0.1
-    config.classifier_dropout_inplace = False
-    
     if task == "sentence-level":
         ModelClass = TransformerWithClassificationHead
     elif task == "token-level":
@@ -97,7 +93,6 @@ def load_tokenizer(config=None, tokenizer="bytes", varlen_strategy=None):
             
 def load_classification_config(
     task_config_path: str,
-    checkpoint_path: str = None,
     inherit_from_checkpoint: bool = True
 ) -> ClassificationConfig:
     """
@@ -118,13 +113,11 @@ def load_classification_config(
     
     with open(task_config_path, 'r') as f:
         task_dict = json.load(f)
+        
+    checkpoint_path = getattr(task_dict,"pretrained_checkpoint", None)
     
-    # Determine checkpoint path
     if checkpoint_path is None:
-        checkpoint_path = task_dict.get('pretrained_checkpoint')
-    
-    if not checkpoint_path:
-        raise ValueError("checkpoint_path must be provided or in config as 'pretrained_checkpoint'")
+        raise ValueError("checkpoint_path must be provided in config as 'pretrained_checkpoint'")
     
     if not Path(checkpoint_path).exists():
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
@@ -174,21 +167,20 @@ def extract_config_from_checkpoint(checkpoint_path):
 
 def main():
   
-    print("\nINIZIO")
     print(torch.cuda.memory_allocated() / 1e9, "GB allocated")
     print(torch.cuda.memory_reserved() / 1e9, "GB reserved")
 
-    checkpoint_path = "/mnt/llmdata/data/FINALE_32768.ckpt"
     config_path = "configs/classification_head/config.json"
     start_scratch = True
   
     # config
     print("\n --- Config ---")
-    config = load_classification_config(config_path, checkpoint_path)
-    print("\n"+ "-"*40+"\n")
+    config = load_classification_config(config_path)
+    print("\n"+ "-"*40+"\n")    
     
-    save_dir = getattr(config, 'save_dir', './checkpoints')
+    save_dir = getattr(config, 'save_dir')
     pl.seed_everything(getattr(config, 'seed', 27))
+    
     # Detect device
     if torch.cuda.is_available():
         accelerator = 'gpu'
