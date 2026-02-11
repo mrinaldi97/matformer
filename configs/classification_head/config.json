@@ -7,7 +7,7 @@
   "pretrained_checkpoint": "/mnt/llmdata/data/FINALE_32768.ckpt",
   "training": {
     "optimizer": "adamw",
-    "lr": 2e-5,
+    "lr": 2e-4,
     "weight_decay": 0.0,
     "gradient_clip_val": 1.0,
     "warmup_steps": 0.1,

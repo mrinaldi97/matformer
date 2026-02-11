@@ -27,6 +27,7 @@ from matformer.matformer_module import MatformerModule
 ## to be deleted
 import sys
 debug_log = open('classification_debug.log', 'w')
+loss_log = open('loss_debug.log', 'w')
 param_cache = {}  # Store params for comparison
 ##
 
@@ -123,18 +124,40 @@ class PL_ModelWrapper(MatformerModule):
 
         logits = self(input_ids)
         loss = torch.nn.functional.cross_entropy(logits, labels)
-        
-        # CHECK 4: Data correctness
-        print(f"\nStep {self.global_step} - Data check:", file=debug_log)
-        print(f"Labels range: [{labels.min().item()}, {labels.max().item()}], expected: [0, {logits.shape[1]-1}]", file=debug_log)
-        print(f"Input hash: {hash(input_ids.tensor.cpu().numpy().tobytes())}", file=debug_log)
-        
+          
         # Store params before update (for CHECK 3)
         if self.global_step % 50 == 0:
             param_cache[self.global_step] = {name: param.data.clone() for name, param in self.named_parameters() if 'classifier' in name or 'head' in name}
         
         batch_size = len(labels)
         self.log('train/classification_loss', loss, prog_bar=True, batch_size=batch_size)
+        
+        
+        # CHECK 8: CLS embedding variance (steps 0, 50, 100)
+        if self.global_step in [0, 50, 100, 200, 300]:
+            with torch.no_grad():
+                try:
+                    # Get encoder hidden states
+                    encoder_out = self.model.encoder(input_ids.to(self.device))
+                    
+                    # Extract CLS token (first token)
+                    if hasattr(encoder_out, 'tensor'):
+                        cls_embeddings = encoder_out.tensor[:, 0, :]
+                    else:
+                        cls_embeddings = encoder_out[:, 0, :]
+                    
+                    print(f"\n=== CLS EMBEDDINGS Step {self.global_step} ===", file=debug_log)
+                    print(f"Shape: {cls_embeddings.shape}", file=debug_log)
+                    print(f"Mean: {cls_embeddings.mean().item():.4f}, Std: {cls_embeddings.std().item():.4f}", file=debug_log)
+                    
+                    # Key metric: variance across batch samples
+                    sample_variance = cls_embeddings.var(dim=0).mean().item()
+                    print(f"Cross-sample variance: {sample_variance:.6f}", file=debug_log)
+                    if sample_variance < 0.01:
+                        print("WARNING: CLS embeddings nearly identical!", file=debug_log)
+                    debug_log.flush()
+                except Exception as e:
+                    print(f"Could not extract CLS: {e}", file=debug_log)
         
         # Compute accuracy
         with torch.no_grad():
@@ -143,60 +166,50 @@ class PL_ModelWrapper(MatformerModule):
             self.log('train/classification_accuracy', acc, prog_bar=True, 
                     on_step=True, on_epoch=True, batch_size=batch_size)
             
+            # CHECK 4: Data correctness
+            print(f"\nStep {self.global_step}: Loss={loss.item():.4f}, Acc={acc.item():.4f}", file=loss_log)
+            print(f"Labels range: [{labels.min().item()}, {labels.max().item()}], expected: [0, {logits.shape[1]-1}]", file=loss_log)
+            print(f"Input hash: {hash(input_ids.tensor.cpu().numpy().tobytes())}", file=loss_log)
+            
             # Per-class logit stats
             for cls in labels.unique():
-                cls_mask = labels == cls
-                cls_logits = logits[cls_mask, cls]
-                print(f"Class {cls.item()} logits - mean: {cls_logits.mean().item():.4f}, std: {cls_logits.std().item():.4f}", file=debug_log)
+                  cls_mask = labels == cls
+                  cls_logits = logits[cls_mask, cls]
+                  print(f"Class {cls.item()} logits - mean: {cls_logits.mean().item():.4f}, std: {cls_logits.std().item():.4f}", file=loss_log)
             
             # CHECK 5: Loss-accuracy correlation
-            print(f"Loss: {loss.item():.4f}, Accuracy: {acc.item():.4f}", file=debug_log)
+            print(f"Loss: {loss.item():.4f}, Accuracy: {acc.item():.4f}", file=loss_log)
         
         # CHECK 6: Learning rate
-        try:
-            current_lr = self.lr_schedulers().get_last_lr()[0]
-            self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False, batch_size=batch_size)
-            print(f"Current LR: {current_lr:.2e}", file=debug_log)
-            if current_lr < 1e-8:
-                print("  WARNING: LR too small!", file=debug_log)
-        except:
-            pass
+        if self.global_step % 50 == 0:
+          try:
+              current_lr = self.lr_schedulers().get_last_lr()[0]
+              self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False, batch_size=batch_size)
+              print(f"Current LR: {current_lr:.2e}", file=debug_log)
+              if current_lr < 1e-8:
+                  print("  WARNING: LR too small!", file=debug_log)
+          except:
+              pass
         
         debug_log.flush()
         return loss
-      
-    # TO BE REMOVED
-    # gradient and parameter update checks
-    def on_before_optimizer_step(self, optimizer):
-        # CHECK 2: Gradient flow
-        if self.global_step % 50 == 0:
-            print(f"\n=== GRADIENTS Step {self.global_step} ===", file=debug_log)
-            for name, param in self.named_parameters():
-                if param.requires_grad:
-                    if param.grad is not None:
-                        grad_norm = param.grad.norm().item()
-                        param_norm = param.data.norm().item()
-                        print(f"{name}: grad_norm={grad_norm:.6f}, param_norm={param_norm:.6f}", file=debug_log)
-                        if grad_norm < 1e-7:
-                            print(f"  WARNING: Gradient too small!", file=debug_log)
-                    else:
-                        print(f"{name}: NO GRADIENT", file=debug_log)
-            debug_log.flush()
-    # TO BE REMOVED
-    # gradient and parameter update checks
-    def on_after_optimizer_step(self, optimizer):
-        # CHECK 3: Parameter updates
+
+
+    def on_after_optimizer_step(self, optimizer, optimizer_closure):
+        # CHECK 3: Parameter updates (only when param_cache has entries)
         if self.global_step % 50 == 0 and self.global_step in param_cache:
             print(f"\n=== PARAMETER UPDATES Step {self.global_step} ===", file=debug_log)
             for name, old_param in param_cache[self.global_step].items():
-                new_param = dict(self.named_parameters())[name]
-                diff = (new_param.data - old_param).abs().max().item()
-                print(f"{name}: max_change={diff:.8f}", file=debug_log)
-                if diff < 1e-8:
-                    print(f"  WARNING: No parameter update!", file=debug_log)
+                current_params = dict(self.named_parameters())
+                if name in current_params:
+                    new_param = current_params[name]
+                    diff = (new_param.data - old_param).abs().max().item()
+                    print(f"{name}: max_change={diff:.8f}", file=debug_log)
+                    if diff < 1e-8:
+                        print(f"  WARNING: No parameter update!", file=debug_log)
             del param_cache[self.global_step]
-            print("-" * 60, file=debug_log)
             debug_log.flush()
+
 
     def on_train_end(self):
         debug_log.close()
@@ -389,6 +402,27 @@ class PL_ModelWrapper(MatformerModule):
             return sum(p.sum() for p in self.parameters()) * 0.0
         
     def on_before_optimizer_step(self, optimizer):
+        # CHECK 2: Gradient flow (only when param_cache has entries = classification step)
+        if self.global_step % 50 == 0 and self.global_step in param_cache:
+            print(f"\n=== GRADIENTS Step {self.global_step} ===", file=debug_log)
+            classifier_found = False
+            for name, param in self.named_parameters():
+                if 'classifier' in name or 'head' in name or 'lm_head' in name:
+                    classifier_found = True
+                    if param.requires_grad:
+                        if param.grad is not None:
+                            grad_norm = param.grad.norm().item()
+                            param_norm = param.data.norm().item()
+                            print(f"{name}: grad_norm={grad_norm:.6f}, param_norm={param_norm:.6f}", file=debug_log)
+                            if grad_norm < 1e-7:
+                                print(f"  WARNING: Gradient too small!", file=debug_log)
+                        else:
+                            print(f"{name}: NO GRADIENT", file=debug_log)
+            if not classifier_found:
+                print("WARNING: No classifier/head parameters found!", file=debug_log)
+            debug_log.flush()
+            
+            
         additional_metrics=False
         if additional_metrics:
             if self.global_step % 100 == 0:
