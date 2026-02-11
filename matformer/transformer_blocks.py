@@ -909,19 +909,23 @@ class TransformerWithTokenClassificationHead(MatformerModule):
     classification_head: "param_name:classifier"
     dropout: "param_name:dropout"
     
-    def __init__(self, config: ModelConfig, tokenizer=None, num_features=None,
-                 device=None, cache=None):
+    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='cls',
+                 num_features=None, device=None, cache=None):
         super().__init__()
         
         self.cache = ensure_cache_and_registry(cache)
         
         self.config = config
         self.tokenizer = tokenizer
+        self.pooling_type = pooling_type
         # Precedence: explicit param > config > default
+        # for current train code, the param is always 
+        # automatically calculated by the loader and passed
+        # so the config is never used
         self.num_features = (
             num_features or 
             getattr(config, 'num_features', None) or 
-            2
+            2 
         )
         
         # Encoder (pretrained part)
@@ -943,7 +947,7 @@ class TransformerWithTokenClassificationHead(MatformerModule):
             self.cache.registry.create(
                 "linear", "linear",
                 in_features=config.hidden_size,
-                out_features=num_labels
+                out_features=num_features
             )
         )
     
@@ -956,23 +960,22 @@ class TransformerWithTokenClassificationHead(MatformerModule):
         """Unfreeze encoder parameters."""
         for param in self.encoder.parameters():
             param.requires_grad = True
-    
+            
     def change_num_labels(self, new_num_labels):
         """Change the number of output features of the classification head."""
-        self.features = new_num_labels
+        self.num_features = new_num_labels
         self.classification_head = ModuleWrapper(
           self.cache.registry.create(
             "linear", "linear",
             in_features=self.config.hidden_size,
             out_features=new_num_labels
-          )
-        )
+        ))
 
         reference_param = next(self.encoder.parameters())
         # Move to the same device and dtype as the model
         self.classification_head = self.classification_head.to(
-          device=reference_param.device, 
-          dtype=reference_param.dtype
+          device = reference_param.device,
+          dtype = reference_param.dtype
         )
 
         print(f"Number of labels changed to {new_num_labels}")
