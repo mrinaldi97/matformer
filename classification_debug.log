@@ -1,0 +1,326 @@
+
+=== PARAMETER TRAINABILITY ===
+model.encoder.embed_tokens.module.inner.weight: requires_grad=False, shape=torch.Size([32768, 1024])
+model.encoder.blocks.norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.0.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.0.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.0.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.0.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.0.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.0.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.0.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.1.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.1.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.1.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.1.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.1.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.1.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.1.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.2.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.2.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.2.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.2.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.2.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.2.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.2.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.3.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.3.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.3.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.3.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.3.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.3.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.3.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.4.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.4.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.4.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.4.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.4.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.4.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.4.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.5.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.5.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.5.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.5.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.5.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.5.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.5.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.6.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.6.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.6.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.6.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.6.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.6.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.6.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.7.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.7.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.7.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.7.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.7.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.7.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.7.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.8.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.8.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.8.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.8.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.8.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.8.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.8.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.9.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.9.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.9.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.9.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.9.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.9.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.9.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.10.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.10.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.10.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.10.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.10.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.10.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.10.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.11.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.11.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.11.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.11.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.11.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.11.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.11.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.12.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.12.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.12.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.12.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.12.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.12.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.12.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.13.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.13.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.13.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.13.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.13.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.13.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.13.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.14.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.14.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.14.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.14.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.14.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.14.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.14.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.15.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.15.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.15.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.15.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.15.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.15.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.15.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.16.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.16.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.16.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.16.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.16.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.16.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.16.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.17.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.17.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.17.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.17.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.17.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.17.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.17.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.18.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.18.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.18.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.18.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.18.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.18.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.18.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.19.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.19.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.19.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.19.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.19.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.19.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.19.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.20.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.20.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.20.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.20.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.20.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.20.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.20.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.21.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.21.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.21.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.21.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.21.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.21.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.21.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.22.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.22.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.22.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.22.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.22.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.22.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.22.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.23.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.23.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.23.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.23.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.23.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.23.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.23.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.24.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.24.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.24.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.24.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.24.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.24.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.24.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.25.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.25.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.25.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.25.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.25.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.25.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.25.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.26.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.26.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.26.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.26.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.26.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.26.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.26.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.encoder.blocks.layers.27.attn_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.27.mlp_norm.module.inner.weight: requires_grad=False, shape=torch.Size([1024])
+model.encoder.blocks.layers.27.self_attn.packed_proj.inner.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.27.self_attn.out_proj.inner.weight: requires_grad=False, shape=torch.Size([1024, 1024])
+model.encoder.blocks.layers.27.mlp.module.gate_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.27.mlp.module.up_proj.weight: requires_grad=False, shape=torch.Size([3072, 1024])
+model.encoder.blocks.layers.27.mlp.module.down_proj.weight: requires_grad=False, shape=torch.Size([1024, 3072])
+model.classification_head.module.inner.weight: requires_grad=True, shape=torch.Size([3, 1024])
+model.classification_head.module.inner.bias: requires_grad=True, shape=torch.Size([3])
+
+=== OPTIMIZER PARAM GROUPS ===
+Group 0: lr=0.0002, 2 params
+
+=== CLS EMBEDDINGS Step 0 ===
+Shape: torch.Size([64, 1024])
+Mean: -0.0070, Std: 1.2806
+Cross-sample variance: 1.541749
+
+=== GRADIENTS Step 0 ===
+model.classification_head.module.inner.weight: grad_norm=5.408502, param_norm=2.416838
+model.classification_head.module.inner.bias: grad_norm=0.128797, param_norm=0.000000
+
+=== CLS EMBEDDINGS Step 50 ===
+Shape: torch.Size([64, 1024])
+Mean: -0.0012, Std: 1.2809
+Cross-sample variance: 1.562882
+
+=== GRADIENTS Step 50 ===
+model.classification_head.module.inner.weight: grad_norm=5.622088, param_norm=2.369259
+model.classification_head.module.inner.bias: grad_norm=0.199098, param_norm=0.007108
+
+=== CLS EMBEDDINGS Step 100 ===
+Shape: torch.Size([64, 1024])
+Mean: -0.0052, Std: 1.2810
+Cross-sample variance: 1.545935
+
+=== GRADIENTS Step 100 ===
+model.classification_head.module.inner.weight: grad_norm=5.485476, param_norm=2.323073
+model.classification_head.module.inner.bias: grad_norm=0.140511, param_norm=0.006613
+
+=== GRADIENTS Step 150 ===
+model.classification_head.module.inner.weight: grad_norm=5.128009, param_norm=2.278694
+model.classification_head.module.inner.bias: grad_norm=0.087589, param_norm=0.007263
+
+=== CLS EMBEDDINGS Step 200 ===
+Shape: torch.Size([64, 1024])
+Mean: 0.0019, Std: 1.2803
+Cross-sample variance: 1.552347
+
+=== GRADIENTS Step 200 ===
+model.classification_head.module.inner.weight: grad_norm=5.381622, param_norm=2.236172
+model.classification_head.module.inner.bias: grad_norm=0.166080, param_norm=0.007821
+
+=== GRADIENTS Step 250 ===
+model.classification_head.module.inner.weight: grad_norm=5.551243, param_norm=2.195678
+model.classification_head.module.inner.bias: grad_norm=0.249515, param_norm=0.008626
+
+=== CLS EMBEDDINGS Step 300 ===
+Shape: torch.Size([64, 1024])
+Mean: -0.0019, Std: 1.2809
+Cross-sample variance: 1.558626
+
+=== GRADIENTS Step 300 ===
+model.classification_head.module.inner.weight: grad_norm=5.006776, param_norm=2.157541
+model.classification_head.module.inner.bias: grad_norm=0.030076, param_norm=0.008651
+
+=== GRADIENTS Step 350 ===
+model.classification_head.module.inner.weight: grad_norm=4.741313, param_norm=2.122193
+model.classification_head.module.inner.bias: grad_norm=0.121817, param_norm=0.009869
+
+=== GRADIENTS Step 400 ===
+model.classification_head.module.inner.weight: grad_norm=5.089884, param_norm=2.088661
+model.classification_head.module.inner.bias: grad_norm=0.181252, param_norm=0.009251
+
+=== GRADIENTS Step 450 ===
+model.classification_head.module.inner.weight: grad_norm=4.798679, param_norm=2.057413
+model.classification_head.module.inner.bias: grad_norm=0.057341, param_norm=0.011250
+
+=== GRADIENTS Step 500 ===
+model.classification_head.module.inner.weight: grad_norm=4.974394, param_norm=2.027762
+model.classification_head.module.inner.bias: grad_norm=0.103781, param_norm=0.011574
+
+=== GRADIENTS Step 550 ===
+model.classification_head.module.inner.weight: grad_norm=4.700273, param_norm=2.000836
+model.classification_head.module.inner.bias: grad_norm=0.150220, param_norm=0.012264
+
+=== GRADIENTS Step 600 ===
+model.classification_head.module.inner.weight: grad_norm=4.777585, param_norm=1.974015
+model.classification_head.module.inner.bias: grad_norm=0.069869, param_norm=0.012440
+
+=== GRADIENTS Step 650 ===
+model.classification_head.module.inner.weight: grad_norm=4.958363, param_norm=1.947872
+model.classification_head.module.inner.bias: grad_norm=0.087548, param_norm=0.013468
+
+=== GRADIENTS Step 700 ===
+model.classification_head.module.inner.weight: grad_norm=4.912247, param_norm=1.924139
+model.classification_head.module.inner.bias: grad_norm=0.060251, param_norm=0.013079
+
+=== GRADIENTS Step 750 ===
+model.classification_head.module.inner.weight: grad_norm=4.426427, param_norm=1.902552
+model.classification_head.module.inner.bias: grad_norm=0.122530, param_norm=0.012710
+
+=== GRADIENTS Step 800 ===
+model.classification_head.module.inner.weight: grad_norm=4.394809, param_norm=1.882867
+model.classification_head.module.inner.bias: grad_norm=0.077633, param_norm=0.014411
+
+=== GRADIENTS Step 850 ===
+model.classification_head.module.inner.weight: grad_norm=4.555055, param_norm=1.862448
+model.classification_head.module.inner.bias: grad_norm=0.061741, param_norm=0.013574
+
+=== GRADIENTS Step 900 ===
+model.classification_head.module.inner.weight: grad_norm=4.425600, param_norm=1.843260
+model.classification_head.module.inner.bias: grad_norm=0.083496, param_norm=0.016137
+
+=== GRADIENTS Step 950 ===
+model.classification_head.module.inner.weight: grad_norm=4.490211, param_norm=1.824822
+model.classification_head.module.inner.bias: grad_norm=0.085540, param_norm=0.013990
+
+=== GRADIENTS Step 1000 ===
+model.classification_head.module.inner.weight: grad_norm=4.513020, param_norm=1.809045
+model.classification_head.module.inner.bias: grad_norm=0.109690, param_norm=0.015177
+
+=== GRADIENTS Step 1050 ===
+model.classification_head.module.inner.weight: grad_norm=4.563298, param_norm=1.793656
+model.classification_head.module.inner.bias: grad_norm=0.011585, param_norm=0.014851
+
+=== GRADIENTS Step 1100 ===
+model.classification_head.module.inner.weight: grad_norm=4.675877, param_norm=1.779202
+model.classification_head.module.inner.bias: grad_norm=0.170838, param_norm=0.015725
+
+=== GRADIENTS Step 1150 ===
+model.classification_head.module.inner.weight: grad_norm=4.658165, param_norm=1.765222
+model.classification_head.module.inner.bias: grad_norm=0.164183, param_norm=0.015233
