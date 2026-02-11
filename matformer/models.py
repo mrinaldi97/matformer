@@ -72,7 +72,10 @@ class PL_ModelWrapper(MatformerModule):
     def forward(self, _input,*args,**kwargs):
         if isinstance(_input,torch.Tensor):
             _input=NormalTensor(tensor=_input)
-        return self.model(_input.to(self.device),*args,**kwargs)
+        output = self.model(_input.to(self.device), *args, **kwargs)
+        print(f"Model output - mean: {output.mean().item():.4f}, std: {output.std().item():.4f}, min: {output.min().item():.4f}, max: {output.max().item():.4f}", file=log_file)
+        return output
+      
     def on_load_checkpoint(self, checkpoint):
         self._restored_from_ckpt = True       
         if self.load_mode in ["weights_only", "weights_and_optimizer"]:
