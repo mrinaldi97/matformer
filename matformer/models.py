@@ -112,7 +112,7 @@ class PL_ModelWrapper(MatformerModule):
         input_ids = batch['input_ids']
         labels = batch['labels']
         
-        # CHECK 1: Parameter trainability (step 0 only)
+        ### DEBUG
         if self.global_step == 0:
             print("\n=== PARAMETER TRAINABILITY ===", file=debug_log)
             for name, param in self.named_parameters():
@@ -121,19 +121,20 @@ class PL_ModelWrapper(MatformerModule):
             for i, group in enumerate(self.optimizers().param_groups):
                 print(f"Group {i}: lr={group['lr']}, {len(group['params'])} params", file=debug_log)
             debug_log.flush()
-
+        ###
+        
         logits = self(input_ids)
         loss = torch.nn.functional.cross_entropy(logits, labels)
           
-        # Store params before update (for CHECK 3)
+        ### DEBUG
         if self.global_step % 50 == 0:
             param_cache[self.global_step] = {name: param.data.clone() for name, param in self.named_parameters() if 'classifier' in name or 'head' in name}
+        ###
         
         batch_size = len(labels)
         self.log('train/classification_loss', loss, prog_bar=True, batch_size=batch_size)
         
-        
-        # CHECK 8: CLS embedding variance (steps 0, 50, 100)
+        ### DEBUG
         if self.global_step in [0, 50, 100, 200, 300]:
             with torch.no_grad():
                 try:
@@ -158,6 +159,7 @@ class PL_ModelWrapper(MatformerModule):
                     debug_log.flush()
                 except Exception as e:
                     print(f"Could not extract CLS: {e}", file=debug_log)
+        ###
         
         # Compute accuracy
         with torch.no_grad():
@@ -166,21 +168,20 @@ class PL_ModelWrapper(MatformerModule):
             self.log('train/classification_accuracy', acc, prog_bar=True, 
                     on_step=True, on_epoch=True, batch_size=batch_size)
             
-            # CHECK 4: Data correctness
+            ### DEBUG
             print(f"\nStep {self.global_step}: Loss={loss.item():.4f}, Acc={acc.item():.4f}", file=loss_log)
             print(f"Labels range: [{labels.min().item()}, {labels.max().item()}], expected: [0, {logits.shape[1]-1}]", file=loss_log)
             print(f"Input hash: {hash(input_ids.tensor.cpu().numpy().tobytes())}", file=loss_log)
             
-            # Per-class logit stats
             for cls in labels.unique():
                   cls_mask = labels == cls
                   cls_logits = logits[cls_mask, cls]
                   print(f"Class {cls.item()} logits - mean: {cls_logits.mean().item():.4f}, std: {cls_logits.std().item():.4f}", file=loss_log)
             
-            # CHECK 5: Loss-accuracy correlation
             print(f"Loss: {loss.item():.4f}, Accuracy: {acc.item():.4f}", file=loss_log)
+            ###
         
-        # CHECK 6: Learning rate
+        ### DEBUG
         if self.global_step % 50 == 0:
           try:
               current_lr = self.lr_schedulers().get_last_lr()[0]
@@ -192,9 +193,11 @@ class PL_ModelWrapper(MatformerModule):
               pass
         
         debug_log.flush()
+        ###
+        
         return loss
 
-
+    ### DEBUG
     def on_after_optimizer_step(self, optimizer, optimizer_closure):
         # CHECK 3: Parameter updates (only when param_cache has entries)
         if self.global_step % 50 == 0 and self.global_step in param_cache:
@@ -209,10 +212,10 @@ class PL_ModelWrapper(MatformerModule):
                         print(f"  WARNING: No parameter update!", file=debug_log)
             del param_cache[self.global_step]
             debug_log.flush()
-
-
+  
     def on_train_end(self):
         debug_log.close()
+    ###
      
     def _pretraining_step(self, batch, batch_idx=None):
         try:
@@ -402,7 +405,7 @@ class PL_ModelWrapper(MatformerModule):
             return sum(p.sum() for p in self.parameters()) * 0.0
         
     def on_before_optimizer_step(self, optimizer):
-        # CHECK 2: Gradient flow (only when param_cache has entries = classification step)
+        ### DEBUG
         if self.global_step % 50 == 0 and self.global_step in param_cache:
             print(f"\n=== GRADIENTS Step {self.global_step} ===", file=debug_log)
             classifier_found = False
@@ -421,7 +424,7 @@ class PL_ModelWrapper(MatformerModule):
             if not classifier_found:
                 print("WARNING: No classifier/head parameters found!", file=debug_log)
             debug_log.flush()
-            
+        ### 
             
         additional_metrics=False
         if additional_metrics:
@@ -448,6 +451,8 @@ class PL_ModelWrapper(MatformerModule):
                         self.log("health/update_weight_ratio", ratio, on_step=True, batch_size=self.batch_size)
                 except Exception:
                     pass
+                  
+                  
     def configure_optimizers(self):
         if getattr(self.train_config, "no_decay_for_embedding", False) and self.train_config["optimizer"] != "muon":
             raise ValueError("no_decay_for_embedding for optimizers different than Muon not implemented yet! (Altough it's easy). Please remove it ")
