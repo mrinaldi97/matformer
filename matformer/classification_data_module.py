@@ -24,7 +24,7 @@ class ClassificationDataset(Dataset):
 
 class ClassificationDataModule(pl.LightningDataModule):
     def __init__(self, data_loader, tokenizer, max_seq_len, batch_size, 
-                 pad_token_id, num_devices=1, val_data_loader=None):
+                 pad_token_id, num_workers=1, val_data_loader=None):
         """
         Args:
             data_loader: class that handles data loading (default works on CSV/TSV/JSON files)
@@ -32,7 +32,7 @@ class ClassificationDataModule(pl.LightningDataModule):
             max_seq_len: Maximum sequence length
             batch_size: Batch size
             pad_token_id: Token ID for padding
-            num_devices: Number of GPUs/devices
+            num_workers: Number of workers
             val_data_loader: Optional loader
         """
         super().__init__()
@@ -41,7 +41,7 @@ class ClassificationDataModule(pl.LightningDataModule):
         self.max_seq_len = max_seq_len
         self.batch_size = batch_size
         self.pad_token_id = pad_token_id
-        self.num_devices = num_devices
+        self.num_workers = num_workers
         self.val_data_loader = val_data_loader
         self.num_labels = data_loader.get_num_labels()
     
@@ -117,7 +117,7 @@ class ClassificationDataModule(pl.LightningDataModule):
                 batch_size=self.batch_size,
                 sampler=sampler,
                 collate_fn=self.collate_fn,
-                num_workers=0,
+                num_workers=self.num_workers,
                 drop_last=True
             )
         else:
@@ -126,7 +126,7 @@ class ClassificationDataModule(pl.LightningDataModule):
                 batch_size=self.batch_size,
                 shuffle=shuffle,
                 collate_fn=self.collate_fn,
-                num_workers=0,
+                num_workers=self.num_workers,
                 drop_last=True
             )
 

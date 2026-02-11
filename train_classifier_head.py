@@ -237,7 +237,7 @@ def main():
         max_seq_len=1024, #cfg.max_seq_len,
         pad_token_id=config.pad_token_id , 
         batch_size=getattr(config,"training")["batch_size"],
-        num_devices=1
+        num_devices= getattr(config,"data")["num_workers"]
     )   
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
@@ -306,8 +306,6 @@ def main():
     print("\n=== Starting trainer.fit() ===")
     
     trainer.fit(model, dm, ckpt_path=ckpt_path)
-    
-    log_file.close()
 
 if __name__ == "__main__":
     main()

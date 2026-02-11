@@ -26,7 +26,7 @@
     "val_file": "test_data/hatexplain/val.json",
     "text_label": "full_text",
     "target_label": "final_label",
-    "num_workers": 1
+    "num_workers": 4
   },
   "save_dir": "./checkpoints_classification",
   "wandb_project": "Albertone_Classification",
