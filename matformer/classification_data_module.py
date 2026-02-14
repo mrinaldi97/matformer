@@ -74,12 +74,32 @@ class ClassificationDataModule(pl.LightningDataModule):
       samples = []
       
       for text, label in zip(texts, labels):
-        input_ids = self.tokenizer.encode(text)
+        if self.task_type == "token":
+          input_ids, label = self._tokenize_and_align(text, label)
+        else: 
+          input_ids = self.tokenizer.encode(text)
+          
         input_ids, label, trunc = self._truncate_sample(input_ids, label)
         truncation += trunc
         samples.append((input_ids, int(label)))
         
       return samples, truncation
+    
+    """
+    TODO: fix this to work with all tokenizers
+    """
+    def _tokenize_and_align(self, tokens, labels):
+        input_ids = []
+        aligned_labels = []
+        
+        for word, label in zip(tokens, labels):
+            word_ids = self.tokenizer.encode(word, add_special_tokens=False)
+            input_ids.extend(word_ids)
+            
+            aligned_labels.append(label)
+            aligned_labels.extend([-100] * (len(word_ids) - 1))
+        
+        return input_ids, aligned_labels
     
     def _truncate_sample(self, input_ids, label):
         """Truncate input and label if needed. Returns (input_ids, label, was_truncated)"""
