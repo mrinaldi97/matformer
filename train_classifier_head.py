@@ -113,7 +113,7 @@ def load_classification_config(
     with open(task_config_path, 'r') as f:
         task_dict = json.load(f)
         
-    checkpoint_path = getattr(task_dict,"pretrained_checkpoint", None)
+    checkpoint_path = task_dict.get("pretrained_checkpoint", None)
     
     if checkpoint_path is None:
         raise ValueError("checkpoint_path must be provided in config as 'pretrained_checkpoint'")
@@ -168,8 +168,8 @@ def main():
     config = load_classification_config(config_path)
     print("\n"+ "-"*40+"\n")    
     
-    save_dir = getattr(config, 'save_dir')
-    pl.seed_everything(getattr(config, 'seed', 27))
+    save_dir = config.get( 'save_dir')
+    pl.seed_everything(config.get('seed', 27))
     
     # Detect device
     if torch.cuda.is_available():
@@ -223,12 +223,12 @@ def main():
     )   
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-    checkpoint_name = getattr(config, 'name', 'name')
-    run_name = getattr(config, 'wandb_run_name', 'training-run')
+    checkpoint_name = config.get( 'name', 'name')
+    run_name = config.get('wandb_run_name', 'training-run')
     # Setup logging
     wandb_logger = WandbLogger(
         name=f"{run_name}_{timestamp}",
-        project=getattr(config, 'wandb_project', 'matformer'),
+        project=config.get('wandb_project', 'matformer'),
         config=config
     )
     
@@ -237,7 +237,7 @@ def main():
         filename=checkpoint_name,
         save_top_k=1,
         save_last=True,
-        every_n_train_steps=getattr(config, "save_every_n_steps", None),
+        every_n_train_steps=config.get( "save_every_n_steps", None),
         enable_version_counter=True,
         save_on_train_epoch_end=True
     )
@@ -247,15 +247,15 @@ def main():
     trainer = pl.Trainer(
         logger=wandb_logger,
         callbacks=[checkpoint],
-        precision=getattr(config, 'precision', 'bf16-mixed'),
+        precision=config.get( 'precision', 'bf16-mixed'),
         gradient_clip_val=getattr(config, 'training')["gradient_clip_val"],
         accelerator=accelerator,
         devices=1,
         log_every_n_steps=10,
-        accumulate_grad_batches=getattr(config, 'accumulate_grad_batches', 1),
+        accumulate_grad_batches=config.get( 'accumulate_grad_batches', 1),
         default_root_dir=save_dir,
         max_epochs=getattr(config, 'training')["max_epochs"],
-        max_steps=getattr(config, 'max_steps',-1),
+        max_steps=config.get( 'max_steps',-1),
         strategy=strategy,
         num_nodes=1
     )
