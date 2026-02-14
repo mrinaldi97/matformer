@@ -113,23 +113,33 @@ class PL_ModelWrapper(MatformerModule):
         labels = batch['labels']
         
         logits = self(input_ids)
-        loss = torch.nn.functional.cross_entropy(logits, labels)
-        print(f"Loss: {loss.item():.6f}", file=log_file)
         
-        batch_size = len(labels)
+        # Detect task type from logits shape
+        is_token_level = len(logits.shape) == 3  # (B, S, C) vs (B, C)
+        
+        if is_token_level:
+            loss = F.cross_entropy(
+                logits.view(-1, logits.size(-1)),
+                labels.view(-1),
+                ignore_index=-100
+            )
+            with torch.no_grad():
+                preds = logits.argmax(dim=-1)
+                mask = labels != -100
+                acc = ((preds == labels) & mask).sum().float() / mask.sum().clamp(min=1)
+        else:
+            loss = F.cross_entropy(logits, labels)
+            with torch.no_grad():
+                acc = (logits.argmax(dim=-1) == labels).float().mean()
+        
+        batch_size = input_ids.size(0)
         self.log('train/classification_loss', loss, prog_bar=True, batch_size=batch_size)
+        self.log('train/classification_accuracy', acc, prog_bar=True, 
+                on_step=True, on_epoch=True, batch_size=batch_size)
         
-        with torch.no_grad():
-            preds = logits.argmax(dim=-1)
-            acc = (preds == labels).float().mean()
-            self.log('train/classification_accuracy', acc, prog_bar=True, 
-                    on_step=True, on_epoch=True, batch_size=batch_size)
-            
-        # Log learning rate
         try:
-            current_lr = self.lr_schedulers().get_last_lr()[0]
-            self.log("lr", current_lr, prog_bar=True, on_step=True, 
-                    on_epoch=False, batch_size=batch_size)
+            self.log("lr", self.lr_schedulers().get_last_lr()[0], 
+                    prog_bar=True, on_step=True, batch_size=batch_size)
         except:
             pass
         
