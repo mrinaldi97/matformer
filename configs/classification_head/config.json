@@ -8,11 +8,7 @@
   "training": {
     "loss": {
       "type": "cross_entropy",
-      "class_weights": [
-        1,
-        1,
-        1
-      ]
+      "class_weights": "auto"
     },
     "optimizer": "adamw",
     "lr": 2e-4,

@@ -227,6 +227,13 @@ def load_and_validate_classification_config_from_dict(config_dict: dict) -> Clas
     if missing:
         raise ValueError(f"Missing required fields in the data section: {missing}")
     
+    
+    required_training = ["loss"]
+    missing += [f for f in required_data if f not in config_dict["data"]]
+    
+    if missing:
+        raise ValueError(f"Missing required fields in the training section: {missing}")
+      
     # Convert default_layer if dict
     if isinstance(config_dict['default_layer'], dict):
         config_dict['default_layer'] = LayerConfig(**config_dict['default_layer'])

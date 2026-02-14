@@ -157,6 +157,37 @@ def extract_config_from_checkpoint(checkpoint_path):
   checkpoint = torch.load(checkpoint_path, weights_only=False)
   return checkpoint['hyper_parameters']['config']  
 
+def save_classification_model(model, trainer, config, save_dir, name="final_model"):
+    """Save classification model after training."""
+    save_path = Path(save_dir) / name
+    save_path.mkdir(parents=True, exist_ok=True)
+    
+    # 1. 
+    full_path = save_path / "final.ckpt"
+    trainer.save_checkpoint(full_path)
+    print(f"Saved Lightning checkpoint: {full_path}")
+    
+    # 2. State dict
+    state_dict_path = save_path / "model_state.pt"
+    torch.save({
+        'model_state_dict': model.model.state_dict(),
+        'config': config,
+        'num_labels': model.model.num_features
+    }, state_dict_path)
+    print(f"Saved state dict: {state_dict_path}")
+    
+    # 3. Classification head only (for transfer to other encoders)
+    head_path = save_path / "classification_head.pt"
+    torch.save({
+        'head_state_dict': model.model.classification_head.state_dict(),
+        'num_labels': model.model.num_features,
+        'pooling_type': model.model.pooling_type,
+        'dropout_p': model.model.classifier_dropout_p
+    }, head_path)
+    print(f"Saved classification head: {head_path}")
+    
+    return save_path
+
 def main():
     config_path = "configs/classification_head/config.json"
     start_scratch = True
@@ -164,7 +195,7 @@ def main():
     # config
     print("\n --- Config ---")
     config = load_classification_config(config_path)
-    print("\n"+ "-"*40+"\n")    
+    print("\n")    
     
     save_dir = getattr(config,'save_dir')
     pl.seed_everything(getattr(config,'seed', 27))
@@ -196,13 +227,13 @@ def main():
 
     print("\n--- Labels distribution ---")
     print(train_loader.get_label_distribution())
-    print("-"*20)
-    class_weights = train_loader.get_class_weights(strategy='inverse_frequency')
-    print(f"Class weights: {class_weights}")
-    print("-"*20)
-
-    # Update config
-    config.training['loss']['class_weights'] = class_weights
+    print()
+    # automatic calculation of class weights to ease the mind of our users
+    if config.training.get('loss', {}).get('class_weights', False) == "auto":
+      class_weights = train_loader.get_class_weights(strategy='inverse_frequency')
+      config.training['loss']['class_weights'] = class_weights
+      print(f"Class weights: {class_weights}")
+      print()
     
     print("\nLoading model..")    
     model = load_model_from_checkpoint(
@@ -280,6 +311,16 @@ def main():
 
     print("\n--- Starting trainer.fit() ---")
     trainer.fit(model, dm, ckpt_path=ckpt_path)
+    
+    print("\n--- Saving final model ---")
+    final_save_path = save_classification_model(
+        model=model,
+        trainer=trainer,  # Pass trainer
+        config=config,
+        save_dir=save_dir,
+        name=f"{checkpoint_name}_final"
+    )
+    print(f"\nModel saved to: {final_save_path}")
 
 if __name__ == "__main__":
     main()
