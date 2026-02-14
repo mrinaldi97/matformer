@@ -158,12 +158,17 @@ class PL_ModelWrapper(MatformerModule):
             logits = logits.view(-1, logits.shape[-1])
             labels = labels.view(-1)
         
-        # Get loss function from registry
-        loss_fn = self.cache.registry.create("loss_fn", loss_type)
+        # Get loss kwargs from config
+        loss_kwargs = {k: v for k, v in loss_config.items() if k != 'type'}
+        loss_kwargs['ignore_index'] = -100 if is_token_level else -100
         
-        # Compute loss (ignore_index=-100 for token-level padding)
-        ignore_index = -100 if is_token_level else None
-        loss = loss_fn(logits, labels, loss_config, ignore_index=ignore_index)
+        # Create or get cached loss function
+        if not hasattr(self, '_loss_fn') or self._loss_type != loss_type:
+            self._loss_fn = self.cache.registry.create("loss_fn", loss_type, **loss_kwargs)
+            self._loss_type = loss_type
+        
+        # Compute loss (can override kwargs at forward time if needed)
+        loss = self._loss_fn(logits, labels)
         
         return loss
 
