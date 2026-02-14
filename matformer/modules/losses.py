@@ -4,8 +4,9 @@ import torch.nn.functional as F
 
 
 def register_loss_functions(registry):
+    """Register all available loss functions."""
     
-    @registry.register("loss_fn", "cross_entropy")
+    @registry.register("loss_fn", "cross_entropy", "torch", requires=["torch"], priority=10)
     def cross_entropy_loss(logits, labels, config, ignore_index=-100):
         """
         Standard cross-entropy loss.
@@ -25,7 +26,7 @@ def register_loss_functions(registry):
             label_smoothing=label_smoothing
         )
     
-    @registry.register("loss_fn", "focal")
+    @registry.register("loss_fn", "focal", "torch", requires=["torch"], priority=10)
     def focal_loss(logits, labels, config, ignore_index=-100):
         """
         Focal loss for severe class imbalance.
@@ -59,56 +60,7 @@ def register_loss_functions(registry):
         
         return focal.mean()
     
-    @registry.register("loss_fn", "dice")
-    def dice_loss(logits, labels, config, ignore_index=-100):
-        """
-        Dice loss for segmentation/token classification.
-        Config: smooth (float)
-        """
-        smooth = config.get('dice_smooth', 1.0)
-        num_classes = logits.shape[-1]
-        
-        # Get probabilities
-        probs = F.softmax(logits, dim=-1)
-        
-        # One-hot encode labels
-        labels_one_hot = F.one_hot(labels.clamp(min=0), num_classes).float()
-        
-        # Handle ignore_index
-        if ignore_index is not None:
-            mask = (labels != ignore_index).float().unsqueeze(-1)
-            probs = probs * mask
-            labels_one_hot = labels_one_hot * mask
-        
-        # Compute dice coefficient per class
-        intersection = (probs * labels_one_hot).sum(dim=0)
-        cardinality = (probs + labels_one_hot).sum(dim=0)
-        dice_score = (2.0 * intersection + smooth) / (cardinality + smooth)
-        
-        return 1.0 - dice_score.mean()
-    
-    @registry.register("loss_fn", "mse")
-    def mse_loss(logits, labels, config, ignore_index=-100):
-        """
-        MSE loss for regression tasks.
-        Config: none
-        """
-        # Assume single output for regression
-        if logits.shape[-1] == 1:
-            logits = logits.squeeze(-1)
-        
-        loss = F.mse_loss(logits, labels.float(), reduction='none')
-        
-        # Handle ignore_index
-        if ignore_index is not None:
-            mask = labels != ignore_index
-            if mask.any():
-                return loss[mask].mean()
-            return torch.tensor(0.0, device=logits.device, requires_grad=True)
-        
-        return loss.mean()
-    
-    @registry.register("loss_fn", "bce")
+    @registry.register("loss_fn", "bce", "torch", requires=["torch"], priority=10)
     def bce_loss(logits, labels, config, ignore_index=-100):
         """
         Binary cross-entropy for binary classification.
