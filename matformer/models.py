@@ -113,7 +113,7 @@ class PL_ModelWrapper(MatformerModule):
         
         if is_token_level:
             loss = F.cross_entropy(
-                logits.view(-1, logits.size(-1)),
+                logits.view(-1, logits.shape[-1]),
                 labels.view(-1),
                 ignore_index=-100
             )
@@ -126,7 +126,7 @@ class PL_ModelWrapper(MatformerModule):
             with torch.no_grad():
                 acc = (logits.argmax(dim=-1) == labels).float().mean()
         
-        batch_size = input_ids.size(0)
+        batch_size = input_ids.shape[0]
         self.log('train/classification_loss', loss, prog_bar=True, batch_size=batch_size)
         self.log('train/classification_accuracy', acc, prog_bar=True, 
                 on_step=True, on_epoch=True, batch_size=batch_size)
