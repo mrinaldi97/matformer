@@ -146,7 +146,7 @@ class PL_ModelWrapper(MatformerModule):
 
     def _compute_loss(self, logits, labels, is_token_level):
         """Compute classification loss using registry."""
-        loss_config = getattr(self.train_config, 'loss', {})
+        loss_config = self.train_config.get('loss', {})
         loss_type = loss_config.get('type', 'cross_entropy')
         
         # Reshape for token-level

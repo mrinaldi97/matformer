@@ -217,19 +217,25 @@ class ClassificationTrainingDataLoader:
         Args:
             strategy: 'inverse_frequency' or 'sqrt_inverse_frequency'
             normalize: If True, normalize weights to sum to num_classes
-        
-        Returns:
-            List of weights, one per class
         """
-        dist = self.get_label_distribution()
-        counts = [dist.get(i, 1) for i in range(self.get_num_labels())]
+        unique_labels, counts = self.get_label_distribution()
         
-        if strategy == 'inverse_frequency':
-            weights = [1.0 / c for c in counts]
-        elif strategy == 'sqrt_inverse_frequency':
-            weights = [1.0 / (c ** 0.5) for c in counts]
-        else:
-            raise ValueError(f"Unknown strategy: {strategy}")
+        num_classes = self.get_num_labels()
+        weights = []
+        
+        label_to_count = dict(zip(unique_labels, counts))
+        
+        for i in range(num_classes):
+            count = label_to_count.get(i, 1)  # Default to 1 if label not in data
+            
+            if strategy == 'inverse_frequency':
+                weight = 1.0 / count
+            elif strategy == 'sqrt_inverse_frequency':
+                weight = 1.0 / (count ** 0.5)
+            else:
+                raise ValueError(f"Unknown strategy: {strategy}")
+            
+            weights.append(weight)
         
         if normalize:
             total = sum(weights)

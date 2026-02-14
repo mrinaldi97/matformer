@@ -7,7 +7,7 @@
   "pretrained_checkpoint": "/mnt/llmdata/data/FINALE_32768.ckpt",
   "training": {
     "loss": {
-      "type": "weighted_cross_entropy",
+      "type": "cross_entropy",
       "class_weights": [
         1,
         1,
