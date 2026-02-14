@@ -209,3 +209,30 @@ class ClassificationTrainingDataLoader:
         
         unique_labels, counts = np.unique(self.df[self.label_column].values, return_counts=True)
         return unique_labels, counts
+      
+    def get_class_weights(self, strategy='inverse_frequency', normalize=True):
+        """
+        Compute class weights for imbalanced datasets.
+        
+        Args:
+            strategy: 'inverse_frequency' or 'sqrt_inverse_frequency'
+            normalize: If True, normalize weights to sum to num_classes
+        
+        Returns:
+            List of weights, one per class
+        """
+        dist = self.get_label_distribution()
+        counts = [dist.get(i, 1) for i in range(self.get_num_labels())]
+        
+        if strategy == 'inverse_frequency':
+            weights = [1.0 / c for c in counts]
+        elif strategy == 'sqrt_inverse_frequency':
+            weights = [1.0 / (c ** 0.5) for c in counts]
+        else:
+            raise ValueError(f"Unknown strategy: {strategy}")
+        
+        if normalize:
+            total = sum(weights)
+            weights = [w * len(weights) / total for w in weights]
+        
+        return weights

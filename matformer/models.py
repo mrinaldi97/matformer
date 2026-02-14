@@ -23,7 +23,6 @@ from matformer.matformer_registry import registry
 from matformer.cached_stuff import CachedStuff
 from copy import deepcopy
 from matformer.matformer_module import MatformerModule
-from matformer.modules.losses import register_loss_functions
 
 
 class PL_ModelWrapper(MatformerModule):
@@ -38,9 +37,6 @@ class PL_ModelWrapper(MatformerModule):
         # Initialize cache and set registry
         self.cache = CachedStuff()
         self.cache.registry = registry
-        
-        # Register loss functions
-        register_loss_functions(self.cache.registry)
         
         self.model = ModelClass(
           config,

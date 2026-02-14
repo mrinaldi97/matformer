@@ -1,4 +1,5 @@
 """Loss functions for classification tasks."""
+from matformer.matformer_registry import registry
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -39,6 +40,44 @@ class CrossEntropyLoss(nn.Module):
             label_smoothing=label_smoothing
         )
 
+@registry.register(
+    "loss_fn",
+    "weighted_cross_entropy",
+    "torch",
+    requires=["torch"],
+    priority=10
+)
+class WeightedCrossEntropyLoss(nn.Module):
+    """
+    Weighted cross-entropy for class imbalance.
+    Assigns higher loss penalty to minority classes.
+    Args at init: class_weights (list of floats, one per class)
+    """
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self._args = args
+        self._kwargs = kwargs
+
+    def forward(self, logits, labels, **extra_kwargs):
+        kw = dict(self._kwargs)
+        kw.update(extra_kwargs)
+        
+        class_weights = kw.get('class_weights', None)
+        ignore_index = kw.get('ignore_index', -100)
+        
+        if class_weights is not None:
+            class_weights = torch.tensor(
+                class_weights, 
+                device=logits.device, 
+                dtype=logits.dtype
+            )
+        
+        return F.cross_entropy(
+            logits, 
+            labels,
+            weight=class_weights,
+            ignore_index=ignore_index
+        )
 
 @registry.register(
     "loss_fn",

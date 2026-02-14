@@ -196,7 +196,13 @@ def main():
 
     print("\n--- Labels distribution ---")
     print(train_loader.get_label_distribution())
-    print("\n"+ "-"*20)
+    print("-"*20)
+    class_weights = train_loader.get_class_weights(strategy='inverse_frequency')
+    print(f"Class weights: {class_weights}")
+    print("-"*20)
+
+    # Update config
+    config.training['loss']['class_weights'] = class_weights
     
     print("\nLoading model..")    
     model = load_model_from_checkpoint(
