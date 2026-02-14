@@ -217,12 +217,15 @@ def load_and_validate_classification_config_from_dict(config_dict: dict) -> Clas
     required = ['hidden_size', 'num_hidden_layers', 'num_attention_heads', 
                 'vocab_size', 'default_layer', 'save_dir', 'data', 'training']
     missing = [f for f in required if f not in config_dict]
+    
+    if missing:
+        raise ValueError(f"Missing required fields: {missing}")
       
     required_data = ["train_file", "text_label", "target_label"]
     missing += [f for f in required_data if f not in config_dict["data"]]
     
     if missing:
-        raise ValueError(f"Missing required fields: {missing}")
+        raise ValueError(f"Missing required fields in the data section: {missing}")
     
     # Convert default_layer if dict
     if isinstance(config_dict['default_layer'], dict):
@@ -242,5 +245,7 @@ def load_and_validate_classification_config_from_dict(config_dict: dict) -> Clas
     
     print(f"Loaded: {config.num_hidden_layers}L x {config.hidden_size}d × {config.num_attention_heads}h, "
           f"{config.num_labels} classes, {config.pooling_type} pooling")
+      
+    if config_dict["training"]["loss_fn"] not in [""]
     
     return config

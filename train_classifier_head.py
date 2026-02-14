@@ -46,7 +46,6 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_featur
     else:
         raise ValueError(f"task must be 'sentence-level' or 'token-level', got {task}")
     
-    # Load model
     model, config = PL_ModelWrapper.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
         ModelClass=ModelClass,
@@ -141,7 +140,6 @@ def load_classification_config(
         # Override with task config (task config takes priority)
         final_dict.update(task_dict)
 
-        # Print inheritance info
         if inherited_fields:
             print(f"Inherited {len(inherited_fields)} fields from checkpoint\n")
         if overridden_fields:
@@ -152,12 +150,8 @@ def load_classification_config(
         # Use only task config
         final_dict = task_dict.copy()
     
-    # Ensure pretrained_checkpoint is set
     final_dict['pretrained_checkpoint'] = checkpoint_path
-    
-    # Parse into ClassificationConfig
     config = load_and_validate_classification_config_from_dict(final_dict)
-    
     return config
 
 
@@ -166,10 +160,6 @@ def extract_config_from_checkpoint(checkpoint_path):
   return checkpoint['hyper_parameters']['config']  
 
 def main():
-  
-    print(torch.cuda.memory_allocated() / 1e9, "GB allocated")
-    print(torch.cuda.memory_reserved() / 1e9, "GB reserved")
-
     config_path = "configs/classification_head/config.json"
     start_scratch = True
   
@@ -270,10 +260,6 @@ def main():
         num_nodes=1
     )
     
-    print("\nTRAINER")
-    print(torch.cuda.memory_allocated() / 1e9, "GB allocated")
-    print(torch.cuda.memory_reserved() / 1e9, "GB reserved")
-    
     # Handle checkpoint loading
     ckpt_path = None
     if not start_scratch:
@@ -286,17 +272,8 @@ def main():
                 ckpt_path = str(last_ckpt)
             else:
                 print("No checkpoint found, starting from scratch.")
-                
-    # After dm initialization, before trainer.fit():
-    print("\n=== DATA BATCH CHECK ===")
-    dm.setup()
-    sample_batch = next(iter(dm.train_dataloader()))
-    print(f"Batch input_ids shape: {sample_batch['input_ids'].shape}")
-    print(f"Batch labels shape: {sample_batch['labels'].shape}")
-    print(f"Memory after batch: {torch.cuda.memory_allocated() / 1e9:.2f} GB")
 
-    print("\n=== Starting trainer.fit() ===")
-    
+    print("\n--- Starting trainer.fit() ---")
     trainer.fit(model, dm, ckpt_path=ckpt_path)
 
 if __name__ == "__main__":
