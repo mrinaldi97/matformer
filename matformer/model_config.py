@@ -245,7 +245,5 @@ def load_and_validate_classification_config_from_dict(config_dict: dict) -> Clas
     
     print(f"Loaded: {config.num_hidden_layers}L x {config.hidden_size}d × {config.num_attention_heads}h, "
           f"{config.num_labels} classes, {config.pooling_type} pooling")
-      
-    if config_dict["training"]["loss_fn"] not in [""]
     
     return config
