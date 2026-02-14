@@ -105,38 +105,68 @@ class PL_ModelWrapper(MatformerModule):
     def _classification_step(self, batch):  
         input_ids = batch['input_ids']
         labels = batch['labels']
-        
+
         logits = self(input_ids)
-        
+
         # Detect task type from logits shape
         is_token_level = len(logits.shape) == 3  # (B, S, C) vs (B, C)
-        
+
         if is_token_level:
+
+            # Shape checks
+            assert logits.shape[:2] == labels.shape, f"Shape mismatch: {logits.shape} vs {labels.shape}"
+            assert logits.shape[-1] == self.num_features, f"Wrong num_classes: {logits.shape[-1]} vs {self.num_features}"
+
+            # Value range checks
+            assert labels.min() >= -100 and labels.max() < self.num_features, f"Labels out of range: [{labels.min()}, {labels.max()}]"
+            assert not torch.isnan(logits).any(), "NaN in logits"
+
             loss = F.cross_entropy(
                 logits.view(-1, logits.shape[-1]),
                 labels.view(-1),
                 ignore_index=-100
             )
+            
             with torch.no_grad():
                 preds = logits.argmax(dim=-1)
                 mask = labels != -100
                 acc = ((preds == labels) & mask).sum().float() / mask.sum().clamp(min=1)
+            
         else:
+            assert logits.shape == (labels.shape[0], self.num_features), f"Shape mismatch: {logits.shape} vs ({labels.shape[0]}, {self.num_features})"
+            assert labels.min() >= 0 and labels.max() < self.num_features, f"Labels OOR: [{labels.min()}, {labels.max()}]"
+          
             loss = F.cross_entropy(logits, labels)
             with torch.no_grad():
                 acc = (logits.argmax(dim=-1) == labels).float().mean()
-        
+
+        assert not torch.isnan(loss) and not torch.isinf(loss), f"Invalid loss: {loss.item()}"
+        assert 0 <= loss.item() < 10, f"Loss OOR: {loss.item()}"
+
         batch_size = input_ids.shape[0]
         self.log('train/classification_loss', loss, prog_bar=True, batch_size=batch_size)
         self.log('train/classification_accuracy', acc, prog_bar=True, 
                 on_step=True, on_epoch=True, batch_size=batch_size)
-        
+
         try:
             self.log("lr", self.lr_schedulers().get_last_lr()[0], 
                     prog_bar=True, on_step=True, batch_size=batch_size)
         except:
             pass
-        
+          
+        # Alignment verification (periodic)
+        if self.global_step % 100 == 0:
+            with torch.no_grad():
+                if is_token_level:
+                    valid_mask = labels[0] != -100
+                    print(f"[Token] Preds:  {preds[0][valid_mask][:5].tolist()}")
+                    print(f"[Token] Labels: {labels[0][valid_mask][:5].tolist()}")
+                    print(f"[Token] Match:  {(preds[0][valid_mask][:5] == labels[0][valid_mask][:5]).tolist()}")
+                else:
+                    print(f"[Seq] Preds:  {preds[:5].tolist()}")
+                    print(f"[Seq] Labels: {labels[:5].tolist()}")
+                    print(f"[Seq] Match:  {(preds[:5] == labels[:5]).tolist()}")
+
         return loss
 
     def _pretraining_step(self, batch, batch_idx=None):
