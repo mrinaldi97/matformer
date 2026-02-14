@@ -33,10 +33,14 @@ from matformer.tensors_dataclasses import PaddedTensor, UnpaddedTensor
 from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
 import torch.serialization as serialization
 
-serialization.add_safe_globals([BERTModel, TransformerWithEmbeddingHead,TransformerWithClassificationHead, TransformerWithTokenClassificationHead, ModelConfig])
+serialization.add_safe_globals([
+    BERTModel, TransformerWithEmbeddingHead, TransformerWithClassificationHead, 
+    TransformerWithTokenClassificationHead, ModelConfig, ClassificationConfig, 
+    TokenClassificationConfig, LayerConfig
+])
 
 def load_model_from_checkpoint(checkpoint_path, config, train_config, num_features, 
-                               task, map_location='cpu', tokenizer=None):
+                               task, freeze_base_model=True, map_location='cpu', tokenizer=None):
     """Load classification model with pretrained encoder weights."""
     
     if task == "sentence-level":
@@ -62,21 +66,22 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_featur
     print(f"Model: {config.name}, {config.num_hidden_layers} layers")
     print(f"Task: {task}, {num_features} classes")
 
-    print("\n--- Freezing encoder ---")
-    model.model.freeze_encoder()
+    if freeze_base_model:
+        print("\n--- Freezing encoder ---")
+        model.model.freeze_encoder()
 
-    # Verify freezing
-    encoder_params = sum(p.numel() for p in model.model.encoder.parameters())
-    encoder_trainable = sum(p.numel() for p in model.model.encoder.parameters() if p.requires_grad)
-    head_trainable = sum(p.numel() for p in model.model.classification_head.parameters() if p.requires_grad)
-    total_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+        # Verify freezing
+        encoder_params = sum(p.numel() for p in model.model.encoder.parameters())
+        encoder_trainable = sum(p.numel() for p in model.model.encoder.parameters() if p.requires_grad)
+        head_trainable = sum(p.numel() for p in model.model.classification_head.parameters() if p.requires_grad)
+        total_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
-    print(f"Encoder params: {encoder_params:,} (trainable: {encoder_trainable:,})")
-    print(f"Head params: {head_trainable:,}")
-    print(f"Total trainable: {total_trainable:,}")
+        print(f"Encoder params: {encoder_params:,} (trainable: {encoder_trainable:,})")
+        print(f"Head params: {head_trainable:,}")
+        print(f"Total trainable: {total_trainable:,}")
 
-    assert encoder_trainable == 0, "Encoder should have 0 trainable params"
-    assert head_trainable > 0, "Classification head should be trainable"
+        assert encoder_trainable == 0, "Encoder should have 0 trainable params"
+        assert head_trainable > 0, "Classification head should be trainable"
     
     return model
   
@@ -188,11 +193,7 @@ def save_classification_model(model, trainer, config, save_dir, name="final_mode
     
     return save_path
 
-def main():
-    config_path = "configs/classification_head/config.json"
-    start_scratch = True
-  
-    # config
+def run_training(config_path, start_scratch=True):  
     print("\n --- Config ---")
     config = load_classification_config(config_path)
     print("\n")    
@@ -243,7 +244,8 @@ def main():
         num_features=train_loader.get_num_labels(),
         task="sentence-level",
         map_location="cuda",
-        tokenizer=tokenizer
+        tokenizer=tokenizer,
+        freeze_base_model = getattr(config, 'freeze_base_model', True)
     )
     
     print("\nLoading data loader..")
@@ -261,39 +263,48 @@ def main():
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     checkpoint_name = getattr(config, 'name', 'name')
     run_name = getattr(config, 'wandb_run_name', 'training-run')
+    
+    Path(save_dir).mkdir(parents=True, exist_ok=True)
+    
+    #don't add timestamp if run_name already has run identifier
+    if '_run' in run_name or 'run' in run_name.lower():
+        final_run_name = run_name
+    else:
+        final_run_name = f"{run_name}_{timestamp}"
+    
     # Setup logging
     wandb_logger = WandbLogger(
-        name=f"{run_name}_{timestamp}",
-        project=getattr(config, 'wandb_project', 'matformer'),
-        config=config
+        name = final_run_name,
+        project = getattr(config, 'wandb_project', 'matformer'),
+        config = config
     )
     
     checkpoint = ModelCheckpoint(
-        dirpath=save_dir,
-        filename=checkpoint_name,
-        save_top_k=1,
-        save_last=True,
-        every_n_train_steps=getattr(config, "save_every_n_steps", None),
-        enable_version_counter=True,
-        save_on_train_epoch_end=True
+        dirpath = save_dir,
+        filename = checkpoint_name,
+        save_top_k = 1,
+        save_last = True,
+        every_n_train_steps = getattr(config, "save_every_n_steps", None),
+        enable_version_counter = True,
+        save_on_train_epoch_end = True
     )
     torch.set_float32_matmul_precision('high')
     
-    strategy=DDPStrategy(gradient_as_bucket_view=True,static_graph=True,find_unused_parameters=False)
+    strategy = DDPStrategy(gradient_as_bucket_view=True,static_graph=True,find_unused_parameters=False)
     trainer = pl.Trainer(
-        logger=wandb_logger,
-        callbacks=[checkpoint],
-        precision=getattr(config, 'precision', 'bf16-mixed'),
-        gradient_clip_val=getattr(config, 'training')["gradient_clip_val"],
-        accelerator=accelerator,
-        devices=1,
-        log_every_n_steps=10,
-        accumulate_grad_batches=getattr(config, 'accumulate_grad_batches', 1),
-        default_root_dir=save_dir,
-        max_epochs=getattr(config, 'training')["max_epochs"],
-        max_steps=getattr(config, 'max_steps',-1),
-        strategy=strategy,
-        num_nodes=1
+        logger = wandb_logger,
+        callbacks = [checkpoint],
+        precision = getattr(config, 'precision', 'bf16-mixed'),
+        gradient_clip_val = getattr(config, 'training')["gradient_clip_val"],
+        accelerator = accelerator,
+        devices = 1,
+        log_every_n_steps = 10,
+        accumulate_grad_batches = getattr(config, 'accumulate_grad_batches', 1),
+        default_root_dir = save_dir,
+        max_epochs = getattr(config, 'training')["max_epochs"],
+        max_steps = getattr(config, 'max_steps',-1),
+        strategy = strategy,
+        num_nodes = 1
     )
     
     # Handle checkpoint loading
@@ -309,8 +320,12 @@ def main():
             else:
                 print("No checkpoint found, starting from scratch.")
 
+    Path(save_dir).mkdir(parents=True, exist_ok=True)
+
     print("\n--- Starting trainer.fit() ---")
     trainer.fit(model, dm, ckpt_path=ckpt_path)
+    
+    wandb.finish() 
     
     print("\n--- Saving final model ---")
     final_save_path = save_classification_model(
@@ -321,6 +336,17 @@ def main():
         name=f"{checkpoint_name}_final"
     )
     print(f"\nModel saved to: {final_save_path}")
+
+def main():
+    import sys
+    
+    if len(sys.argv) > 1:
+        config_path = sys.argv[1]
+    else:
+        config_path = "configs/classification_head/config.json"
+    
+    start_scratch = True
+    run_training(config_path, start_scratch)
 
 if __name__ == "__main__":
     main()

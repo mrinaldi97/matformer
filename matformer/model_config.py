@@ -197,7 +197,7 @@ class ClassificationConfig(ModelConfig):
     classifier_dropout_inplace: bool = False
     
     # Fine-tuning specific
-    freeze_encoder: bool = False
+    freeze_base_model: bool = False
     pretrained_checkpoint: Optional[str] = None
 
 @dataclass
@@ -207,7 +207,7 @@ class TokenClassificationConfig(ModelConfig):
     num_labels: int = 2
     classifier_dropout_p: float = 0.1
     classifier_dropout_inplace: bool = False
-    freeze_encoder: bool = False
+    freeze_base_model: bool = False
     pretrained_checkpoint: Optional[str] = None
 
 def load_and_validate_classification_config_from_dict(config_dict: dict) -> ClassificationConfig:
