@@ -115,10 +115,10 @@ class PL_ModelWrapper(MatformerModule):
 
             # Shape checks
             assert logits.shape[:2] == labels.shape, f"Shape mismatch: {logits.shape} vs {labels.shape}"
-            assert logits.shape[-1] == self.num_features, f"Wrong num_classes: {logits.shape[-1]} vs {self.num_features}"
+            assert logits.shape[-1] == self.model.num_features, f"Wrong num_classes: {logits.shape[-1]} vs {self.model.num_features}"
 
             # Value range checks
-            assert labels.min() >= -100 and labels.max() < self.num_features, f"Labels out of range: [{labels.min()}, {labels.max()}]"
+            assert labels.min() >= -100 and labels.max() < self.model.num_features, f"Labels out of range: [{labels.min()}, {labels.max()}]"
             assert not torch.isnan(logits).any(), "NaN in logits"
 
             loss = F.cross_entropy(
@@ -133,12 +133,13 @@ class PL_ModelWrapper(MatformerModule):
                 acc = ((preds == labels) & mask).sum().float() / mask.sum().clamp(min=1)
             
         else:
-            assert logits.shape == (labels.shape[0], self.num_features), f"Shape mismatch: {logits.shape} vs ({labels.shape[0]}, {self.num_features})"
-            assert labels.min() >= 0 and labels.max() < self.num_features, f"Labels OOR: [{labels.min()}, {labels.max()}]"
+            assert logits.shape == (labels.shape[0], self.model.num_features), f"Shape mismatch: {logits.shape} vs ({labels.shape[0]}, {self.model.num_features})"
+            assert labels.min() >= 0 and labels.max() < self.model.num_features, f"Labels OOR: [{labels.min()}, {labels.max()}]"
           
             loss = F.cross_entropy(logits, labels)
             with torch.no_grad():
-                acc = (logits.argmax(dim=-1) == labels).float().mean()
+                preds = logits.argmax(dim=-1)
+                acc = (preds == labels).float().mean()
 
         assert not torch.isnan(loss) and not torch.isinf(loss), f"Invalid loss: {loss.item()}"
         assert 0 <= loss.item() < 10, f"Loss OOR: {loss.item()}"
@@ -153,20 +154,7 @@ class PL_ModelWrapper(MatformerModule):
                     prog_bar=True, on_step=True, batch_size=batch_size)
         except:
             pass
-          
-        # Alignment verification (periodic)
-        if self.global_step % 100 == 0:
-            with torch.no_grad():
-                if is_token_level:
-                    valid_mask = labels[0] != -100
-                    print(f"[Token] Preds:  {preds[0][valid_mask][:5].tolist()}")
-                    print(f"[Token] Labels: {labels[0][valid_mask][:5].tolist()}")
-                    print(f"[Token] Match:  {(preds[0][valid_mask][:5] == labels[0][valid_mask][:5]).tolist()}")
-                else:
-                    print(f"[Seq] Preds:  {preds[:5].tolist()}")
-                    print(f"[Seq] Labels: {labels[:5].tolist()}")
-                    print(f"[Seq] Match:  {(preds[:5] == labels[:5]).tolist()}")
-
+            
         return loss
 
     def _pretraining_step(self, batch, batch_idx=None):
