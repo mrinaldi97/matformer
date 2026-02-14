@@ -96,26 +96,37 @@ class ClassificationDataModule(pl.LightningDataModule):
     La collate_fn restituisce un dizionario input_ids, attention_mask, labels. Sta quindi passando degli oggetti torch.Tensor; È possibile con molta facilità integrare in questo punto la logica padding/unpadding di matformer in modo da armonizzarlo con il codice usato in addestramento;
     """
     def collate_fn(self, batch):
-      
         input_ids_list = []
         labels_list = []
         
         for input_ids, label in batch:
-            padded = input_ids + [self.pad_token_id] * (self.max_seq_len - len(input_ids))
-            input_ids_list.append(padded)
-            labels_list.append(label)
+            input_ids_list.append(self._pad_input(input_ids))
+            labels_list.append(self._pad_label(label))
         
+        return self._create_batch_dict(input_ids_list, labels_list)
+    
+    def _pad_input(self, input_ids):
+        return input_ids + [self.pad_token_id] * (self.max_seq_len - len(input_ids))
+    
+    def _pad_label(self, label):
+        if self.task_type == 'sequence':
+            return label
+        else:  # token
+            return label + [-100] * (self.max_seq_len - len(label))
+    
+    def _create_batch_dict(self, input_ids_list, labels_list):
         input_ids_tensor = torch.tensor(input_ids_list, dtype=torch.long)
         labels_tensor = torch.tensor(labels_list, dtype=torch.long)
         padding_mask = (input_ids_tensor == self.pad_token_id)
-        padded_sequence = PaddedTensor(tensor=input_ids_tensor, padding_mask=padding_mask)
         
-        if self.varlen_strategy=='unpad':
-          padded_sequence.unpad()
+        padded_sequence = PaddedTensor(tensor=input_ids_tensor, padding_mask=padding_mask)
+        if self.varlen_strategy == 'unpad':
+            padded_sequence.unpad()
         
         return {
             "input_ids": padded_sequence,
-            "labels": labels_tensor
+            "labels": labels_tensor,
+            "attention_mask": ~padding_mask
         }
     
     def _create_dataloader(self, dataset, shuffle):
