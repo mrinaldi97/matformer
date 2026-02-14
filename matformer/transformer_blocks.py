@@ -807,10 +807,7 @@ class TransformerWithClassificationHead(MatformerModule):
             2 
         )
         
-        # Transformer with embeddings
         self.encoder = TransformerWithEmbeddingHead(config=config, cache=self.cache)
-        
-        # Classification components
         self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)             
         self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)             
 
@@ -925,10 +922,7 @@ class TransformerWithTokenClassificationHead(MatformerModule):
             2 
         )
         
-        # Encoder (pretrained part)
         self.encoder = TransformerWithEmbeddingHead(config=config, cache=self.cache)
-        
-        # Token classification components
         self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)
         self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)
           
@@ -980,10 +974,8 @@ class TransformerWithTokenClassificationHead(MatformerModule):
     def forward(self, x, attention_mask=None, **kwargs):
         kwargs.pop('return_type', None)
         
-        # Encoder forward
         hidden_states = self.encoder(x, **kwargs).tensor
         
-        # Token-level classification
         hidden_states = self.dropout(hidden_states)
         logits = self.classification_head(hidden_states)
         
