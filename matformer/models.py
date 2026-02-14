@@ -24,12 +24,6 @@ from matformer.cached_stuff import CachedStuff
 from copy import deepcopy
 from matformer.matformer_module import MatformerModule
 
-## to be deleted
-import sys
-debug_log = open('classification_debug.log', 'w')
-loss_log = open('loss_debug.log', 'w')
-param_cache = {}  # Store params for comparison
-##
 
 class PL_ModelWrapper(MatformerModule):
     def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,
