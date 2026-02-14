@@ -24,7 +24,8 @@ class ClassificationDataset(Dataset):
 
 class ClassificationDataModule(pl.LightningDataModule):
     def __init__(self, data_loader, tokenizer, max_seq_len, batch_size, 
-                 pad_token_id, num_workers=1, val_data_loader=None, varlen_strategy = "Padding"):
+                 pad_token_id, task_type='sequence', num_workers=1,
+                 val_data_loader=None, varlen_strategy = "Padding"):
         """
         Args:
             data_loader: class that handles data loading (default works on CSV/TSV/JSON files)
@@ -45,6 +46,7 @@ class ClassificationDataModule(pl.LightningDataModule):
         self.val_data_loader = val_data_loader
         self.num_labels = data_loader.get_num_labels()
         self.varlen_strategy = varlen_strategy
+        self.task_type = task_type
     
     
     def setup(self, stage=None):
@@ -70,13 +72,24 @@ class ClassificationDataModule(pl.LightningDataModule):
       truncation = 0
       texts, labels, ids = data_loader.get_data()
       samples = []
+      
       for text, label in zip(texts, labels):
         input_ids = self.tokenizer.encode(text)
-        if len(input_ids) > self.max_seq_len:
-          input_ids = input_ids[:self.max_seq_len]
-          truncation += 1
+        input_ids, label, trunc = self._truncate_sample(input_ids, label)
+        truncation += trunc
         samples.append((input_ids, int(label)))
+        
       return samples, truncation
+    
+    def _truncate_sample(self, input_ids, label):
+        """Truncate input and label if needed. Returns (input_ids, label, was_truncated)"""
+        if len(input_ids) <= self.max_seq_len:
+            return input_ids, label, 0
+        
+        input_ids = input_ids[:self.max_seq_len]
+        if self.task_type == 'token':
+            label = label[:self.max_seq_len]
+        return input_ids, label, 1
     
     
     """
