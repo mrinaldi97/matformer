@@ -45,32 +45,36 @@ class ClassificationDataModule(pl.LightningDataModule):
         self.val_data_loader = val_data_loader
         self.num_labels = data_loader.get_num_labels()
     
+    
     def setup(self, stage=None):
+      train_truncation, val_truncation = 0
         
-        texts, labels, ids = self.data_loader.get_data()
+      train_samples , train_truncation = _sampler(self.data_loader)
+      self.train_dataset = ClassificationDataset(train_samples)
         
-        print(f"\n! max_seq_len = {self.max_seq_len}!\nThis could cause troncation of samples, choose the value accordingly!\n")
-        
-        # Tokenize and create examples
-        train_examples = []
-        for text, label in zip(texts, labels):
-            input_ids = self.tokenizer.encode(text)
-            if len(input_ids) > self.max_seq_len:
-                input_ids = input_ids[:self.max_seq_len]
-            train_examples.append((input_ids, int(label)))
-        
-        self.train_dataset = ClassificationDataset(train_examples)
-        
-        # Same for validation if exists
-        if self.val_data_loader is not None:
-            val_texts, val_labels, _ = self.val_data_loader.get_data()
-            val_examples = []
-            for text, label in zip(val_texts, val_labels):
-                input_ids = self.tokenizer.encode(text)
-                if len(input_ids) > self.max_seq_len:
-                    input_ids = input_ids[:self.max_seq_len]
-                val_examples.append((input_ids, int(label)))
-            self.val_dataset = ClassificationDataset(val_examples)
+      # Same for validation if exists
+      if self.val_data_loader is not None:
+        val_samples , val_truncation = _sampler(self.val_data_loader)
+        self.val_dataset = ClassificationDataset(val_samples)
+            
+      if train_truncation or val_truncation:
+        print(f"\n--- Truncation of long samples ---")
+        print(f"Currently the max length of samples is set to {self.max_seq_len}")
+        print(f"This caused the truncation of {train_truncation} in the train set and {val_truncation} in the validation set")
+        print("If this is unwanted behaviour, consider modifying the value in the config file\n" + "-" * 30)
+    
+    
+    def _sampler(data_loader):
+      truncation = 0
+      texts, labels, ids = data_loader.get_data()
+      samples = []
+      for text, label in zip(texts, labels):
+        input_ids = self.tokenizer.encode(text)
+        if len(input_ids) > self.max_seq_len:
+          input_ids = input_ids[:self.max_seq_len]
+          truncation += 1
+        samples.append((input_ids, int(label)))
+      return samples, truncation
     
     
     """
@@ -78,8 +82,6 @@ class ClassificationDataModule(pl.LightningDataModule):
     """
     def collate_fn(self, batch):
       
-        #print(f"[COLLATE] Batch length: {len(batch)}")
-    
         input_ids_list = []
         labels_list = []
         
@@ -90,12 +92,7 @@ class ClassificationDataModule(pl.LightningDataModule):
         
         input_ids_tensor = torch.tensor(input_ids_list, dtype=torch.long)
         labels_tensor = torch.tensor(labels_list, dtype=torch.long)
-        
-        #print(f"[COLLATE] input_ids_tensor.shape: {input_ids_tensor.shape}")
-        #print(f"[COLLATE] labels_tensor.shape: {labels_tensor.shape}")
-    
         padding_mask = (input_ids_tensor == self.pad_token_id)
-        #print(f"[COLLATE] padding_mask.shape: {padding_mask.shape}")
         padded_sequence = PaddedTensor(tensor=input_ids_tensor, padding_mask=padding_mask)
         
         return {
