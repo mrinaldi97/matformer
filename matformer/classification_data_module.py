@@ -95,6 +95,9 @@ class ClassificationDataModule(pl.LightningDataModule):
         padding_mask = (input_ids_tensor == self.pad_token_id)
         padded_sequence = PaddedTensor(tensor=input_ids_tensor, padding_mask=padding_mask)
         
+        if self.config.varlen_strategy=='unpad':
+          padded_sequence.unpad()
+        
         return {
             "input_ids": padded_sequence,
             "labels": labels_tensor
