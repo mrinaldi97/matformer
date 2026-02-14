@@ -6,6 +6,11 @@
   "classifier_dropout_inplace": false,
   "pretrained_checkpoint": "/mnt/llmdata/data/FINALE_32768.ckpt",
   "training": {
+    "loss": {
+      "type": "cross_entropy",
+      "class_weights": null,
+      "label_smoothing": 0.0
+    },
     "optimizer": "adamw",
     "lr": 2e-4,
     "weight_decay": 0.0,
