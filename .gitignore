@@ -10,3 +10,5 @@ char_autoencoder/data/
 __pycache__*
 utils/
 .venv/
+test_data/hatexplain/
+test_data/fake/
