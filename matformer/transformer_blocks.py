@@ -875,9 +875,6 @@ class TransformerWithClassificationHead(MatformerModule):
         # TODO: perchè?
         kwargs.pop('return_type', None)
         
-        if attention_mask is None and isinstance(x, PaddedTensor):
-            attention_mask = ~x.padding_mask  # True for real tokens
-        
         hidden_states = self.encoder(x, **kwargs) # (B,S,D)
         
         if self.pooling_type == 'cls':
@@ -990,7 +987,7 @@ class TransformerWithTokenClassificationHead(MatformerModule):
         hidden_states = self.dropout(hidden_states)
         logits = self.classification_head(hidden_states)
         
-        return logits        
+        return logits
         
 class TextDiffusionModel:
     """
