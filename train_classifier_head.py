@@ -99,9 +99,7 @@ def load_classification_config(
     
     Args:
         task_config_path: Path to task config JSON
-        checkpoint_path: Path to pretrained checkpoint (optional if in task config)
         inherit_from_checkpoint: If True, fill missing fields from checkpoint config
-        validate_compatibility: If True, validate config compatibility
     
     Returns:
         ClassificationConfig with merged settings
@@ -113,7 +111,7 @@ def load_classification_config(
     with open(task_config_path, 'r') as f:
         task_dict = json.load(f)
         
-    checkpoint_path = getattr(task_dict,"pretrained_checkpoint", None)
+    checkpoint_path = task_dict.get("pretrained_checkpoint", None)
     
     if checkpoint_path is None:
         raise ValueError("checkpoint_path must be provided in config as 'pretrained_checkpoint'")
@@ -168,8 +166,8 @@ def main():
     config = load_classification_config(config_path)
     print("\n"+ "-"*40+"\n")    
     
-    save_dir = getattr(config, 'save_dir')
-    pl.seed_everything(getattr(config, 'seed', 27))
+    save_dir = getattr(config,'save_dir')
+    pl.seed_everything(getattr(config,'seed', 27))
     
     # Detect device
     if torch.cuda.is_available():
@@ -202,7 +200,7 @@ def main():
     
     print("\nLoading model..")    
     model = load_model_from_checkpoint(
-        checkpoint_path=checkpoint_path,
+        checkpoint_path=getattr(config,"pretrained_checkpoint"),
         config=config,
         train_config=getattr(config,'training'),
         num_features=train_loader.get_num_labels(),
@@ -219,7 +217,8 @@ def main():
         max_seq_len=1024, #cfg.max_seq_len,
         pad_token_id=config.pad_token_id , 
         batch_size=getattr(config,"training")["batch_size"],
-        num_workers= getattr(config,"data")["num_workers"]
+        num_workers= getattr(config,"data")["num_workers"],
+        varlen_strategy = "Padding"
     )   
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

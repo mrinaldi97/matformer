@@ -24,7 +24,7 @@ class ClassificationDataset(Dataset):
 
 class ClassificationDataModule(pl.LightningDataModule):
     def __init__(self, data_loader, tokenizer, max_seq_len, batch_size, 
-                 pad_token_id, num_workers=1, val_data_loader=None):
+                 pad_token_id, num_workers=1, val_data_loader=None, varlen_strategy = "Padding"):
         """
         Args:
             data_loader: class that handles data loading (default works on CSV/TSV/JSON files)
@@ -44,17 +44,19 @@ class ClassificationDataModule(pl.LightningDataModule):
         self.num_workers = num_workers
         self.val_data_loader = val_data_loader
         self.num_labels = data_loader.get_num_labels()
+        self.varlen_strategy = varlen_strategy
     
     
     def setup(self, stage=None):
-      train_truncation, val_truncation = 0
+      train_truncation = 0
+      val_truncation = 0
         
-      train_samples , train_truncation = _sampler(self.data_loader)
+      train_samples , train_truncation = self._sampler(self.data_loader)
       self.train_dataset = ClassificationDataset(train_samples)
         
       # Same for validation if exists
       if self.val_data_loader is not None:
-        val_samples , val_truncation = _sampler(self.val_data_loader)
+        val_samples , val_truncation = self._sampler(self.val_data_loader)
         self.val_dataset = ClassificationDataset(val_samples)
             
       if train_truncation or val_truncation:
@@ -64,7 +66,7 @@ class ClassificationDataModule(pl.LightningDataModule):
         print("If this is unwanted behaviour, consider modifying the value in the config file\n" + "-" * 30)
     
     
-    def _sampler(data_loader):
+    def _sampler(self, data_loader):
       truncation = 0
       texts, labels, ids = data_loader.get_data()
       samples = []
@@ -95,7 +97,7 @@ class ClassificationDataModule(pl.LightningDataModule):
         padding_mask = (input_ids_tensor == self.pad_token_id)
         padded_sequence = PaddedTensor(tensor=input_ids_tensor, padding_mask=padding_mask)
         
-        if self.config.varlen_strategy=='unpad':
+        if self.varlen_strategy=='unpad':
           padded_sequence.unpad()
         
         return {
