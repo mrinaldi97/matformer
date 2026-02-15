@@ -9,3 +9,6 @@ char_autoencoder/checkpoints/
 char_autoencoder/data/
 __pycache__*
 utils/
+.venv/
+test_data/fake/
+temp_grid_configs

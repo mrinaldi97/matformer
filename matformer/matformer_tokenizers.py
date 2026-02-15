@@ -15,7 +15,7 @@ class MatformerTokenizer:
     """
     def __init__(self, tokenizer=None,tokenizer_type=None, tokenizer_name=None, tokenizer_args=None, varlen_strategy=None, config=None):
         self.config = config
-        tokenizer=tokenizer_type #[kept for compatibility, deprecated]
+        #tokenizer=tokenizer_type #[kept for compatibility, deprecated]
         if tokenizer == 'bytes':
             self.tokenizer = ByteLevelTokenizer(config)
             self.tokenizer_modality='bytes'
@@ -117,18 +117,24 @@ class MatformerTokenizer:
         add_special_tokens: bool = False,
         return_offsets_mapping: bool = False
     ):
-        encoded = self.tokenizer(
-            text,
-            add_special_tokens=add_special_tokens,
-            return_offsets_mapping=return_offsets_mapping
-        )
-        input_ids = encoded["input_ids"]
+        # ByteLevelTokenizer already handles bos/eos tokens in __call__
+        if isinstance(self.tokenizer, ByteLevelTokenizer):
+            encoded = self.tokenizer(text)
+            input_ids = encoded["input_ids"]
+        else:
+            # HuggingFace tokenizers
+            encoded = self.tokenizer(
+                text,
+                add_special_tokens=add_special_tokens,
+                return_offsets_mapping=return_offsets_mapping
+            )
+            input_ids = encoded["input_ids"]
 
-        if add_bos and getattr(self.tokenizer, "bos_token_id", None) is not None:
-            input_ids = [self.tokenizer.bos_token_id] + input_ids
+            if add_bos and getattr(self.tokenizer, "bos_token_id", None) is not None:
+                input_ids = [self.tokenizer.bos_token_id] + input_ids
 
-        if add_eos and getattr(self.tokenizer, "eos_token_id", None) is not None:
-            input_ids = input_ids + [self.tokenizer.eos_token_id]
+            if add_eos and getattr(self.tokenizer, "eos_token_id", None) is not None:
+                input_ids = input_ids + [self.tokenizer.eos_token_id]
 
         if truncation and hasattr(self, "seq_len"):
             input_ids = input_ids[:self.seq_len]

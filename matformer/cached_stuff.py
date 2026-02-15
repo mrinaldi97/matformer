@@ -1,7 +1,7 @@
 import torch
 import math
 from typing import Optional, Tuple, Any, Dict, Callable
-from torch.nn.attention.flex_attention import flex_attention, create_block_mask,create_nested_block_mask
+from torch.nn.attention.flex_attention import flex_attention, create_block_mask#,create_nested_block_mask
 
 
 class CachedStuff:

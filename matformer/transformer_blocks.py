@@ -781,54 +781,99 @@ class TransformerWithLMHead(MatformerModule):
         
         return sequence
 
-class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
-    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='cls', num_features=2, device=None, cache=None):
-        super().__init__(config)
-        self.cache = ensure_cache_and_registry(cache)   
-        cache=self.cache      
-        self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)             
-        self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)             
-        self.classification_head = ModuleWrapper(self.cache.registry.create(
-            "linear", "linear", in_features=config.hidden_size, out_features=num_features
-        ))
-
-        self.dropout = ModuleWrapper(self.cache.registry.create(
-                "dropout", "dropout",
-                p=self.classifier_dropout_p, inplace=self.classifier_dropout_inplace
-            )
-        )
-        # Transformer with embeddings
-        self.encoder = TransformerWithEmbeddingHead(config, cache=self.cache)
+class TransformerWithClassificationHead(MatformerModule):
+  
+    # Stable parameter names
+    encoder: "param_name:encoder"
+    classification_head: "param_name:classifier"
+    dropout: "param_name:dropout"
+      
+    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='cls',
+                 num_features=None, device=None, cache=None):
+        super().__init__()
         
-        # Weight tying: share embeddings with output projection
-        if config.tie_word_embeddings and hasattr(self,"lm_head"):
-            self.lm_head.weight = self.encoder.embed_tokens.module.inner.weight
-   
+        self.cache = ensure_cache_and_registry(cache)
+        
         self.config = config
         self.tokenizer = tokenizer
         self.pooling_type = pooling_type
-        self.num_features = num_features
+        # Precedence: explicit param > config > default
+        # for current train code, the param is always 
+        # automatically calculated by the loader and passed
+        # so the config is never used
+        self.num_features = (
+            num_features or 
+            getattr(config, 'num_features', None) or 
+            2 
+        )
+        
+        self.encoder = TransformerWithEmbeddingHead(config=config, cache=self.cache)
+        self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)             
+        self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)             
+
+        self.dropout = ModuleWrapper(
+          self.cache.registry.create(
+                "dropout", "dropout",
+                p=self.classifier_dropout_p,
+                inplace=self.classifier_dropout_inplace
+            )
+        )
+        
+        self.classification_head = ModuleWrapper(
+            self.cache.registry.create(
+                "linear", "linear",
+                in_features=config.hidden_size,
+                out_features=num_features
+            )
+        )   
     
+    def freeze_encoder(self):
+        """Freeze encoder parameters."""
+        for param in self.encoder.parameters():
+            param.requires_grad = False
+    
+    def unfreeze_encoder(self):
+        """Unfreeze encoder parameters."""
+        for param in self.encoder.parameters():
+            param.requires_grad = True
+            
     def change_num_labels(self, new_num_labels):
         """Change the number of output features of the classification head."""
-        self.num_labels = new_num_labels
-        self.classification_head = ModuleWrapper(self.cache.registry.create(
-            "linear", "linear", in_features=self.config.hidden_size, out_features=new_num_labels
+        self.num_features = new_num_labels
+        self.classification_head = ModuleWrapper(
+          self.cache.registry.create(
+            "linear", "linear",
+            in_features=self.config.hidden_size,
+            out_features=new_num_labels
         ))
 
-        # Get device and dtype from existing parameters
         reference_param = next(self.encoder.parameters())
-        device = reference_param.device
-        dtype = reference_param.dtype
-        
         # Move to the same device and dtype as the model
-        self.classification_head = self.classification_head.to(device=device, dtype=dtype)
+        self.classification_head = self.classification_head.to(
+          device = reference_param.device,
+          dtype = reference_param.dtype
+        )
 
         print(f"Number of labels changed to {new_num_labels}")
 
     def forward(self, x, attention_mask=None, **kwargs):
+        """
+        Args:
+            x: Input tensor or PaddedTensor
+            attention_mask: Optional explicit mask. If None, extracted from PaddedTensor
+        """
+        
+        #print(f"[FORWARD] x type: {type(x)}")
+        #if isinstance(x, PaddedTensor):
+        #    print(f"[FORWARD] x.tensor.shape: {x.tensor.shape}")
+        #    print(f"[FORWARD] x.padding_mask.shape: {x.padding_mask.shape}")
+      
+        # Remove return_type before passing to encoder
+        # TODO: perchè?
+        kwargs.pop('return_type', None)
+        
         hidden_states = self.encoder(x, **kwargs) # (B,S,D)
-
+        
         if self.pooling_type == 'cls':
             # [CLS] in pos. 0
             pooled_output = hidden_states.tensor[:, 0, :]
@@ -837,7 +882,9 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
             if attention_mask is None:
                 pooled_output = hidden_states.tensor.mean(dim=1)
             else:
-                mask_expanded = attention_mask.unsqueeze(-1).expand(hidden_states.tensor.size()).to(hidden_states.dtype)
+                mask_expanded = attention_mask.unsqueeze(-1).expand(
+                  hidden_states.tensor.size()
+                ).to(hidden_states.dtype)
                 sum_hidden = torch.sum(hidden_states.tensor * mask_expanded, dim=1)
                 sum_mask = torch.clamp(mask_expanded.sum(dim=1), min=1e-9)
                 pooled_output = sum_hidden / sum_mask
@@ -846,60 +893,93 @@ class TransformerWithClassificationHead(TransformerWithEmbeddingHead):
 
         pooled_output = self.dropout(pooled_output)
         logits = self.classification_head(pooled_output)
+        
         return logits
 
-class TransformerWithTokenClassificationHead(TransformerWithEmbeddingHead):
-    def __init__(self, config: ModelConfig, tokenizer=None, num_labels=2, device=None, cache=None):
-        super().__init__(config)
+class TransformerWithTokenClassificationHead(MatformerModule):
+    
+    # Stable parameter names
+    encoder: "param_name:encoder"
+    classification_head: "param_name:classifier"
+    dropout: "param_name:dropout"
+    
+    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='cls',
+                 num_features=None, device=None, cache=None):
+        super().__init__()
         
-        self.cache = ensure_cache_and_registry(cache)   
-        cache=self.cache      
-        self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)             
-        self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)             
-        self.classification_head = ModuleWrapper(self.cache.registry.create(
-            "linear", "linear", in_features=config.hidden_size, out_features=num_labels
-        ))
-
-        self.dropout = ModuleWrapper(self.cache.registry.create(
-                "dropout", "dropout",
-                p=self.classifier_dropout_p, inplace=self.classifier_dropout_inplace
-            )
-        )
-        # Transformer with embeddings
-        self.encoder = TransformerWithEmbeddingHead(config, cache=self.cache)
+        self.cache = ensure_cache_and_registry(cache)
         
-        # Weight tying: share embeddings with output projection
-        if config.tie_word_embeddings and hasattr(self,"lm_head"):
-            self.lm_head.weight = self.encoder.embed_tokens.module.inner.weight
-   
         self.config = config
         self.tokenizer = tokenizer
-        self.num_labels = num_labels
+        self.pooling_type = pooling_type
+        # Precedence: explicit param > config > default
+        # for current train code, the param is always 
+        # automatically calculated by the loader and passed
+        # so the config is never used
+        self.num_features = (
+            num_features or 
+            getattr(config, 'num_features', None) or 
+            2 
+        )
+        
+        self.encoder = TransformerWithEmbeddingHead(config=config, cache=self.cache)
+        self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)
+        self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)
+          
+        self.dropout = ModuleWrapper(
+            self.cache.registry.create(
+                "dropout", "dropout",
+                p=self.classifier_dropout_p,
+                inplace=self.classifier_dropout_inplace
+            )
+        )
+        
+        self.classification_head = ModuleWrapper(
+            self.cache.registry.create(
+                "linear", "linear",
+                in_features=config.hidden_size,
+                out_features=num_features
+            )
+        )
     
+    def freeze_encoder(self):
+        """Freeze encoder parameters."""
+        for param in self.encoder.parameters():
+            param.requires_grad = False
+    
+    def unfreeze_encoder(self):
+        """Unfreeze encoder parameters."""
+        for param in self.encoder.parameters():
+            param.requires_grad = True
+            
     def change_num_labels(self, new_num_labels):
         """Change the number of output features of the classification head."""
-        self.num_labels = new_num_labels
-        self.classification_head = ModuleWrapper(self.cache.registry.create(
-            "linear", "linear", in_features=self.config.hidden_size, out_features=new_num_labels
+        self.num_features = new_num_labels
+        self.classification_head = ModuleWrapper(
+          self.cache.registry.create(
+            "linear", "linear",
+            in_features=self.config.hidden_size,
+            out_features=new_num_labels
         ))
 
-        # Get device and dtype from existing parameters
         reference_param = next(self.encoder.parameters())
-        device = reference_param.device
-        dtype = reference_param.dtype
-        
         # Move to the same device and dtype as the model
-        self.classification_head = self.classification_head.to(device=device, dtype=dtype)
+        self.classification_head = self.classification_head.to(
+          device = reference_param.device,
+          dtype = reference_param.dtype
+        )
 
         print(f"Number of labels changed to {new_num_labels}")
 
     def forward(self, x, attention_mask=None, **kwargs):
-        hidden_states = self.encoder(x, **kwargs).tensor # (B,S,D)
-
+        kwargs.pop('return_type', None)
+        
+        hidden_states = self.encoder(x, **kwargs).tensor
+        
         hidden_states = self.dropout(hidden_states)
         logits = self.classification_head(hidden_states)
-        return logits
         
+        return logits
         
 class TextDiffusionModel:
     """
