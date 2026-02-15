@@ -1,5 +1,3 @@
-"""Loss functions for classification tasks."""
-
 from matformer.matformer_registry import registry
 import torch
 import torch.nn as nn
@@ -9,7 +7,10 @@ import torch.nn.functional as F
 @registry.register("loss_fn", "cross_entropy", "torch", requires=["torch"], priority=10)
 class CrossEntropyLoss(nn.Module):
     """
-    Args: class_weights, label_smoothing, ignore_index
+    Args:
+    class_weights,
+    label_smoothing,
+    ignore_index (int): value to ignore in labels/targets
     """
 
     def __init__(self, *args, **kwargs):
@@ -125,3 +126,49 @@ class BCELoss(nn.Module):
             return torch.tensor(0.0, device=logits.device, requires_grad=True)
 
         return loss.mean()
+
+
+class _RegressionLossBase(nn.Module):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self._kwargs = kwargs
+
+    def _compute_loss(self, logits, labels):
+        """Override in subclasses."""
+        raise NotImplementedError
+
+    def forward(self, logits, labels, **extra_kwargs):
+        kw = {**self._kwargs, **extra_kwargs}
+
+        if logits.shape[-1] == 1:
+            logits = logits.squeeze(-1)
+
+        if logits.shape != labels.shape:
+            raise ValueError(
+                f"Shape mismatch: logits {logits.shape} vs labels {labels.shape}"
+            )
+
+        # Use NaN masking for regression
+        use_nan_masking = kw.get("use_nan_masking", False)
+
+        loss = self._compute_loss(logits, labels.float())
+
+        if use_nan_masking:
+            mask = ~torch.isnan(labels)
+            if mask.any():
+                return loss[mask].mean()
+            return torch.tensor(0.0, device=logits.device, requires_grad=True)
+
+        return loss.mean()
+
+
+@registry.register("loss_fn", "mse", "torch", requires=["torch"], priority=10)
+class MSELoss(_RegressionLossBase):
+    def _compute_loss(self, logits, labels):
+        return F.mse_loss(logits, labels, reduction="none")
+
+
+@registry.register("loss_fn", "mae", "torch", requires=["torch"], priority=10)
+class MAELoss(_RegressionLossBase):
+    def _compute_loss(self, logits, labels):
+        return F.l1_loss(logits, labels, reduction="none")
