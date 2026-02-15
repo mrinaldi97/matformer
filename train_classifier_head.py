@@ -237,10 +237,8 @@ def run_training(config_path, start_scratch=True):
       print()
     
     freeze_base_model = getattr(config, 'freeze_base_model', True)
-    # ugliest fix ever for OOM
-    if not freeze_base_model and getattr(config, 'training')["batch_size"] > 16:
-      print("\nBATCH SIZE REDUCED TO AVOID OOM")
-      config.training["batch_size"] = 16
+    if freeze_base_model and :
+      config["batch_size"] = 32
     
     print("\nLoading model..")    
     model = load_model_from_checkpoint(
