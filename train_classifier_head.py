@@ -236,6 +236,14 @@ def run_training(config_path, start_scratch=True):
       print(f"Class weights: {class_weights}")
       print()
     
+    freeze_base_model = getattr(config, 'freeze_base_model', True)
+    # ugliest fix ever for OOM
+    if not freeze_base_model and getattr(config, 'training')["batch_size"] > 16:
+      print("\nBATCH SIZE REDUCED TO AVOID OOM")
+      config.training["batch_size"] = 16
+    
+    print(config)
+    
     print("\nLoading model..")    
     model = load_model_from_checkpoint(
         checkpoint_path=getattr(config,"pretrained_checkpoint"),
@@ -245,7 +253,7 @@ def run_training(config_path, start_scratch=True):
         task="sentence-level",
         map_location="cuda",
         tokenizer=tokenizer,
-        freeze_base_model = getattr(config, 'freeze_base_model', True)
+        freeze_base_model = freeze_base_model
     )
     
     print("\nLoading data loader..")

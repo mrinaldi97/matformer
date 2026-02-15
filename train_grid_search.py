@@ -5,6 +5,8 @@ from typing import Any, Dict, List
 from copy import deepcopy
 from datetime import datetime
 import sys
+import torch
+import gc
 from train_classifier_head import run_training
 
 def expand_grid_config(config: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -133,6 +135,11 @@ def main():
             print(f"{'='*60}\n")
             
             continue
+        finally:
+            if torch.cuda.is_available():
+                torch.cuda.empty_cache()
+                torch.cuda.synchronize()
+            gc.collect()
           
     results_file = results_dir / "grid_search_results.json"
     results_dir.mkdir(parents=True, exist_ok=True)
