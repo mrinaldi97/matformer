@@ -242,8 +242,6 @@ def run_training(config_path, start_scratch=True):
       print("\nBATCH SIZE REDUCED TO AVOID OOM")
       config.training["batch_size"] = 16
     
-    print(config)
-    
     print("\nLoading model..")    
     model = load_model_from_checkpoint(
         checkpoint_path=getattr(config,"pretrained_checkpoint"),
