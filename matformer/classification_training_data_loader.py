@@ -47,7 +47,7 @@ class ClassificationTrainingDataLoader:
         self._validate_and_load()
 
     def _validate_and_load(self):
-        """Load CSV,TSV,JSON,CONLLU,CONLLX and validate required columns exist."""
+        """Load CSV,TSV,JSON,JSONL,CONLLU,CONLLX and validate required columns exist."""
 
         print("--- WARNING ---\nAs of now, the loader loads all data in memory")
 
@@ -74,6 +74,8 @@ class ClassificationTrainingDataLoader:
                     self.df = pd.read_csv(self.filepath, sep="\t")
                 elif suffix == ".json":
                     self.df = pd.read_json(self.filepath)
+                elif suffix == ".jsonl":
+                    self.df = pd.read_json(self.filepath, lines=True)
                 else:
                     raise ValueError(f"Unsupported format: {suffix}")
             except (pd.errors.ParserError, FileNotFoundError) as e:

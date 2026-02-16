@@ -5,6 +5,7 @@ datasets/
 tokenizers/
 logs/
 entropy_model/
+char_autoencoder/
 char_autoencoder/checkpoints/
 char_autoencoder/data/
 __pycache__*

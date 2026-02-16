@@ -237,8 +237,8 @@ def run_training(config_path, start_scratch=True):
       print()
     
     freeze_base_model = getattr(config, 'freeze_base_model', True)
-    if freeze_base_model and :
-      config["batch_size"] = 32
+    #if freeze_base_model and :
+    #  config["batch_size"] = 32
     
     print("\nLoading model..")    
     model = load_model_from_checkpoint(
@@ -290,7 +290,7 @@ def run_training(config_path, start_scratch=True):
         save_last = True,
         every_n_train_steps = getattr(config, "save_every_n_steps", None),
         enable_version_counter = True,
-        save_on_train_epoch_end = True
+        save_on_train_epoch_end = getattr(config, "save_on_train_epoch_end", False)
     )
     torch.set_float32_matmul_precision('high')
     
