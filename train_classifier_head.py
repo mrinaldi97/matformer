@@ -218,9 +218,9 @@ def run_training(config_path, start_scratch=True):
     )
     tokenizer = MatformerTokenizer(
                 config=config,
-                tokenizer=config.tokenizer,
+                tokenizer_type=config.tokenizer_type,
                 tokenizer_name=config.tokenizer_name,
-                varlen_strategy="padding"
+                varlen_strategy="padding"   
             )     
     print("\n--- Labels distribution ---")
     print(train_loader.get_label_distribution())
