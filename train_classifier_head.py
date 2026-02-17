@@ -85,15 +85,7 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_featur
     
     return model
   
-# taken from models.py
-def load_tokenizer(config=None, tokenizer="bytes", varlen_strategy=None):
-  tokenizer = MatformerTokenizer(
-            config=config,
-            tokenizer=tokenizer,
-            tokenizer_name=tokenizer,
-            varlen_strategy=varlen_strategy
-        )     
-  return tokenizer
+
             
 def load_classification_config(
     task_config_path: str,
@@ -224,12 +216,14 @@ def run_training(config_path, start_scratch=True):
         if "val_file" in getattr(config, "data", {})
         else None
     )
-    tokenizer = load_tokenizer(config=config)
-
+    tokenizer = MatformerTokenizer(
+                config=config,
+                tokenizer=config.tokenizer,
+                tokenizer_name=config.tokenizer_name,
+                varlen_strategy="padding"
+            )     
     print("\n--- Labels distribution ---")
     print(train_loader.get_label_distribution())
-    print()
-    # automatic calculation of class weights to ease the mind of our users
     if config.training.get('loss', {}).get('class_weights', False) == "auto":
       class_weights = train_loader.get_class_weights(strategy='inverse_frequency')
       config.training['loss']['class_weights'] = class_weights

@@ -789,14 +789,15 @@ class PL_ModelWrapper(MatformerModule):
             for k, v in overrides.items():
                 setattr(config, k, v)
 
-        tokenizer = MatformerTokenizer(
-            config=config,
-            # tokenizer_type='huggingface', by keeping this we force the tokenizer huggingface in place of the correct param
-            tokenizer=tokenizer,
-            tokenizer_name=tokenizer,
-            varlen_strategy=varlen_strategy,
-        )
-
+        #tokenizer = MatformerTokenizer(
+        #    config=config,
+        #    # tokenizer_type='huggingface',
+        #    tokenizer=tokenizer,
+        #    tokenizer_name=tokenizer,
+        #    varlen_strategy=varlen_strategy,
+        #)
+        if tokenizer is not None:
+            assert isinstance(tokenizer,MatformerTokenizer)
         model = PL_ModelWrapper(
             ModelClass=ModelClass,
             config=config,
