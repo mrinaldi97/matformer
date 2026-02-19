@@ -39,6 +39,7 @@ class PL_ModelWrapper(MatformerModule):
         train_config=None,
         inference=False,
         load_mode="full",
+        init_weights=True,
         **model_kwargs,
     ):
         super().__init__()
@@ -62,14 +63,17 @@ class PL_ModelWrapper(MatformerModule):
                 *[],
                 **{"ignore_index": config.pad_token_id},
             )
-        else:  # 22785MiB
+        else:  
             self.cross_entropy_loss = self.cache.registry.create(
                 "loss",
                 "cross_entropy_loss",
                 *[],
                 **{"ignore_index": config.pad_token_id},
             )
-
+        ### ATTENZIONE: Bug sistemato al volo perchè bloccava l'addestramento della testa di classificazione, ora però manca l'iniziallizzazione dei pesi del classificatore, da sistemare presto (molto facile)
+        # E rendere anche più eleganti questi parametri
+        if init_weights==False:
+            self._restored_from_ckpt=True
         if not getattr(self, "_restored_from_ckpt", False):
             self.model.apply(init_transformer_weights_)
 
@@ -804,6 +808,7 @@ class PL_ModelWrapper(MatformerModule):
             train_config=train_config,
             tokenizer=tokenizer,
             device=map_location,
+            init_weights=False,
             **model_kwargs,
         )
         # model.load_state_dict(checkpoint['state_dict'])
