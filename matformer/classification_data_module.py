@@ -30,7 +30,7 @@ class ClassificationDataModule(pl.LightningDataModule):
         task_type="sequence",
         num_workers=1,
         val_data_loader=None,
-        varlen_strategy="padding",
+        varlen_strategy="unpadding",
     ):
         """
         Args:

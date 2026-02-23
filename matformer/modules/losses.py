@@ -84,6 +84,7 @@ class FocalLoss(_ClassificationLossBase):
 
 @registry.register("loss_fn", "bce", "torch", requires=["torch"], priority=10)
 class BCELoss(_ClassificationLossBase):
+	# Mi sembra sbagliata
     """
     Args: pos_weight, ignore_index
     """
@@ -97,7 +98,7 @@ class BCELoss(_ClassificationLossBase):
                 [pos_weight], device=logits.device, dtype=logits.dtype
             )
 
-        # Normalize shape
+        # Normalize shape ??????
         if logits.shape[-1] == 2:
             logits = logits[:, 1]
         else:

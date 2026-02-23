@@ -57,7 +57,7 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_featur
         train_config=train_config,
         map_location=map_location,
         tokenizer=tokenizer,
-        varlen_strategy='padding',
+        varlen_strategy='unpadding',
         external_mapping=None,
         num_features=num_features
     )
@@ -220,7 +220,7 @@ def run_training(config_path, start_scratch=True):
                 config=config,
                 tokenizer_type=config.tokenizer_type,
                 tokenizer_name=config.tokenizer_name,
-                varlen_strategy="padding"   
+                varlen_strategy="unpadding"   
             )     
     print("\n--- Labels distribution ---")
     print(train_loader.get_label_distribution())
@@ -255,7 +255,7 @@ def run_training(config_path, start_scratch=True):
         pad_token_id=config.pad_token_id , 
         batch_size=getattr(config,"training")["batch_size"],
         num_workers= getattr(config,"data")["num_workers"],
-        varlen_strategy = "Padding"
+        varlen_strategy = "unpadding"
     )   
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")

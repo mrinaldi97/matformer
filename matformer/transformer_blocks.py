@@ -706,10 +706,6 @@ class TransformerWithClassificationHead(MatformerModule):
         self.config = config
         self.tokenizer = tokenizer
         self.pooling_type = pooling_type
-        # Precedence: explicit param > config > default
-        # for current train code, the param is always 
-        # automatically calculated by the loader and passed
-        # so the config is never used
         self.num_features = (
             num_features or 
             getattr(config, 'num_features', None) or 
@@ -732,7 +728,7 @@ class TransformerWithClassificationHead(MatformerModule):
             self.cache.registry.create(
                 "linear", "linear",
                 in_features=config.hidden_size,
-                out_features=num_features
+                out_features=self.num_features
             )
         )   
     
@@ -781,8 +777,8 @@ class TransformerWithClassificationHead(MatformerModule):
         # TODO: perchè?
         kwargs.pop('return_type', None)
         
-        hidden_states = self.encoder(x, **kwargs) # (B,S,D)
-        
+        hidden_states = self.encoder(x, **kwargs).pad() # (B,S,D)
+        # Warning: hidden states are now a PaddedTensor so that pooling can be accomplished
         if self.pooling_type == 'cls':
             # [CLS] in pos. 0
             pooled_output = hidden_states.tensor[:, 0, :]
@@ -860,7 +856,7 @@ class TransformerWithTokenClassificationHead(MatformerModule):
                 param.requires_grad = False
         else:
             for name,param in self.encoder.named_parameters():
-				
+                
                 pass
                 
     
