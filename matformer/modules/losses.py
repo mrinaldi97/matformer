@@ -118,8 +118,8 @@ class BCELoss(_ClassificationLossBase):
         return self._apply_ignore_mask(loss, labels, kw.get("ignore_index", -100))
 
 
-=======
->>>>>>> 82d808b8df9eeba1290c978fdf263086c21eb951
+#=======
+#>>>>>>> 82d808b8df9eeba1290c978fdf263086c21eb951
 class _RegressionLossBase(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__()
