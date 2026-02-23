@@ -1022,7 +1022,7 @@ class BERTModel(TransformerWithLMHead):
             masked_sequence = NormalTensor(tensor=masked_list.unsqueeze(0),recurrence_mask=torch.tensor([recurrence_mask]).to(self.device))
         model_input=deepcopy(masked_sequence)
         with torch.no_grad():
-            logits = self(model_input)
+            logits = self(model_input)        
         predictions = torch.argmax(logits.tensor, dim=-1)
         targets = sequence.squeeze()
         mask = cloze_list.squeeze().bool()

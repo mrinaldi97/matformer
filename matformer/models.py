@@ -92,14 +92,7 @@ class PL_ModelWrapper(MatformerModule):
             vocab_size=self.config.vocab_size,
         )
 
-    def forward(self, _input, *args, **kwargs):
-        with open('norm_w_inference.txt', 'w') as f:
-            for name, param in self.named_parameters():
-                norm = param.data.norm().item()
-                f.write(f"{name}: {norm:.6f}\n")
-        sys.exit(1)
-            
-        
+    def forward(self, _input, *args, **kwargs):       
         if isinstance(_input, torch.Tensor):
             _input = NormalTensor(tensor=_input)
         output = self.model(_input.to(self.device), *args, **kwargs)
@@ -802,13 +795,15 @@ class PL_ModelWrapper(MatformerModule):
             for k, v in overrides.items():
                 setattr(config, k, v)
 
-        tokenizer = MatformerTokenizer(
-            config=config,
-            tokenizer_type='huggingface',
-            tokenizer=tokenizer,
-            tokenizer_name=tokenizer,
-            varlen_strategy=varlen_strategy,
-        )
+        
+        if type(tokenizer) != MatformerTokenizer:
+          tokenizer = MatformerTokenizer(
+              config=config,
+              tokenizer_type='huggingface',
+              tokenizer=tokenizer,
+              tokenizer_name=tokenizer,
+              varlen_strategy=varlen_strategy,
+          )
         
         if tokenizer is not None:
           assert isinstance(tokenizer,MatformerTokenizer)
