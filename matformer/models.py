@@ -27,6 +27,8 @@ from matformer.cached_stuff import CachedStuff
 from copy import deepcopy
 from matformer.matformer_module import MatformerModule
 
+import sys
+
 
 class PL_ModelWrapper(MatformerModule):
     def __init__(
@@ -91,6 +93,13 @@ class PL_ModelWrapper(MatformerModule):
         )
 
     def forward(self, _input, *args, **kwargs):
+        with open('norm_w_inference.txt', 'w') as f:
+            for name, param in self.named_parameters():
+                norm = param.data.norm().item()
+                f.write(f"{name}: {norm:.6f}\n")
+        sys.exit(1)
+            
+        
         if isinstance(_input, torch.Tensor):
             _input = NormalTensor(tensor=_input)
         output = self.model(_input.to(self.device), *args, **kwargs)
@@ -783,25 +792,26 @@ class PL_ModelWrapper(MatformerModule):
                     "Config not found in checkpoint and not provided. Please provide a config."
                 )
 
-        """  
-        tokenizer = (
-            AutoTokenizer.from_pretrained(tokenizer) 
-            if tokenizer != 'bytes' else 'bytes'
-        )
-        """
+        
+        #tokenizer = (
+        #    AutoTokenizer.from_pretrained(tokenizer) 
+        #    if tokenizer != 'bytes' else 'bytes'
+        #)
+        
         if overrides is not None:
             for k, v in overrides.items():
                 setattr(config, k, v)
 
-        #tokenizer = MatformerTokenizer(
-        #    config=config,
-        #    # tokenizer_type='huggingface',
-        #    tokenizer=tokenizer,
-        #    tokenizer_name=tokenizer,
-        #    varlen_strategy=varlen_strategy,
-        #)
+        tokenizer = MatformerTokenizer(
+            config=config,
+            tokenizer_type='huggingface',
+            tokenizer=tokenizer,
+            tokenizer_name=tokenizer,
+            varlen_strategy=varlen_strategy,
+        )
+        
         if tokenizer is not None:
-            assert isinstance(tokenizer,MatformerTokenizer)
+          assert isinstance(tokenizer,MatformerTokenizer)
         model = PL_ModelWrapper(
             ModelClass=ModelClass,
             config=config,

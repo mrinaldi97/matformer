@@ -89,7 +89,7 @@ if __name__ == "__main__":
         print("\n--- Generated ---\n" + out + "\n------\n")
 
     def do_masked(prompt):
-        acc, toks = model.model.inference_testing(prompt, masking_ratio=args.masking_ratio)
+        acc, toks, pseudo_perplexity = model.model.inference_testing(prompt, masking_ratio=args.masking_ratio)
         print("\n--- Masked prediction ---")
         print(" ".join(toks))
         print(f"Accuracy: {acc*100:.2f}%\n------\n")
