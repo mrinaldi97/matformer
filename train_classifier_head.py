@@ -158,13 +158,12 @@ def save_classification_model(model, trainer, config, save_dir, name="final_mode
     """Save classification model after training."""
     save_path = Path(save_dir) / name
     save_path.mkdir(parents=True, exist_ok=True)
-    
-    # 1. 
+ 
     full_path = save_path / "final.ckpt"
     trainer.save_checkpoint(full_path)
     print(f"Saved Lightning checkpoint: {full_path}")
     
-    # 2. State dict
+    # State dict
     state_dict_path = save_path / "model_state.pt"
     torch.save({
         'model_state_dict': model.model.state_dict(),
@@ -173,7 +172,7 @@ def save_classification_model(model, trainer, config, save_dir, name="final_mode
     }, state_dict_path)
     print(f"Saved state dict: {state_dict_path}")
     
-    # 3. Classification head only (for transfer to other encoders)
+    # Classification head only (for transfer to other encoders)
     head_path = save_path / "classification_head.pt"
     torch.save({
         'head_state_dict': model.model.classification_head.state_dict(),

@@ -13,3 +13,4 @@ utils/
 .venv/
 test_data/fake/
 temp_grid_configs
+dataset

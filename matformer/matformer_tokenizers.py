@@ -6,6 +6,8 @@ from typing import List, Union
 from matformer.model_config import ModelConfig
 from matformer.tensors_dataclasses import PaddedTensor, UnpaddedTensor
 from dataclasses import dataclass, replace
+from transformers import AutoTokenizer
+import sys
 
 class MatformerTokenizer:
     """
@@ -27,9 +29,8 @@ class MatformerTokenizer:
             self.vocab:size=255
             self.return_type=int
         elif tokenizer=='huggingface':
-            from transformers import AutoTokenizer
             #self.tokenizer=AutoTokenizer.from_pretrained(tokenizer_name,**tokenizer_args)
-            self.tokenizer=AutoTokenizer.from_pretrained(tokenizer_name)            
+            self.tokenizer=AutoTokenizer.from_pretrained(tokenizer_name.strip())            
             self.vocab_size=self.tokenizer.vocab_size
             self.mask_token_id=self.tokenizer.mask_token_id
             self.bos_token_id=self.tokenizer.bos_token_id

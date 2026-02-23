@@ -27,6 +27,8 @@ from matformer.cached_stuff import CachedStuff
 from copy import deepcopy
 from matformer.matformer_module import MatformerModule
 
+import sys
+
 
 class PL_ModelWrapper(MatformerModule):
     def __init__(
@@ -77,7 +79,7 @@ class PL_ModelWrapper(MatformerModule):
         if not getattr(self, "_restored_from_ckpt", False):
             self.model.apply(init_transformer_weights_)
 
-        self.batch_size = batch_size  # Utile per il learning rate scheduling
+        self.batch_size = batch_size
         self.tokenizer = tokenizer
         # Maskerator setup
         self.maskerator = Maskerator(
@@ -90,7 +92,7 @@ class PL_ModelWrapper(MatformerModule):
             vocab_size=self.config.vocab_size,
         )
 
-    def forward(self, _input, *args, **kwargs):
+    def forward(self, _input, *args, **kwargs):       
         if isinstance(_input, torch.Tensor):
             _input = NormalTensor(tensor=_input)
         output = self.model(_input.to(self.device), *args, **kwargs)
@@ -783,25 +785,28 @@ class PL_ModelWrapper(MatformerModule):
                     "Config not found in checkpoint and not provided. Please provide a config."
                 )
 
-        """  
-        tokenizer = (
-            AutoTokenizer.from_pretrained(tokenizer) 
-            if tokenizer != 'bytes' else 'bytes'
-        )
-        """
+        
+        #tokenizer = (
+        #    AutoTokenizer.from_pretrained(tokenizer) 
+        #    if tokenizer != 'bytes' else 'bytes'
+        #)
+        
         if overrides is not None:
             for k, v in overrides.items():
                 setattr(config, k, v)
 
-        #tokenizer = MatformerTokenizer(
-        #    config=config,
-        #    # tokenizer_type='huggingface',
-        #    tokenizer=tokenizer,
-        #    tokenizer_name=tokenizer,
-        #    varlen_strategy=varlen_strategy,
-        #)
+        
+        if type(tokenizer) != MatformerTokenizer:
+          tokenizer = MatformerTokenizer(
+              config=config,
+              tokenizer_type='huggingface',
+              tokenizer=tokenizer,
+              tokenizer_name=tokenizer,
+              varlen_strategy=varlen_strategy,
+          )
+        
         if tokenizer is not None:
-            assert isinstance(tokenizer,MatformerTokenizer)
+          assert isinstance(tokenizer,MatformerTokenizer)
         model = PL_ModelWrapper(
             ModelClass=ModelClass,
             config=config,
