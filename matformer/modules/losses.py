@@ -56,66 +56,6 @@ class CrossEntropyLoss(_ClassificationLossBase):
             label_smoothing=kw.get("label_smoothing", 0.0),
         )
 
-
-@registry.register("loss_fn", "focal", "torch", requires=["torch"], priority=10)
-class FocalLoss(_ClassificationLossBase):
-    """
-    Args: focal_alpha, focal_gamma, class_weights, ignore_index
-    """
-
-    def forward(self, logits, labels, **extra_kwargs):
-        kw = self._merge_kwargs(extra_kwargs)
-
-        alpha = kw.get("focal_alpha", 0.25)
-        gamma = kw.get("focal_gamma", 2.0)
-        ignore_index = kw.get("ignore_index", -100)
-
-        weights = self._get_class_weights(
-            kw.get("class_weights"), logits.device, logits.dtype
-        )
-
-        ce_loss = F.cross_entropy(logits, labels, weight=weights, reduction="none")
-
-        pt = torch.exp(-ce_loss)
-        focal = alpha * (1 - pt) ** gamma * ce_loss
-
-        return self._apply_ignore_mask(focal, labels, ignore_index)
-
-
-@registry.register("loss_fn", "bce", "torch", requires=["torch"], priority=10)
-class BCELoss(_ClassificationLossBase):
-    """
-    Args: pos_weight, ignore_index
-    """
-
-    def forward(self, logits, labels, **extra_kwargs):
-        kw = self._merge_kwargs(extra_kwargs)
-
-        pos_weight = kw.get("pos_weight")
-        if pos_weight is not None:
-            pos_weight = torch.tensor(
-                [pos_weight], device=logits.device, dtype=logits.dtype
-            )
-
-        # Normalize shape
-        if logits.shape[-1] == 2:
-            logits = logits[:, 1]
-        else:
-            logits = logits.squeeze(-1)
-
-        if logits.shape != labels.shape:
-            raise ValueError(
-                f"Shape mismatch after normalization: "
-                f"logits {logits.shape} vs labels {labels.shape}"
-            )
-
-        loss = F.binary_cross_entropy_with_logits(
-            logits, labels.float(), pos_weight=pos_weight, reduction="none"
-        )
-
-        return self._apply_ignore_mask(loss, labels, kw.get("ignore_index", -100))
-
-
 class _RegressionLossBase(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__()

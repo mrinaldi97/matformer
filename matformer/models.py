@@ -77,7 +77,7 @@ class PL_ModelWrapper(MatformerModule):
         if not getattr(self, "_restored_from_ckpt", False):
             self.model.apply(init_transformer_weights_)
 
-        self.batch_size = batch_size  # Utile per il learning rate scheduling
+        self.batch_size = batch_size
         self.tokenizer = tokenizer
         # Maskerator setup
         self.maskerator = Maskerator(
