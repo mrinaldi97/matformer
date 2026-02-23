@@ -56,7 +56,7 @@ class CrossEntropyLoss(_ClassificationLossBase):
             label_smoothing=kw.get("label_smoothing", 0.0),
         )
 
-<<<<<<< HEAD
+#<<<<<<< HEAD
 
 @registry.register("loss_fn", "focal", "torch", requires=["torch"], priority=10)
 class FocalLoss(_ClassificationLossBase):
