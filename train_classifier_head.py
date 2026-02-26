@@ -59,7 +59,6 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_featur
         tokenizer=tokenizer,
         varlen_strategy='unpadding',
         external_mapping=None,
-        num_features=num_features,
         training_step_type='classification'
     )
     
