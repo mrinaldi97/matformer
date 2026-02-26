@@ -711,8 +711,8 @@ class TransformerWithClassificationHead(MatformerModule):
             getattr(config, 'num_features', None) or 
             2 
         )
-        
-        self.encoder = TransformerWithEmbeddingHead(config=config, cache=self.cache)
+        # EmbeddingHead not working (probably bad loading)
+        self.encoder = TransformerWithLMHead(config=config, cache=self.cache)
         self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)             
         self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)             
 
@@ -777,7 +777,7 @@ class TransformerWithClassificationHead(MatformerModule):
         # TODO: perchè?
         kwargs.pop('return_type', None)
         
-        hidden_states = self.encoder(x, **kwargs).pad() # (B,S,D)
+        hidden_states = self.encoder(x, return_type='hidden', **kwargs).pad() # (B,S,D)
         # Warning: hidden states are now a PaddedTensor so that pooling can be accomplished
         if self.pooling_type == 'cls':
             # [CLS] in pos. 0
