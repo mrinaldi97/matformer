@@ -93,7 +93,7 @@ class PL_ModelWrapper(MatformerModule):
         targets = batch["labels"]
         input_ids=input_ids.unpad() # Unpadding to avoid attention attending pad tokens
         logits = self(input_ids)
-        logits=logits.pad() # Restore padding for the loss function to match targets
+        #logits=logits.pad() # Restore padding for the loss function to match targets
         print(f"Debug: input_ids => {input_ids.shape}, targets=> {targets.shape}, logits=> {logits.shape}")        
         loss_kwargs={} # Todo
         loss = self.loss_function(logits, targets, **loss_kwargs)
