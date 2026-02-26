@@ -89,7 +89,7 @@ class BaseSubModelConfig:
     # compilation & bias
     compile_flexattn: Optional[bool] = None
     bias: Optional[bool] = None
-    loss_type: str = "normal"  # Can be normal or fused
+    loss_type: str = "cross_entropy_loss"  
     # behavior
     training_objective: Optional[str] = None
     is_causal: Optional[bool] = None

@@ -59,7 +59,8 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config, num_featur
         tokenizer=tokenizer,
         varlen_strategy='unpadding',
         external_mapping=None,
-        num_features=num_features
+        num_features=num_features,
+        training_step_type='classification'
     )
     
     print(f"Loaded pretrained encoder from {checkpoint_path}")
@@ -232,13 +233,14 @@ def run_training(config_path, start_scratch=True):
     freeze_base_model = getattr(config, 'freeze_base_model', True)
     #if freeze_base_model and :
     #  config["batch_size"] = 32
-    
+    train_config=config.training
+    print("Debug 1 train_config")
+    print(train_config)
     print("\nLoading model..")    
     model = load_model_from_checkpoint(
         checkpoint_path=getattr(config,"pretrained_checkpoint"),
         config=config,
-        train_config=getattr(config,'training'),
-        num_features=train_loader.get_num_labels(),
+        train_config=train_config,
         task="sentence-level",
         map_location="cuda",
         tokenizer=tokenizer,

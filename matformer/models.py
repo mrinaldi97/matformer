@@ -25,7 +25,7 @@ from copy import deepcopy
 from matformer.matformer_module import MatformerModule
 
 class PL_ModelWrapper(MatformerModule):
-    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False,load_mode="full"):
+    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False,load_mode="full", skip_init=False, training_step_type='pretraining'):
         super().__init__()
         self.config=config
         self.train_config=train_config
@@ -34,15 +34,21 @@ class PL_ModelWrapper(MatformerModule):
         # Initialize cache and set registry
         self.cache = CachedStuff()
         self.cache.registry = registry
-        self.model = ModelClass(config,tokenizer=tokenizer,device=device,cache=self.cache)    
+        self.model = ModelClass(config,tokenizer=tokenizer,device=device,cache=self.cache)  
+        self.training_step_type=training_step_type # Provvisorio, trovare un modo più elegante
         self.nested = None  
-        if self.config.loss_type=='fused':
-            self.cross_entropy_loss = self.cache.registry.create("loss", "cross_entropy_loss_fused", *[], **{"ignore_index":config.pad_token_id})
-        else: #22785MiB
-            self.cross_entropy_loss = self.cache.registry.create("loss", "cross_entropy_loss", *[], **{"ignore_index":config.pad_token_id})
-
-        if not getattr(self, "_restored_from_ckpt", False): 
-            self.model.apply(init_transformer_weights_)
+        if self.config.loss_type=='normal':
+            self.config.loss_type='cross_entropy_loss' # For legacy models
+        print(f"Initializing {self.config.loss_type} as loss function.")
+        self.loss_function=self.cache.registry.create("loss",self.config.loss_type)
+        #if self.config.loss_type=='fused':
+        #    self.loss_function = self.cache.registry.create("loss", "cross_entropy_loss_fused", *[], **{"ignore_index":config.pad_token_id})
+        #else:
+        #    self.loss_function = self.cache.registry.create("loss", "cross_entropy_loss", *[], **{"ignore_index":config.pad_token_id})
+        if skip_init==False: # Provvisorio, trovare un modo più elegante
+            if not getattr(self, "_restored_from_ckpt", False): 
+                print("Initializing transformer weights...")
+                self.model.apply(init_transformer_weights_)
             
         self.batch_size=batch_size # Utile per il learning rate scheduling
         self.tokenizer=tokenizer
@@ -75,26 +81,31 @@ class PL_ModelWrapper(MatformerModule):
         if self.load_mode == 'publication':
             new_checkpoint=checkpoint['state_dict']
             new_checkpoint=checkpoint['hyper_parameters']
-            
-     
     def training_step(self, batch, batch_idx=None):
+        if self.training_step_type=='pretraining':
+            return self.pretraining_step(batch,batch_idx)
+        elif self.training_step_type=='classification':
+            return self.classification_step(batch, batch_idx)
+        else:
+            raise ValueError        
+    def classification_step(self, batch, batch_idx=None):
+        input_ids = batch["input_ids"]
+        targets = batch["labels"]
+        input_ids=input_ids.unpad() # Unpadding to avoid attention attending pad tokens
+        logits = self(input_ids)
+        logits=logits.pad() # Restore padding for the loss function to match targets
+        print(f"Debug: input_ids => {input_ids.shape}, targets=> {targets.shape}, logits=> {logits.shape}")        
+        loss_kwargs={} # Todo
+        loss = self.loss_function(logits, targets, **loss_kwargs)
+        self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)  
+        preds = logits.argmax(dim=-1)
+        acc = (preds == targets).float().mean()  
+        self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size) 
+        return loss
+        
+    def pretraining_step(self, batch, batch_idx=None):
         try:
             input_sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
-            # Un modo sporco per testare cosa succede se arrivano tutte sequenze lunghe
-            test_memory=False
-            if test_memory:
-                if isinstance(input_sequence, UnpaddedTensor):
-                    max_len = self.config.max_position_embeddings
-                    batch_size = input_sequence.batch_size
-                    total_tokens = max_len * batch_size
-                    input_sequence = replace(
-                        input_sequence, 
-                        tensor=torch.randint(0, self.config.vocab_size, (total_tokens,), device=input_sequence.tensor.device),
-                        cu_seqlens=torch.arange(0, total_tokens + 1, max_len, dtype=torch.int32, device=input_sequence.tensor.device),
-                        max_seq_len=max_len,
-                        indices=torch.arange(total_tokens, device=input_sequence.tensor.device),
-                        original_seq_len=max_len
-                    )
             batch['sequence'] = input_sequence
             if batch['worker_has_finished']:
                 zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
@@ -123,7 +134,7 @@ class PL_ModelWrapper(MatformerModule):
                 #    input_sequence=input_sequence.unpad()  
                 input_sequence,masking_ratio=self.maskerator(input_sequence) 
                 original_sequence=batch['sequence'] 
-            if self.config.loss_type=='fused':
+            if self.config.loss_type=='cross_entropy_loss_fused':
                 model_return_type = 'hidden'
                 flattening_dimension = self.config.hidden_size
                 loss_kwargs = {"lm_head_weight": self.model.lm_head.module.inner.weight}
@@ -163,7 +174,7 @@ class PL_ModelWrapper(MatformerModule):
                 inputs = model_output_flat[:-1][mask]
                 targets = targets_flat[1:][mask]
             # 4. Getting the loss
-            loss = self.cross_entropy_loss(inputs, targets, **loss_kwargs)  
+            loss = self.loss_function(inputs, targets, **loss_kwargs)  
             self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)      
             if 'aux_losses' in self.cache.storage:
                         aux_losses = self.cache.storage['aux_losses']
@@ -232,10 +243,10 @@ class PL_ModelWrapper(MatformerModule):
 
             if masked:
                 mask = cloze_mask_flat & base_mask
-                loss = self.cross_entropy_loss(logits_flat[mask], targets_flat[mask])
+                loss = self.loss_function(logits_flat[mask], targets_flat[mask])
             else:
                 mask = base_mask[1:]
-                loss = self.cross_entropy_loss(logits_flat[:-1][mask], targets_flat[1:][mask])
+                loss = self.loss_function(logits_flat[:-1][mask], targets_flat[1:][mask])
             """          
 
              
@@ -257,7 +268,7 @@ class PL_ModelWrapper(MatformerModule):
                         sample_size = min(inputs.size(0), 1024)
                         diag_data = inputs[:sample_size]
 
-                        if self.config.loss_type != 'fused':
+                        if self.config.loss_type != 'cross_entropy_loss_fused':
                             # 1. Logit Statistics (Saturation check)
                             self.log("health/logits_max", diag_data.max(), on_step=True, batch_size=self.batch_size)
                             self.log("health/logits_std", diag_data.std(), on_step=True, batch_size=self.batch_size)
@@ -519,7 +530,7 @@ class PL_ModelWrapper(MatformerModule):
         }
 
     @staticmethod
-    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, map_location=None, tokenizer=None, overrides=None,varlen_strategy='padding'):
+    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, train_config=None, map_location=None, tokenizer=None, overrides=None,varlen_strategy='padding', external_mapping=None, training_step_type='pretraining', skip_init=True):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
 
         if config is None:
@@ -537,16 +548,19 @@ class PL_ModelWrapper(MatformerModule):
         if overrides is not None:
             for k,v in overrides.items():
                 setattr(config,k,v)
-        tokenizer = MatformerTokenizer(
-            config=config,
-            tokenizer_type='huggingface',
-            tokenizer_name=tokenizer,
-            varlen_strategy=varlen_strategy
-        )     
+        if type(tokenizer) != MatformerTokenizer:
+          tokenizer = MatformerTokenizer(
+              config=config,
+              tokenizer_type='huggingface',
+              tokenizer=tokenizer,
+              tokenizer_name=tokenizer,
+              varlen_strategy=varlen_strategy,
+          )                
+   
 
-        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, tokenizer=tokenizer, device=map_location, train_config=None)  
+        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, train_config=train_config, tokenizer=tokenizer, device=map_location, skip_init=skip_init, training_step_type=training_step_type)  
         #model.load_state_dict(checkpoint['state_dict'])
-        model.load_stable_state_dict(checkpoint['state_dict'], strict=False)
+        model.load_stable_state_dict(checkpoint['state_dict'], strict=False, external_mapping=external_mapping)
         #print("Found this config:")
         #print(config)
         return model,config   
