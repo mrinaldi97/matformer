@@ -39,7 +39,7 @@ serialization.add_safe_globals([
     TokenClassificationConfig, LayerConfig
 ])
 
-def load_model_from_checkpoint(checkpoint_path, config, train_config, num_features, 
+def load_model_from_checkpoint(checkpoint_path, config, train_config,
                                task, freeze_base_model=True, map_location='cpu', tokenizer=None):
     """Load classification model with pretrained encoder weights."""
     
