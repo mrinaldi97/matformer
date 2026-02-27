@@ -184,7 +184,7 @@ def save_classification_model(model, trainer, config, save_dir, name="final_mode
     
     return save_path
 
-def run_training(config_path, start_scratch=True, num_gpus, num_nodes, checkpoint_path):  
+def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, checkpoint_path=None):  
     print("\n --- Config ---")
     config = load_classification_config(config_path)
     print("\n")    
