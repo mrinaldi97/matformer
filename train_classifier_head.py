@@ -223,6 +223,7 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, check
             )     
     print("\n--- Labels distribution ---")
     print(train_loader.get_label_distribution())
+    config.loss_type=config.training['loss']['type'] #Sporco... sovrascrivo il config del modello con la loss x classificazione
     if config.training.get('loss', {}).get('class_weights', False) == "auto":
       class_weights = train_loader.get_class_weights(strategy='inverse_frequency')
       config.training['loss']['class_weights'] = class_weights

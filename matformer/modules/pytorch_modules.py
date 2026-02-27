@@ -70,7 +70,7 @@ class BCELoss(nn.Module):
         self._kwargs = kwargs
     def forward(self, logits, labels, **extra_kwargs):
         loss = F.binary_cross_entropy_with_logits(
-            logits, labels.float(), pos_weight=pos_weight, reduction="none"
+            logits, labels.float(), reduction="none"
         )
         
         

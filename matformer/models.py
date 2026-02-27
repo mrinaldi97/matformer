@@ -110,11 +110,11 @@ class PL_ModelWrapper(MatformerModule):
             return loss
     def on_validation_epoch_end(self):
         if self.val_f1 is not None:
-            self.log('val/f1', self.val_f1.compute(), prog_bar=True, on_epoch=True)
+            self.log('val/f1', self.val_f1.compute(), prog_bar=True, on_epoch=True, batch_size=self.batch_size, sync_dist=True)
             self.val_f1.reset()
     def on_train_epoch_end(self):
         if self.train_f1 is not None:
-            self.log('train/f1', self.train_f1.compute(), prog_bar=True, on_epoch=True)
+            self.log('train/f1', self.train_f1.compute(), prog_bar=True, on_epoch=True, batch_size=self.batch_size, sync_dist=True)
             self.train_f1.reset()           
     def training_step(self, batch, batch_idx=None):
         if self.training_step_type=='pretraining':
