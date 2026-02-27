@@ -236,7 +236,6 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, check
     print("Debug 1 train_config")
     print(train_config)
     print("\nLoading model..")    
-    checkpoint_path=
     if checkpoint_path is not None:
         print(f"Using {checkpoint_path} (from argument) instead of {getattr(config,'pretrained_checkpoint')} (from config)")
     else:
