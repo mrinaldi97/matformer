@@ -62,7 +62,18 @@ class TorchCrossEntropyLoss(nn.Module):
         kw.update(extra_kwargs)
         return F.cross_entropy(logits, targets, *self._args, **kw)
 
-
+@registry.register("loss", "bce", "torch", requires=["torch"], priority=10)
+class BCELoss(_ClassificationLossBase):
+    def __init__(self, *args, **kwargs):
+        super().__init__()
+        self._args = args
+        self._kwargs = kwargs
+    def forward(self, logits, labels, **extra_kwargs):
+        loss = F.binary_cross_entropy_with_logits(
+            logits, labels.float(), pos_weight=pos_weight, reduction="none"
+        )
+        
+        
 @registry.register(
     "mlp",
     "swiglu",
