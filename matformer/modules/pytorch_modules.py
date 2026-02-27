@@ -63,7 +63,7 @@ class TorchCrossEntropyLoss(nn.Module):
         return F.cross_entropy(logits, targets, *self._args, **kw)
 
 @registry.register("loss", "bce", "torch", requires=["torch"], priority=10)
-class BCELoss(_ClassificationLossBase):
+class BCELoss(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__()
         self._args = args
