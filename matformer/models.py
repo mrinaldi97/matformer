@@ -90,7 +90,7 @@ class PL_ModelWrapper(MatformerModule):
             loss = self.loss_function(logits, batch["labels"])
             preds = logits.argmax(dim=-1)
             acc = (preds == batch["labels"]).float().mean()
-            self.log_dict({'val/loss': loss, 'val/accuracy': acc}, batch_size=self.batch_size)
+            self.log_dict({'val/loss': loss, 'val/accuracy': acc}, batch_size=self.batch_size, sync_dist=True)
             return loss
 
     def training_step(self, batch, batch_idx=None):
@@ -106,7 +106,7 @@ class PL_ModelWrapper(MatformerModule):
         input_ids=input_ids.unpad() # Unpadding to avoid attention attending pad tokens
         logits = self(input_ids)
         #logits=logits.pad() # Restore padding for the loss function to match targets
-        print(f"Debug: input_ids => {input_ids.shape}, targets=> {targets.shape}, logits=> {logits.shape}")        
+        #print(f"Debug: input_ids => {input_ids.shape}, targets=> {targets.shape}, logits=> {logits.shape}")        
         loss_kwargs={} # Todo
         loss = self.loss_function(logits, targets, **loss_kwargs)
         self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)  

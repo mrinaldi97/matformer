@@ -184,7 +184,7 @@ def save_classification_model(model, trainer, config, save_dir, name="final_mode
     
     return save_path
 
-def run_training(config_path, start_scratch=True):  
+def run_training(config_path, start_scratch=True, num_gpus, num_nodes, checkpoint_path):  
     print("\n --- Config ---")
     config = load_classification_config(config_path)
     print("\n")    
@@ -236,8 +236,13 @@ def run_training(config_path, start_scratch=True):
     print("Debug 1 train_config")
     print(train_config)
     print("\nLoading model..")    
+    checkpoint_path=
+    if checkpoint_path is not None:
+        print(f"Using {checkpoint_path} (from argument) instead of {getattr(config,'pretrained_checkpoint')} (from config)")
+    else:
+        checkpoint_path=getattr(config,'pretrained_checkpoint')
     model = load_model_from_checkpoint(
-        checkpoint_path=getattr(config,"pretrained_checkpoint"),
+        checkpoint_path=checkpoint_path,
         config=config,
         train_config=train_config,
         task="sentence-level",
@@ -295,14 +300,14 @@ def run_training(config_path, start_scratch=True):
         precision = getattr(config, 'precision', 'bf16-mixed'),
         gradient_clip_val = getattr(config, 'training')["gradient_clip_val"],
         accelerator = accelerator,
-        devices = 1,
+        devices = num_gpus,
         log_every_n_steps = 10,
         accumulate_grad_batches = getattr(config, 'accumulate_grad_batches', 1),
         default_root_dir = save_dir,
         max_epochs = getattr(config, 'training')["max_epochs"],
         max_steps = getattr(config, 'max_steps',-1),
         strategy = strategy,
-        num_nodes = 1
+        num_nodes = num_nodes
     )
     
     # Handle checkpoint loading
@@ -335,16 +340,19 @@ def run_training(config_path, start_scratch=True):
     )
     print(f"\nModel saved to: {final_save_path}")
 
+import argparse
+
 def main():
-    import sys
+    parser = argparse.ArgumentParser(description='Training script')
+    parser.add_argument('config', type=str, help='Path to config file')
+    parser.add_argument('--checkpoint_path', type=str, default=None, help='Path to checkpoint (override the config)')
+    parser.add_argument('--gpu', type=int, default=1, help='Number of GPUs (default: 1)')
+    parser.add_argument('--nodes', type=int, default=1, help='Number of nodes (default: 1)')
     
-    if len(sys.argv) > 1:
-        config_path = sys.argv[1]
-    else:
-        config_path = "configs/classification_head/config.json"
+    args = parser.parse_args()
     
-    start_scratch = True
-    run_training(config_path, start_scratch)
+    start_scratch = args.checkpoint_path is None
+    run_training(args.config, start_scratch, args.gpu, args.nodes, checkpoint_path=args.checkpoint_path)
 
 if __name__ == "__main__":
     main()
