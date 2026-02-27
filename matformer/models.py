@@ -62,6 +62,20 @@ class PL_ModelWrapper(MatformerModule):
                                        vocab_size=self.config.vocab_size)
 
 
+        if self.training_step_type=='classification':
+            # Initializing the F1 metric (unless torchmetrics is not available)
+            try: 
+                from torchmetrics.classification import MulticlassF1Score, BinaryF1Score
+                if self.config.num_classes == 2:
+                    self.train_f1 = BinaryF1Score()
+                    self.val_f1 = BinaryF1Score()
+                else:
+                    self.train_f1 = MulticlassF1Score(num_classes=self.config.num_classes, average='macro')
+                    self.val_f1 = MulticlassF1Score(num_classes=self.config.num_classes, average='macro')
+            except:
+                print("Install torchmetrics if you want F1 scores. (pip install torchmetrics)")
+                self.train_f1=None
+                self.val_f1=None
         
     def forward(self, _input,*args,**kwargs):
         if isinstance(_input,torch.Tensor):
@@ -89,10 +103,19 @@ class PL_ModelWrapper(MatformerModule):
             logits = self(input_ids)
             loss = self.loss_function(logits, batch["labels"])
             preds = logits.argmax(dim=-1)
+            if self.val_f1 is not None:
+                self.val_f1.update(preds, batch["labels"])
             acc = (preds == batch["labels"]).float().mean()
             self.log_dict({'val/loss': loss, 'val/accuracy': acc}, batch_size=self.batch_size, sync_dist=True)
             return loss
-
+    def on_validation_epoch_end(self):
+        if self.val_f1 is not None:
+            self.log('val/f1', self.val_f1.compute(), prog_bar=True, on_epoch=True)
+            self.val_f1.reset()
+    def on_train_epoch_end(self):
+        if self.train_f1 is not None:
+            self.log('train/f1', self.train_f1.compute(), prog_bar=True, on_epoch=True)
+            self.train_f1.reset()           
     def training_step(self, batch, batch_idx=None):
         if self.training_step_type=='pretraining':
             return self.pretraining_step(batch,batch_idx)
@@ -111,6 +134,8 @@ class PL_ModelWrapper(MatformerModule):
         loss = self.loss_function(logits, targets, **loss_kwargs)
         self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)  
         preds = logits.argmax(dim=-1)
+        if self.train_f1 is not None:
+            self.train_f1.update(preds, targets)
         acc = (preds == targets).float().mean()  
         self.log("train/accuracy", acc, prog_bar=True, on_step=True, on_epoch=True,batch_size=self.batch_size) 
         return loss
