@@ -184,7 +184,7 @@ def save_classification_model(model, trainer, config, save_dir, name="final_mode
     
     return save_path
 
-def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, checkpoint_path=None):  
+def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, base_model_path=None, run_name=None):  
     print("\n --- Config ---")
     config = load_classification_config(config_path)
     print("\n")    
@@ -237,12 +237,12 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, check
     print("Debug 1 train_config")
     print(train_config)
     print("\nLoading model..")    
-    if checkpoint_path is not None:
-        print(f"Using {checkpoint_path} (from argument) instead of {getattr(config,'pretrained_checkpoint')} (from config)")
+    if base_model_path is not None:
+        print(f"Using {base_model_path} (from argument) instead of {getattr(config,'pretrained_checkpoint')} (from config)")
     else:
-        checkpoint_path=getattr(config,'pretrained_checkpoint')
+        base_model_path=getattr(config,'pretrained_checkpoint')
     model = load_model_from_checkpoint(
-        checkpoint_path=checkpoint_path,
+        checkpoint_path=base_model_path,
         config=config,
         train_config=train_config,
         task="sentence-level",
@@ -265,17 +265,16 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, check
     
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     checkpoint_name = getattr(config, 'name', 'name')
-    run_name = getattr(config, 'wandb_run_name', 'training-run')
+    if run_name is None:
+        run_name = getattr(config, 'wandb_run_name', 'training-run')
     
     Path(save_dir).mkdir(parents=True, exist_ok=True)
     
-    #don't add timestamp if run_name already has run identifier
     if '_run' in run_name or 'run' in run_name.lower():
         final_run_name = run_name
     else:
         final_run_name = f"{run_name}_{timestamp}"
     
-    # Setup logging
     wandb_logger = WandbLogger(
         name = final_run_name,
         project = getattr(config, 'wandb_project', 'matformer'),
@@ -285,8 +284,8 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, check
     checkpoint = ModelCheckpoint(
         dirpath = save_dir,
         filename = checkpoint_name,
-        save_top_k = 1,
-        save_last = True,
+        save_top_k = 0,
+        save_last = False,
         every_n_train_steps = getattr(config, "save_every_n_steps", None),
         enable_version_counter = True,
         save_on_train_epoch_end = getattr(config, "save_on_train_epoch_end", False)
@@ -310,19 +309,6 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, check
         num_nodes = num_nodes
     )
     
-    # Handle checkpoint loading
-    ckpt_path = None
-    if not start_scratch:
-        if ckpt_arg and os.path.exists(ckpt_arg):
-            ckpt_path = ckpt_arg
-        else:
-            last_ckpt = Path(save_dir) / "last.ckpt"
-            if last_ckpt.exists():
-                print(f"Resuming training from {last_ckpt}")
-                ckpt_path = str(last_ckpt)
-            else:
-                print("No checkpoint found, starting from scratch.")
-
     Path(save_dir).mkdir(parents=True, exist_ok=True)
 
     print("\n--- Starting trainer.fit() ---")
@@ -333,7 +319,7 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, check
     print("\n--- Saving final model ---")
     final_save_path = save_classification_model(
         model=model,
-        trainer=trainer,  # Pass trainer
+        trainer=trainer,  
         config=config,
         save_dir=save_dir,
         name=f"{checkpoint_name}_final"
@@ -345,14 +331,13 @@ import argparse
 def main():
     parser = argparse.ArgumentParser(description='Training script')
     parser.add_argument('config', type=str, help='Path to config file')
-    parser.add_argument('--checkpoint_path', type=str, default=None, help='Path to checkpoint (override the config)')
+    parser.add_argument('--base_model_path', type=str, default=None, help='Path to base model (override the config)')
     parser.add_argument('--gpu', type=int, default=1, help='Number of GPUs (default: 1)')
     parser.add_argument('--nodes', type=int, default=1, help='Number of nodes (default: 1)')
+    parser.add_argument('--run_name', type=str, default=None, help="Name of the run for logging")
     
     args = parser.parse_args()
-    
-    start_scratch = args.checkpoint_path is None
-    run_training(args.config, start_scratch, args.gpu, args.nodes, checkpoint_path=args.checkpoint_path)
+    run_training(args.config, start_scratch, args.gpu, args.nodes, checkpoint_path=args.base_model_path, run_name=args.run_name)
 
 if __name__ == "__main__":
     main()
