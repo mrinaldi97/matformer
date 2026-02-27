@@ -81,6 +81,18 @@ class PL_ModelWrapper(MatformerModule):
         if self.load_mode == 'publication':
             new_checkpoint=checkpoint['state_dict']
             new_checkpoint=checkpoint['hyper_parameters']
+    def validation_step(self, batch, batch_idx=None):
+        if self.training_step_type == 'pretraining':
+            raise NotImplementedError
+        else:
+            input_ids = batch["input_ids"].unpad()
+            logits = self(input_ids)
+            loss = self.loss_function(logits, batch["labels"])
+            preds = logits.argmax(dim=-1)
+            acc = (preds == batch["labels"]).float().mean()
+            self.log_dict({'val/loss': loss, 'val/accuracy': acc}, batch_size=self.batch_size)
+            return loss
+
     def training_step(self, batch, batch_idx=None):
         if self.training_step_type=='pretraining':
             return self.pretraining_step(batch,batch_idx)
