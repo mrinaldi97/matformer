@@ -24,6 +24,7 @@ Da implementare il Fused Layer norm mlp
     params_names={'inner.weight': 'weight'}
 )
 class TE_RMSNorm(nn.Module):
+	inner: "transparent"
     def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True, **kwargs):
         super().__init__()
         cls = _load("transformer_engine.pytorch", "RMSNorm")
@@ -46,6 +47,7 @@ class TE_RMSNorm(nn.Module):
     params_names={'inner.weight': 'weight', 'inner.bias': 'bias'}
 )
 class TE_LayerNorm(nn.Module):
+	inner: "transparent"
     def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True, **kwargs):
         super().__init__()
         cls = _load("transformer_engine.pytorch", "LayerNorm")
@@ -67,6 +69,7 @@ class TE_LayerNorm(nn.Module):
     params_names={'inner.weight': 'weight', 'inner.bias': 'bias'}
 )
 class TE_Linear(nn.Module):
+	inner: "transparent"
     def __init__(self, in_features, out_features, bias=True, **kwargs):
         super().__init__()
         cls = _load("transformer_engine.pytorch", "Linear")

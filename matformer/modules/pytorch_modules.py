@@ -14,6 +14,7 @@ from torch.nn import RMSNorm, LayerNorm
     params_names={'inner.weight': 'weight', 'inner.bias': 'bias'}
 )
 class TorchLinear(nn.Module):
+    inner: "transparent"
     def __init__(self, in_features, out_features, bias=True, *args, **kwargs):
         super().__init__()
         self.inner = nn.Linear(in_features, out_features, bias=bias)
@@ -31,6 +32,7 @@ class TorchLinear(nn.Module):
     params_names={'inner.weight': 'weight', 'inner.bias': 'bias'}
 )
 class TorchEmbedding(nn.Module):
+    inner: "transparent"
     def __init__(self, num_embeddings, embedding_dim, padding_idx=None, *args, **kwargs):
         super().__init__()
         self.inner = nn.Embedding(
@@ -87,6 +89,7 @@ class BCELoss(nn.Module):
     }
 )
 class TorchSwiGLU(nn.Module):
+    inner: "transparent"
     def __init__(self, config=None, hidden_size=None, ffn_factor=None):
         super().__init__()
         if config is not None:
@@ -115,6 +118,7 @@ class TorchSwiGLU(nn.Module):
     }
 )
 class TorchGEGLU(nn.Module):
+    inner: "transparent"
     def __init__(self, config=None, hidden_size=None, ffn_factor=None):
         super().__init__()
         if config is not None:
@@ -141,6 +145,7 @@ class TorchGEGLU(nn.Module):
     }
 )
 class TorchGELU(nn.Module):
+    inner: "transparent"
     def __init__(self, config=None, hidden_size=None, ffn_factor=None):
         super().__init__()
         if config is not None:
@@ -161,6 +166,7 @@ class TorchGELU(nn.Module):
     params_names={'inner.weight': 'weight'}
 )
 class TorchRMSNorm(nn.Module):
+    inner: "transparent"
     def __init__(self, normalized_shape, eps=1e-6, elementwise_affine=True):
         super().__init__()
         self.inner = RMSNorm(
@@ -182,6 +188,7 @@ class TorchRMSNorm(nn.Module):
     params_names={'inner.weight': 'weight', 'inner.bias': 'bias'}
 )
 class TorchLayerNorm(nn.Module):
+    inner: "transparent"
     def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True):
         super().__init__()
         self.inner = LayerNorm(
@@ -201,6 +208,7 @@ class TorchLayerNorm(nn.Module):
     priority=0
     )
 class TorchDropout(nn.Module):
+    inner: "transparent"
     def __init__(self, p=0.5, inplace=False, *args, **kwargs):
         super().__init__()
         self.inner = nn.Dropout(p=p, inplace=inplace)

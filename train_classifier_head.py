@@ -312,7 +312,7 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, base_
     Path(save_dir).mkdir(parents=True, exist_ok=True)
 
     print("\n--- Starting trainer.fit() ---")
-    trainer.fit(model, dm, ckpt_path=ckpt_path)
+    trainer.fit(model, dm)
     
     wandb.finish() 
     
@@ -337,7 +337,6 @@ def main():
     parser.add_argument('--run_name', type=str, default=None, help="Name of the run for logging")
     
     args = parser.parse_args()
-    run_training(args.config, start_scratch, args.gpu, args.nodes, checkpoint_path=args.base_model_path, run_name=args.run_name)
-
+    run_training(config_path=args.config, num_gpus=args.gpu, num_nodes=args.nodes, base_model_path=args.base_model_path, run_name=args.run_name)
 if __name__ == "__main__":
     main()

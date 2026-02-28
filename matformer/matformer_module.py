@@ -2,12 +2,56 @@
 import torch
 import torch.nn as nn
 from typing import Optional
-
+from itertools import chain
 try:
     import pytorch_lightning as pl
     HAS_LIGHTNING = True
 except ImportError:
     HAS_LIGHTNING = False
+    
+
+#class ParametersRenamer:
+"""
+    The system for automatically renaming parameters is being rewritten.
+
+    Definitions:
+        "Stable_name(s)" => Names of the parameters defined at annotation level, for example 
+            class TransformerWithClassificationHead(MatformerModule): 
+            encoder: "param_name:encoder"
+            classification_head: "param_name:classifier"
+            dropout: "param_name:dropout"
+        "Actual_name(s)" => The name used internally by matformer, and dependent from the way in which modules are coded and nested.
+        "External_name(s)" => A possibility to load any state dict, also of models not originally trained with Matformer, with a dictionary that converts the names used by those external state dicts into the "stable_names"
+    
+
+    def _scan_tree(self,module,stable_prefix,actual_prefix):
+        
+        Scan tree 
+        
+        # "Annotations" are the "param_name" string under class definition, ex encoder: "param_name:encoder". They must start with param_name to be recognized.
+        class_annotations=getattr(module.__class__,'__annotations__',{})
+        # Registry annotations are the _params_names present in the registry module (ex. params_names={'inner.weight': 'weight'}); it is a dict where keys are the "actual_names" and values the "stable_names"
+        registry_annotations=getattr(module,'_params_names',{})
+        
+        # Cycle into the module's parameters and buffers
+        for actual_name, _ in chain(module.named_parameters(recurse=False), module.named_buffers(recurse=False)):
+            stable_name=registry_annotations.get(actual_name,actual_name) # Get the stable name; if missing, regression to actual name
+            stable_path = '.'.join(filter(None, [stable_prefix, stable_name]))
+            actual_path = '.'.join(filter(None, [actual_prefix, actual_name]))
+            self._parameters_mappings[stable_path]=actual_path
+        
+        for actual_child_name, child_module in module.named_children():
+            ann=class_annotations.get(actual_child_name, actual_child_name)
+            if ann == "transparent":
+                stable_child_name = None
+            elif ann.startswith('param_name:'):
+                stable_child_name = ann.split(':', 1)[1]
+            else:
+                stable_child_name = actual_child_name
+            child_stable_path = '.'.join(filter(None, [stable_prefix, stable_child_name]))
+            child_actual_path = '.'.join(filter(None, [actual_prefix, actual_child_name]))
+            self._scan_tree(child_module,child_stable_path,child_actual_path)
+"""            
 class ParametersRenamer:
     def get_parameters_name_mapping(self, external_mapping: Optional[dict] = None):
         if not hasattr(self, '_modules') or len(self._modules) == 0:
@@ -35,8 +79,34 @@ class ParametersRenamer:
         #print(f"Mappings: {len(self._parameters_mappings)}")
         #if not self._parameters_mappings:
         #    print("WARNING: No mappings found!")
-
-    def _scan_tree(self, module: nn.Module, stable_prefix: str, actual_prefix: str):
+    def _scan_tree(self,module,stable_prefix,actual_prefix):
+        """
+        Scan tree 
+        """
+        # "Annotations" are the "param_name" string under class definition, ex encoder: "param_name:encoder". They must start with param_name to be recognized.
+        class_annotations=getattr(module.__class__,'__annotations__',{})
+        # Registry annotations are the _params_names present in the registry module (ex. params_names={'inner.weight': 'weight'}); it is a dict where keys are the "actual_names" and values the "stable_names"
+        registry_annotations=getattr(module,'_params_names',{})
+        
+        # Cycle into the module's parameters and buffers
+        for actual_name, _ in chain(module.named_parameters(recurse=False), module.named_buffers(recurse=False)):
+            stable_name=registry_annotations.get(actual_name,actual_name) # Get the stable name; if missing, regression to actual name
+            stable_path = '.'.join(filter(None, [stable_prefix, stable_name]))
+            actual_path = '.'.join(filter(None, [actual_prefix, actual_name]))
+            self._parameters_mappings[stable_path]=actual_path
+        
+        for actual_child_name, child_module in module.named_children():
+            ann=class_annotations.get(actual_child_name, actual_child_name)
+            if ann == "transparent":
+                stable_child_name = None
+            elif ann.startswith('param_name:'):
+                stable_child_name = ann.split(':', 1)[1]
+            else:
+                stable_child_name = actual_child_name
+            child_stable_path = '.'.join(filter(None, [stable_prefix, stable_child_name]))
+            child_actual_path = '.'.join(filter(None, [actual_prefix, actual_child_name]))
+            self._scan_tree(child_module,child_stable_path,child_actual_path)
+    def _scan_tree_old(self, module: nn.Module, stable_prefix: str, actual_prefix: str):
         """
         Recursively scan module hierarchy, building mappings.
         
