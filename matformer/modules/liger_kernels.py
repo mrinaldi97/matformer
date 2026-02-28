@@ -16,7 +16,7 @@ def _load(module: str, attr: str):
     params_names={'inner.weight': 'weight'}
 )
 class LigerRMSNorm(nn.Module):
-	inner: "transparent"
+    inner: "transparent"
     def __init__(self, normalized_shape, eps=1e-6, elementwise_affine=True):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerRMSNorm")
@@ -36,7 +36,7 @@ class LigerRMSNorm(nn.Module):
     params_names={'inner.weight': 'weight', 'inner.bias': 'bias'}
 )
 class LigerLayerNorm(nn.Module):
-	inner: "transparent"
+    inner: "transparent"
     def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerLayerNorm")
@@ -60,7 +60,7 @@ class LigerLayerNorm(nn.Module):
     }
 )
 class LigerSwiGLU(nn.Module):
-	inner: "transparent"
+    inner: "transparent"
     def __init__(self, hidden_size, ffn_factor):
         super().__init__()
         from liger_kernel.transformers import LigerSwiGLUMLP
@@ -88,7 +88,7 @@ class LigerSwiGLU(nn.Module):
     }
 )
 class LigerGEGLU(nn.Module):
-	inner: "transparent"
+    inner: "transparent"
     def __init__(self, hidden_size, ffn_factor):
         super().__init__()
         from liger_kernel.transformers import LigerGEGLUMLP
@@ -111,7 +111,7 @@ class LigerGEGLU(nn.Module):
     priority=0
 )
 class LigerCrossEntropyLoss(nn.Module):
-	inner: "transparent"
+    inner: "transparent"
     def __init__(self, *args, **kwargs):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerCrossEntropyLoss")
@@ -130,7 +130,7 @@ class LigerCrossEntropyLoss(nn.Module):
     priority=0
 )
 class LigerCrossEntropyLossFused(nn.Module):
-	inner: "transparent"
+    inner: "transparent"
     def __init__(self, *args, **kwargs):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerFusedLinearCrossEntropyLoss")
