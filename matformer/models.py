@@ -25,6 +25,7 @@ from copy import deepcopy
 from matformer.matformer_module import MatformerModule
 
 class PL_ModelWrapper(MatformerModule):
+    model: "transparent"
     def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False,load_mode="full", skip_init=False, training_step_type='pretraining'):
         super().__init__()
         self.config=config
@@ -597,9 +598,10 @@ class PL_ModelWrapper(MatformerModule):
 
         model = PL_ModelWrapper(ModelClass=ModelClass, config=config, train_config=train_config, tokenizer=tokenizer, device=map_location, skip_init=skip_init, training_step_type=training_step_type)  
         #model.load_state_dict(checkpoint['state_dict'])
-        model.load_stable_state_dict(checkpoint['state_dict'], strict=False, external_mapping=external_mapping)
+        problems=model.load_stable_state_dict(checkpoint['state_dict'], strict=False, external_mapping=external_mapping)
         #print("Found this config:")
         #print(config)
+        print(problems)
         return model,config   
         
 

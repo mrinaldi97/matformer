@@ -169,6 +169,7 @@ class UnpaddedTensor(TensorDC):
         )
 
 class ModuleWrapper(nn.Module):
+    module:"transparent"
     def __init__(self, module: nn.Module):
         super().__init__()
         self.module = module
