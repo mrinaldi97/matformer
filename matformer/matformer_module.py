@@ -97,7 +97,8 @@ class ParametersRenamer:
         
         for actual_child_name, child_module in module.named_children():
             ann=class_annotations.get(actual_child_name, actual_child_name)
-            if ann == "transparent":
+            #if ann == "transparent": <= It should be like this, but instead I put if transparent in ann WIP because from future import annotations in some files messes with the annotations adding a single quote instead the string "transparent" ("'transparent'"). To fix better. 
+            if "transparent" in ann:
                 stable_child_name = None
             elif ann.startswith('param_name:'):
                 stable_child_name = ann.split(':', 1)[1]
