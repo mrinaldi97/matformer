@@ -67,12 +67,12 @@ class PL_ModelWrapper(MatformerModule):
             # Initializing the F1 metric (unless torchmetrics is not available)
             try: 
                 from torchmetrics.classification import MulticlassF1Score, BinaryF1Score
-                if self.config.num_classes == 2:
+                if self.config.num_labels == 2:
                     self.train_f1 = BinaryF1Score()
                     self.val_f1 = BinaryF1Score()
                 else:
-                    self.train_f1 = MulticlassF1Score(num_classes=self.config.num_classes, average='macro')
-                    self.val_f1 = MulticlassF1Score(num_classes=self.config.num_classes, average='macro')
+                    self.train_f1 = MulticlassF1Score(num_classes=self.config.num_labels, average='macro')
+                    self.val_f1 = MulticlassF1Score(num_classes=self.config.num_labels, average='macro')
             except:
                 print("Install torchmetrics if you want F1 scores. (pip install torchmetrics)")
                 self.train_f1=None

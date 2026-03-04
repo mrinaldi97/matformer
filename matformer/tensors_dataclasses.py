@@ -65,7 +65,8 @@ class TensorDC:
 
 @dataclass(frozen=False,kw_only=True)
 class NormalTensor(TensorDC):
-    pass
+    def pad(self):
+        return self    
 
 
 @dataclass(frozen=False,kw_only=True)

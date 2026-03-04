@@ -27,7 +27,7 @@ from typing import Optional, List, Literal, Any
 #Transformers
 from transformers.modeling_outputs import SequenceClassifierOutput
 
-
+import einops
 def ensure_cache_and_registry(cache):
     """Ensure cache and registry initialization"""
     if cache is None:
@@ -62,7 +62,9 @@ class MultiHeadAttention(MatformerModule):
         attn_impl: str = 'flash',  # Preferred implementation within variant
         is_causal: bool = True,
         sliding_window: Optional[int] = None,
-        device: str = 'cuda'  
+        device: str = 'cuda',
+        interpretability_friendly=False,
+        layer_idx=0
     ):
         super().__init__()
         if isinstance(positional_encoding, str):
@@ -99,7 +101,13 @@ class MultiHeadAttention(MatformerModule):
         self.k_dim = k_dim
         self.v_dim = v_dim
         self.head_dim = q_dim // nheads
-        
+        self.layer_idx=layer_idx if layer_idx is not None else 0
+        self.mechanistic_interpretability=interpretability_friendly
+        if interpretability_friendly:
+            try:
+                import einops
+            except ImportError:
+                print("Einops is required to do Mechanistic Interpretability!")
         # RoPE initialization
         if 'rope' in self.positional_encoding:
             #self.rotary_embedding = self.cache.get_rotary_emb(self.head_dim)
@@ -121,8 +129,7 @@ class MultiHeadAttention(MatformerModule):
         
         # Get kernel metadata
         self.kernel_meta = self.attn_kernel._matformer_metadata
-        
-        if not is_cross_attention or self.qkv_samedim: # Packed qkv projection for efficiency  
+        if not self.force_separed_qkv and (not is_cross_attention or self.qkv_samedim): # Packed qkv projection for efficiency  
             self.packed_proj=self.cache.registry.create('linear','linear',in_features=self.q_dim, out_features=3*q_dim,bias=bias)
         else:
             self.q_proj=self.cache.registry.create('linear','linear',in_features=q_dim, out_features=q_dim,bias=bias)
@@ -186,16 +193,59 @@ class MultiHeadAttention(MatformerModule):
         print(f"Current: {current} Wanted: {wanted}")
         raise Exception
 
+    """
+    The properties defined below serves for Mechanistic Interpretability purposes: they provide
+    diverse views over the weight that facilitates MI. Can be ignored for a training model or in general
+    if MI is not at stake. The MI part can be recognized by the suffix "_MI"
+    """
+    @property
+    def W_Q_MI(self):
+        if hasattr(self, 'packed_proj'):
+            return self.packed_proj.inner.weight.view(3, self.nheads, self.head_dim, -1)[0].transpose(-1, -2)
+        return self.q_proj.inner.weight.view(self.nheads, self.head_dim, -1).transpose(-1, -2)
+
+    @property
+    def W_K_MI(self):
+        if hasattr(self, 'packed_proj'):
+            return self.packed_proj.inner.weight.view(3, self.nheads, self.head_dim, -1)[1].transpose(-1, -2)
+        return self.k_proj.inner.weight.view(self.nheads, self.head_dim, -1).transpose(-1, -2)
+
+    @property
+    def W_V_MI(self):
+        if hasattr(self, 'packed_proj'):
+            return self.packed_proj.inner.weight.view(3, self.nheads, self.head_dim, -1)[2].transpose(-1, -2)
+        return self.v_proj.inner.weight.view(self.nheads, self.head_dim, -1).transpose(-1, -2)
+
+    @property
+    def W_O_MI(self):
+        return self.out_proj.inner.weight.view(-1, self.nheads, self.head_dim).permute(1, 2, 0)
+    @property
+    def B_Q_MI(self):
+        if not self.bias: return 0
+        if hasattr(self, 'packed_proj'):
+            return self.packed_proj.inner.bias.view(3, self.nheads, self.head_dim)[0]
+        return self.q_proj.inner.bias.view(self.nheads, self.head_dim)
+
+    @property
+    def B_K_MI(self):
+        if not self.bias: return 0
+        if hasattr(self, 'packed_proj'):
+            return self.packed_proj.inner.bias.view(3, self.nheads, self.head_dim)[1]
+        return self.k_proj.inner.bias.view(self.nheads, self.head_dim)
+
+    @property
+    def B_V_MI(self):
+        if not self.bias: return 0
+        if hasattr(self, 'packed_proj'):
+            return self.packed_proj.inner.bias.view(3, self.nheads, self.head_dim)[2]
+        return self.v_proj.inner.bias.view(self.nheads, self.head_dim)
+
+    @property
+    def B_O_MI(self):
+        if not self.bias: return 0
+        return self.out_proj.bias  # shape: [d_model] 
+    
     def forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None):
-        """
-        Input Tensors:
-        query_input: (Batch, Seqlen, Qdim)
-        key_input: (Batch, Seqlen, Kdim) [If omitted, self-attention]
-        value_input: (Batch, Seqlen, Vdim) [If omitted, self-attention]
-        Output:
-        (Batch, Seqlen, Qdim) # Qdim is the query dimension as well as the output.
-        """
-        
         # 1. Extract max seq len and cu_seqlens (if appliable), convert to Normal Tensor in case a pytorch tensor is passed.
         cu_seqlens=None
         if isinstance(query_input, UnpaddedTensor):
@@ -209,13 +259,96 @@ class MultiHeadAttention(MatformerModule):
                 max_seq_len = query_input.shape[0]
             else:
                 max_seq_len=query_input.shape[1]
-                
-                
-        #self.device=query_input.device
-        #self.dtype=query_input.dtype
         
-        # 2. 
-        
+        if key_input is None:
+            key_input = query_input
+        if value_input is None:
+            value_input = query_input  
+             
+        if not self.mechanistic_interpretability:
+            return self.normal_forward(query_input,original_x,key_input,value_input,document_mask,cu_seqlens,max_seq_len)
+        else:
+            return self.interpretability_friendly_forward(query_input,original_x,key_input,value_input,document_mask,cu_seqlens,max_seq_len)
+    def _h(self, name, x):
+        """
+        A function to execute an hook when in Mechanistic Interpretability mode
+        """
+        assert self.mechanistic_interpretability
+        hook = self.mi_hooks.get(name)
+        if hook is None: return x
+        if hook == 'cache':
+            key=f"L{self.layer_idx}_{name}"
+            self.cache.storage[key] = x.detach(); return x
+        return hook(x)
+
+    def set_hook(self, name, fn='cache'):
+        """
+        Set an hook for Mechanistic interpretability
+        """
+        assert self.mechanistic_interpretability        
+        self.mi_hooks[name] = fn
+        return self 
+    def interpretability_friendly_forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None, cu_seqlens=None, max_seq_len=None):
+        """
+        A modified forward that is optimal for working on mechanistic interpretability.
+        """
+        # 1. For now, the MI version works only with PaddedTensors
+        assert isinstance(query_input, TensorDC)
+        wasUnpadded = True if isinstance(query_input, UnpaddedTensor) else False
+        q = query_input.pad().tensor
+        k = key_input.pad().tensor
+        v = value_input.pad().tensor
+
+        # 2. Query, key and value vectors using the MI-friendly  weights
+        q = einops.einsum(q, self.W_Q_MI, "batch position d_model, n_heads d_model d_head -> batch position n_heads d_head") + self.B_Q_MI
+        k = einops.einsum(k, self.W_K_MI, "batch position d_model, n_heads d_model d_head -> batch position n_heads d_head") + self.B_K_MI
+        v = einops.einsum(v, self.W_V_MI, "batch position d_model, n_heads d_model d_head -> batch position n_heads d_head") + self.B_V_MI
+        q, k, v = self._h('q', q), self._h('k', k), self._h('v', v)
+
+        if 'rope' in self.positional_encoding:
+            cos, sin = self.cache.get_rotary_cos_sin(q.shape[1], self.head_dim, q.device, q.dtype)
+            cos, sin = cos[None, :, None, :], sin[None, :, None, :]
+            rotate = lambda x: torch.cat([-x[..., x.shape[-1]//2:], x[..., :x.shape[-1]//2]], dim=-1)
+            q, k = q * cos + rotate(q) * sin, k * cos + rotate(k) * sin
+
+        # 3. Computation of attention scores    
+        attn_scores = einops.einsum(q, k, "batch posQ n_heads d_head, batch posK n_heads d_head -> batch n_heads posQ posK")
+        attn_scores = (attn_scores / self.head_dim**0.5) # Standard sqrt(d) scaling
+        if 'alibi' in self.positional_encoding:
+            attn_scores = attn_scores + self.cache.get_alibi_bias(q.shape[1], k.shape[1], self.nheads, q.device, q.dtype)
+        if self.is_causal:
+            mask = torch.ones(*attn_scores.shape[-2:], device=attn_scores.device, dtype=torch.bool).tril()
+            attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
+        attn_scores = self._h('attn_scores', attn_scores)
+
+        # 4. Softmax
+        attn_pattern = attn_scores.softmax(-1)
+        attn_pattern = self._h('attn_pattern', attn_pattern)
+
+        # 5. Weighed sums of values according to attention pattern
+        z = einops.einsum(v, attn_pattern, "batch posK n_heads d_head, batch n_heads posQ posK -> batch posQ n_heads d_head")
+        z = self._h('z', z)
+
+        # 6. Output calculation
+        attn_out = einops.einsum(z, self.W_O_MI, "batch posQ n_heads d_head, n_heads d_head d_model -> batch posQ d_model") + self.B_O_MI
+        attn_out = self._h('attn_out', attn_out)
+
+        # 7. Reinserting into tensorDC
+        attn_out = replace(query_input, tensor=attn_out)
+
+        # (optional) repadding
+        if wasUnpadded:
+            attn_out = attn_out.unpad()
+        return attn_out
+    def normal_forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None, cu_seqlens=None,max_seq_len=None):
+        """
+        Input Tensors:
+        query_input: (Batch, Seqlen, Qdim)
+        key_input: (Batch, Seqlen, Kdim) [If omitted, self-attention]
+        value_input: (Batch, Seqlen, Vdim) [If omitted, self-attention]
+        Output:
+        (Batch, Seqlen, Qdim) # Qdim is the query dimension as well as the output.
+        """
         supports_unpadding = self.kernel_meta.get('supports_unpadding', False)
         if 'rope' in self.positional_encoding:
             supports_unpadding = supports_unpadding and self.rotary_embedding_meta.get('supports_unpadding', False) # If either the RoPe or the attn kernel do not support unpadding, sequence is repadded
@@ -344,7 +477,7 @@ class MultiHeadAttention(MatformerModule):
         if repadded:
             query_input = query_input.unpad()
 
-        return query_input  
+        return query_input 
 
 
 
@@ -416,9 +549,12 @@ class TransformerBlock(MatformerModule):
             positional_encoding=layer_config['positional_encoding'],
             is_causal=config.is_causal,
             sliding_window=layer_config['sliding_window_size'],
-            device=self.device
+            device=self.device,
+            layer_idx=layer_idx,
+            interpretability_friendly=False
+            
         )
-        
+
         # Initialize MLP
         self.mlp = ModuleWrapper(
             self.cache.registry.create(
@@ -431,7 +567,6 @@ class TransformerBlock(MatformerModule):
         
         # Initialize hook system
         self.hooks = self._init_hooks(layer_config.get('hooks', {}))
-    
     def _init_hooks(self, hook_specs):
         if not hook_specs:
             return {}
@@ -632,10 +767,22 @@ class TransformerWithLMHead(MatformerModule):
         # Transformer with embeddings
         self.encoder = TransformerWithEmbeddingHead(config, cache=self.cache)
         
+        ################## WARNING !!! ##################
+        # Due to a bug discovered too late, currently weight tying is allowed only
+        # with the environment variable ALLOW_WEIGHT_TYING set to TRUE
+        # This is extremely temporary: we have several checkpoints trained with
+        # weight tying set up in the config but that actually didn't worked
+        # until we fix the configurations file present in those checkpoints
+        # for easiness the weight tying is disabled
+        # Be aware of this if you are going to train a model with Matformer!
+        ################## WARNING !!! ##################
         # Weight tying: share embeddings with output projection
-        if config.tie_word_embeddings:
-            self.lm_head.weight = self.encoder.embed_tokens.module.inner.weight
-    
+        import os 
+        allow_tying = os.environ.get("ALLOW_WEIGHT_TYING", "false").lower() == "true"
+
+        if config.tie_word_embeddings and allow_tying:
+            self.lm_head.module.inner.weight = self.encoder.embed_tokens.module.inner.weight
+            
     def forward(self, x, return_type='logits', **kwargs):
         """Forward pass with optional return type.
         
@@ -693,7 +840,7 @@ class TransformerWithLMHead(MatformerModule):
 class TransformerWithClassificationHead(MatformerModule):
   
     # Stable parameter names
-    encoder: "param_name:encoder"
+    encoder: "transparent"
     classification_head: "param_name:classifier"
     dropout: "param_name:dropout"
       

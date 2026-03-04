@@ -190,18 +190,28 @@ class ParametersRenamer:
             self._scan_tree(child_module, child_stable, child_actual)
     
     def stable_state_dict(self):
-        """Get renamed state dict without recursion issues."""
+		# register_state_dict_post_hook(hook)
         mapping = self.get_parameters_name_mapping()
         reverse = {v: k for k, v in mapping.items()}
         raw_dict = nn.Module.state_dict(self)
         return {reverse.get(k, k): v for k, v in raw_dict.items()}
-
+        
     def load_stable_state_dict(self, state_dict, strict=True, external_mapping=None):
-        """Load renamed state dict."""
+        state_dict = {k: v for k, v in state_dict.items() if not k.endswith('_extra_state')}
+        
+        for module in self.modules():
+            for src, dst in getattr(module.__class__, '_tied_weights', {}).items():
+                for k, v in list(state_dict.items()):
+                    # Forward: src present, dst missing
+                    if k.endswith(src) and k.replace(src, dst) not in state_dict:
+                        state_dict[k.replace(src, dst)] = v
+                    # Reverse: dst present, src missing  ← this is the new part
+                    if k.endswith(dst) and k.replace(dst, src) not in state_dict:
+                        state_dict[k.replace(dst, src)] = v
+        
         mapping = self.get_parameters_name_mapping(external_mapping)
         translated = {mapping.get(k, k): v for k, v in state_dict.items()}
         return nn.Module.load_state_dict(self, translated, strict=strict)
-
 
 if HAS_LIGHTNING:
     class MatformerModule(pl.LightningModule, ParametersRenamer):
