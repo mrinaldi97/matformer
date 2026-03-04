@@ -89,6 +89,7 @@ def load_model_from_checkpoint(checkpoint_path, config, train_config,
             
 def load_classification_config(
     task_config_path: str,
+    base_model_path,
     inherit_from_checkpoint: bool = True
 ) -> ClassificationConfig:
     """
@@ -107,20 +108,15 @@ def load_classification_config(
     
     with open(task_config_path, 'r') as f:
         task_dict = json.load(f)
-        
-    checkpoint_path = task_dict.get("pretrained_checkpoint", None)
-    
-    if checkpoint_path is None:
-        raise ValueError("checkpoint_path must be provided in config as 'pretrained_checkpoint'")
-    
-    if not Path(checkpoint_path).exists():
+
+    if not Path(base_model_path).exists():
         raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
     
     # Load checkpoint config if inheriting
     checkpoint_config = None
     if inherit_from_checkpoint:
-        print(f"Loading checkpoint config from: {checkpoint_path}")
-        checkpoint_config = extract_config_from_checkpoint(checkpoint_path)
+        print(f"Loading checkpoint config from: {base_model_path}")
+        checkpoint_config = extract_config_from_checkpoint(base_model_path)
     
     # Build final config dict
     if inherit_from_checkpoint and checkpoint_config:
@@ -145,7 +141,7 @@ def load_classification_config(
         # Use only task config
         final_dict = task_dict.copy()
     
-    final_dict['pretrained_checkpoint'] = checkpoint_path
+    final_dict['pretrained_checkpoint'] = base_model_path
     config = load_and_validate_classification_config_from_dict(final_dict)
     return config
 
@@ -186,7 +182,12 @@ def save_classification_model(model, trainer, config, save_dir, name="final_mode
 
 def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, base_model_path=None, run_name=None):  
     print("\n --- Config ---")
-    config = load_classification_config(config_path)
+    config = load_classification_config(config_path, base_model_path)
+    if base_model_path is not None:
+        print(f"Using {base_model_path} (from argument) instead of {getattr(config,'pretrained_checkpoint')} (from config)")
+    else:
+        base_model_path=getattr(config,'pretrained_checkpoint')    
+    config = load_classification_config(config_path, base_model_path)
     print("\n")    
     
     save_dir = getattr(config,'save_dir')
@@ -237,10 +238,7 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, base_
     print("Debug 1 train_config")
     print(train_config)
     print("\nLoading model..")    
-    if base_model_path is not None:
-        print(f"Using {base_model_path} (from argument) instead of {getattr(config,'pretrained_checkpoint')} (from config)")
-    else:
-        base_model_path=getattr(config,'pretrained_checkpoint')
+
     model = load_model_from_checkpoint(
         checkpoint_path=base_model_path,
         config=config,

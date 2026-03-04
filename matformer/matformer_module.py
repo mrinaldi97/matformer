@@ -22,63 +22,18 @@ except ImportError:
             dropout: "param_name:dropout"
         "Actual_name(s)" => The name used internally by matformer, and dependent from the way in which modules are coded and nested.
         "External_name(s)" => A possibility to load any state dict, also of models not originally trained with Matformer, with a dictionary that converts the names used by those external state dicts into the "stable_names"
-    
-
-    def _scan_tree(self,module,stable_prefix,actual_prefix):
-        
-        Scan tree 
-        
-        # "Annotations" are the "param_name" string under class definition, ex encoder: "param_name:encoder". They must start with param_name to be recognized.
-        class_annotations=getattr(module.__class__,'__annotations__',{})
-        # Registry annotations are the _params_names present in the registry module (ex. params_names={'inner.weight': 'weight'}); it is a dict where keys are the "actual_names" and values the "stable_names"
-        registry_annotations=getattr(module,'_params_names',{})
-        
-        # Cycle into the module's parameters and buffers
-        for actual_name, _ in chain(module.named_parameters(recurse=False), module.named_buffers(recurse=False)):
-            stable_name=registry_annotations.get(actual_name,actual_name) # Get the stable name; if missing, regression to actual name
-            stable_path = '.'.join(filter(None, [stable_prefix, stable_name]))
-            actual_path = '.'.join(filter(None, [actual_prefix, actual_name]))
-            self._parameters_mappings[stable_path]=actual_path
-        
-        for actual_child_name, child_module in module.named_children():
-            ann=class_annotations.get(actual_child_name, actual_child_name)
-            if ann == "transparent":
-                stable_child_name = None
-            elif ann.startswith('param_name:'):
-                stable_child_name = ann.split(':', 1)[1]
-            else:
-                stable_child_name = actual_child_name
-            child_stable_path = '.'.join(filter(None, [stable_prefix, stable_child_name]))
-            child_actual_path = '.'.join(filter(None, [actual_prefix, actual_child_name]))
-            self._scan_tree(child_module,child_stable_path,child_actual_path)
 """            
 class ParametersRenamer:
-    def get_parameters_name_mapping(self, external_mapping: Optional[dict] = None):
-        if not hasattr(self, '_modules') or len(self._modules) == 0:
-            self._parameters_mappings = {}
-            return
+    @property
+    def _mappings(self): 
+        """
+        Mapping from stable name to actual names
+        """
         if not hasattr(self, '_parameters_mappings'):
-            self._build_parameters_mappings()
-        
-        if external_mapping:
-            composed = {}
-            for checkpoint_name, parameters_name in external_mapping.items():
-                actual_name = self._parameters_mappings.get(parameters_name)
-                if actual_name:
-                    composed[checkpoint_name] = actual_name
-                else:
-                    composed[checkpoint_name] = parameters_name
-            return composed
-        
+            self._parameters_mappings = {}
+            self._scan_tree(self, "", "")
         return self._parameters_mappings
     
-    def _build_parameters_mappings(self):
-        """Recursively scan entire module hierarchy."""
-        self._parameters_mappings = {}
-        self._scan_tree(self, "", "")
-        #print(f"Mappings: {len(self._parameters_mappings)}")
-        #if not self._parameters_mappings:
-        #    print("WARNING: No mappings found!")
     def _scan_tree(self,module,stable_prefix,actual_prefix):
         """
         Scan tree 
@@ -107,111 +62,16 @@ class ParametersRenamer:
             child_stable_path = '.'.join(filter(None, [stable_prefix, stable_child_name]))
             child_actual_path = '.'.join(filter(None, [actual_prefix, actual_child_name]))
             self._scan_tree(child_module,child_stable_path,child_actual_path)
-    def _scan_tree_old(self, module: nn.Module, stable_prefix: str, actual_prefix: str):
-        """
-        Recursively scan module hierarchy, building mappings.
-        
-        Args:
-            module: Current module to scan
-            stable_prefix: Clean path (strips model/module/inner)
-            actual_prefix: Real attribute path
-        """
-        # Get annotations from current module's class (these annotate CHILDREN)
-        annotations = getattr(module.__class__, '__annotations__', {})
-        
-        # Get registry custom mappings for this module's parameters
-        custom_maps = getattr(module, '_params_names', {})
-        #if custom_maps:
-        #    print(f"   {module.__class__.__name__} => {custom_maps}")
-        
-        # Process this module's direct parameters (respect custom maps)
-        for param_name, _ in module.named_parameters(recurse=False):
-            if param_name in custom_maps:
-                stable_name = custom_maps[param_name]
-                #print(f" {param_name} => {stable_name}")
-            else:
-                # Strip generic prefixes from parameter name itself
-                parts = param_name.split('.')
-                stable_name = '.'.join(p for p in parts if p not in ('model', 'module', 'inner'))
-            
-            # Build full paths
-            full_stable = f"{stable_prefix}.{stable_name}" if stable_prefix else stable_name
-            full_actual = f"{actual_prefix}.{param_name}" if actual_prefix else param_name
-            
-            self._parameters_mappings[full_stable] = full_actual
-            #print(f"{full_stable} => {full_actual}")
-        # Process BUFFERS (add this block)
-        for buffer_name, _ in module.named_buffers(recurse=False):
-            # Use the same renaming logic as parameters
-            clean_name = '.'.join(p for p in buffer_name.split('.') if p not in ('model', 'module', 'inner'))
-            
-            if buffer_name in custom_maps:  # Also respect _params_names for buffers
-                stable_name = custom_maps[buffer_name]
-                #print(f"{buffer_name} => {stable_name}")
-            else:
-                stable_name = clean_name
-            
-            full_stable = f"{stable_prefix}.{stable_name}" if stable_prefix else stable_name
-            full_actual = f"{actual_prefix}.{buffer_name}" if actual_prefix else buffer_name
-            
-            self._parameters_mappings[full_stable] = full_actual
-            #print(f"Mapped buffer: {full_stable} => {full_actual}")        
-        # Recurse into children
-        for child_name, child_module in module.named_children():
-            # Check for annotation override (e.g., module: "param_name:mlp")
-            override_name = None
-            if child_name in annotations:
-                ann = annotations[child_name]
-                if isinstance(ann, str) and ann.startswith('param_name:'):
-                    override_name = ann.split(':', 1)[1]
-                    #print(f"  {module.__class__.__name__}.{child_name} => {override_name}")
-            
-            # Determine stable child name:
-            # - If annotation override exists: use it
-            # - If child_name is generic (model/module/inner): skip this level
-            # - Otherwise: use child_name
-            if override_name:
-                stable_child_name = override_name
-            elif child_name in ('model', 'module', 'inner'):
-                stable_child_name = None  # Skip generic names in stable path
-            else:
-                stable_child_name = child_name
-            
-            # Build stable prefix (skip if None)
-            if stable_child_name:
-                child_stable = f"{stable_prefix}.{stable_child_name}" if stable_prefix else stable_child_name
-            else:
-                child_stable = stable_prefix  # Pass through current prefix
-            
-            # Build actual prefix (always keep real names)
-            child_actual = f"{actual_prefix}.{child_name}" if actual_prefix else child_name
-            
-            # Continue recursion
-            self._scan_tree(child_module, child_stable, child_actual)
+ 
     
     def stable_state_dict(self):
-		# register_state_dict_post_hook(hook)
+        # register_state_dict_post_hook(hook)
         mapping = self.get_parameters_name_mapping()
         reverse = {v: k for k, v in mapping.items()}
         raw_dict = nn.Module.state_dict(self)
         return {reverse.get(k, k): v for k, v in raw_dict.items()}
         
-    def load_stable_state_dict(self, state_dict, strict=True, external_mapping=None):
-        state_dict = {k: v for k, v in state_dict.items() if not k.endswith('_extra_state')}
-        
-        for module in self.modules():
-            for src, dst in getattr(module.__class__, '_tied_weights', {}).items():
-                for k, v in list(state_dict.items()):
-                    # Forward: src present, dst missing
-                    if k.endswith(src) and k.replace(src, dst) not in state_dict:
-                        state_dict[k.replace(src, dst)] = v
-                    # Reverse: dst present, src missing  ← this is the new part
-                    if k.endswith(dst) and k.replace(dst, src) not in state_dict:
-                        state_dict[k.replace(dst, src)] = v
-        
-        mapping = self.get_parameters_name_mapping(external_mapping)
-        translated = {mapping.get(k, k): v for k, v in state_dict.items()}
-        return nn.Module.load_state_dict(self, translated, strict=strict)
+
 
 if HAS_LIGHTNING:
     class MatformerModule(pl.LightningModule, ParametersRenamer):

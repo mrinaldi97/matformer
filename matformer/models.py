@@ -8,16 +8,13 @@ from matformer.extra.muon import Muon
 from matformer.model_config import ModelConfig  
 from matformer.masked_models import Maskerator
 from matformer.initialization import init_transformer_weights_
-#import matformer.transformer_blocks
 from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor,NormalTensor
-#from matformer.debug_methods import train_debug_print
 from torch.optim import AdamW, Adam
 from transformers import get_scheduler
 import math
 import torch.distributed as dist
 import numpy as np
 from dataclasses import replace
-#from copy import deepcopy Provo a rimuovere
 from transformers import AutoTokenizer
 from matformer.matformer_registry import registry
 from matformer.cached_stuff import CachedStuff
@@ -32,7 +29,6 @@ class PL_ModelWrapper(MatformerModule):
         self.train_config=train_config
         self.save_hyperparameters()  
         self.load_mode = load_mode
-        # Initialize cache and set registry
         self.cache = CachedStuff()
         self.cache.registry = registry
         self.model = ModelClass(config,tokenizer=tokenizer,device=device,cache=self.cache)  
@@ -81,21 +77,7 @@ class PL_ModelWrapper(MatformerModule):
     def forward(self, _input,*args,**kwargs):
         if isinstance(_input,torch.Tensor):
             _input=NormalTensor(tensor=_input)
-        return self.model(_input.to(self.device),*args,**kwargs)
-    def on_load_checkpoint(self, checkpoint):
-        self._restored_from_ckpt = True       
-        if self.load_mode in ["weights_only", "weights_and_optimizer"]:
-           checkpoint["lr_schedulers"] = [] 
-           checkpoint["epoch"] = 0
-           checkpoint["global_step"] = 0
-           checkpoint.pop("loops", None)
-           checkpoint.pop("MatformerDataModule",None)
-           checkpoint.pop("callbacks", None)
-        if self.load_mode == "weights_only":
-            checkpoint["optimizer_states"] = []
-        if self.load_mode == 'publication':
-            new_checkpoint=checkpoint['state_dict']
-            new_checkpoint=checkpoint['hyper_parameters']
+
     def validation_step(self, batch, batch_idx=None):
         if self.training_step_type == 'pretraining':
             raise NotImplementedError
@@ -245,85 +227,8 @@ class PL_ModelWrapper(MatformerModule):
                 targets_flat = torch.cat(sequence.unbind()).to(logits_flat.device)
                 base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
                 cloze_mask_flat = torch.cat(cloze_mask.unbind()).to(logits_flat.device) if masked else None
-            """
-            #if len(self.cache.additional_logs.items()) > 0:
-            #            for k, v in self.cache.additional_logs.items():
-            #                self.log(k, v, on_step=True, batch_size=self.batch_size)
-            #            self.cache.additional_logs.clear()
-                        
-                   
-            #Trying to simplify the logic,now it by defaults pad everything again.It could be less efficient,we need some tiny test and benchmark
-            #1) See if the loss makes sense directly with unpadding
-            #2) See if repadding causes a significant performances loss
-            """
-            elif logits.isPadded:
-                vocab_size = logits.shape[-1]
-                logits_flat = logits.tensor.reshape(-1, vocab_size)
-                targets_flat = sequence.tensor.reshape(-1)
-                #print(f"Logits flat shape: {logits_flat.shape}")
-                #print(f"Targets flat shape: {targets_flat.shape}")
-                base_mask = (targets_flat != self.config.pad_token_id)
-            
-            
-                autoencoders_experimental=False
-                if autoencoders_experimental:
-                    base_mask = (targets_flat.to(logits.tensor.device) != 259)   
-                    fake_mask = ~logits.padding_mask.reshape(-1).to(logits.tensor.device )
-                    base_mask = base_mask & fake_mask  
-                         
-                
-                cloze_mask_flat = cloze_mask.reshape(-1) if masked else None
-            else:
-                logits_flat = logits.tensor
-                targets_flat = sequence.tensor
-                base_mask = torch.ones_like(targets_flat, dtype=torch.bool, device=targets_flat.device)
-                cloze_mask_flat = cloze_mask if masked else None
-
-            if masked:
-                mask = cloze_mask_flat & base_mask
-                loss = self.loss_function(logits_flat[mask], targets_flat[mask])
-            else:
-                mask = base_mask[1:]
-                loss = self.loss_function(logits_flat[:-1][mask], targets_flat[1:][mask])
             """          
-
-             
-
-            # TODO: this part has to be revised and cleaned
-            additional_metrics=False
-            if additional_metrics:
-                if self.global_step % 100 == 0:         
-                    with torch.no_grad():
-                        if self.cache.additional_logs:
-                             keys = list(self.cache.additional_logs.keys())
-                             vals = [v if torch.is_tensor(v) else torch.tensor(v, device=self.device) for v in self.cache.additional_logs.values()]
-                             vals_cpu = torch.stack(vals).detach().cpu().float().tolist()
-                             log_dict = dict(zip(keys, vals_cpu))
-                             self.log_dict(log_dict, on_step=True, batch_size=self.batch_size)
-                             self.cache.additional_logs.clear()                         
-                        # 'inputs' is already flattened and filtered for the loss (works for GPT/BERT/Unpadded)
-                        # We sample the first 1024 tokens to keep the compute cost negligible
-                        sample_size = min(inputs.size(0), 1024)
-                        diag_data = inputs[:sample_size]
-
-                        if self.config.loss_type != 'cross_entropy_loss_fused':
-                            # 1. Logit Statistics (Saturation check)
-                            self.log("health/logits_max", diag_data.max(), on_step=True, batch_size=self.batch_size)
-                            self.log("health/logits_std", diag_data.std(), on_step=True, batch_size=self.batch_size)
-                            
-                            # 2. Entropy (Confidence check)
-                            probs = torch.softmax(diag_data, dim=-1)
-                            entropy = -torch.sum(probs * torch.log(probs + 1e-9), dim=-1).mean()
-                            self.log("health/entropy", entropy, on_step=True, batch_size=self.batch_size)
-                        else:
-                            # If fused, inputs are actually hidden states
-                            self.log("health/hidden_max", diag_data.max(), on_step=True, batch_size=self.batch_size)
-                            self.log("health/hidden_std", diag_data.std(), on_step=True, batch_size=self.batch_size)
-
-                        # 3. Gating Health (if the model has gates)
-                        for name, p in self.named_parameters():
-                            if 'gate' in name and p.numel() == 1:
-                                self.log(f"gates/{name}_val", p.item(), on_step=True, batch_size=self.batch_size)          
+            additional_metrics=False        
             return loss
             """
             This exception must be only for extreme cases. To avoid breaking a large training if only a minor issue occurs,
@@ -362,32 +267,9 @@ class PL_ModelWrapper(MatformerModule):
 
             return sum(p.sum() for p in self.parameters()) * 0.0
         
-    def on_before_optimizer_step(self, optimizer):
-        additional_metrics=False
-        if additional_metrics:
-            if self.global_step % 100 == 0:
-                grad_norm_sq = 0.0
-                weight_norm_sq = 0.0
-                
-                for p in self.parameters():
-                    if p.grad is not None:
-                        # Use .item() to move scalars to CPU immediately, preventing GPU sync overhead later
-                        grad_norm_sq += p.grad.detach().norm(2).item() ** 2
-                        weight_norm_sq += p.detach().norm(2).item() ** 2
-                
-                total_grad_norm = grad_norm_sq ** 0.5
-                total_weight_norm = weight_norm_sq ** 0.5
-                
-                self.log("health/total_grad_norm", total_grad_norm, on_step=True, batch_size=self.batch_size)
-
-                # 4. Update-to-Weight Ratio (The "Karpathy Metric")
-                try:
-                    lr = optimizer.param_groups[0]['lr']
-                    if total_weight_norm > 1e-8:
-                        ratio = (lr * total_grad_norm) / total_weight_norm
-                        self.log("health/update_weight_ratio", ratio, on_step=True, batch_size=self.batch_size)
-                except Exception:
-                    pass
+    #def on_before_optimizer_step(self, optimizer):
+    #    additional_metrics=False
+    
     def configure_optimizers(self):
         if self.train_config.get("no_decay_for_embedding", False) and self.train_config["optimizer"] != "muon":
             raise ValueError("no_decay_for_embedding for optimizers different than Muon not implemented yet! (Altough it's easy). Please remove it ")
@@ -566,42 +448,104 @@ class PL_ModelWrapper(MatformerModule):
             "optimizer": optimizer,
             "lr_scheduler": {"scheduler": scheduler, "interval": "step", "frequency": 1},
         }
+        
+    def _get_weight_pointer(self, stable_name):
+        """
+        From stable name, returns the associated weight
+        """
+        try:
+            return self.get_parameter(self._mappings[stable_name])
+        except:
+            return None
 
+    def _set_weight(self, stable_name, weight):
+        """
+        Allows to set a weight to a specific value, indexed by stable name
+        """
+        with torch.no_grad():
+            self._get_weight_pointer(stable_name).copy_(weight)
+            
+    def _load_stable_state_dict(self, state_dict):
+        """
+        Loads a state dict saved with stable names,
+        returns missing and unexpected keys
+        """
+        obtained, unexpected = [], []
+        for k in tqdm(state_dict.keys()):
+            if self._get_weight_pointer(k) is not None:
+                obtained.append(k)
+                self._set_weight(k, state_dict[k])
+            elif "_extra_state" not in k:
+                unexpected.append(k)
+        missing = set(self._mappings.keys()) - set(obtained)
+        return missing, unexpected
+        
+    def load_torch_checkpoint(self, ckpt_path, map_location=None):
+        checkpoint = torch.load(ckpt_path, map_location=map_location, weights_only=False)
+        state_dict = checkpoint.get('state_dict', checkpoint)  # Supports just state dict or checkpoint
+        return self._load_stable_state_dict(state_dict)
+
+    def load_safetensors(self, path):
+        from safetensors.torch import load_file
+        return self._load_stable_state_dict(load_file(path))   
+             
     @staticmethod
-    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, train_config=None, map_location=None, tokenizer=None, overrides=None,varlen_strategy='padding', external_mapping=None, training_step_type='pretraining', skip_init=True):
+    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, train_config=None,
+                              map_location=None, tokenizer=None, overrides=None,
+                              varlen_strategy='padding', training_step_type='pretraining', skip_init=True, external_mapping=None):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
-
+        if external_mapping is not None:
+            print(f"WARNING: External mapping is currently disabled. You passed {external_mapping} at it was ignored.")
         if config is None:
             if 'hyper_parameters' in checkpoint and 'config' in checkpoint['hyper_parameters']:
                 config = checkpoint['hyper_parameters']['config']
             else:
-                raise ValueError("Config not found in checkpoint and not provided. Please provide a config.")  
-                
-        """  
-        tokenizer = (
-            AutoTokenizer.from_pretrained(tokenizer) 
-            if tokenizer != 'bytes' else 'bytes'
-        )
-        """
+                raise ValueError("Config not found in checkpoint and not provided. Please provide a config.")
+
         if overrides is not None:
-            for k,v in overrides.items():
-                setattr(config,k,v)
-        if type(tokenizer) != MatformerTokenizer:
-          tokenizer = MatformerTokenizer(
-              config=config,
-              tokenizer_type='huggingface',
-              tokenizer=tokenizer,
-              tokenizer_name=tokenizer,
-              varlen_strategy=varlen_strategy,
-          )                
-   
+            for k, v in overrides.items():
+                setattr(config, k, v)
 
-        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, train_config=train_config, tokenizer=tokenizer, device=map_location, skip_init=skip_init, training_step_type=training_step_type)  
-        #model.load_state_dict(checkpoint['state_dict'])
-        problems=model.load_stable_state_dict(checkpoint['state_dict'], strict=False, external_mapping=external_mapping)
-        #print("Found this config:")
-        #print(config)
-        print(problems)
-        return model,config   
+        if not isinstance(tokenizer, MatformerTokenizer):
+            tokenizer = MatformerTokenizer(
+                config=config,
+                tokenizer_type='huggingface',
+                tokenizer=tokenizer,
+                tokenizer_name=tokenizer,
+                varlen_strategy=varlen_strategy,
+            )
+
+        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, train_config=train_config,
+                                 tokenizer=tokenizer, device=map_location, skip_init=skip_init,
+                                 training_step_type=training_step_type)
+
+        missing, unexpected = model.load_torch_checkpoint(checkpoint_path, map_location=map_location)
+        print(f"Missing:    {missing}")
+        print(f"Unexpected: {unexpected}")
+        return model, config
+        return self.model(_input.to(self.device),*args,**kwargs)
         
-
+    def on_load_checkpoint(self, checkpoint):
+        """
+        Hook for pyTorch lightning
+        """
+        self._restored_from_ckpt = True       
+        if self.load_mode in ["weights_only", "weights_and_optimizer"]:
+           checkpoint["lr_schedulers"] = [] 
+           checkpoint["epoch"] = 0
+           checkpoint["global_step"] = 0
+           checkpoint.pop("loops", None)
+           checkpoint.pop("MatformerDataModule",None)
+           checkpoint.pop("callbacks", None)
+        if self.load_mode == "weights_only":
+            checkpoint["optimizer_states"] = []
+        if self.load_mode == 'publication':
+            new_checkpoint=checkpoint['state_dict']
+            new_checkpoint=checkpoint['hyper_parameters']
+        checkpoint['state_dict'] = {self._mappings.get(k, k): v for k, v in checkpoint['state_dict'].items()}
+        
+    def on_save_checkpoint(self, checkpoint):
+        """
+        Lightning hook so that a stable state dict is saved
+        """
+        checkpoint['state_dict'] = self.stable_state_dict()            
