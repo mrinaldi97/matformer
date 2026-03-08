@@ -77,6 +77,7 @@ class PL_ModelWrapper(MatformerModule):
     def forward(self, _input,*args,**kwargs):
         if isinstance(_input,torch.Tensor):
             _input=NormalTensor(tensor=_input)
+        return self.model(_input.to(self.device),*args,**kwargs)
 
     def validation_step(self, batch, batch_idx=None):
         if self.training_step_type == 'pretraining':

@@ -1,12 +1,3 @@
-"""
-A function to train the classifier head using the matformer library
-A JSON config file must be provided
-But each argument can be overridden from the CLI
-
-objective: making it the most general and easiest at the same time 
-the target are linguists and researchers that should be able to use
-their own data
-"""
 from typing import Literal
 import sys
 import argparse, json, torch, pytorch_lightning as pl, wandb
@@ -39,116 +30,6 @@ serialization.add_safe_globals([
     TokenClassificationConfig, LayerConfig
 ])
 
-def load_model_from_checkpoint(checkpoint_path, config, train_config, 
-                               task, freeze_base_model=True, map_location='cpu', tokenizer=None):
-    """Load classification model with pretrained encoder weights."""
-    
-    if task == "sentence-level":
-        ModelClass = TransformerWithClassificationHead
-    elif task == "token-level":
-        ModelClass = TransformerWithTokenClassificationHead
-    else:
-        raise ValueError(f"task must be 'sentence-level' or 'token-level', got {task}")
-    
-    model, config = PL_ModelWrapper.load_from_checkpoint(
-        checkpoint_path=checkpoint_path,
-        ModelClass=ModelClass,
-        config=config,
-        train_config=train_config,
-        map_location=map_location,
-        tokenizer=tokenizer,
-        varlen_strategy='unpadding',
-        external_mapping=None,
-        training_step_type='classification'
-    )
-    
-    print(f"Loaded pretrained encoder from {checkpoint_path}")
-    print(f"Model: {config.name}, {config.num_hidden_layers} layers")
-    #print(f"Task: {task}, {num_features} classes")
-
-    if freeze_base_model:
-        print("\n--- Freezing encoder ---")
-        model.model.freeze_encoder()
-
-        # Verify freezing
-        encoder_params = sum(p.numel() for p in model.model.encoder.parameters())
-        encoder_trainable = sum(p.numel() for p in model.model.encoder.parameters() if p.requires_grad)
-        head_trainable = sum(p.numel() for p in model.model.classification_head.parameters() if p.requires_grad)
-        total_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
-
-        print(f"Encoder params: {encoder_params:,} (trainable: {encoder_trainable:,})")
-        print(f"Head params: {head_trainable:,}")
-        print(f"Total trainable: {total_trainable:,}")
-
-        assert encoder_trainable == 0, "Encoder should have 0 trainable params"
-        assert head_trainable > 0, "Classification head should be trainable"
-    
-    return model
-  
-
-            
-def load_classification_config(
-    task_config_path: str,
-    base_model_path,
-    inherit_from_checkpoint: bool = True
-) -> ClassificationConfig:
-    """
-    Load classification config with optional checkpoint inheritance.
-    
-    Args:
-        task_config_path: Path to task config JSON
-        inherit_from_checkpoint: If True, fill missing fields from checkpoint config
-    
-    Returns:
-        ClassificationConfig with merged settings
-    """
-    # Load task config
-    if not Path(task_config_path).exists():
-        raise FileNotFoundError(f"Config file not found: {task_config_path}")
-    
-    with open(task_config_path, 'r') as f:
-        task_dict = json.load(f)
-
-    if not Path(base_model_path).exists():
-        raise FileNotFoundError(f"Checkpoint not found: {checkpoint_path}")
-    
-    # Load checkpoint config if inheriting
-    checkpoint_config = None
-    if inherit_from_checkpoint:
-        print(f"Loading checkpoint config from: {base_model_path}")
-        checkpoint_config = extract_config_from_checkpoint(base_model_path)
-    
-    # Build final config dict
-    if inherit_from_checkpoint and checkpoint_config:
-        # Start with checkpoint config as base
-        final_dict = vars(checkpoint_config).copy()
-        
-        # Track what gets overridden
-        inherited_fields = set(final_dict.keys())
-        overridden_fields = set(task_dict.keys()) & inherited_fields
-        new_fields = set(task_dict.keys()) - inherited_fields
-
-        # Override with task config (task config takes priority)
-        final_dict.update(task_dict)
-
-        if inherited_fields:
-            print(f"Inherited {len(inherited_fields)} fields from checkpoint\n")
-        if overridden_fields:
-            print(f"Overridden {len(overridden_fields)} fields: {sorted(overridden_fields)}\n")
-        if new_fields:
-            print(f"Added {len(new_fields)} new fields: {sorted(new_fields)}\n")
-    else:
-        # Use only task config
-        final_dict = task_dict.copy()
-    
-    final_dict['pretrained_checkpoint'] = base_model_path
-    config = load_and_validate_classification_config_from_dict(final_dict)
-    return config
-
-
-def extract_config_from_checkpoint(checkpoint_path):
-  checkpoint = torch.load(checkpoint_path, weights_only=False)
-  return checkpoint['hyper_parameters']['config']  
 
 def save_classification_model(model, trainer, config, save_dir, name="final_model"):
     """Save classification model after training."""
@@ -180,19 +61,20 @@ def save_classification_model(model, trainer, config, save_dir, name="final_mode
     
     return save_path
 
-def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, base_model_path=None, run_name=None):  
-    print("\n --- Config ---")
-    config = load_classification_config(config_path, base_model_path)
+
+
+def run_training(config_path, num_gpus=1, num_nodes=1, base_model_path=None, run_name=None, base_model_config=None):
+    
+    # 1. Load the config from the JSON
+    with open(config_path,"r") as f:
+        task_dict=json.load(f)
+    
+    # Base model path overrides the config
     if base_model_path is not None:
-        print(f"Using {base_model_path} (from argument) instead of {getattr(config,'pretrained_checkpoint')} (from config)")
+        print(f"Using {base_model_path} instead of {task_dict.get('pretrained_checkpoint')} (present in config)")
+        task_dict['pretrained_checkpoint']=base_model_path
     else:
-        base_model_path=getattr(config,'pretrained_checkpoint')    
-    config = load_classification_config(config_path, base_model_path)
-    print("\n")    
-    
-    save_dir = getattr(config,'save_dir')
-    pl.seed_everything(getattr(config,'seed', 27))
-    
+        base_model_path=task_dict['pretrained_checkpoint']
     # Detect device
     if torch.cuda.is_available():
         accelerator = 'gpu'
@@ -200,8 +82,87 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, base_
     elif torch.backends.mps.is_available():
         accelerator = device_string = 'mps'
     else:
-        accelerator = device_string = 'cpu'
+        accelerator = device_string = 'cpu'    
+        
+    # Loading state dict and config (if present in checkpoint)
+    checkpoint=torch.load(base_model_path, weights_only=False)
     
+    if base_model_config is None:
+        try:
+            base_model_config = checkpoint['hyper_parameters']['config']
+        except:
+            raise Exception
+  
+    base_model_state_dict=checkpoint['state_dict']
+    final_dict = vars(base_model_config).copy()
+    inherited_fields = set(final_dict.keys())
+    overridden_fields = set(task_dict.keys()) & inherited_fields
+    new_fields = set(task_dict.keys()) - inherited_fields
+    final_dict.update(task_dict)
+    if True:
+        if inherited_fields:
+            print(f"Inherited {len(inherited_fields)} fields from checkpoint\n")
+        if overridden_fields:
+            print(f"Overridden {len(overridden_fields)} fields: {sorted(overridden_fields)}\n")
+        if new_fields:
+            print(f"Added {len(new_fields)} new fields: {sorted(new_fields)}\n")  
+
+    config = load_and_validate_classification_config_from_dict(final_dict)
+    
+    task="sentence-level"
+    
+    
+    if task == "sentence-level":
+        ModelClass = TransformerWithClassificationHead
+    elif task == "token-level":
+        ModelClass = TransformerWithTokenClassificationHead
+    else:
+        raise ValueError(f"task must be 'sentence-level' or 'token-level', got {task}")
+    tokenizer = MatformerTokenizer(
+                config=config,
+                tokenizer_type=config.tokenizer_type,
+                tokenizer_name=config.tokenizer_name,
+                varlen_strategy="unpadding"   
+            )    
+     # Instantiate the model   
+    model = PL_ModelWrapper(
+        ModelClass, 
+        config=config, 
+        tokenizer=tokenizer, 
+        train_config=config.training, 
+        device=device_string, 
+        batch_size=config.training['batch_size'],
+        training_step_type='classification'
+        )    
+    
+    # Load the base model weights into the classification model
+    missing,unexpected=model._load_stable_state_dict(base_model_state_dict)
+    print(f"Missing: (it's normal)\n{missing}\n\nUnexpected (it's normal): {unexpected}")
+    
+    print(f"Loaded pretrained encoder from {base_model_path}")
+    print(f"Model: {config.name}, {config.num_hidden_layers} layers")
+    #print(f"Task: {task}, {num_features} classes")
+
+    if config.freeze_base_model:
+        print("\n--- Freezing encoder ---")
+        model.model.freeze_encoder()
+
+        # Verify freezing
+        encoder_params = sum(p.numel() for p in model.model.encoder.parameters())
+        encoder_trainable = sum(p.numel() for p in model.model.encoder.parameters() if p.requires_grad)
+        head_trainable = sum(p.numel() for p in model.model.classification_head.parameters() if p.requires_grad)
+        total_trainable = sum(p.numel() for p in model.parameters() if p.requires_grad)
+
+        print(f"Encoder params: {encoder_params:,} (trainable: {encoder_trainable:,})")
+        print(f"Head params: {head_trainable:,}")
+        print(f"Total trainable: {total_trainable:,}")
+
+        assert encoder_trainable == 0, "Encoder should have 0 trainable params"
+        assert head_trainable > 0, "Classification head should be trainable"
+     
+
+    save_dir = getattr(config,'save_dir')
+    pl.seed_everything(getattr(config,'seed', 27))
     train_loader = ClassificationTrainingDataLoader(
       filepath=getattr(config,"data")["train_file"],
       text_column=getattr(config,"data")["text_label"],
@@ -216,12 +177,7 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, base_
         if "val_file" in getattr(config, "data", {})
         else None
     )
-    tokenizer = MatformerTokenizer(
-                config=config,
-                tokenizer_type=config.tokenizer_type,
-                tokenizer_name=config.tokenizer_name,
-                varlen_strategy="unpadding"   
-            )     
+  
     print("\n--- Labels distribution ---")
     print(train_loader.get_label_distribution())
     config.loss_type=config.training['loss']['type'] #Sporco... sovrascrivo il config del modello con la loss x classificazione
@@ -239,15 +195,7 @@ def run_training(config_path, start_scratch=True, num_gpus=1, num_nodes=1, base_
     print(train_config)
     print("\nLoading model..")    
 
-    model = load_model_from_checkpoint(
-        checkpoint_path=base_model_path,
-        config=config,
-        train_config=train_config,
-        task="sentence-level",
-        map_location="cuda",
-        tokenizer=tokenizer,
-        freeze_base_model = freeze_base_model
-    )
+
     
     print("\nLoading data loader..")
     dm = ClassificationDataModule(
