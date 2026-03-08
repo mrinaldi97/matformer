@@ -29,7 +29,45 @@ serialization.add_safe_globals([
     TransformerWithTokenClassificationHead, ModelConfig, ClassificationConfig, 
     TokenClassificationConfig, LayerConfig
 ])
+class CheckpointResultsCallback(Callback):
+    def __init__(self, csv_path, run_name, base_model_path):
+        self.csv_path = Path(csv_path)
+        self.run_name = run_name
+        self.base_model_path = base_model_path
+        self.epoch_metrics = []
 
+    def on_validation_epoch_end(self, trainer, pl_module):
+        m = trainer.callback_metrics
+        self.epoch_metrics.append({
+            'epoch': trainer.current_epoch,
+            'val_loss':     m.get('val/loss',     float('nan')),
+            'val_accuracy': m.get('val/accuracy', float('nan')),
+            'val_f1':       m.get('val/f1',       float('nan')),
+            'train_loss':   m.get('train/loss',   float('nan')),
+            'train_accuracy': m.get('train/accuracy', float('nan')),
+            'train_f1':     m.get('train/f1',     float('nan')),
+        })
+
+    def on_fit_end(self, trainer, pl_module):
+        import csv, json
+        # Scalar-ify any remaining tensors
+        clean = [{k: (v.item() if hasattr(v, 'item') else v) for k, v in e.items()} 
+                 for e in self.epoch_metrics]
+        last = clean[-1] if clean else {}
+        row = {
+            'run_name':       self.run_name,
+            'base_model':     self.base_model_path,
+            'timestamp':      datetime.now().isoformat(),
+            'num_epochs':     trainer.current_epoch + 1,
+            'per_epoch_metrics': json.dumps(clean),
+            **{f'final_{k}': v for k, v in last.items() if k != 'epoch'}
+        }
+        write_header = not self.csv_path.exists()
+        with open(self.csv_path, 'a', newline='') as f:
+            writer = csv.DictWriter(f, fieldnames=row.keys())
+            if write_header:
+                writer.writeheader()
+            writer.writerow(row)
 
 def save_classification_model(model, trainer, config, save_dir, name="final_model"):
     """Save classification model after training."""
@@ -63,7 +101,7 @@ def save_classification_model(model, trainer, config, save_dir, name="final_mode
 
 
 
-def run_training(config_path, num_gpus=1, num_nodes=1, base_model_path=None, run_name=None, base_model_config=None):
+def run_training(config_path, num_gpus=1, num_nodes=1, base_model_path=None, run_name=None, base_model_config=None, skip_save=False, results_csv_path=None):
     
     # 1. Load the config from the JSON
     with open(config_path,"r") as f:
@@ -236,12 +274,18 @@ def run_training(config_path, num_gpus=1, num_nodes=1, base_model_path=None, run
         enable_version_counter = True,
         save_on_train_epoch_end = getattr(config, "save_on_train_epoch_end", False)
     )
+    results_callback = (
+    CheckpointResultsCallback(csv_path=results_csv_path, run_name=final_run_name, base_model_path=base_model_path)
+    if results_csv_path is not None else None
+    )
+    callbacks = [checkpoint] + ([results_callback] if results_callback else [])
+
     torch.set_float32_matmul_precision('high')
     
     strategy = DDPStrategy(gradient_as_bucket_view=True,static_graph=True,find_unused_parameters=False)
     trainer = pl.Trainer(
         logger = wandb_logger,
-        callbacks = [checkpoint],
+        callbacks = callbacks,
         precision = getattr(config, 'precision', 'bf16-mixed'),
         gradient_clip_val = getattr(config, 'training')["gradient_clip_val"],
         accelerator = accelerator,
@@ -261,18 +305,80 @@ def run_training(config_path, num_gpus=1, num_nodes=1, base_model_path=None, run
     trainer.fit(model, dm)
     
     wandb.finish() 
-    
-    print("\n--- Saving final model ---")
-    final_save_path = save_classification_model(
-        model=model,
-        trainer=trainer,  
-        config=config,
-        save_dir=save_dir,
-        name=f"{checkpoint_name}_final"
-    )
-    print(f"\nModel saved to: {final_save_path}")
+    if not skip_save:
+        print("\n--- Saving final model ---")
+        final_save_path = save_classification_model(
+            model=model,
+            trainer=trainer,  
+            config=config,
+            save_dir=save_dir,
+            name=f"{checkpoint_name}_final"
+        )
+        print(f"\nModel saved to: {final_save_path}")
 
-import argparse
+def checkpoint_mode(config_path, checkpoints_dir, num_gpus=1, num_nodes=1, run_name_prefix=None, skip_save=False):
+    """Iterate over all .ckpt files in checkpoints_dir, running fine-tuning for each
+    and appending results to a shared CSV in the same directory.
+    The CSV is named after the config file with a progressive suffix, and the config
+    is copied alongside it — so each distinct run is fully reproducible and traceable.
+    Already-processed checkpoints are skipped, making it safe to interrupt and resume."""
+    import csv, shutil
+
+    ckpt_files = sorted(Path(checkpoints_dir).glob("*.ckpt"))
+    if not ckpt_files:
+        print(f"No .ckpt files found in {checkpoints_dir}")
+        return
+
+    config_stem = Path(config_path).stem  # e.g. "sentiment_task"
+
+    # Find the next free progressive index for this config name in this directory
+    # e.g. sentiment_task_1.csv, sentiment_task_2.csv, ...
+    # If an existing CSV already has a copy of this exact config, reuse it (resume case)
+    existing_csvs = sorted(Path(checkpoints_dir).glob(f"{config_stem}_*.csv"))
+    csv_path = None
+    for candidate in existing_csvs:
+        companion_config = candidate.with_suffix('.json')
+        if companion_config.exists() and companion_config.read_bytes() == Path(config_path).read_bytes():
+            csv_path = candidate
+            print(f"Resuming existing run: {candidate.name}")
+            break
+
+    if csv_path is None:
+        next_idx = len(existing_csvs) + 1
+        csv_path = Path(checkpoints_dir) / f"{config_stem}_{next_idx}.csv"
+        companion_config = csv_path.with_suffix('.json')
+        shutil.copy(config_path, companion_config)
+        print(f"New run: {csv_path.name} (config saved as {companion_config.name})")
+
+    # Build set of already-processed checkpoint paths from existing CSV
+    already_processed = set()
+    if csv_path.exists():
+        with open(csv_path, newline='') as f:
+            for row in csv.DictReader(f):
+                already_processed.add(row['base_model'])
+        print(f"{len(already_processed)} checkpoints already processed, skipping.")
+
+    print(f"Found {len(ckpt_files)} checkpoints: {[f.name for f in ckpt_files]}")
+
+    for ckpt in ckpt_files:
+        if str(ckpt) in already_processed:
+            print(f"Skipping {ckpt.name} (already processed)")
+            continue
+
+        run_name = f"{run_name_prefix}_{ckpt.stem}" if run_name_prefix else ckpt.stem
+        print(f"\n{'='*60}\nRunning checkpoint: {ckpt.name}  |  run: {run_name}\n{'='*60}")
+        try:
+            run_training(
+            config_path=config_path,
+            num_gpus=num_gpus,
+            num_nodes=num_nodes,
+            base_model_path=str(ckpt),
+            run_name=run_name,
+            results_csv_path=csv_path,
+            skip_save=skip_save
+        )
+        except Exception as e:
+            print(f"ERROR. {e}")
 
 def main():
     parser = argparse.ArgumentParser(description='Training script')
@@ -281,8 +387,15 @@ def main():
     parser.add_argument('--gpu', type=int, default=1, help='Number of GPUs (default: 1)')
     parser.add_argument('--nodes', type=int, default=1, help='Number of nodes (default: 1)')
     parser.add_argument('--run_name', type=str, default=None, help="Name of the run for logging")
-    
+    parser.add_argument('--skip_save',action='store_true', help="Don't save the model at the end of the run")
+    parser.add_argument('--checkpoint_mode', action='store_true')
+    parser.add_argument('--checkpoints_dir', type=str, default=None)
+    parser.add_argument('--run_name_prefix', type=str, default=None)
     args = parser.parse_args()
-    run_training(config_path=args.config, num_gpus=args.gpu, num_nodes=args.nodes, base_model_path=args.base_model_path, run_name=args.run_name)
+
+    if args.checkpoint_mode:
+        checkpoint_mode(args.config, args.checkpoints_dir, args.gpu, args.nodes, args.run_name_prefix, skip_save=args.skip_save)
+    else:
+        run_training(config_path=args.config, num_gpus=args.gpu, num_nodes=args.nodes, base_model_path=args.base_model_path, run_name=args.run_name, skip_save=args.skip_save)
 if __name__ == "__main__":
     main()

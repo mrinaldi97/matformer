@@ -220,6 +220,12 @@ class ClassificationConfig(ModelConfig):
     classifier_dropout_p: float = 0.1
     classifier_dropout_inplace: bool = False
 
+    # Classification head architecture
+    head_type: Literal["linear", "mlp"] = "linear"
+    head_config: Dict[str, Any] = field(default_factory=dict)  # num_layers, activation, hidden_size, transformer_layers
+    pre_head: Optional[Literal["transformer"]] = None
+    layers_to_remove: int = 0
+
     # Fine-tuning specific
     freeze_base_model: bool = False
     pretrained_checkpoint: Optional[str] = None
@@ -230,9 +236,16 @@ class TokenClassificationConfig(ModelConfig):
     num_labels: int = 2
     classifier_dropout_p: float = 0.1
     classifier_dropout_inplace: bool = False
+
+    # Classification head architecture
+    head_type: Literal["linear", "mlp"] = "linear"
+    head_config: Dict[str, Any] = field(default_factory=dict)
+    pre_head: Optional[Literal["transformer"]] = None
+    layers_to_remove: int = 0
+
+    # Fine-tuning specific
     freeze_base_model: bool = False
     pretrained_checkpoint: Optional[str] = None
-
 
 def load_and_validate_classification_config_from_dict(
     config_dict: dict,
