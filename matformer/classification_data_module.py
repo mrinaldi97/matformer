@@ -27,7 +27,7 @@ class ClassificationDataModule(pl.LightningDataModule):
         max_seq_len,
         batch_size,
         pad_token_id,
-        task_type="sequence",
+        task="sequence-level",
         num_workers=1,
         val_data_loader=None,
         varlen_strategy="unpadding",
@@ -52,7 +52,7 @@ class ClassificationDataModule(pl.LightningDataModule):
         self.val_data_loader = val_data_loader
         self.num_labels = data_loader.get_num_labels()
         self.varlen_strategy = varlen_strategy
-        self.task_type = task_type
+        self.task = task
 
     def setup(self, stage=None):
         train_truncation = 0
@@ -83,14 +83,14 @@ class ClassificationDataModule(pl.LightningDataModule):
         samples = []
 
         for text, label in zip(texts, labels):
-            if self.task_type == "token":
+            if self.task == "token-level":
                 input_ids, label = self._tokenize_and_align(text, label)
             else:
                 input_ids = self.tokenizer.encode(text)
 
             input_ids, label, trunc = self._truncate_sample(input_ids, label)
             truncation += trunc
-            samples.append((input_ids, int(label)))
+            samples.append((input_ids, label if self.task == "token-level" else int(label)))
 
         return samples, truncation
 
@@ -116,7 +116,7 @@ class ClassificationDataModule(pl.LightningDataModule):
             return input_ids, label, 0
 
         input_ids = input_ids[: self.max_seq_len]
-        if self.task_type == "token":
+        if self.task == "token-level":
             label = label[: self.max_seq_len]
         return input_ids, label, 1
 
@@ -138,7 +138,7 @@ class ClassificationDataModule(pl.LightningDataModule):
         return input_ids + [self.pad_token_id] * (self.max_seq_len - len(input_ids))
 
     def _pad_label(self, label):
-        if self.task_type == "sequence":
+        if self.task == "sequence-level":
             return label
         else:  # token
             return label + [-100] * (self.max_seq_len - len(label))
