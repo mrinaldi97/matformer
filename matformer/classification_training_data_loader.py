@@ -263,6 +263,7 @@ class ClassificationTrainingDataLoader:
     
     def _labels_are_strings(self) -> bool:
         if self.task == "sentence-level":
+            # object dtype is pandas' indicator for string/mixed columns. 
             return self.df[self.label_column].dtype == object
         
         elif self.task == "token-level":
