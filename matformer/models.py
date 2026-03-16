@@ -466,10 +466,11 @@ class PL_ModelWrapper(MatformerModule):
         with torch.no_grad():
             self._get_weight_pointer(stable_name).copy_(weight)
             
-    def _load_stable_state_dict(self, state_dict):
+    def _load_stable_state_dict(self, state_dict, weight_keys_conversion=None):
         """
         Loads a state dict saved with stable names,
         returns missing and unexpected keys
+        Weight key conversion expects a dictionary
         """
         obtained, unexpected = [], []
         for k in tqdm(state_dict.keys()):
