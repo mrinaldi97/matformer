@@ -147,8 +147,8 @@ def run_training(config_path, num_gpus=1, num_nodes=1, base_model_path=None, run
 
     config = load_and_validate_classification_config_from_dict(final_dict)
     
-    task = config.task
-        
+    task = "sentence-level"
+     
     if task == "sentence-level":
         ModelClass = TransformerWithClassificationHead
     elif task == "token-level":
