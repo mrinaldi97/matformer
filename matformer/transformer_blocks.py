@@ -852,7 +852,7 @@ class _ClassificationModel(MatformerModule):
         self.layers_to_remove = layers_to_remove or getattr(config, 'layers_to_remove', 0)
         self.num_features = (
             num_features or
-            getattr(config, 'num_labels', None) or
+            getattr(config, 'num_features', None) or
             2
         )
         self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)
@@ -870,7 +870,7 @@ class _ClassificationModel(MatformerModule):
         if self.layers_to_remove > 0: # In Matformer it's easy to attach the classification head to a layer that is not the last
             encoder_config = deepcopy(config)
             encoder_config.num_hidden_layers -= self.layers_to_remove
-        self.encoder = TransformerWithEmbeddingHead(config=encoder_config, cache=self.cache)
+        self.encoder = TransformerWithLMHead(config=encoder_config, cache=self.cache) # TODO: EmbeddingHead not working (probably bad loading)
 
         self.classification_transformer = None # Similarly, it is easy to add new transformer layers before the classification head
         if self.pre_head == 'transformer':
@@ -958,9 +958,9 @@ class TransformerWithClassificationHead(_ClassificationModel):
         # TODO: perchè?
         kwargs.pop('return_type', None)
         if self.classification_transformer is not None:
-            hidden_states = self.classification_transformer(self.encoder(x, **kwargs)).pad()
+            hidden_states = self.classification_transformer(self.encoder(x, return_type='hidden', **kwargs)).pad()
         else:
-            hidden_states = self.encoder(x, **kwargs).pad() # (B,S,D)
+            hidden_states = self.encoder(x, return_type='hidden', **kwargs).pad() # (B,S,D)
         # Warning: hidden states are now a PaddedTensor so that pooling can be accomplished
         pooled_output = self._pool(hidden_states, attention_mask)
         pooled_output = self.dropout(pooled_output)
@@ -968,7 +968,7 @@ class TransformerWithClassificationHead(_ClassificationModel):
         return logits            
             
 
-class TransformerWithTokenClassificationHead(_ClassificationModel):
+class TransformerWithTokenClassificationHead(MatformerModule):
     classification_head: "param_name:classifier"
     dropout: "param_name:dropout"
     classification_transformer: "param_name:classification_transformer"
