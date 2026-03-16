@@ -147,9 +147,8 @@ def run_training(config_path, num_gpus=1, num_nodes=1, base_model_path=None, run
 
     config = load_and_validate_classification_config_from_dict(final_dict)
     
-    task="sentence-level"
-    
-    
+    task = config.task
+        
     if task == "sentence-level":
         ModelClass = TransformerWithClassificationHead
     elif task == "token-level":
@@ -204,13 +203,17 @@ def run_training(config_path, num_gpus=1, num_nodes=1, base_model_path=None, run
     train_loader = ClassificationTrainingDataLoader(
       filepath=getattr(config,"data")["train_file"],
       text_column=getattr(config,"data")["text_label"],
-      label_column=getattr(config,"data")["target_label"]
+      label_column=getattr(config,"data")["target_label"],
+      task=task,
+      #label2id
     )
     val_loader = (
         ClassificationTrainingDataLoader(
             filepath=getattr(config,"data")["val_file"],
             text_column=getattr(config,"data")["text_label"],
-            label_column=getattr(config,"data")["target_label"]
+            label_column=getattr(config,"data")["target_label"],
+            task=task,
+            #label2id
         )
         if "val_file" in getattr(config, "data", {})
         else None
