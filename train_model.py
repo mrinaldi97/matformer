@@ -296,7 +296,7 @@ def main():
     else:
         max_steps=-1
     # Create trainer
-    strategy=DDPStrategy(gradient_as_bucket_view=True,static_graph=True,find_unused_parameters=False)
+    strategy=DDPStrategy(gradient_as_bucket_view=False,static_graph=False,find_unused_parameters=False)
     trainer = pl.Trainer(
         logger=wandb_logger,
         callbacks=[checkpoint],
