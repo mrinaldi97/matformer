@@ -1,6 +1,6 @@
 import pandas as pd
 from pathlib import Path
-from typing import Optional, Union, List, Tuple
+from typing import Dict, Optional, Union, List, Tuple
 import numpy as np
 from datasets import load_dataset, Dataset
 
@@ -16,6 +16,8 @@ class ClassificationTrainingDataLoader:
         hf_dataset: Optional[str] = None,
         hf_split: str = "train",
         hf_config: Optional[str] = None,
+        task: str = "sentence-level",
+        label2id: Optional[Dict[str,int]] = None
     ):
         """
         Args:
@@ -27,6 +29,8 @@ class ClassificationTrainingDataLoader:
             hf_dataset: HuggingFace dataset name (alternative to filepath)
             hf_split: HuggingFace split to load (default: "train")
             hf_config: HuggingFace dataset configuration (optional)
+            task: sentence-level or token-level
+            label2id: mappings for string labels
         """
         self.filepath = Path(filepath) if filepath else None
 
@@ -38,6 +42,10 @@ class ClassificationTrainingDataLoader:
         self.hf_dataset = hf_dataset
         self.hf_split = hf_split
         self.hf_config = hf_config
+        self.task = task
+        # handle non-integer labels
+        self.label2id = label2id
+        self.id2label = {v: k for k, v in label2id.items()} if label2id is not None else None
 
         if not self.hf_dataset and not self.filepath:
             raise ValueError("Must specify either 'filepath' or 'hf_dataset'")
@@ -98,6 +106,45 @@ class ClassificationTrainingDataLoader:
         dropped = initial_len - len(self.df)
         if dropped > 0:
             print(f"Dropped {dropped} rows with missing values in required columns")
+
+        # string labels
+        if self._labels_are_strings():
+            if self.label2id is None:
+                raise ValueError(
+                    "Labels are strings but no label2id mapping was provided. "
+                    "Define label2id in the task config."
+                )
+            else:
+                if self.task == "sentence-level":
+                    unique = sorted(self.df[self.label_column].unique())
+                elif self.task == "token-level":
+                    all_labels = [l for label_list in self.df[self.label_column] for l in label_list]
+                    unique = sorted(set(all_labels))
+                    
+                # Validate: every label in data must be in label2id
+                unseen = set(unique) - set(self.label2id.keys())
+                if unseen:
+                    raise ValueError(
+                        f"Labels in data not found in label2id: {sorted(unseen)}.\n"
+                        f"label2id keys: {sorted(self.label2id.keys())}"
+                    )
+                    
+                # Apply mapping
+                if self.task == "sentence-level":
+                    self.df[self.label_column] = self.df[self.label_column].map(self.label2id)
+                    if self.df[self.label_column].isna().any():
+                        raise ValueError("Mapping produced NaN values, some labels failed to map")
+                elif self.task == "token-level":
+                    self.df[self.label_column] = self.df[self.label_column].apply(
+                        lambda label_list: [self.label2id[l] for l in label_list]
+                    )
+
+                self.id2label = {v: k for k, v in self.label2id.items()}
+                print(f"Mapped {len(self.label2id)} string labels to integers: {self.label2id}")
+
+    def get_label_maps(self) -> Tuple[Optional[dict], Optional[dict]]:
+        """Returns (label2id, id2label). Both None if labels were already integers."""
+        return self.label2id, self.id2label
 
     def _load_conll(self, is_conllu: bool):
         sentences = []
@@ -168,16 +215,12 @@ class ClassificationTrainingDataLoader:
             num_labels: Count of unique labels
         """
         labels = self.df[self.label_column]
-
-        # Check if labels are lists (token classification) or scalars (sequence classification)
-        if isinstance(labels.iloc[0], (list, np.ndarray)):
+        if self.task == "token-level":
             all_labels = [label for label_list in labels for label in label_list]
             unique_labels = np.sort(np.unique(all_labels))
         else:
             unique_labels = np.sort(labels.unique())
-
         num_labels = len(unique_labels)
-
         return unique_labels, num_labels
 
     def get_num_labels(self) -> int:
@@ -189,34 +232,43 @@ class ClassificationTrainingDataLoader:
             raise ValueError(
                 "Cannot get label distribution: label_column not specified"
             )
-
+            
         unique_labels, counts = np.unique(
             self.df[self.label_column].values, return_counts=True
         )
+        
         return unique_labels, counts
 
     def get_class_weights(self, strategy="inverse_frequency", normalize=True):
         unique_labels, counts = self.get_label_distribution()
-
         num_classes = self.get_num_labels()
         weights = []
-
+        
         label_to_count = dict(zip(unique_labels, counts))
-
         for i in range(num_classes):
             count = label_to_count.get(i, 1)  # Default to 1 if label not in data
-
             if strategy == "inverse_frequency":
                 weight = 1.0 / count
             elif strategy == "sqrt_inverse_frequency":
                 weight = 1.0 / (count**0.5)
             else:
                 raise ValueError(f"Unknown strategy: {strategy}")
-
             weights.append(weight)
-
+            
         if normalize:
             total = sum(weights)
             weights = [w * len(weights) / total for w in weights]
-
+            
         return weights
+    
+    def _labels_are_strings(self) -> bool:
+        if self.task == "sentence-level":
+            # object dtype is pandas' indicator for string/mixed columns. 
+            return self.df[self.label_column].dtype == object
+        
+        elif self.task == "token-level":
+            non_empty = self.df[self.label_column].apply(lambda x: isinstance(x, (list, np.ndarray)) and len(x) > 0)
+            if not non_empty.any():
+                raise ValueError("All token label sequences are empty")
+            first_valid = self.df.loc[non_empty[non_empty].index[0], self.label_column]
+            return isinstance(first_valid[0], str)
