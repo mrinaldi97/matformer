@@ -97,7 +97,7 @@ class PL_ModelWrapper(MatformerModule):
             self.log('val/f1', self.val_f1.compute(), prog_bar=True, on_epoch=True, batch_size=self.batch_size, sync_dist=True)
             self.val_f1.reset()
     def on_train_epoch_end(self):
-        if self.train_f1 is not None:
+        if hasattr(self,'train_f1') and self.train_f1 is not None:
             self.log('train/f1', self.train_f1.compute(), prog_bar=True, on_epoch=True, batch_size=self.batch_size, sync_dist=True)
             self.train_f1.reset()           
     def training_step(self, batch, batch_idx=None):
