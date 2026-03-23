@@ -91,6 +91,8 @@ if __name__ == "__main__":
     def do_masked(prompt):
         acc, toks, pseudo_perplexity = model.model.inference_testing(prompt, masking_ratio=args.masking_ratio)
         print("\n--- Masked prediction ---")
+        if toks is None:
+            return 100.0,""
         print(" ".join(toks))
         print(f"Accuracy: {acc*100:.2f}%\n------\n")
         return acc, toks

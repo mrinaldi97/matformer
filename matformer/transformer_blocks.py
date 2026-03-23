@@ -736,7 +736,14 @@ class TransformerWithEmbeddingHead(MatformerModule):
             embeddings = replace(embeddings, tensor=embeddings.tensor + position_embeds.tensor)
         
         return self.blocks(embeddings, **kwargs)
-
+    def get_cls_token(self, x, **kwargs):
+        """
+        A debug function. Probably will be removed in the future.
+        Return the cls token (token in first position)
+        
+        """
+        return self.forward(x,**kwargs).tensor[:, 0, :]
+        
 
 class TransformerWithLMHead(MatformerModule):
     """
