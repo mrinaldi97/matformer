@@ -10,10 +10,12 @@ from statistics import mean
 
 # ---- LOAD ----
 def load_inference_model(checkpoint_path, ModelClass, map_location, tokenizer):
+    # TODO aggiungi anche qui i due casi nuovi
     if ModelClass==BERTModel:
         overrides={'is_causal':False}
     elif ModelClass==Autoregressive_Model:
         overrides={'is_causal':True}
+    # questa dovrebbe andare bene
     model, cfg = PL_ModelWrapper.load_from_checkpoint(
         checkpoint_path=checkpoint_path,
         ModelClass=ModelClass,
@@ -28,7 +30,7 @@ def load_inference_model(checkpoint_path, ModelClass, map_location, tokenizer):
             module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
     return model, cfg
 
-
+# ignora
 def compute_entropy(model, prompt, return_type='chunks', smoothing=0.0, hard_limit=None):
     ent = model.model.compute_entropy(prompt)
     cuts, cmask, gmask = model.model.monotonicity_breakpoints(prompt=prompt, smoothing=smoothing)
@@ -66,6 +68,7 @@ if __name__ == "__main__":
     args = p.parse_args()
 
     # ---- MAP ARCH ----
+    # TODO aggiungi categorie transformer for classification / token classification
     if args.arch == 'gpt':
         ModelClass = Autoregressive_Model
     elif args.arch == 'bert':
@@ -102,8 +105,16 @@ if __name__ == "__main__":
         print("Chunks:", return_dict['chunks'])
         print(f"Text divided into {len(return_dict['chunks'])} chunks")
         print("------\n")
+        
+    def do_sentence_classification(prompt):
+      # chiama il modello con il prompt e fallo lavorare
+      # tokenize prompt
+      # model(tokenized prompt) e mi restituisci i logits e le stampo
+      # in maniera grafica possibilmente decente
 
     def run_once(prompt):
+        # TODO aggiungi i due casi di arch
+        # ed in ognuno devi fare le do_classification do_token_classification
         if args.arch == 'bert':
             do_masked(prompt)
         elif args.arch == 'entropy':
@@ -182,6 +193,7 @@ if __name__ == "__main__":
         sys.exit(0)
 
     # ---- MAIN ----
+    # TODO chiama run once quindi modifica lui
     if args.interactive:
         print("Interactive mode. Ctrl+C to quit.")
         while True:
