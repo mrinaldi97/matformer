@@ -229,8 +229,6 @@ if __name__ == "__main__":
         raise Exception("Not ready yet.")
 
     def run_once(prompt):
-        # TODO aggiungi i due casi di arch
-        # ed in ognuno devi fare le do_classification do_token_classification
         if args.arch == "bert":
             do_masked(prompt)
         elif args.arch == "entropy":
