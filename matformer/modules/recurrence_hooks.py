@@ -3,8 +3,8 @@ import torch.nn as nn
 import torch.nn.functional as F
 from dataclasses import replace
 from matformer.tensors_dataclasses import TensorDC,UnpaddedTensor,PaddedTensor, ModuleWrapper
-from matformer.transformer_blocks import MultiHeadAttention
 from matformer.matformer_registry import registry
+from matformer.transformer_blocks import MultiHeadAttention
 
 @registry.register(
     "hooks",
@@ -125,11 +125,6 @@ class RecurrenceBridgeInjector(nn.Module):
             import traceback
             traceback.print_exc()
             return x
-
-import torch
-import torch.nn as nn
-from matformer.matformer_registry import registry
-from dataclasses import replace
 
 @registry.register("hooks", "gated_bridge_injector", "default", requires=["torch"], priority=0)
 class GatedBridgeInjector(nn.Module):
