@@ -494,7 +494,7 @@ class PL_ModelWrapper(MatformerModule):
     @staticmethod
     def load_from_checkpoint(checkpoint_path, ModelClass, config=None, train_config=None,
                               map_location=None, tokenizer=None, overrides=None,
-                              varlen_strategy='padding', training_step_type='pretraining', skip_init=True, external_mapping=None):
+                              varlen_strategy='padding', training_step_type='pretraining', skip_init=True, external_mapping=None, return_checkpoint=False):
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
         if external_mapping is not None:
             print(f"WARNING: External mapping is currently disabled. You passed {external_mapping} at it was ignored.")
@@ -526,7 +526,10 @@ class PL_ModelWrapper(MatformerModule):
         unexpected=[x for x in unexpected if 'alibi' not in x]
         print(f"Missing (apart from Alibi slopes):    {missing}")
         print(f"Unexpected (apart from Alibi slopes): {unexpected}")
-        return model, config
+        if not return_checkpoint:
+            return model, config
+        else:
+            return model, config, checkpoint
         return self.model(_input.to(self.device),*args,**kwargs)
         
     def on_load_checkpoint(self, checkpoint):
