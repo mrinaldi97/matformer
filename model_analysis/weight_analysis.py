@@ -9,7 +9,7 @@ import json
 import argparse
 from pathlib import Path
 from tqdm import tqdm
-
+import traceback
 
 def load_model(checkpoint_path, ModelClass=BERTModel, map_location='cpu', tokenizer=None, overrides=None):
     model, cfg, ckpt = PL_ModelWrapper.load_from_checkpoint(
@@ -121,7 +121,7 @@ if __name__ == "__main__":
         for ckpt_path in tqdm(checkpoints):
             try:
                 process_checkpoint(ckpt_path, ModelClass, args.device, args.tokenizer, args.output_file, include_step=True)
-            except:
-                print(f"Invalid: {ckpt_path}")
+            except Exception as e:
+                print(f"Invalid: {ckpt_path}, Exception: {e}, Traceback: {traceback.format_exc()}")
     else:
         process_checkpoint(args.checkpoint, ModelClass, args.device, args.tokenizer, args.output_file, include_step=False)
