@@ -119,6 +119,9 @@ if __name__ == "__main__":
     if args.checkpoints_dir:
         checkpoints = sorted(Path(args.checkpoints_dir).glob("*.ckpt"))
         for ckpt_path in tqdm(checkpoints):
-            process_checkpoint(ckpt_path, ModelClass, args.device, args.tokenizer, args.output_file, include_step=True)
+            try:
+                process_checkpoint(ckpt_path, ModelClass, args.device, args.tokenizer, args.output_file, include_step=True)
+            except:
+                print(f"Invalid: {ckpt_path}")
     else:
         process_checkpoint(args.checkpoint, ModelClass, args.device, args.tokenizer, args.output_file, include_step=False)
