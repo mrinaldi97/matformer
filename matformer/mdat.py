@@ -1326,7 +1326,98 @@ class MatformerDataset(IterableDataset):
                 return self.__len__() 
         else:
             return self.len
+    def create_head_view(self, n: int, new_view_name: str, source_view: str = 'default') -> dict:
+        """
+        *** Added using an LLM, not yet tested but should work ***
+        Create a new view containing the first n documents from source_view's
+        shuffle file, preserving their original order. No re-shuffling.
 
+        Args:
+            n:               Number of documents to take from the head of source_view.
+            new_view_name:   Name for the new view.
+            source_view:     View to slice from (default: 'default').
+
+        Returns:
+            The new view's manifest dict.
+        """
+        # 1. Validate source view and its shuffle file
+        source_meta = self.db.get_manifest(view=source_view)
+        if not source_meta:
+            raise ValueError(f"Source view '{source_view}' not found.")
+        struct_format = source_meta.get('shuffle_struct_format')
+        if not struct_format:
+            raise MDatNotShuffled(f"Source view '{source_view}' has no shuffle file.")
+
+        source_total = self.db.get_view_totals(view_name=source_view)['document_number']
+        if n > source_total:
+            raise ValueError(f"Requested {n} documents but source view only has {source_total}.")
+
+        source_shuffle_path = os.path.join(self.shuffling_path, f'{source_view}.mdat')
+        struct_size = struct.calcsize(struct_format)
+
+        # 2. Create the new view entry in the DB (must exist before link_submdat_view calls)
+        if new_view_name in self.db.list_views():
+            raise NameAlreadyUsed(f"View '{new_view_name}' already exists.")
+        self.db.add_view(new_view_name)
+
+        # 3. Read the first n entries and accumulate per-submdat stats
+        ds_map = self.db.get_dsmap(key='id')          # {submdat_id: submdat_name}
+        doc_counts   = {}   # submdat_id -> number of docs selected
+        bytes_counts = {}   # submdat_id -> raw bytes of selected docs
+
+        new_shuffle_path = os.path.join(self.shuffling_path, f'{new_view_name}.mdat')
+        os.makedirs(self.shuffling_path, exist_ok=True)
+
+        with open(source_shuffle_path, 'rb') as src, \
+             open(new_shuffle_path, 'wb') as dst:
+
+            for _ in tqdm(range(n), desc=f"Building head view '{new_view_name}'"):
+                raw = src.read(struct_size)
+                if not raw:
+                    break  # source file shorter than expected; stop cleanly
+                dst.write(raw)
+
+                submdat_id, doc_id = struct.unpack(struct_format, raw)
+                doc_counts[submdat_id]  = doc_counts.get(submdat_id, 0) + 1
+
+                # Accumulate raw bytes from the actual data DB
+                submdat_name = ds_map[submdat_id]
+                raw_bytes = len(self.loaded_submdats[submdat_name].storage_db['data'][doc_id])
+                bytes_counts[submdat_id] = bytes_counts.get(submdat_id, 0) + raw_bytes
+
+        # 4. Register every submdat against the new view
+        #    Submdats that appear in the head are "partial"; others are "skipped".
+        all_submdat_ids = set(self.db.get_dsmap(key='id').keys())   # all known IDs
+
+        for sbm_id in all_submdat_ids:
+            if sbm_id in doc_counts:
+                self.db.link_submdat_view(
+                    submdat_id      = sbm_id,
+                    view_name       = new_view_name,
+                    is_skipped      = 0,
+                    is_partial      = 1,
+                    is_preserved    = 0,
+                    document_number = doc_counts[sbm_id],
+                    bytes_criteria  = bytes_counts.get(sbm_id, 0),
+                )
+            else:
+                self.db.link_submdat_view(
+                    submdat_id      = sbm_id,
+                    view_name       = new_view_name,
+                    is_skipped      = 1,
+                    is_partial      = 0,
+                    is_preserved    = 0,
+                    document_number = 0,
+                    bytes_criteria  = 0,
+                )
+
+        # 5. Store the shuffle struct format so set_view / _init_shuffle_file work normally
+        self.db.update_manifest(
+            data={'shuffle_struct_format': struct_format},
+            view=new_view_name,
+        )
+
+        return self.db.get_manifest(view=new_view_name)
 
 # Exceptions
 if True:

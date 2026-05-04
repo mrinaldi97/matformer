@@ -522,8 +522,10 @@ class PL_ModelWrapper(MatformerModule):
                                  training_step_type=training_step_type)
 
         missing, unexpected = model.load_torch_checkpoint(checkpoint_path, map_location=map_location)
-        print(f"Missing:    {missing}")
-        print(f"Unexpected: {unexpected}")
+        missing=[x for x in missing if 'alibi' not in x]
+        unexpected=[x for x in unexpected if 'alibi' not in x]
+        print(f"Missing (apart from Alibi slopes):    {missing}")
+        print(f"Unexpected (apart from Alibi slopes): {unexpected}")
         return model, config
         return self.model(_input.to(self.device),*args,**kwargs)
         
