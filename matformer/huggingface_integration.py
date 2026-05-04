@@ -211,7 +211,7 @@ class MatformerForCausalLM(MatformerPreTrainedModel, GenerationMixin):
             shift_labels = labels[..., 1:].contiguous()
             loss = F.cross_entropy(
                 shift_logits.view(-1, shift_logits.size(-1)),
-                shift_labels.view(-1),ignore_index=self.config.pad_token_id
+                shift_labels.view(-1),ignore_index=-100
             )
         
         return CausalLMOutputWithPast(loss=loss, logits=logits)
@@ -342,7 +342,7 @@ class MatformerForMaskedLM(MatformerPreTrainedModel):
         if labels is not None:
             loss = F.cross_entropy(
                 logits.view(-1, logits.size(-1)),
-                labels.view(-1), ignore_index=self.config.pad_token_id
+                labels.view(-1), ignore_index=-100
             )
         
         return MaskedLMOutput(loss=loss, logits=logits)
