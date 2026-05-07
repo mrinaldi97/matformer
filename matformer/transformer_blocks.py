@@ -64,6 +64,7 @@ class MultiHeadAttention(MatformerModule):
         sliding_window: Optional[int] = None,
         device: str = 'cuda',
         interpretability_friendly=False,
+        is_hybrid=False, #Initialize two kernels, one for is_causal = True, another one for is_causal = False; supports giving is_causal as a forward argument
         layer_idx=0
     ):
         super().__init__()
@@ -103,6 +104,8 @@ class MultiHeadAttention(MatformerModule):
         self.head_dim = q_dim // nheads
         self.layer_idx=layer_idx if layer_idx is not None else 0
         self.mechanistic_interpretability=interpretability_friendly
+        self.mi_hooks = {}
+        self.is_hybrid = is_hybrid
         if interpretability_friendly:
             try:
                 import einops
@@ -112,23 +115,52 @@ class MultiHeadAttention(MatformerModule):
         if 'rope' in self.positional_encoding:
             #self.rotary_embedding = self.cache.get_rotary_emb(self.head_dim)
             self.rotary_embedding = self.cache.registry.create('positional_encoding','rope')
-            self.rotary_embedding_meta=self.rotary_embedding._matformer_metadata
-        # Initialize attention kernel
-        self.attn_kernel = self.cache.registry.create(
-            'attention', 
-            attn_variant,
-            preferred=attn_impl,
-            nheads=nheads,
-            head_dim=self.head_dim,
-            is_causal=is_causal,
-            sliding_window=sliding_window,
-            positional_encoding=positional_encoding,
-            cache=cache,
-            device=device
-        )
-        
-        # Get kernel metadata
-        self.kernel_meta = self.attn_kernel._matformer_metadata
+            self.rotary_embedding_meta=self.rotary_embedding._matformer_metadata     
+        if not interpretability_friendly:
+            # Initialize fast attention kernel
+            if is_hybrid: #Initialize two kernels
+                self.attn_kernel_causal= self.cache.registry.create(
+                    'attention', 
+                    attn_variant,
+                    preferred=attn_impl,
+                    nheads=nheads,
+                    head_dim=self.head_dim,
+                    is_causal=True,
+                    sliding_window=sliding_window,
+                    positional_encoding=positional_encoding,
+                    cache=cache,
+                    device=device
+                )
+                self.attn_kernel_noncausal= self.cache.registry.create(
+                    'attention', 
+                    attn_variant,
+                    preferred=attn_impl,
+                    nheads=nheads,
+                    head_dim=self.head_dim,
+                    is_causal=False,
+                    sliding_window=sliding_window,
+                    positional_encoding=positional_encoding,
+                    cache=cache,
+                    device=device
+                )   
+                self.causal_kernel_meta=self.attn_kernel_causal._matformer_metadata
+                self.non_causal_kernel_meta=self.attn_kernel_noncausal._matformer_metadata      
+            else: #Normal branch
+                self.attn_kernel = self.cache.registry.create(
+                    'attention', 
+                    attn_variant,
+                    preferred=attn_impl,
+                    nheads=nheads,
+                    head_dim=self.head_dim,
+                    is_causal=is_causal,
+                    sliding_window=sliding_window,
+                    positional_encoding=positional_encoding,
+                    cache=cache,
+                    device=device
+                )   
+                # Get kernel metadata
+                self.kernel_meta = self.attn_kernel._matformer_metadata
+            
         if not self.force_separed_qkv and (not is_cross_attention or self.qkv_samedim): # Packed qkv projection for efficiency  
             self.packed_proj=self.cache.registry.create('linear','linear',in_features=self.q_dim, out_features=3*q_dim,bias=bias)
         else:
@@ -245,7 +277,9 @@ class MultiHeadAttention(MatformerModule):
         if not self.bias: return 0
         return self.out_proj.bias  # shape: [d_model] 
     
-    def forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None):
+    def forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None, is_causal=None, interpretability=False):
+        if is_causal is None:
+            is_causal=self.is_causal
         # 1. Extract max seq len and cu_seqlens (if appliable), convert to Normal Tensor in case a pytorch tensor is passed.
         cu_seqlens=None
         if isinstance(query_input, UnpaddedTensor):
@@ -265,10 +299,10 @@ class MultiHeadAttention(MatformerModule):
         if value_input is None:
             value_input = query_input  
              
-        if not self.mechanistic_interpretability:
-            return self.normal_forward(query_input,original_x,key_input,value_input,document_mask,cu_seqlens,max_seq_len)
+        if self.mechanistic_interpretability or interpretability:
+            return self.interpretability_friendly_forward(query_input,original_x,key_input,value_input,document_mask,cu_seqlens,max_seq_len, is_causal)            
         else:
-            return self.interpretability_friendly_forward(query_input,original_x,key_input,value_input,document_mask,cu_seqlens,max_seq_len)
+            return self.normal_forward(query_input,original_x,key_input,value_input,document_mask,cu_seqlens,max_seq_len, is_causal)
     def _h(self, name, x):
         """
         A function to execute an hook when in Mechanistic Interpretability mode
@@ -288,7 +322,7 @@ class MultiHeadAttention(MatformerModule):
         assert self.mechanistic_interpretability        
         self.mi_hooks[name] = fn
         return self 
-    def interpretability_friendly_forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None, cu_seqlens=None, max_seq_len=None):
+    def interpretability_friendly_forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None, cu_seqlens=None, max_seq_len=None, is_causal=False):
         """
         A modified forward that is optimal for working on mechanistic interpretability.
         """
@@ -316,7 +350,7 @@ class MultiHeadAttention(MatformerModule):
         attn_scores = (attn_scores / self.head_dim**0.5) # Standard sqrt(d) scaling
         if 'alibi' in self.positional_encoding:
             attn_scores = attn_scores + self.cache.get_alibi_bias(q.shape[1], k.shape[1], self.nheads, q.device, q.dtype)
-        if self.is_causal:
+        if is_causal:
             mask = torch.ones(*attn_scores.shape[-2:], device=attn_scores.device, dtype=torch.bool).tril()
             attn_scores = attn_scores.masked_fill(~mask, float('-inf'))
         attn_scores = self._h('attn_scores', attn_scores)
@@ -340,7 +374,7 @@ class MultiHeadAttention(MatformerModule):
         if wasUnpadded:
             attn_out = attn_out.unpad()
         return attn_out
-    def normal_forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None, cu_seqlens=None,max_seq_len=None):
+    def normal_forward(self, query_input, original_x=None, key_input=None, value_input=None, document_mask=None, cu_seqlens=None,max_seq_len=None, is_causal=False):
         """
         Input Tensors:
         query_input: (Batch, Seqlen, Qdim)
@@ -349,10 +383,21 @@ class MultiHeadAttention(MatformerModule):
         Output:
         (Batch, Seqlen, Qdim) # Qdim is the query dimension as well as the output.
         """
-        supports_unpadding = self.kernel_meta.get('supports_unpadding', False)
+        if not self.is_hybrid:
+            kernel_meta=self.kernel_meta
+            attn_kernel=self.attn_kernel
+        else:
+            if is_causal:
+                kernel_meta=self.causal_kernel_meta
+                attn_kernel=self.attn_kernel_causal
+            else:
+                kernel_meta=self.noncausal_kernel_meta
+                attn_kernel=self.attn_kernel_noncausal
+        
+        supports_unpadding = kernel_meta.get('supports_unpadding', False)
         if 'rope' in self.positional_encoding:
             supports_unpadding = supports_unpadding and self.rotary_embedding_meta.get('supports_unpadding', False) # If either the RoPe or the attn kernel do not support unpadding, sequence is repadded
-        supports_packed_qkv = self.kernel_meta.get('supports_packed_qkv', False)
+        supports_packed_qkv = kernel_meta.get('supports_packed_qkv', False)
         rope_supports_packed = self.rotary_embedding_meta.get('supports_packed_qkv', False) if  'rope' in self.positional_encoding else True  
         
         # Set defaults for self-attention
@@ -435,8 +480,8 @@ class MultiHeadAttention(MatformerModule):
             if repack_after_rope:
                 qkv_projected = self._pack_qkv(q, k, v)
                 q, k, v = None, None, None
-        kernel_input_order = self.kernel_meta.get('tensor_order_input', '?SHD')
-        tensor_order_qkv_packed = self.kernel_meta.get('tensor_order_qkv_packed_input', None)
+        kernel_input_order = kernel_meta.get('tensor_order_input', '?SHD')
+        tensor_order_qkv_packed = kernel_meta.get('tensor_order_qkv_packed_input', None)
         
         if qkv_projected is not None and not supports_packed_qkv:
             q, k, v = self._unpack_qkv(qkv_projected)
@@ -450,7 +495,7 @@ class MultiHeadAttention(MatformerModule):
             v = self._transpose_for_kernel(v, kernel_input_order)
 
         # Attention computation
-        attn_output = self.attn_kernel(
+        attn_output = attn_kernel(
             qkv=qkv_projected.tensor if qkv_projected is not None else None,
             q=q.tensor if q is not None else None,
             k=k.tensor if k is not None else None,
@@ -460,7 +505,7 @@ class MultiHeadAttention(MatformerModule):
         )
 
         # Transpose from kernel's output format to expected format (B, S, H, Hd)
-        kernel_output_order = self.kernel_meta.get('tensor_order_output', '?SHD')
+        kernel_output_order = kernel_meta.get('tensor_order_output', '?SHD')
         attn_output = NormalTensor(tensor=attn_output, tensor_order=kernel_output_order)
         attn_output = self._transpose_for_kernel(attn_output, '?SHD')
 
@@ -597,16 +642,16 @@ class TransformerBlock(MatformerModule):
         """Apply hook if it exists, otherwise return input unchanged."""
         return self.hooks[hook_name](x, *args, **kwargs) if hook_name in self.hooks else x
     
-    def _norm_attn_residual(self, x, original_x):
+    def _norm_attn_residual(self, x, original_x, is_causal=None, interpretability=False):
         """Apply normalization, attention, and residual connection."""
         if self.norm_position == 'pre':
             normed = self.attn_norm(x)
             normed = self._apply_hook("post_norm_pre_attn", normed)
-            attn_out = self.self_attn(normed, original_x=original_x)
+            attn_out = self.self_attn(normed, original_x=original_x, is_causal=is_causal, interpretability=interpretability)
             attn_out = self._apply_hook("post_attn", attn_out)
             return x + attn_out
         else:  # post normalization
-            attn_out = self.self_attn(x, original_x=original_x)
+            attn_out = self.self_attn(x, original_x=original_x, is_causal=is_causal, interpretability=interpretability)
             attn_out = self._apply_hook("post_attn", attn_out)
             x = x + attn_out
             x = self.attn_norm(x)
@@ -627,7 +672,7 @@ class TransformerBlock(MatformerModule):
             x = self.mlp_norm(x)
             return self._apply_hook("post_mlp_norm", x)
     
-    def forward(self, x, block_mask=None, sliding=False):
+    def forward(self, x, block_mask=None, sliding=False, is_causal=None, interpretability=False):
         """Forward pass through transformer block.     
         If self.norm_position == pre:
             pre_attn => norm => attn => residual => pre_mlp => norm => mlp => residual => output
@@ -640,7 +685,7 @@ class TransformerBlock(MatformerModule):
         
         # Attention block
         x = self._apply_hook("pre_attn", x)
-        x = self._norm_attn_residual(x, original_x)
+        x = self._norm_attn_residual(x, original_x, is_causal, interpretability)
         
         # MLP block
         x = self._apply_hook("pre_mlp", x)
@@ -678,9 +723,9 @@ class NakedTransformer(MatformerModule):
             for idx in range(config.num_hidden_layers)
         ])
     
-    def forward(self, x, document_mask=None, inference=False):
+    def forward(self, x, document_mask=None, **kwargs):
         for layer in self.layers:
-            x = layer(x)
+            x = layer(x, **kwargs)
         return self.norm(x)
 
 

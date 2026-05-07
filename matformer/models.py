@@ -127,19 +127,21 @@ class PL_ModelWrapper(MatformerModule):
     def pretraining_step(self, batch, batch_idx=None):
         try:
             input_sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
+            original_sequence = input_sequence
             batch['sequence'] = input_sequence
             if batch['worker_has_finished']:
                 zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
                 return zero_loss
             masked=True if self.config.training_objective=='masked' else False
-            if self.config.training_objective == 'crazy':
-                self.crazy_previous_state = not getattr(self, 'crazy_previous_state', False)
-                masked = self.crazy_previous_state
-                for m in self.model.modules():
-                    if hasattr(m, 'is_causal'):
-                        m.is_causal = not masked
-                    if hasattr(m, 'attn_kernel') and hasattr(m.attn_kernel, 'is_causal'):
-                        m.attn_kernel.is_causal = not masked
+            
+            if self.config.training_objective == 'hybrid': # Hybrid MLM + GPT training regime
+                prob = getattr(self.config, 'hybrid_mlm_prob', 0.5) #Probability of MLM vs GPT          
+                if self.train_config and 'hybrid_curriculum_fn' in self.train_config:
+                    prob = self.train_config['hybrid_curriculum_fn'](self.global_step, prob)
+                masked = torch.rand(1).item() < prob
+            else:
+                masked = (self.config.training_objective == 'masked')
+
 
             #input_sequence=sequence
             if masked:
@@ -168,7 +170,7 @@ class PL_ModelWrapper(MatformerModule):
             
             
             ### Input al modello ###
-            model_output = self(input_sequence, return_type=model_return_type) #Return type can be 'logits' or 'hidden' (required for fused loss)   
+            model_output = self(input_sequence, return_type=model_return_type, is_causal=not masked) #Return type can be 'logits' or 'hidden' (required for fused loss)   
             is_unpadded = isinstance(model_output, UnpaddedTensor)
 
             if is_unpadded:
@@ -209,7 +211,7 @@ class PL_ModelWrapper(MatformerModule):
             
 
             
-            if self.config.training_objective == 'crazy':
+            if self.config.training_objective == 'hybrid':
                 self.log(f'train/loss_masked_{str(masked)}',loss, prog_bar=True,batch_size=self.batch_size)
             try:
                 current_lr = self.lr_schedulers().get_last_lr()[0]
