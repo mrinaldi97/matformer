@@ -23,12 +23,12 @@ from matformer.matformer_module import MatformerModule
 
 class PL_ModelWrapper(MatformerModule):
     model: "transparent"
-    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False,load_mode="full", skip_init=False, training_step_type='pretraining'):
+    def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False,reset=None, skip_init=False, training_step_type='pretraining'):
         super().__init__()
         self.config=config
         self.train_config=train_config
         self.save_hyperparameters()  
-        self.load_mode = load_mode
+        self.what_to_reset = reset
         self.cache = CachedStuff()
         self.cache.registry = registry
         self.model = ModelClass(config,tokenizer=tokenizer,device=device,cache=self.cache)  
@@ -389,64 +389,47 @@ class PL_ModelWrapper(MatformerModule):
         # === Scheduler ===
         if not self.train_config.get("lr_scheduling", False):
             return optimizer
-
-
-        total_steps = self.train_config.get("total_steps") 
-        
+         
+        cfg          = self.train_config
+        total_steps  = cfg["total_steps"]
+        warmup_steps = int(cfg.get("warmup_steps", 0.05) * total_steps)
+        hold_steps   = int(cfg.get("hold_steps",   0.0)  * total_steps)
+        decay_steps  = max(1, total_steps - warmup_steps - hold_steps)
+        anneal_step  = cfg.get("annealing_start_step")
+         
+        DECAY_FNS = {
+            "custom":     lambda p, s, e: e + (s - e) * 0.5 * (1 + math.cos(math.pi * p)), #deprecated, is the same as 'cosine'
+            "cosine":     lambda p, s, e: e + (s - e) * 0.5 * (1 + math.cos(math.pi * p)),
+            "linear":     lambda p, s, e: s + (e - s) * p,
+            "polynomial": lambda p, s, e: e + (s - e) * (1 - p) ** cfg.get("poly_power", 2),
+            "constant":   lambda p, s, e: s,
+        }
+        decay = DECAY_FNS[cfg.get("scheduler", "cosine")]
+         
+        def make_schedule(opt):
+            lr           = opt.param_groups[0]["lr"]
+            end_factor   = cfg.get("final_lr", 0.0) / lr
+            anneal_factor = cfg.get("annealing_lr", lr) / lr if anneal_step else None
+         
+            def lr_schedule(step):
+                if anneal_step and step >= anneal_step:
+                    prog = (step - anneal_step) / max(1, total_steps - anneal_step)
+                    return decay(min(prog, 1.0), anneal_factor, end_factor)
+                if step < warmup_steps:
+                    return step / max(1, warmup_steps)
+                if step < warmup_steps + hold_steps:
+                    return 1.0
+                prog = (step - warmup_steps - hold_steps) / decay_steps
+                return decay(min(prog, 1.0), 1.0, end_factor)
+         
+            return torch.optim.lr_scheduler.LambdaLR(opt, lr_schedule)
+         
+        opts      = optimizer if isinstance(optimizer, list) else [optimizer]
+        scheduler = [make_schedule(opt) for opt in opts] if isinstance(optimizer, list) else make_schedule(optimizer)
+         
         self.total_training_steps = total_steps
-        
-        def create_scheduler(opt):
-            if self.train_config.get("scheduler") == "custom":
-                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps) 
-                hold = int(self.train_config.get("hold_steps", 0.10) * total_steps)
-                target = self.train_config.get("final_lr", 0.0)
-                base_lr = opt.param_groups[0]["lr"]
-                factor = target / base_lr if base_lr > 0 else 0.0
-
-                def lr_schedule(step):
-                    if step < warmup:
-                        return step / max(1, warmup)
-                    if step < warmup + hold:
-                        return 1.0
-                    prog = (step - warmup - hold) / max(1, total_steps - warmup - hold)
-                    return factor + (1 - factor) * 0.5 * (1 + math.cos(math.pi * prog))
-
-                return torch.optim.lr_scheduler.LambdaLR(opt, lr_schedule, last_epoch=-1)
-
-            elif self.train_config.get("scheduler") == "cosine_decay":
-                from transformers import get_cosine_schedule_with_warmup
-                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
-                return get_cosine_schedule_with_warmup(
-                    optimizer=opt,
-                    num_warmup_steps=warmup,
-                    num_training_steps=total_steps
-                )
-
-            elif self.train_config.get("scheduler") == "linear_decay":
-                from transformers import get_linear_schedule_with_warmup
-                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
-                return get_linear_schedule_with_warmup(
-                    optimizer=opt,
-                    num_warmup_steps=warmup,
-                    num_training_steps=total_steps
-                )
-
-            else:
-                warmup = int(self.train_config.get("warmup_steps", 0.05) * total_steps)
-                return get_scheduler(
-                    name=self.train_config.get("scheduler", "linear"),
-                    optimizer=opt,
-                    num_warmup_steps=warmup,
-                    num_training_steps=total_steps
-                )
-        
-        if isinstance(optimizer, list):
-            scheduler = [create_scheduler(opt) for opt in optimizer]
-        else:
-            scheduler = create_scheduler(optimizer)
-
         return {
-            "optimizer": optimizer,
+            "optimizer":    optimizer,
             "lr_scheduler": {"scheduler": scheduler, "interval": "step", "frequency": 1},
         }
         
@@ -531,28 +514,31 @@ class PL_ModelWrapper(MatformerModule):
         else:
             return model, config, checkpoint
         return self.model(_input.to(self.device),*args,**kwargs)
-        
+
     def on_load_checkpoint(self, checkpoint):
-        """
-        Hook for pyTorch lightning
-        """
-        self._restored_from_ckpt = True       
-        if self.load_mode in ["weights_only", "weights_and_optimizer"]:
-           checkpoint["lr_schedulers"] = [] 
-           checkpoint["epoch"] = 0
-           checkpoint["global_step"] = 0
-           checkpoint.pop("loops", None)
-           checkpoint.pop("MatformerDataModule",None)
-           checkpoint.pop("callbacks", None)
-        if self.load_mode == "weights_only":
-            checkpoint["optimizer_states"] = []
-        if self.load_mode == 'publication':
-            new_checkpoint=checkpoint['state_dict']
-            new_checkpoint=checkpoint['hyper_parameters']
-        checkpoint['state_dict'] = {self._mappings.get(k, k): v for k, v in checkpoint['state_dict'].items()}
-        
+            """
+            Hook for pyTorch lightning
+            """
+            self._restored_from_ckpt = True 
+            if self.what_to_reset is not None:
+                what_to_reset=self.what_to_reset.split(',')
+                if 'lr_scheduler' in what_to_reset:
+                    print("LR Scheduler is reset")
+                    checkpoint["lr_schedulers"] = []    
+                if 'optimizer' in what_to_reset:
+                    print("Optimizer states are reset")
+                    checkpoint["optimizer_states"] = []   
+                if 'datamodule' in what_to_reset:
+                   print("Datamodule is reset")
+                   checkpoint.pop("MatformerDataModule",None)
+                if 'steps' in what_to_reset:
+                   print("Epoch and global step are reset")
+                   checkpoint["epoch"] = 0
+                   checkpoint["global_step"] = 0
+            checkpoint['state_dict'] = {self._mappings.get(k, k): v for k, v in checkpoint['state_dict'].items()}              
+
     def on_save_checkpoint(self, checkpoint):
-        """
-        Lightning hook so that a stable state dict is saved
-        """
-        checkpoint['state_dict'] = self.stable_state_dict()            
+            """
+            Lightning hook so that a stable state dict is saved
+            """
+            checkpoint['state_dict'] = self.stable_state_dict()            

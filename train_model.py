@@ -55,7 +55,8 @@ def parse_args():
     parser.add_argument('--dump-json', type=str, default=None, help="Path to dump JSON state dict shapes")
     parser.add_argument('--debug-steps', type=int, default=None, help="If you choose this, train for one epoch on this number of steps")
     parser.add_argument('--compile', action='store_true', help="Torch.compile the whole model")
-    parser.add_argument('--load-mode', type=str, choices=['full', 'weights_only', 'weights_and_optimizer'], default='full',help="Checkpoint loading strategy")
+    
+    parser.add_argument('--reset', type=str ,help="What do you want to reset from the checkpoint") #, choices=['lr_scheduler', 'optimizer', 'datamodule', 'steps']
     parser.add_argument('--precision', type=str, choices=['16-mixed', 'bf16-mixed', '32','16','bf16','32-true','bf16-true','16-true','64-true','transformer-engine'], 
                         default='bf16-mixed', help="precision")
     args = parser.parse_args()
@@ -98,7 +99,7 @@ def parse_args():
         except ValueError:
             parser.error(f"Override '{item}' must be in key=value format")
     
-    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch,args.simulate,args.dump_json,args.debug_steps,args.compile,args.nodes,args.load_mode,args.precision
+    return config_paths, overrides, args.gpu, args.checkpoint, args.start_from_scratch,args.simulate,args.dump_json,args.debug_steps,args.compile,args.nodes,args.reset,args.precision
 
 def get_model_class(model_class: str):
     module = import_module("matformer.transformer_blocks")
@@ -178,7 +179,7 @@ def main():
     #config_path, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json = parse_args()
     #cfg = apply_overrides(load_config(config_path), overrides)
     
-    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json, debug_steps,_compile, num_nodes, load_mode, precision = parse_args()
+    config_paths, overrides, device_count, ckpt_arg, start_scratch, simulate, dump_json, debug_steps,_compile, num_nodes, reset, precision = parse_args()
     model_config_dict, train_cfg, data_cfg, tok_cfg, cfg = load_and_prepare_configs(config_paths, overrides)
     
     #model_cfg = ModelConfig(**cfg['model_config'])
@@ -195,7 +196,11 @@ def main():
         accelerator = device_string = 'mps'
     else:
         accelerator = device_string = 'cpu'
-    
+    if debug_steps is not None:
+        max_epochs=None
+        max_steps=debug_steps
+    else:
+        max_steps=-1    
     # Create data module with MDAT dataset
     data = MatformerDataModule(
         mdat_path=data_cfg['data_root'],
@@ -213,11 +218,15 @@ def main():
     
     # Calculate training steps if dataset length is available
     max_epochs = train_cfg.get("max_epochs", 1)
+    annealing_flag=True # This should be an argument, it means "If debug steps is selected, compute the learning rate scheduling accordingly to the number of specified steps" in order to have a correct annealing     
+        
     if hasattr(data, '__len__') and len(data) > 0: #Nel caso di più GPU viene già divisa per numero di GPU (es. /4)
         num_batches = math.ceil(len(data) / data_cfg["batch_size"])
         accumulate_grad_batches = train_cfg.get("accumulate_grad_batches", 1)
         total_steps = (num_batches // accumulate_grad_batches) * max_epochs // num_nodes # Dividi anche per i nodi
         train_cfg["total_steps"] = total_steps
+        if annealing_flag and max_steps != -1:
+            train_cfg["total_steps"] = max_steps
         train_cfg["num_batches"] = num_batches
     else:
         print("The Datamodule is not returning the length. Thus, LR scheduling is disabled")
@@ -234,7 +243,7 @@ def main():
         train_config=train_cfg, 
         device=device_string, 
         batch_size=data_cfg['batch_size'],
-        load_mode=load_mode
+        reset=reset
     )
     
     if simulate:
@@ -290,11 +299,7 @@ def main():
     )
 
     torch.set_float32_matmul_precision('high')
-    if debug_steps is not None:
-        max_epochs=None
-        max_steps=debug_steps
-    else:
-        max_steps=-1
+
     # Create trainer
     strategy=DDPStrategy(gradient_as_bucket_view=False,static_graph=False,find_unused_parameters=False)
     trainer = pl.Trainer(
