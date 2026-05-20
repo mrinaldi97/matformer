@@ -1381,9 +1381,9 @@ class MatformerDataset(IterableDataset):
                 doc_counts[submdat_id]  = doc_counts.get(submdat_id, 0) + 1
 
                 # Accumulate raw bytes from the actual data DB
-                submdat_name = ds_map[submdat_id]
-                raw_bytes = len(self.loaded_submdats[submdat_name].storage_db['data'][doc_id])
-                bytes_counts[submdat_id] = bytes_counts.get(submdat_id, 0) + raw_bytes
+                #submdat_name = ds_map[submdat_id]
+                #raw_bytes = len(self.loaded_submdats[submdat_name].storage_db['data'][doc_id])
+                #bytes_counts[submdat_id] = bytes_counts.get(submdat_id, 0) + raw_bytes
 
         # 4. Register every submdat against the new view
         #    Submdats that appear in the head are "partial"; others are "skipped".

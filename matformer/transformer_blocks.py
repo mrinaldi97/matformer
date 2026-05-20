@@ -144,7 +144,7 @@ class MultiHeadAttention(MatformerModule):
                     device=device
                 )   
                 self.causal_kernel_meta=self.attn_kernel_causal._matformer_metadata
-                self.non_causal_kernel_meta=self.attn_kernel_noncausal._matformer_metadata      
+                self.noncausal_kernel_meta=self.attn_kernel_noncausal._matformer_metadata      
             else: #Normal branch
                 self.attn_kernel = self.cache.registry.create(
                     'attention', 
@@ -593,13 +593,13 @@ class TransformerBlock(MatformerModule):
             attn_impl=layer_config['attn_impl'],
             positional_encoding=layer_config['positional_encoding'],
             is_causal=config.is_causal,
+            is_hybrid=getattr(config, 'training_objective', None) == 'hybrid',
             sliding_window=layer_config['sliding_window_size'],
             device=self.device,
             layer_idx=layer_idx,
             interpretability_friendly=False
             
         )
-
         # Initialize MLP
         self.mlp = ModuleWrapper(
             self.cache.registry.create(

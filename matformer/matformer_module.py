@@ -1,4 +1,4 @@
-# matformer/base.py
+# matformer/matformer_module.py
 import torch
 import torch.nn as nn
 from typing import Optional
@@ -72,7 +72,7 @@ class ParametersRenamer:
         return {reverse.get(k, k): v for k, v in raw_dict.items()}
         
 
-
+"""
 if HAS_LIGHTNING:
     class MatformerModule(pl.LightningModule, ParametersRenamer):
         def __init__(self):
@@ -80,28 +80,27 @@ if HAS_LIGHTNING:
             self.has_lightning = True
             self.strict_loading = False
         def on_save_checkpoint(self, checkpoint: dict) -> None:
-            """Transform state dict before saving."""
             checkpoint['state_dict'] = self.stable_state_dict()
             print(f"Saved checkpoint with {len(checkpoint['state_dict'])} keys")
         
         def load_state_dict(self, state_dict, strict=True):
-            """Translate stable keys to actual keys before loading."""
             mapping = self._mappings  # stable -> actual
             translated = {mapping.get(k, k): v for k, v in state_dict.items()}
             self._state_dict_translated = True  
             return super().load_state_dict(translated, strict=strict)
         
         def on_load_checkpoint(self, checkpoint: dict) -> None:
-            """Fallback: translate if load_state_dict didn't run."""
             if not getattr(self, '_state_dict_translated', False):
                 mapping = self._mappings
                 checkpoint['state_dict'] = {mapping.get(k, k): v for k, v in checkpoint['state_dict'].items()}
             self._state_dict_translated = False 
 else:
-    class MatformerModule(nn.Module, ParametersRenamer):
+"""
+class MatformerModule(nn.Module, ParametersRenamer):
         """
         Base class for Matformer modules when Lightning is NOT available.
         Provides stable checkpointing + manual device/dtype management.
+        Probably going to be deprecated
         """
         def __init__(self):
             super().__init__()

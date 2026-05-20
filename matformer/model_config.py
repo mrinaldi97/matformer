@@ -94,6 +94,10 @@ class BaseSubModelConfig:
     training_objective: Optional[str] = None
     is_causal: Optional[bool] = None
     hybrid_mlm_prob: Optional[float] = None # Masked probability in hybrid models
+    hybrid_curriculum: Optional[bool] = None
+    hybrid_mlm_start: Optional[float] = None
+    hybrid_mlm_end: Optional[float] = None
+    hybrid_equal_final_step: Optional[int] = None
     has_text_autoencoder: Optional[bool] = None
     # tokenizer
     tokenizer_type: Optional[str] = None  # ex. HuggingFace

@@ -1,15 +1,14 @@
+# matformer/models.py
 import argparse
 import torch
 import torch.nn.functional as F
 import pytorch_lightning as pl
 from tqdm import tqdm
 from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
-from matformer.extra.muon import Muon
 from matformer.model_config import ModelConfig  
 from matformer.masked_models import Maskerator
 from matformer.initialization import init_transformer_weights_
 from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor,NormalTensor
-from torch.optim import AdamW, Adam
 from transformers import get_scheduler
 import math
 import torch.distributed as dist
@@ -20,14 +19,14 @@ from matformer.matformer_registry import registry
 from matformer.cached_stuff import CachedStuff
 from copy import deepcopy
 from matformer.matformer_module import MatformerModule
-
+from matformer.training.ckpt_manager import CheckpointDirectoryManager
 class PL_ModelWrapper(MatformerModule):
     model: "transparent"
     def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False,reset=None, skip_init=False, training_step_type='pretraining'):
         super().__init__()
         self.config=config
         self.train_config=train_config
-        self.save_hyperparameters()  
+        #self.save_hyperparameters()  Removed after fabric transition
         self.what_to_reset = reset
         self.cache = CachedStuff()
         self.cache.registry = registry
@@ -129,19 +128,30 @@ class PL_ModelWrapper(MatformerModule):
             input_sequence = batch['sequence'] # Arriva la sequenza già tokenizzata dal MatformerDataModule
             original_sequence = input_sequence
             batch['sequence'] = input_sequence
-            if batch['worker_has_finished']:
-                zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 #Questa roba è da riguardare attentamente!!!
+            
+            if batch.get('worker_has_finished', False):
+                zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 # Questa roba è da riguardare attentamente!!!
                 return zero_loss
-            masked=True if self.config.training_objective=='masked' else False
             
             if self.config.training_objective == 'hybrid': # Hybrid MLM + GPT training regime
-                prob = getattr(self.config, 'hybrid_mlm_prob', 0.5) #Probability of MLM vs GPT          
-                if self.train_config and 'hybrid_curriculum_fn' in self.train_config:
-                    prob = self.train_config['hybrid_curriculum_fn'](self.global_step, prob)
+                prob = getattr(self.config, 'hybrid_mlm_prob', 0.5) 
+                
+                if getattr(self.config, 'hybrid_curriculum', False):
+                    mlm_start = getattr(self.config, 'hybrid_mlm_start', 1.0)
+                    mlm_end = getattr(self.config, 'hybrid_mlm_end', prob)
+                    final_steps = getattr(self.config, 'hybrid_equal_final_steps', 0)
+                    
+                    curriculum_steps = max(1, self.train_config.get('total_steps',0) - final_steps)
+                    
+                    if self.global_step >= curriculum_steps:
+                        prob=getattr(self.config, 'hybrid_mlm_prob', 0.5) 
+                    else:   
+                        progress = self.global_step / curriculum_steps
+                        prob = mlm_start + progress * (mlm_end - mlm_start)
+                self.log('train/mlm_probability', prob, prog_bar=False)      
                 masked = torch.rand(1).item() < prob
             else:
                 masked = (self.config.training_objective == 'masked')
-
 
             #input_sequence=sequence
             if masked:
@@ -212,7 +222,7 @@ class PL_ModelWrapper(MatformerModule):
 
             
             if self.config.training_objective == 'hybrid':
-                self.log(f'train/loss_masked_{str(masked)}',loss, prog_bar=True,batch_size=self.batch_size)
+                self.log(f'train/loss_masked_{str(masked)}',loss, prog_bar=False,batch_size=self.batch_size)
             try:
                 current_lr = self.lr_schedulers().get_last_lr()[0]
                 self.log("lr", current_lr, prog_bar=True, on_step=True, on_epoch=False,batch_size=self.batch_size)
@@ -244,6 +254,8 @@ class PL_ModelWrapper(MatformerModule):
                 print("CAUGHT EXCEPTION: ")
                 print(e)
                 print("Training will try to continue but this may be unreliable. Careful check what is happening")
+                import traceback
+                traceback.print_exc()
                 self.log("train/EXCEPTIONS",1,on_step=True,on_epoch=False,batch_size=self.batch_size)
             else:
                 print("OUT OF MEMORY ERROR")
@@ -269,11 +281,22 @@ class PL_ModelWrapper(MatformerModule):
             torch.cuda.synchronize()
 
             return sum(p.sum() for p in self.parameters()) * 0.0
-        
+    def setup_logging(self, logger, step_ref):
+        self._matformer_logger = logger
+        self._step_ref = step_ref
+
+    def log(self, key, value, **kwargs):
+        if getattr(self, '_matformer_logger', None) is not None:
+            v = value.item() if hasattr(value, 'item') else value
+            self._matformer_logger.log(key, v, step=self._step_ref[0], **kwargs)
+    @property
+    def global_step(self):
+        return self._step_ref[0] if getattr(self, '_step_ref', None) else 0        
     #def on_before_optimizer_step(self, optimizer):
     #    additional_metrics=False
     
     def configure_optimizers(self):
+        """DEPRECATED"""
         if self.train_config.get("no_decay_for_embedding", False) and self.train_config["optimizer"] != "muon":
             raise ValueError("no_decay_for_embedding for optimizers different than Muon not implemented yet! (Altough it's easy). Please remove it ")
 
@@ -466,20 +489,170 @@ class PL_ModelWrapper(MatformerModule):
                 unexpected.append(k)
         missing = set(self._mappings.keys()) - set(obtained)
         return missing, unexpected
-        
-    def load_torch_checkpoint(self, ckpt_path, map_location=None):
-        checkpoint = torch.load(ckpt_path, map_location=map_location, weights_only=False)
-        state_dict = checkpoint.get('state_dict', checkpoint)  # Supports just state dict or checkpoint
-        return self._load_stable_state_dict(state_dict)
-
     def load_safetensors(self, path):
         from safetensors.torch import load_file
         return self._load_stable_state_dict(load_file(path))   
-             
+       
+    def _load_checkpoint(self,path):
+         """
+         
+         """  
+         pass            
+
     @staticmethod
-    def load_from_checkpoint(checkpoint_path, ModelClass, config=None, train_config=None,
+    def reset_checkpoint_objects(checkpoint, what_to_reset):
+        for key in what_to_reset.split(','):
+            key = key.strip()
+            if key == 'lr_scheduler':
+                print("LR Scheduler is reset")
+                checkpoint["lr_schedulers"] = []
+            elif key == 'optimizer':
+                print("Optimizer states are reset")
+                checkpoint["optimizer_states"] = []
+            elif key == 'datamodule':
+                print("Datamodule is reset")
+                checkpoint.pop("MatformerDataModule", None)
+            elif key == 'steps':
+                print("Epoch and global step are reset")
+                checkpoint["epoch"] = 0
+                checkpoint["global_step"] = 0
+        return checkpoint
+
+
+    @staticmethod
+    def _load_torch_ckpt(ckpt_path, map_location='cpu'):
+        return torch.load(ckpt_path, map_location=map_location, weights_only=False)
+    def load_checkpoint(self, ckpt_path=None, map_location=None, what_to_reset=None, optimizer=None, scheduler=None, datamodule=None, checkpoint=None):
+        def _optimizer_state_to_device(optimizer, device):
+            for state in optimizer.state.values():
+                for k, v in state.items():
+                    if isinstance(v, torch.Tensor):
+                        state[k] = v.to(device)
+        if ckpt_path is not None:
+            assert checkpoint is None
+            checkpoint = self._load_torch_ckpt(ckpt_path, map_location=map_location)
+        assert checkpoint is not None
+        state_dict = checkpoint.get('state_dict', checkpoint)
+        missing, unexpected = self._load_stable_state_dict(state_dict)
+        self._restored_from_ckpt = True
+ 
+        if what_to_reset is not None:
+            checkpoint = self.reset_checkpoint_objects(checkpoint, what_to_reset)
+ 
+        optimizer_states = checkpoint.get("optimizer")
+        if optimizer is not None and optimizer_states:
+            if isinstance(optimizer, list):
+                for opt, opt_state in zip(optimizer, optimizer_states):
+                    opt.load_state_dict(opt_state)
+                    _optimizer_state_to_device(opt, next(self.parameters()).device)
+            else:
+                optimizer.load_state_dict(optimizer_states)
+                _optimizer_state_to_device(optimizer, next(self.parameters()).device)
+ 
+        scheduler_states = checkpoint.get("scheduler")
+        if scheduler is not None and scheduler_states:
+            if isinstance(scheduler, list):
+                for sched, sched_state in zip(scheduler, scheduler_states):
+                    sched.load_state_dict(sched_state)
+            else:
+                scheduler.load_state_dict(scheduler_states)
+ 
+        datamodule_state = checkpoint.get('datamodule')
+        if datamodule is not None and datamodule_state is not None:
+            datamodule.load_state_dict(datamodule_state)
+ 
+        missing    = [x for x in missing    if 'alibi' not in x]
+        unexpected = [x for x in unexpected if 'alibi' not in x]
+        print(f"Missing (apart from Alibi slopes):    {missing}")
+        print(f"Unexpected (apart from Alibi slopes): {unexpected}")
+ 
+        return {
+            "missing":    missing,
+            "unexpected": unexpected,
+            "checkpoint": checkpoint,
+            "step":       checkpoint.get("step", 0),
+            "epoch":      checkpoint.get("epoch", 0),
+        }
+ 
+    @staticmethod
+    def save_checkpoint(model, optimizer, scheduler, step, epoch, datamodule, ckpt_manager=None, save_path=None, what_to_reset=None, fabric=None):
+        """
+        Cannot use both ckpt_manager and save_path.
+        If ckpt_manager is used, save_path is automatically set to the one corresponding to the training step.
+        """
+        assert not (ckpt_manager is not None and save_path is not None), \
+            "Cannot use both ckpt_manager and save_path."
+        if ckpt_manager is not None:
+            assert isinstance(ckpt_manager, CheckpointDirectoryManager)
+            save_path = ckpt_manager.return_save_path(step)
+ 
+        checkpoint = {
+            "state_dict": model.stable_state_dict(),
+            "optimizer":  [o.state_dict() for o in optimizer] if isinstance(optimizer, list) else optimizer.state_dict(),
+            "scheduler":  [s.state_dict() for s in scheduler] if isinstance(scheduler, list) else scheduler.state_dict(),
+            "datamodule": datamodule.state_dict(),
+            "step":       step,
+            "epoch":      epoch,
+            "config":     model.config,
+        }
+ 
+        if what_to_reset is not None:
+            checkpoint = model.reset_checkpoint_objects(checkpoint, what_to_reset)
+        if fabric: #Fabric does the barrier and allows writing only on rank 0
+            fabric.save(save_path,checkpoint)
+        else:
+            torch.save(checkpoint, save_path)
+
+    @staticmethod
+    def load_from_checkpoint(checkpoint_path,ModelClass,config=None,train_config=None,
+                                map_location=None, tokenizer=None, overrides=None,
+                                varlen_strategy='padding', training_step_type='pretraining',
+                                skip_init=True, external_mapping=None, return_checkpoint=False):
+        # 1. Load the checkpoint
+        checkpoint = PL_ModelWrapper._load_torch_ckpt(checkpoint_path, map_location=map_location)
+        # 2. Extract the config
+        if config is None:
+            if checkpoint.get('config',None) is not None:
+                config=checkpoint['config']
+            elif checkpoint.get('hyper_parameters',None) is not None and checkpoint['hyper_parameters'].get('config',None) is not None:
+                print("WARNING: You are restoring from a deprecated Lightning checkpoint")
+                config=checkpoint['hyper_parameters']['config']
+            else:
+                print("ERROR: Cannot find the config in the checkpoint. Please provide it as argument to load_from_checkpoint")
+                raise ValueError
+        else:
+            print("A config was passed as argument and override the config saved in the checkpoint")
+        # 2.1 Optional overrides
+        if overrides is not None:
+            for k, v in overrides.items():
+                setattr(config, k, v)            
+        # 3. Instantiate the tokenizer (to be reviewed)
+        if not isinstance(tokenizer, MatformerTokenizer):
+            tokenizer = MatformerTokenizer(
+                config=config,
+                tokenizer_type='huggingface',
+                tokenizer=tokenizer,
+                tokenizer_name=tokenizer,
+                varlen_strategy=varlen_strategy,
+            )
+        # 4. Instantiate the empty model
+        model = PL_ModelWrapper(ModelClass=ModelClass, config=config, train_config=train_config,
+                                 tokenizer=tokenizer, device=map_location, skip_init=skip_init,
+                                 training_step_type=training_step_type)
+        # 5. Load the weights
+        result=model.load_checkpoint(checkpoint=checkpoint, map_location=map_location, what_to_reset=None, optimizer=None, scheduler=None, datamodule=None)
+        if not return_checkpoint:
+            return model, config
+        else:
+            return model, config, checkpoint
+        return self.model(_input.to(self.device),*args,**kwargs)    
+                
+    @staticmethod
+    def OLD_load_from_checkpoint(checkpoint_path, ModelClass, config=None, train_config=None,
                               map_location=None, tokenizer=None, overrides=None,
                               varlen_strategy='padding', training_step_type='pretraining', skip_init=True, external_mapping=None, return_checkpoint=False):
+        print("WARNING!!!!")
+        print("load_from_checkpoint is DEPRECATED")
         checkpoint = torch.load(checkpoint_path, map_location=map_location, weights_only=False)
         if external_mapping is not None:
             print(f"WARNING: External mapping is currently disabled. You passed {external_mapping} at it was ignored.")
@@ -506,7 +679,7 @@ class PL_ModelWrapper(MatformerModule):
                                  tokenizer=tokenizer, device=map_location, skip_init=skip_init,
                                  training_step_type=training_step_type)
 
-        missing, unexpected = model.load_torch_checkpoint(checkpoint_path, map_location=map_location)
+        missing, unexpected,_ = model.load_checkpoint(checkpoint_path, map_location=map_location)
         missing=[x for x in missing if 'alibi' not in x]
         unexpected=[x for x in unexpected if 'alibi' not in x]
         print(f"Missing (apart from Alibi slopes):    {missing}")
@@ -520,6 +693,7 @@ class PL_ModelWrapper(MatformerModule):
     def on_load_checkpoint(self, checkpoint):
             """
             Hook for pyTorch lightning
+            (in phase of deprecation)
             """
             self._restored_from_ckpt = True 
             if self.what_to_reset is not None:
@@ -542,5 +716,6 @@ class PL_ModelWrapper(MatformerModule):
     def on_save_checkpoint(self, checkpoint):
             """
             Lightning hook so that a stable state dict is saved
+            (in phase of deprecation)
             """
-            checkpoint['state_dict'] = self.stable_state_dict()            
+            checkpoint['state_dict'] = self.stable_state_dict()

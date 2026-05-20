@@ -1,4 +1,5 @@
-import pytorch_lightning as pl
+# matformer/data_module.py
+#import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from matformer.model_config import ModelConfig  
 import os
@@ -8,7 +9,7 @@ import torch.distributed as dist
 from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
 import torch.nn.functional as F
 
-class MatformerDataModule(pl.LightningDataModule):
+class MatformerDataModule:
     def __init__(self, mdat_path: str, iteration_modality, pad_token_id: int, 
                  varlen_strategy='unpadding', with_meta=False, max_seq_len=None, 
                  mdat_strategy=None, mdat_view=None, batch_size=None,distributed=True,num_devices=1):
