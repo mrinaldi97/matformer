@@ -1,3 +1,11 @@
+"""
+TODO
+- Separare ogni funzionalità di inferenza in una funzione a parte, dividendo bene le responsabilità tra frontend e backend (API universale per altri usi, esemio web o incorporazione in altro codice)
+- Rimuovere i condizionali sulla modelclass, trovare modo più elegante
+- Alibi slopes, precisione bfloat16 e eval dovranno essere gestiti direttamente dall'interfaccia di ModelWrapper, eliminando load_inference_model da questo codice
+"""
+
+
 # inference.py
 import argparse, torch, sys, re, os
 from matformer.models import PL_ModelWrapper
