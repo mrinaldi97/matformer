@@ -614,9 +614,14 @@ class PL_ModelWrapper(MatformerModule):
         if config is None:
             if checkpoint.get('config',None) is not None:
                 config=checkpoint['config']
-            elif checkpoint.get('hyper_parameters',None) is not None and checkpoint['hyper_parameters'].get('config',None) is not None:
+            elif checkpoint.get('hyper_parameters',None) is not None:
                 print("WARNING: You are restoring from a deprecated Lightning checkpoint")
-                config=checkpoint['hyper_parameters']['config']
+                if isinstance(checkpoint['hyper_parameters'], dict) and ('config' in checkpoint['hyper_parameters']):
+                    config = checkpoint['hyper_parameters']['config']
+                elif isinstance(checkpoint['hyper_parameters'], ModelConfig):
+                    config = checkpoint['hyper_parameters']
+                else:
+                    raise ValueError("Config not found in checkpoint and not provided. Please provide a config.")
             else:
                 print("ERROR: Cannot find the config in the checkpoint. Please provide it as argument to load_from_checkpoint")
                 raise ValueError
