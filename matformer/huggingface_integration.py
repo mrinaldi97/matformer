@@ -678,10 +678,17 @@ def push_to_hub(model, config_dict, repo_id, token=None, model_type='auto', clea
             json.dump(config_dict, f, indent=2)
         if clean_checkpoint:
             ckpt=torch.load(model.config._checkpoint_path,weights_only=False,map_location='cpu')
-            ckpt_clean={
-                "state_dict":ckpt["state_dict"],
-                "hyper_parameters":ckpt["hyper_parameters"]
-            }
+            if ckpt.get('config') is not None:
+                ckpt_clean={
+                    "state_dict":ckpt["state_dict"],
+                    "hyper_parameters":ckpt["config"]
+                }
+            else:
+                print("WARNING: Pushing a deprecated Lightning checkpoint")
+                ckpt_clean={
+                    "state_dict":ckpt["state_dict"],
+                    "hyper_parameters":ckpt["hyper_parameters"]
+                }               
             checkpoint_source="checkpoint_to_upload.ckpt"
             torch.save(ckpt_clean,checkpoint_source)            
             print(f"Saved temporary {checkpoint_source}")
@@ -722,7 +729,7 @@ def upload_to_huggingface(checkpoint,config,hf_name,hf_token=None,weights_only=T
         token=hf_token,
         model_type=model_type,
         clean_checkpoint=weights_only
-    )	
+    )   
 
 def main():
     import argparse

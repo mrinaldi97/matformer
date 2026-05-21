@@ -58,7 +58,7 @@ def launch_training_loop(fabric, training_dict, save_at_end=True):
     if save_at_end:
         PL_ModelWrapper.save_checkpoint(
                 model=training_dict['model'], optimizer=training_dict['optimizer'],
-                scheduler=training_dict['lr_scheduler'], step=training_dict['step'],
+                scheduler=training_dict['lr_scheduler'], step=training_dict['train_config'].get('total_steps',0),
                 epoch=training_dict['epoch'], datamodule=training_dict['datamodule'],
                 ckpt_manager=training_dict['ckpt_manager'], fabric=fabric
             )
