@@ -619,36 +619,22 @@ class PL_ModelWrapper(MatformerModule):
             tokenizer=AutoTokenizer.from_pretrained(hf_repo)
 
         # 1. Load the checkpoint
-<<<<<<< HEAD
-        if not hf:
+        if not hf:   
             checkpoint = PL_ModelWrapper._load_torch_ckpt(checkpoint_path, map_location=map_location)
             # 2. Extract the config
             if config is None:
                 if checkpoint.get('config',None) is not None:
                     config=checkpoint['config']
-                elif checkpoint.get('hyper_parameters',None) is not None and checkpoint['hyper_parameters'].get('config',None) is not None:
+                elif checkpoint.get('hyper_parameters',None) is not None:
                     print("WARNING: You are restoring from a deprecated Lightning checkpoint")
-                    config=checkpoint['hyper_parameters']['config']
+                    if isinstance(checkpoint['hyper_parameters'], dict) and ('config' in checkpoint['hyper_parameters']):
+                        config = checkpoint['hyper_parameters']['config']
+                    elif isinstance(checkpoint['hyper_parameters'], ModelConfig):
+                        config = checkpoint['hyper_parameters']
+                    else:
+                        raise ValueError("Config not found in checkpoint and not provided. Please provide a config.")
                 else:
-                    print("ERROR: Cannot find the config in the checkpoint. Please provide it as argument to load_from_checkpoint")
-                    raise ValueError
-=======
-        checkpoint = PL_ModelWrapper._load_torch_ckpt(checkpoint_path, map_location=map_location)
-        # 2. Extract the config
-        if config is None:
-            if checkpoint.get('config',None) is not None:
-                config=checkpoint['config']
-            elif checkpoint.get('hyper_parameters',None) is not None:
-                print("WARNING: You are restoring from a deprecated Lightning checkpoint")
-                if isinstance(checkpoint['hyper_parameters'], dict) and ('config' in checkpoint['hyper_parameters']):
-                    config = checkpoint['hyper_parameters']['config']
-                elif isinstance(checkpoint['hyper_parameters'], ModelConfig):
-                    config = checkpoint['hyper_parameters']
-                else:
-                    raise ValueError("Config not found in checkpoint and not provided. Please provide a config.")
->>>>>>> 6762b2e00ec8b76bb1fb561580c895f58a51ca55
-            else:
-                print("A config was passed as argument and override the config saved in the checkpoint")
+                    print("A config was passed as argument and override the config saved in the checkpoint")
         # 2.1 Optional overrides
         if overrides is not None:
             for k, v in overrides.items():
