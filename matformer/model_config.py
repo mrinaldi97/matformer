@@ -64,6 +64,7 @@ class BaseSubModelConfig:
     ffn_factor: Optional[float] = None
     num_hidden_layers: Optional[int] = None
     num_attention_heads: Optional[int] = None
+    num_key_value_heads: Optional[int] = None
     # vocabulary & embeddings
     vocab_size: Optional[int] = None
     pad_token_id: Optional[int] = None

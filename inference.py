@@ -10,6 +10,7 @@ TODO
 import argparse, torch, sys, re, os
 from matformer.models import PL_ModelWrapper
 from matformer.matformer_tokenizers import MatformerTokenizer
+#from matformer.utils.general import load__model
 from transformers import AutoTokenizer
 from matformer.transformer_blocks import (
     Autoregressive_Model,
@@ -22,25 +23,6 @@ from copy import deepcopy
 from statistics import mean
 
 
-# ---- LOAD ----
-def load_inference_model(checkpoint_path, ModelClass, map_location, tokenizer):
-    if ModelClass == BERTModel:
-        overrides = {"is_causal": False}
-    elif ModelClass == Autoregressive_Model:
-        overrides = {"is_causal": True}
-    model, cfg = PL_ModelWrapper.load_from_checkpoint(
-        checkpoint_path=checkpoint_path,
-        ModelClass=ModelClass,
-        map_location=map_location,
-        tokenizer=tokenizer,
-        overrides=overrides,
-    )
-
-    model = model.to(map_location).to(torch.bfloat16).eval()
-    for module in model.modules():
-        if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
-            module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
-    return model, cfg
 
 
 def compute_entropy(
@@ -75,6 +57,7 @@ if __name__ == "__main__":
     # ---- ARGS ----
     p = argparse.ArgumentParser("Matformer inference")
     p.add_argument("--model", required=True)
+    p.add_argument("--hf", action="store_true", help="If set, loads an huggingface model from the hub using Matformer.")
     p.add_argument(
         "--arch",
         required=True,
@@ -117,10 +100,13 @@ if __name__ == "__main__":
     args = p.parse_args()
 
     # ---- MAP ARCH ----
+    overrides={}
     if args.arch == "gpt":
         ModelClass = Autoregressive_Model
+        overrides = {"is_causal": True}
     elif args.arch == "bert":
         ModelClass = BERTModel
+        overrides = {"is_causal": False}
     elif args.arch == "entropy":
         ModelClass = EntropyModel
     elif args.arch == "classification-sentence":
@@ -133,11 +119,24 @@ if __name__ == "__main__":
     device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     tok_arg = "bytes" if args.tokenizer is None else args.tokenizer
 
-    model, cfg = load_inference_model(
+    """model, cfg = load_model(
         checkpoint_path=args.model,
         ModelClass=ModelClass,
         map_location=device,
         tokenizer=tok_arg,
+        hf=args.hf
+    )"""
+
+    model, cfg = PL_ModelWrapper.load_from_checkpoint(
+        args.model, 
+        ModelClass, 
+        map_location=device, 
+        dtype=torch.bfloat16, 
+        tokenizer=tok_arg, 
+        hf=args.hf, 
+        inference=True, 
+        skip_init=True, 
+        overrides=overrides
     )
     print("Loaded model on", device)
     print("Config:", cfg)

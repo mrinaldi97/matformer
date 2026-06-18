@@ -54,6 +54,7 @@ class MultiHeadAttention(MatformerModule):
         v_dim: Optional[int] = None,
         is_cross_attention: bool = False,
         nheads: int = 8,
+        num_key_value_heads: int = None, #If not none, Grouped Query Attention
         bias: bool = False,
         positional_encoding = ['rope'],  # 'alibi', 'rope', 'nope', 'sinusoidal', 'learnable'
         #dropout: float = 0.0, # Not supported by FlexAttention yet
@@ -71,7 +72,11 @@ class MultiHeadAttention(MatformerModule):
         if isinstance(positional_encoding, str):
             positional_encoding = [positional_encoding]        
         # Assertions
+
         assert q_dim % nheads == 0, "q_dim is not divisible by nheads"
+        if num_key_value_heads is None:
+            num_key_value_heads = nheads  # default: MHA
+        assert nheads % num_key_value_heads == 0, "nheads must be divisible by num_key_value_heads"        
         if is_cross_attention:
             assert k_dim is not None, "You asked for a cross attention, but you haven't provided keys dim"
             assert v_dim is not None, "You asked for a cross attention, but you haven't provided values dim"
@@ -91,6 +96,8 @@ class MultiHeadAttention(MatformerModule):
             self.cache.registry = registry
         self.force_separed_qkv=False
         self.nheads = nheads
+        self.kv_nheads = num_key_value_heads  
+        self.n_groups = nheads // self.kv_nheads  #1 for MHA, >1 for GQA
         self.attn_variant = attn_variant
         self.positional_encoding = positional_encoding
         self.is_causal = is_causal
@@ -125,6 +132,7 @@ class MultiHeadAttention(MatformerModule):
                     preferred=attn_impl,
                     nheads=nheads,
                     head_dim=self.head_dim,
+                    num_key_value_heads=num_key_value_heads,
                     is_causal=True,
                     sliding_window=sliding_window,
                     positional_encoding=positional_encoding,
@@ -137,6 +145,7 @@ class MultiHeadAttention(MatformerModule):
                     preferred=attn_impl,
                     nheads=nheads,
                     head_dim=self.head_dim,
+                    num_key_value_heads=num_key_value_heads,
                     is_causal=False,
                     sliding_window=sliding_window,
                     positional_encoding=positional_encoding,
@@ -152,6 +161,7 @@ class MultiHeadAttention(MatformerModule):
                     preferred=attn_impl,
                     nheads=nheads,
                     head_dim=self.head_dim,
+                    num_key_value_heads=num_key_value_heads,
                     is_causal=is_causal,
                     sliding_window=sliding_window,
                     positional_encoding=positional_encoding,
@@ -161,12 +171,12 @@ class MultiHeadAttention(MatformerModule):
                 # Get kernel metadata
                 self.kernel_meta = self.attn_kernel._matformer_metadata
             
-        if not self.force_separed_qkv and (not is_cross_attention or self.qkv_samedim): # Packed qkv projection for efficiency  
+        if not self.force_separed_qkv and (not is_cross_attention or self.qkv_samedim) and self.n_groups == 1: # Packed qkv projection for efficiency  
             self.packed_proj=self.cache.registry.create('linear','linear',in_features=self.q_dim, out_features=3*q_dim,bias=bias)
         else:
             self.q_proj=self.cache.registry.create('linear','linear',in_features=q_dim, out_features=q_dim,bias=bias)
-            self.k_proj=self.cache.registry.create('linear','linear',in_features=k_dim, out_features=q_dim,bias=bias)
-            self.v_proj=self.cache.registry.create('linear','linear',in_features=v_dim, out_features=q_dim,bias=bias)
+            self.k_proj=self.cache.registry.create('linear','linear',in_features=k_dim, out_features=self.head_dim * self.kv_nheads,bias=bias)
+            self.v_proj=self.cache.registry.create('linear','linear',in_features=v_dim, out_features=self.head_dim * self.kv_nheads,bias=bias)
 
         self.out_proj=self.cache.registry.create('linear','linear',in_features=q_dim,out_features=self.q_dim,bias=bias) # Out projection
 
@@ -174,6 +184,7 @@ class MultiHeadAttention(MatformerModule):
     def _pack_qkv(q, k, v):
         normalize = lambda s: s.translate(str.maketrans('', '', '?B'))
         assert normalize(q.tensor_order) == normalize(k.tensor_order) == normalize(v.tensor_order), "QKV must have same tensor order"
+        assert q.tensor.shape == k.tensor.shape == v.tensor.shape, "_pack_qkv requires Q, K, V to have identical shapes (MHA only). Use separate projections for GQA."
         current_order_norm = normalize(q.tensor_order)
         
         if current_order_norm == "HSD":
@@ -240,13 +251,13 @@ class MultiHeadAttention(MatformerModule):
     def W_K_MI(self):
         if hasattr(self, 'packed_proj'):
             return self.packed_proj.inner.weight.view(3, self.nheads, self.head_dim, -1)[1].transpose(-1, -2)
-        return self.k_proj.inner.weight.view(self.nheads, self.head_dim, -1).transpose(-1, -2)
+        return self.k_proj.inner.weight.view(self.kv_nheads, self.head_dim, -1).transpose(-1, -2)
 
     @property
     def W_V_MI(self):
         if hasattr(self, 'packed_proj'):
             return self.packed_proj.inner.weight.view(3, self.nheads, self.head_dim, -1)[2].transpose(-1, -2)
-        return self.v_proj.inner.weight.view(self.nheads, self.head_dim, -1).transpose(-1, -2)
+        return self.v_proj.inner.weight.view(self.kv_nheads, self.head_dim, -1).transpose(-1, -2)
 
     @property
     def W_O_MI(self):
@@ -263,14 +274,14 @@ class MultiHeadAttention(MatformerModule):
         if not self.bias: return 0
         if hasattr(self, 'packed_proj'):
             return self.packed_proj.inner.bias.view(3, self.nheads, self.head_dim)[1]
-        return self.k_proj.inner.bias.view(self.nheads, self.head_dim)
+        return self.k_proj.inner.bias.view(self.kv_nheads, self.head_dim)
 
     @property
     def B_V_MI(self):
         if not self.bias: return 0
         if hasattr(self, 'packed_proj'):
             return self.packed_proj.inner.bias.view(3, self.nheads, self.head_dim)[2]
-        return self.v_proj.inner.bias.view(self.nheads, self.head_dim)
+        return self.v_proj.inner.bias.view(self.kv_nheads, self.head_dim)
 
     @property
     def B_O_MI(self):
@@ -335,8 +346,8 @@ class MultiHeadAttention(MatformerModule):
 
         # 2. Query, key and value vectors using the MI-friendly  weights
         q = einops.einsum(q, self.W_Q_MI, "batch position d_model, n_heads d_model d_head -> batch position n_heads d_head") + self.B_Q_MI
-        k = einops.einsum(k, self.W_K_MI, "batch position d_model, n_heads d_model d_head -> batch position n_heads d_head") + self.B_K_MI
-        v = einops.einsum(v, self.W_V_MI, "batch position d_model, n_heads d_model d_head -> batch position n_heads d_head") + self.B_V_MI
+        k = einops.einsum(k, self.W_K_MI, "batch position d_model, kv_heads d_model d_head -> batch position kv_heads d_head") + self.B_K_MI
+        v = einops.einsum(v, self.W_V_MI, "batch position d_model, kv_heads d_model d_head -> batch position kv_heads d_head") + self.B_V_MI
         q, k, v = self._h('q', q), self._h('k', k), self._h('v', v)
 
         if 'rope' in self.positional_encoding:
@@ -344,8 +355,10 @@ class MultiHeadAttention(MatformerModule):
             cos, sin = cos[None, :, None, :], sin[None, :, None, :]
             rotate = lambda x: torch.cat([-x[..., x.shape[-1]//2:], x[..., :x.shape[-1]//2]], dim=-1)
             q, k = q * cos + rotate(q) * sin, k * cos + rotate(k) * sin
-
-        # 3. Computation of attention scores    
+        if self.n_groups > 1: # Expanding GQA to MHA
+            k = k.repeat_interleave(self.n_groups, dim=2)
+            v = v.repeat_interleave(self.n_groups, dim=2)
+            # 3. Computation of attention scores    
         attn_scores = einops.einsum(q, k, "batch posQ n_heads d_head, batch posK n_heads d_head -> batch n_heads posQ posK")
         attn_scores = (attn_scores / self.head_dim**0.5) # Standard sqrt(d) scaling
         if 'alibi' in self.positional_encoding:
@@ -420,10 +433,10 @@ class MultiHeadAttention(MatformerModule):
 
         
         # Projecting (eventually, packed projection)
-        if self.qkv_samedim and not self.is_cross_attention and not self.force_separed_qkv:
+        if self.qkv_samedim and not self.is_cross_attention and not self.force_separed_qkv and self.n_groups == 1:
             qkv_projected = NormalTensor(tensor=self.packed_proj(query_input.tensor), tensor_order='?S(3*D)')
             q, k, v = None, None, None
-        elif self.qkv_samedim and self.is_cross_attention and not self.force_separed_qkv:
+        elif self.qkv_samedim and self.is_cross_attention and not self.force_separed_qkv and self.n_groups == 1:
             qkv_projected = None
             w = torch.chunk(self.packed_proj.inner.weight, 3, dim=0)
             b = torch.chunk(self.packed_proj.inner.bias, 3, dim=0) if self.bias else (None, None, None)
@@ -441,8 +454,8 @@ class MultiHeadAttention(MatformerModule):
             qkv_projected = replace(qkv_projected, tensor=qkv_projected.tensor.unflatten(-1, [3, self.nheads, self.head_dim]), tensor_order='?S3HD')
         else:
             q = replace(q, tensor=q.tensor.unflatten(-1, [self.nheads, self.head_dim]),tensor_order='?SHD')
-            k = replace(k, tensor=k.tensor.unflatten(-1, [self.nheads, self.head_dim]),tensor_order='?SHD')
-            v = replace(v, tensor=v.tensor.unflatten(-1, [self.nheads, self.head_dim]),tensor_order='?SHD')
+            k = replace(k, tensor=k.tensor.unflatten(-1, [self.kv_nheads, self.head_dim]),tensor_order='?SHD')
+            v = replace(v, tensor=v.tensor.unflatten(-1, [self.kv_nheads, self.head_dim]),tensor_order='?SHD')
 
         # 3b. (facultative) Apply RoPe
         if 'rope' in self.positional_encoding:
@@ -494,6 +507,11 @@ class MultiHeadAttention(MatformerModule):
             k = self._transpose_for_kernel(k, kernel_input_order)
             v = self._transpose_for_kernel(v, kernel_input_order)
 
+        if self.n_groups > 1 and not kernel_meta.get('supports_gqa', False):
+            # Kernel doesn't support GQA natively: expand K/V to full nheads
+            dim = 1 if k.tensor_order.replace('?', 'B') == 'BHSD' else 2
+            k = replace(k, tensor=k.tensor.repeat_interleave(self.n_groups, dim=dim))
+            v = replace(v, tensor=v.tensor.repeat_interleave(self.n_groups, dim=dim))
         # Attention computation
         attn_output = attn_kernel(
             qkv=qkv_projected.tensor if qkv_projected is not None else None,
@@ -589,6 +607,7 @@ class TransformerBlock(MatformerModule):
             bias=config.bias,
             q_dim=config.hidden_size,
             nheads=config.num_attention_heads,
+            num_key_value_heads=config.num_key_value_heads,
             cache=self.cache,
             attn_impl=layer_config['attn_impl'],
             positional_encoding=layer_config['positional_encoding'],
@@ -1219,6 +1238,8 @@ class Autoregressive_Model(TransformerWithLMHead):
         
         if pad_token_id is None:
             pad_token_id = self.config.pad_token_id
+            if pad_token_id is None: #dirty
+                pad_token_id=0
         if eos_token_id is None:
             eos_token_id = self.config.eos_token_id
         if bos_token_id is None:

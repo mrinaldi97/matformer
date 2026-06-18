@@ -1,0 +1,44 @@
+# Qwen3 architecture → Matformer ModelConfig mapping
+defaults:
+  model_class: Autoregressive_Model
+  is_causal: true
+  bias: false
+  training_objective: clm
+  default_layer:
+    attn_impl: flash
+    positional_encoding: rope
+    normalization: rmsnorm
+    normalization_position: pre
+    ffn_activation: swiglu
+
+mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  num_attention_heads: num_attention_heads
+  num_key_value_heads: num_key_value_heads
+  vocab_size: vocab_size
+  bos_token_id: bos_token_id
+  eos_token_id: eos_token_id
+  rms_norm_eps: rms_norm_eps
+  rope_theta: rope_theta
+  max_position_embeddings: max_position_embeddings
+  tie_word_embeddings: tie_word_embeddings
+
+derived:
+  ffn_factor: "intermediate_size / hidden_size"
+  default_layer.sliding_window_size: "sliding_window"
+
+# Same layout as Mistral/Llama
+weight_mapping:
+  lm_head.weight:                                    lm_head.weight
+  encoder.embed_tokens.weight:                       model.embed_tokens.weight
+  encoder.blocks.norm.weight:                        model.norm.weight
+  encoder.blocks.layers.N.attn_norm.weight:          model.layers.N.input_layernorm.weight
+  encoder.blocks.layers.N.mlp_norm.weight:           model.layers.N.post_attention_layernorm.weight
+  encoder.blocks.layers.N.attn.q_proj.weight:        model.layers.N.self_attn.q_proj.weight
+  encoder.blocks.layers.N.attn.k_proj.weight:        model.layers.N.self_attn.k_proj.weight
+  encoder.blocks.layers.N.attn.v_proj.weight:        model.layers.N.self_attn.v_proj.weight
+  encoder.blocks.layers.N.attn.o_proj.weight:        model.layers.N.self_attn.o_proj.weight
+  encoder.blocks.layers.N.mlp.gate_proj.weight:      model.layers.N.mlp.gate_proj.weight
+  encoder.blocks.layers.N.mlp.up_proj.weight:        model.layers.N.mlp.up_proj.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:      model.layers.N.mlp.down_proj.weight

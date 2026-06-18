@@ -22,6 +22,7 @@ except:
         'supports_packed_qkv': True,
         'supports_sliding_window': True,
         'supports_alibi': True,
+        'supports_gqa': True
     }
 )
 class FlashAttentionKernel(nn.Module):

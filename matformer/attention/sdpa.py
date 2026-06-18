@@ -13,6 +13,7 @@ import torch
         'supports_packed_qkv': False,
         'supports_sliding_window': True,
         'supports_alibi': True,
+        'supports_gqa': False
     }
 )
 class SDPAKernel(nn.Module):

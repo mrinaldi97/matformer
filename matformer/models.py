@@ -605,23 +605,34 @@ class PL_ModelWrapper(MatformerModule):
 
     @staticmethod
     def load_from_checkpoint(checkpoint_path,ModelClass,config=None,train_config=None,
-                                map_location=None, tokenizer=None, overrides=None,
+                                map_location=None, dtype=None, tokenizer=None, overrides=None,
                                 varlen_strategy='padding', training_step_type='pretraining',
-                                skip_init=True, external_mapping=None, return_checkpoint=False):
+                                skip_init=True, external_mapping=None, return_checkpoint=False, hf=False, inference=False):
+
+        if hf:
+            # 0. Experimental feature: load an huggingface model 
+            from matformer.huggingface.hf_model_loader import hf_config_to_matformer, get_hf_repo, load_hf_weights
+            from transformers import AutoTokenizer
+            hf_repo=checkpoint_path
+            hf_config_path, hf_weight_files = get_hf_repo(hf_repo)
+            config = hf_config_to_matformer(hf_config_path)
+            tokenizer=AutoTokenizer.from_pretrained(hf_repo)
+
         # 1. Load the checkpoint
-        checkpoint = PL_ModelWrapper._load_torch_ckpt(checkpoint_path, map_location=map_location)
-        # 2. Extract the config
-        if config is None:
-            if checkpoint.get('config',None) is not None:
-                config=checkpoint['config']
-            elif checkpoint.get('hyper_parameters',None) is not None and checkpoint['hyper_parameters'].get('config',None) is not None:
-                print("WARNING: You are restoring from a deprecated Lightning checkpoint")
-                config=checkpoint['hyper_parameters']['config']
+        if not hf:
+            checkpoint = PL_ModelWrapper._load_torch_ckpt(checkpoint_path, map_location=map_location)
+            # 2. Extract the config
+            if config is None:
+                if checkpoint.get('config',None) is not None:
+                    config=checkpoint['config']
+                elif checkpoint.get('hyper_parameters',None) is not None and checkpoint['hyper_parameters'].get('config',None) is not None:
+                    print("WARNING: You are restoring from a deprecated Lightning checkpoint")
+                    config=checkpoint['hyper_parameters']['config']
+                else:
+                    print("ERROR: Cannot find the config in the checkpoint. Please provide it as argument to load_from_checkpoint")
+                    raise ValueError
             else:
-                print("ERROR: Cannot find the config in the checkpoint. Please provide it as argument to load_from_checkpoint")
-                raise ValueError
-        else:
-            print("A config was passed as argument and override the config saved in the checkpoint")
+                print("A config was passed as argument and override the config saved in the checkpoint")
         # 2.1 Optional overrides
         if overrides is not None:
             for k, v in overrides.items():
@@ -640,7 +651,27 @@ class PL_ModelWrapper(MatformerModule):
                                  tokenizer=tokenizer, device=map_location, skip_init=skip_init,
                                  training_step_type=training_step_type)
         # 5. Load the weights
-        result=model.load_checkpoint(checkpoint=checkpoint, map_location=map_location, what_to_reset=None, optimizer=None, scheduler=None, datamodule=None)
+        if hf:
+            missing, unexpected = load_hf_weights(model, hf_config_path)
+            result={
+            "missing":    missing,
+            "unexpected": unexpected,
+            "checkpoint": None,
+            "step":       0,
+            "epoch":      0
+            }
+        else:
+            result=model.load_checkpoint(checkpoint=checkpoint, map_location=map_location, what_to_reset=None, optimizer=None, scheduler=None, datamodule=None)
+        print(result)
+        if map_location:
+            model=model.to(map_location)
+        if dtype:
+            model=model.to(dtype)
+        for module in model.modules():
+            if hasattr(module, "alibi_slopes") and module.alibi_slopes is not None:
+                module.alibi_slopes = module.alibi_slopes.to(dtype=torch.float32)
+        if inference:
+            model=model.eval()
         if not return_checkpoint:
             return model, config
         else:
