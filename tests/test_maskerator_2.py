@@ -3,7 +3,7 @@ sys.path.append("../")
 import pytest
 import torch
 import numpy as np
-from matformer.masked_models import Maskerator
+from matformer.utils.masked_models import Maskerator
 from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor,NormalTensor
 def test_reproducibility():
     """Test that same seed produces identical results"""

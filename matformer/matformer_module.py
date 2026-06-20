@@ -39,7 +39,9 @@ class ParametersRenamer:
         Scan tree 
         """
         # "Annotations" are the "param_name" string under class definition, ex encoder: "param_name:encoder". They must start with param_name to be recognized.
-        class_annotations=getattr(module.__class__,'__annotations__',{})
+        class_annotations = {**getattr(module.__class__, '__annotations__', {}),
+                            **getattr(module, '__instance_annotations__', {})}
+
         # Registry annotations are the _params_names present in the registry module (ex. params_names={'inner.weight': 'weight'}); it is a dict where keys are the "actual_names" and values the "stable_names"
         registry_annotations=getattr(module,'_params_names',{})
         
@@ -72,6 +74,71 @@ class ParametersRenamer:
         return {reverse.get(k, k): v for k, v in raw_dict.items()}
         
 
+class HooksMixin:
+    """
+    Hook system for Matformer components.
+    To be compatible with the hook system, each module must declare which positions it exposes:
+        available_hooks = ['pre_attn', 'post_attn', 'post_mlp', 'before_output']
+
+    Hooks are registered in __init__ from a hook_dict and fired in forward via _apply_hook.
+    Multiple hooks at the same position are applied sequentially.
+    Hooks that inherit from MatformerModule and declare `hook_name` get a stable checkpoint key.
+    """
+
+    def _init_hooks(self, hook_dict: dict):
+        """
+        Each definition is either:
+          - a string registry key:                          "probe"
+          - a dict with mandatory 'type' + extra kwargs:   {"type": "probe", "scale": 0.1}
+        """
+        declared_positions = set(getattr(self.__class__, 'available_hooks', []))
+        registered = {}
+
+        for position, definition in (hook_dict or {}).items():
+            if declared_positions and position not in declared_positions:
+                continue  # silently ignore: this hook belongs to a different module
+
+            definitions = definition if isinstance(definition, list) else [definition]
+
+            resolved = []
+            for i, single_definition in enumerate(definitions):
+                if isinstance(single_definition, dict):
+                    registry_key       = single_definition['type']
+                    constructor_kwargs = {k: v for k, v in single_definition.items() if k != 'type'}
+                else:
+                    registry_key       = single_definition
+                    constructor_kwargs = {}
+
+                hook = self.cache.registry.create(
+                    "hooks", registry_key,
+                    config=self.config,
+                    cache=self.cache,
+                    layer_idx=getattr(self, 'layer_idx', None),
+                    position=position,
+                    **constructor_kwargs
+                )
+                if isinstance(hook, nn.Module):
+                    mount_name = f"hook_{position}_{i}"
+                    self.add_module(mount_name, hook)
+                    # If the hook declares a stable name, inject it into instance
+                    # annotations so ParametersRenamer picks it up at scan time
+                    if hasattr(hook.__class__, 'hook_name'):
+                        instance_ann = self.__dict__.setdefault('__instance_annotations__', {})
+                        instance_ann[mount_name] = f"param_name:{hook.__class__.hook_name}"
+                resolved.append(hook)
+
+            registered[position] = resolved 
+
+        return registered
+
+    def _apply_hook(self, position: str, x, *args, **kwargs):
+        """
+        Fire all hooks at `position` sequentially. No-op if position is unregistered.
+        The position name is forwarded so a generic hook can know where it is called.
+        """
+        for hook in getattr(self, 'hooks', {}).get(position, []):
+            x = hook(x, *args, position=position, **kwargs)
+        return x
 """
 if HAS_LIGHTNING:
     class MatformerModule(pl.LightningModule, ParametersRenamer):
@@ -96,7 +163,7 @@ if HAS_LIGHTNING:
             self._state_dict_translated = False 
 else:
 """
-class MatformerModule(nn.Module, ParametersRenamer):
+class MatformerModule(nn.Module, ParametersRenamer, HooksMixin):
         """
         Base class for Matformer modules when Lightning is NOT available.
         Provides stable checkpointing + manual device/dtype management.

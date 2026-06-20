@@ -68,7 +68,8 @@ def main():
 
     # 4. Prepare training
     fabric, training_dict = instantiate_training(
-        model_config, train_config, data_config, tokenizer_config, raw_config,
+        model_config, 
+        train_config, data_config, tokenizer_config, raw_config,
         device=args.device, precision=args.precision,
         num_nodes=args.nodes, device_count=args.gpu,
         checkpoint=args.checkpoint, start_from_scratch=args.start_from_scratch,

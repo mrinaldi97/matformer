@@ -7,7 +7,7 @@ from lightning.fabric import Fabric
 from lightning.pytorch.loggers import WandbLogger
 from lightning.fabric.strategies import DDPStrategy
 from matformer.models import PL_ModelWrapper
-from matformer.data_module import MatformerDataModule
+from matformer.data.matformer_data_module import MatformerDataModule
 from matformer.training.optimizers import configure_optimizers
 from matformer.training.lr_scheduler import configure_lr_schedulers
 from matformer.training.logger import MatformerLogger, WandbAdapter, TQDMBar

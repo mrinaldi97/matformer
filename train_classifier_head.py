@@ -5,7 +5,7 @@ from pathlib import Path
 from importlib import import_module
 from transformers import AutoTokenizer
 from matformer.matformer_tokenizers import MatformerTokenizer
-from matformer.data_module import MatformerDataModule
+from matformer.data.matformer_data_module import MatformerDataModule
 from matformer.model_config import ModelConfig, LayerConfig, ClassificationConfig, TokenClassificationConfig, load_and_validate_classification_config_from_dict
 from matformer.models import PL_ModelWrapper
 from pytorch_lightning.loggers import WandbLogger
@@ -18,8 +18,8 @@ import math, os
 from datetime import datetime
 
 from matformer.transformer_blocks import BERTModel, TransformerWithEmbeddingHead, TransformerWithClassificationHead, TransformerWithTokenClassificationHead
-from matformer.classification_training_data_loader import ClassificationTrainingDataLoader
-from matformer.classification_data_module import ClassificationDataset, ClassificationDataModule
+from matformer.data.classification_training_data_loader import ClassificationTrainingDataLoader
+from matformer.data.classification_data_module import ClassificationDataset, ClassificationDataModule
 from matformer.tensors_dataclasses import PaddedTensor, UnpaddedTensor
 from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
 import torch.serialization as serialization

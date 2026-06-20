@@ -51,6 +51,7 @@ def load_config(config_path=None, overrides=None, config_string=None):
     "data": json_config['data'],
     "tokenizer": json_config['tokenizer']
     }       
+    
 
     if overrides is not None:
         cfg = apply_overrides(cfg, overrides)

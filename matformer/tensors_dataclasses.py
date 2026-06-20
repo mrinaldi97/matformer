@@ -62,11 +62,15 @@ class TensorDC:
 
     def pad(self, seq_len: Optional[int] = None) -> "PaddedTensor":
         raise NotImplementedError(f"Cannot pad a tensor of type {type(self).__name__}")
+    def detach(self) -> list:
+        raise NotImplementedError(f"Cannot detach a tensor of type {type(self).__name__}")
 
 @dataclass(frozen=False,kw_only=True)
 class NormalTensor(TensorDC):
     def pad(self):
-        return self    
+        return self  
+    def detach(self):
+        return [self.tensor]
 
 
 @dataclass(frozen=False,kw_only=True)
@@ -114,6 +118,13 @@ class PaddedTensor(TensorDC):
             extra_attributes=unpadded_extra,
             extra_follow_keys=self.extra_follow_keys
         )
+    def detach(self) -> list:
+        """Returns list of raw tensors with padding removed"""
+        output=[]
+        for t in range(0,self.padding_mask.shape[0]):
+            output.append(self.tensor[t][self.padding_mask[t]==False])
+        return output
+   
 
 
 @dataclass(frozen=False,kw_only=True)

@@ -1,6 +1,6 @@
 import torch
 import unittest
-from matformer.masked_models import Maskerator 
+from matformer.utils.masked_models import Maskerator 
 
 class TestMaskerator(unittest.TestCase):
 

@@ -6,8 +6,8 @@ import pytorch_lightning as pl
 from tqdm import tqdm
 from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
 from matformer.model_config import ModelConfig  
-from matformer.masked_models import Maskerator
-from matformer.initialization import init_transformer_weights_
+from matformer.utils.masked_models import Maskerator
+from matformer.utils.initialization import init_transformer_weights_
 from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor,NormalTensor
 from transformers import get_scheduler
 import math
@@ -16,7 +16,7 @@ import numpy as np
 from dataclasses import replace
 from transformers import AutoTokenizer
 from matformer.matformer_registry import registry
-from matformer.cached_stuff import CachedStuff
+from matformer.utils.matformer_cache import CachedStuff
 from copy import deepcopy
 from matformer.matformer_module import MatformerModule
 from matformer.training.ckpt_manager import CheckpointDirectoryManager

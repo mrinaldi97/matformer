@@ -1,3 +1,4 @@
+#matformer/model_config.py
 from dataclasses import dataclass, field
 from typing import List, Optional, Literal, Union, Dict, Callable, Tuple, Any
 import torch.nn as nn
@@ -33,28 +34,6 @@ class LayerConfig:
     def get(self, key, default=None):
         """Dict-like get method with default value"""
         return getattr(self, key, default)
-
-
-def resolve_hook(
-    hook_spec: Union[str, nn.Module, Callable], config: "ModelConfig"
-) -> Union[nn.Module, Callable]:
-    """Resolve hook specification to actual callable/module"""
-    if isinstance(hook_spec, (nn.Module, type(lambda: None))):
-        return hook_spec
-
-    if isinstance(hook_spec, str):
-        if "." in hook_spec:
-            # Import from module: "custom_functions.my_hook"
-            module_name, func_name = hook_spec.rsplit(".", 1)
-            module = importlib.import_module(module_name)
-            return getattr(module, func_name)
-        else:
-            # Class name - instantiate with config
-            module = importlib.import_module("custom_functions")  # default module
-            cls = getattr(module, hook_spec)
-            return cls(config) if issubclass(cls, nn.Module) else cls
-
-    raise ValueError(f"Invalid hook specification: {hook_spec}")
 
 
 @dataclass
@@ -100,6 +79,8 @@ class BaseSubModelConfig:
     hybrid_mlm_end: Optional[float] = None
     hybrid_equal_final_step: Optional[int] = None
     has_text_autoencoder: Optional[bool] = None
+    # non-layer specific hooks
+    hooks: Dict[str, Union[str, Dict[str, Any]]] = field(default_factory=dict)
     # tokenizer
     tokenizer_type: Optional[str] = None  # ex. HuggingFace
     tokenizer_name: Optional[str] = None  # Ex mrinaldi/Gettone
@@ -128,7 +109,6 @@ class ModelConfig(BaseSubModelConfig):
     default_layer: LayerConfig = field(default_factory=LayerConfig)
     # custom_layers: Dict[Union[int, str], LayerConfig] = field(default_factory=LayerConfig)
     custom_layers: Dict[Union[int, str], LayerConfig] = field(default_factory=dict)
-
     encoder: Optional[Union[SubModelConfig, dict]] = None
     decoder: Optional[Union[SubModelConfig, dict]] = None
     entropy: Optional[Union[EntropyConfig, dict]] = None
