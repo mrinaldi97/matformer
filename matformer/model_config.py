@@ -20,19 +20,12 @@ class LayerConfig:
     normalization: Optional[Literal["layernorm", "rmsnorm"]] = "rmsnorm"
     normalization_position: Optional[Literal["pre", "post"]] = "post"
     ffn_activation: Optional[Literal["gelu", "swiglu"]] = "swiglu"
-
     hooks: Dict[str, Union[str, Dict[str, Any]]] = field(default_factory=dict)
-
     def __getitem__(self, key):
-        """Allow dict-like access to dataclass fields"""
         return getattr(self, key)
-
     def __setitem__(self, key, value):
-        """Allow dict-like setting of dataclass fields"""
         setattr(self, key, value)
-
     def get(self, key, default=None):
-        """Dict-like get method with default value"""
         return getattr(self, key, default)
 
 
