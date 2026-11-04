@@ -1,18 +1,22 @@
-# matformer/data/matformer_data_module.py
-#import pytorch_lightning as pl
+"""Connect an MDAT view/selection to the training loop and tensor collation."""
 from torch.utils.data import DataLoader
-from matformer.model_config import ModelConfig  
 import os
 from matformer.data.mdat.mdat import MatformerDataset
 import torch
 import torch.distributed as dist
-from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
+from matformer.tensors_dataclasses import PaddedTensor, UnpaddedTensor
 import torch.nn.functional as F
 
 class MatformerDataModule:
-    def __init__(self, mdat_path: str, iteration_modality, pad_token_id: int, 
-                 varlen_strategy='unpadding', with_meta=False, max_seq_len=None, 
-                 mdat_strategy=None, mdat_view=None, batch_size=None,distributed=True,num_devices=1):
+    """Load a saved view and optionally restrict domains and token budgets.
+
+    ``mdat_selection`` accepts ``domains``, ``max_tokens``, ``domain_tokens``,
+    and ``seed``; see :class:`DatasetSelection`. Existing configs need no change.
+    """
+    def __init__(self, mdat_path: str, iteration_modality, pad_token_id: int,
+                 varlen_strategy='unpadding', with_meta=False, max_seq_len=None,
+                 mdat_strategy=None, mdat_view=None, batch_size=None,distributed=True,num_devices=1,
+                 mdat_selection=None, prefetch_buffer=32768):
         super().__init__()
         self.mdat_path = mdat_path
         self.iteration_modality = iteration_modality
@@ -24,25 +28,34 @@ class MatformerDataModule:
         self.mdat_view = mdat_view
         self.batch_size = batch_size
         self.num_devices=num_devices
+        self.distributed = distributed
+        self.mdat_selection = mdat_selection
+        self.prefetch_buffer = prefetch_buffer
         self.distributed_initialized=False
     def setup(self, stage=None):
-        if dist.is_initialized():
-            self.distributed_initialized=True
+        self.distributed_initialized = self.distributed and dist.is_initialized()
+        if hasattr(self, 'mdat'):
+            self.mdat.close()
         self.mdat = MatformerDataset.load_dataset(
             path=self.mdat_path,
             readonly=True,
-            distributed=dist.is_initialized(),
+            distributed=self.distributed_initialized,
             shuffle=True,
             ds_view=self.mdat_view,
-            batch_size=self.batch_size
+            batch_size=self.batch_size,
+            strategy=self.mdat_strategy,
+            max_seq_len=self.max_seq_len,
+            selection=self.mdat_selection,
+            prefetch_buffer=self.prefetch_buffer,
         )
-        if self.mdat_view is not None:
-            self.mdat.set_view(self.mdat_view)        
-        if self.mdat_strategy is not None:
-            self.mdat.set_strategy(self.mdat_strategy,max_seq_len=self.max_seq_len) 
-            
+
         self.mdat.set_iteration_modality(self.iteration_modality, with_meta=self.with_meta)
-        print(f"Len attuale: {len(self)}")
+        if self.mdat.selection_summary is not None:
+            print(f"Dataset selection: {self.mdat.selection_summary}")
+
+    def teardown(self, stage=None):
+        if hasattr(self, 'mdat'):
+            self.mdat.close()
     def collate_fn(self, batch):
         if batch is None:
             print("WARNING: GOT A None TOKEN SEQUENCES FROM THE DATALOADER!")
@@ -100,7 +113,7 @@ class MatformerDataModule:
                     f.write(json.dumps(record))
                     f.write("\n")
                 self._debug_save_index += 1
-                
+
             any_worker_finished = any_worker_finished or worker_finished
             if recurrent_same is True:
                 stacked_recurrence_masks.append(True)
@@ -125,27 +138,27 @@ class MatformerDataModule:
         else:
             recurrence_batch_mask=None
             #extra_follow_keys=None
-        
+
         if self.varlen_strategy == "unpadding":
             # Build UnpaddedTensor directly
             seqlens = torch.tensor([len(seq) for seq in token_sequences], dtype=torch.int32)
             cu_seqlens = F.pad(torch.cumsum(seqlens, dim=0, dtype=torch.int32), (1, 0))
-            
+
             # Concatenate all sequences
             unpadded_tensor = torch.tensor(
-                [token for seq in token_sequences for token in seq], 
+                [token for seq in token_sequences for token in seq],
                 dtype=torch.long
             )
-            
+
             # Compute indices: position in flattened padded tensor (batch_size * original_seq_len)
             indices = []
             for batch_idx, seq_len in enumerate(seqlens):
                 base_offset = batch_idx * self.max_seq_len
                 indices.extend(range(base_offset, base_offset + seq_len))
             indices = torch.tensor(indices, dtype=torch.long)
-            
+
             max_seq_len_value = seqlens.max().item() if len(seqlens) > 0 else 0
-            
+
             sequence = UnpaddedTensor(
                 tensor=unpadded_tensor,
                 indices=indices,
@@ -161,12 +174,12 @@ class MatformerDataModule:
             for seq in token_sequences:
                 padded = seq + [self.pad_token_id] * (self.max_seq_len - len(seq))
                 padded_ids.append(padded)
-            
+
             tensors = torch.tensor(padded_ids, dtype=torch.long)
             padding_masks = (tensors == self.pad_token_id)
             sequence = PaddedTensor(
-                tensor=tensors, 
-                padding_mask=padding_masks, 
+                tensor=tensors,
+                padding_mask=padding_masks,
                 extra_attributes={'metadata':metadata_sequences} if self.with_meta else None,
                 recurrence_mask=recurrence_batch_mask
             )
@@ -175,40 +188,12 @@ class MatformerDataModule:
             "sequence": sequence,
             "worker_has_finished": any_worker_finished
         }
-        # padded ids -> tensor
-        #tensors = torch.tensor(padded_ids, dtype=torch.long)
-        #padding_masks = (tensors == self.pad_token_id)
-        #sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks, recurrence_mask=recurrence_batch_mask)
-        
-
-
-        #if self.varlen_strategy == "unpadding":
-        #    sequence = sequence.unpad()
-
-        #return {
-        #    "sequence": sequence,
-        #    "worker_has_finished": any_worker_finished
-        #}
-         
-        """    
-        # Pad sequences
-        padded_ids = [ids + [self.pad_token_id] * (self.max_seq_len - len(ids)) for ids in batch]
-        tensors = torch.tensor(padded_ids, dtype=torch.long)
-        padding_masks = (tensors == self.pad_token_id)
-        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks)
-        
-        if self.varlen_strategy == 'unpadding':
-            sequence = sequence.unpad()   
-            
-        return sequence 
-        """      
-
     def __len__(self):
         if self.num_devices == 1 or self.distributed_initialized:
             return len(self.mdat) if hasattr(self, 'mdat') else 0
         else:
             return self.mdat.get_distributed_length_before_training(num_devices=self.num_devices)
-            
+
     def train_dataloader(self):
         dataloader = DataLoader(
             self.mdat,
@@ -234,7 +219,7 @@ class MatformerDataModule:
         if not is_dist:
             return {"per_rank": [this_rank_state]}
 
-        
+
         # Distributed branch
         rank = dist.get_rank()
         world_size = dist.get_world_size()
@@ -273,12 +258,12 @@ class MatformerDataModule:
                     f"(saved={saved_world_size}, current={world_size})."
                 )
             else:
-                print(f"WARNING: world size changed")
+                print("WARNING: world size changed")
                 print(f"saved={saved_world_size}, current={world_size}")
                 mapped_rank = rank #Rivedere la logica se si vuole supportare cambio numero GPU
         else:
             mapped_rank = rank
-            
+
         state_dict_rank = per_rank[mapped_rank]
         self.mdat.restore_state_dict(state_dict_rank)
         print("Restoring state dict")
@@ -286,6 +271,3 @@ class MatformerDataModule:
         print(self.mdat.current_chunk_step)
         if is_dist:
             dist.barrier()
-
-    
-    

@@ -53,6 +53,7 @@ Altough now available only for text, its modularity allows extension to multimod
   - [Data Configuration](#4-data-configuration-data)
   - [Logging & Checkpoints](#5-logging--checkpoints)
 - [MDAT: The Matformer Dataset](#mdat-the-matformer-dataset)
+- [Data loading: domains, views, and token budgets](matformer/data/README.md)
 
 ---
 
