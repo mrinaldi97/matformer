@@ -17,7 +17,11 @@ class MatformerTokenizer:
     """
     def __init__(self, tokenizer=None,tokenizer_type=None, tokenizer_name=None, tokenizer_args=None, varlen_strategy=None, config=None):
         self.config = config
-        #tokenizer=tokenizer_type #[kept for compatibility, deprecated]
+        # Support the named tokenizer API used by MDAT.
+        if tokenizer is None and tokenizer_type is not None:
+            tokenizer = tokenizer_type.lower()
+            if tokenizer == "hf":
+                tokenizer = "huggingface"
         if tokenizer == 'bytes':
             self.tokenizer = ByteLevelTokenizer(config)
             self.tokenizer_modality='bytes'
@@ -30,8 +34,8 @@ class MatformerTokenizer:
             self.return_type=int
         elif tokenizer=='huggingface':
             #self.tokenizer=AutoTokenizer.from_pretrained(tokenizer_name,**tokenizer_args)
-            self.tokenizer=AutoTokenizer.from_pretrained(tokenizer_name.strip())            
-            self.vocab_size=self.tokenizer.vocab_size
+            self.tokenizer=AutoTokenizer.from_pretrained(tokenizer_name.strip(), **(tokenizer_args or {}))            
+            self.vocab_size=len(self.tokenizer)
             self.mask_token_id=self.tokenizer.mask_token_id
             self.bos_token_id=self.tokenizer.bos_token_id
             self.eos_token_id=self.tokenizer.eos_token_id
