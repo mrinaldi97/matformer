@@ -4,6 +4,9 @@ A Matformer hook to store activations into a database.
 This can be very useful for things such as mechanistic interpretability studies or model debug. 
 
 """
+import json
+from transformers import AutoTokenizer
+from matformer.tensors_dataclasses import TensorDC
 from matformer.matformer_registry import registry
 @registry.register(
     "hooks",

@@ -229,7 +229,8 @@ class SubMdat:
         #Update the default view
         instance.mdat._update_default_view(instance.submdat_id)
 
-        # Now load the created submdat
+        # Close creation handles before reopening the same LMDB paths.
+        instance.close()
         return cls.load_submdat(parent_mdat, submdat_name)
 
     def set_default_wanted(self, from_dbs: list = ['full'], from_strategy: list = [], raw: bool = False, add_special_tokens=True):

@@ -15,3 +15,8 @@ utils/
 test_data/fake/
 temp_grid_configs
 dataset
+    
+# Keep the model utilities in version control.
+!/matformer/utils/
+/matformer/utils/*
+!/matformer/utils/*.py
