@@ -31,6 +31,8 @@ class DatasetSelection:
     domains: Optional[Sequence[str]] = None
     max_tokens: Optional[int] = None
     domain_tokens: Optional[Dict[str, int]] = None
+    # Shares of max_tokens, e.g. {'wikipedia': '100%', 'twita': '0%'}.
+    composition: Optional[Dict[str, str]] = None
     seed: Optional[int] = None
 
     def __post_init__(self):
@@ -40,6 +42,31 @@ class DatasetSelection:
 
         if self.max_tokens is not None:
             validate_budget("max_tokens", self.max_tokens)
+        if self.composition is not None:
+            if not isinstance(self.composition, dict):
+                raise ValueError('composition must be a mapping of domain names to percentages')
+            if self.domain_tokens is not None or self.max_tokens is None or not self.composition:
+                raise ValueError('composition requires max_tokens and cannot be mixed with domain_tokens')
+            shares = {}
+            from decimal import Decimal, InvalidOperation
+            for name, value in self.composition.items():
+                if not isinstance(value, str) or not value.endswith('%'):
+                    raise ValueError('composition values must be percentage strings, e.g. "70%"')
+                try:
+                    share = Decimal(value[:-1])
+                except InvalidOperation as error:
+                    raise ValueError(f'Invalid percentage: {value}') from error
+                if not share.is_finite() or not 0 <= share <= 100:
+                    raise ValueError(f'Invalid percentage: {value}')
+                shares[name] = share
+            if sum(shares.values()) != 100:
+                raise ValueError('composition percentages must sum to 100%')
+            exact = {name: self.max_tokens * share / 100 for name, share in shares.items()}
+            caps = {name: int(value) for name, value in exact.items()}
+            remaining = self.max_tokens - sum(caps.values())
+            for name in sorted(caps, key=lambda n: exact[n] - caps[n], reverse=True)[:remaining]:
+                caps[name] += 1
+            object.__setattr__(self, 'domain_tokens', caps)
         if self.domains is not None:
             if isinstance(self.domains, str) or not self.domains:
                 raise ValueError("domains must be a non-empty list of subdataset names")
@@ -158,6 +185,8 @@ class SelectedView:
             token_size = np.dtype(get_datatype_for_numpy(strategy.tokens_datatype)).itemsize
             chunk_size = np.dtype(get_datatype_for_numpy(strategy.chunks_datatype)).itemsize
             for name in domains:
+                if (config.domain_tokens or {}).get(name) == 0:
+                    continue
                 if "tokens" not in dataset.loaded_submdats[name].pretok_db:
                     raise ValueError(f"Domain {name!r} has no cached tokens for {self.strategy_name!r}")
 

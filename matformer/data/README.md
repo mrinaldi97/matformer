@@ -135,6 +135,19 @@ points remain available. Use `--help` to inspect the creation/import commands.
 For Hugging Face imports through `convert_to_submdat`, choose a source split
 with `dataset_args={"hf_split": "validation"}`.
 
+## Composition and training budgets
+
+`mdat_selection.composition` accepts percentage strings summing to 100%, together
+with a total `max_tokens`: for example
+`{"max_tokens": 1000000, "composition": {"wiki": "100%", "books": "0%"}}`.
+Percentages are mixture shares of that total, not fractions of source corpora.
+Selection keeps whole documents and may underfill; inspect the reported totals.
+Do not combine composition with explicit `domain_tokens` caps.
+
+The separate training target ceiling, packing semantics, checkpoint identity
+checks, and bounded-storage data-stage workflow are described in
+[the pretraining guide](../../docs/pretraining.md).
+
 ## Where the code lives
 
 | File | Responsibility |

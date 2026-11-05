@@ -46,7 +46,8 @@ class MultiHeadAttention(MatformerModule):
         interpretability_friendly=False,
         hooks={},
         is_hybrid=False, #Initialize two kernels, one for is_causal = True, another one for is_causal = False; supports giving is_causal as a forward argument
-        layer_idx=0
+        layer_idx=0,
+        rope_theta=10000.0,
     ):
         super().__init__()
         if isinstance(positional_encoding, str):
@@ -90,6 +91,7 @@ class MultiHeadAttention(MatformerModule):
         self.v_dim = v_dim
         self.head_dim = q_dim // nheads
         self.layer_idx=layer_idx if layer_idx is not None else 0
+        self.rope_theta = rope_theta
         self.mechanistic_interpretability=interpretability_friendly
         self.is_hybrid = is_hybrid
         if interpretability_friendly:
@@ -312,7 +314,7 @@ class MultiHeadAttention(MatformerModule):
         q, k, v = self._apply_hook('q', q), self._apply_hook('k', k), self._apply_hook('v', v)
 
         if 'rope' in self.positional_encoding:
-            cos, sin = self.cache.get_rotary_cos_sin(q.shape[1], self.head_dim, q.device, q.dtype)
+            cos, sin = self.cache.get_rotary_cos_sin(q.shape[1], self.head_dim, q.device, q.dtype, theta=self.rope_theta)
             cos, sin = cos[None, :, None, :], sin[None, :, None, :]
             rotate = lambda x: torch.cat([-x[..., x.shape[-1]//2:], x[..., :x.shape[-1]//2]], dim=-1)
             q, k = q * cos + rotate(q) * sin, k * cos + rotate(k) * sin
@@ -433,7 +435,7 @@ class MultiHeadAttention(MatformerModule):
                 k = self._transpose_for_kernel(k, self.rotary_embedding_meta['tensor_order_input'])
 
             # 1. Get sin and cos from cache
-            cos, sin = self.cache.get_rotary_cos_sin(max_seq_len, self.head_dim, device=query_input.device, dtype=query_input.dtype)  
+            cos, sin = self.cache.get_rotary_cos_sin(max_seq_len, self.head_dim, device=query_input.device, dtype=query_input.dtype, theta=self.rope_theta)
 
             # 2. Rotate query and keys
             qkv_t, q_t, k_t = self.rotary_embedding(

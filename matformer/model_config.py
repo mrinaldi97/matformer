@@ -37,6 +37,8 @@ class BaseSubModelConfig:
     num_hidden_layers: Optional[int] = None
     num_attention_heads: Optional[int] = None
     num_key_value_heads: Optional[int] = None
+    # Reapply the same stack, sharing all block weights across depth loops.
+    num_loops: int = 1
     # vocabulary & embeddings
     vocab_size: Optional[int] = None
     pad_token_id: Optional[int] = None
@@ -107,6 +109,10 @@ class ModelConfig(BaseSubModelConfig):
     entropy: Optional[Union[EntropyConfig, dict]] = None
 
     def __post_init__(self):
+        if isinstance(self.num_loops, bool) or not isinstance(self.num_loops, int) or self.num_loops < 1:
+            raise ValueError('num_loops must be a positive integer')
+        if isinstance(self.default_layer, dict):
+            self.default_layer = LayerConfig(**self.default_layer)
         # Convert encoder dict to SubModelConfig if needed
         if self.encoder is not None and isinstance(self.encoder, dict):
             self.encoder = SubModelConfig(**self.encoder)

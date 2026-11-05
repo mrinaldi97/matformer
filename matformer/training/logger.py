@@ -1,4 +1,19 @@
 from tqdm import tqdm
+import json
+from pathlib import Path
+
+
+class JSONLLogger:
+    """Append local metrics across restarts; no network dependency."""
+    def __init__(self, path):
+        Path(path).parent.mkdir(parents=True, exist_ok=True)
+        self.stream = open(path, 'a', buffering=1)
+
+    def log(self, metrics, step):
+        self.stream.write(json.dumps({'step': step, **metrics}) + '\n')
+
+    def close(self):
+        self.stream.close()
 
 class MatformerLogger:
     def __init__(self):
@@ -32,13 +47,19 @@ class WandbAdapter:
     def log(self, metrics, step):
         self._l.log_metrics(metrics, step=step)
 
+    def close(self):
+        self._l.finalize('success')
+        # Lightning's logger finalizes artifacts but does not close the W&B
+        # process. Finish explicitly so offline files are flushed for sync.
+        self._l.experiment.finish()
+
 
 class TQDMBar:
     def __init__(self, total, initial=0, desc="Training"):
         self._bar = tqdm(
             total=total, initial=initial,
             dynamic_ncols=True, desc=desc,
-            miniters=1, mininterval=0,
+            miniters=1, mininterval=1,
         )
         self._pending: dict = {}   
 

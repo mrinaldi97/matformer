@@ -1,6 +1,7 @@
 #matformer/training/optimizers.py
 
 import torch
+import math
 from matformer.extra.muon import Muon
 from torch.optim import AdamW, Adam
 
@@ -41,7 +42,7 @@ def configure_optimizers(model,train_config):
             estimate_lower_bound=False
         )
         
-        optimizer = MuonClip(self, model_config, muon_config)
+        optimizer = MuonClip(model, model_config, muon_config)
         
     elif train_config["optimizer"] == "muonflash":
         muon_params = []
@@ -111,13 +112,19 @@ def configure_optimizers(model,train_config):
             model.parameters(),
             lr=train_config["lr"],
             weight_decay=train_config.get("weight_decay", 0.01),
+            betas=tuple(train_config.get('betas', (0.9, 0.95))),
+            eps=train_config.get('eps', 1e-8),
         )
     elif train_config["optimizer"] == "adam":
         optimizer = Adam(
             model.parameters(),
             lr=train_config["lr"],
             weight_decay=train_config.get("weight_decay", 0.01),
+            betas=tuple(train_config.get('betas', (0.9, 0.999))),
+            eps=train_config.get('eps', 1e-8),
         )
+    else:
+        raise ValueError(f'Unknown optimizer: {train_config["optimizer"]}')
     if not isinstance(optimizer,list):
         optimizer=[optimizer]
     return optimizer

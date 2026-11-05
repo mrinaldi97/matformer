@@ -3,6 +3,7 @@
 Generic utils to load config, detect best device, compile a model...
 """
 import json
+import ast
 from matformer.model_config import ModelConfig
 import torch
 from importlib import import_module
@@ -22,9 +23,12 @@ def apply_overrides(cfg, overrides=None):
         for k in keys[:-1]:
             d = d.setdefault(k, {})
         try:
-            d[keys[-1]] = eval(val)
-        except:
-            d[keys[-1]] = val
+            d[keys[-1]] = json.loads(val)
+        except (TypeError, ValueError):
+            try:
+                d[keys[-1]] = ast.literal_eval(val)
+            except (ValueError, SyntaxError):
+                d[keys[-1]] = val
     return cfg
 
 
@@ -41,16 +45,8 @@ def load_config(config_path=None, overrides=None, config_string=None):
             config_string=f.read()
     json_config=json.loads(config_string)
         
-    cfg = {
-    "model_class": json_config['model_class'],
-    "save_dir": json_config.pop("save_dir", "./checkpoints"),
-    "wandb_project": json_config.pop("wandb_project", "default_project"),
-    "wandb_run_name": json_config.pop("wandb_run_name", "default_run"),
-    "model_config": json_config['model_config'], 
-    "training": json_config['training'],
-    "data": json_config['data'],
-    "tokenizer": json_config['tokenizer']
-    }       
+    cfg = json_config
+    cfg.setdefault('save_dir', './checkpoints')
     
 
     if overrides is not None:
@@ -83,24 +79,7 @@ def detect_device():
     return accelerator,device_string
     
 def compile_model(model):
-    try:
-        if tok_cfg['varlen_strategy']:
-            print("Trying compilation: dynamic sequence length, normal")
-            try:
-                model=torch.compile(model, dynamic=True)
-            except:
-                print("Trying compilation: dynamic sequence length, normal autotune")
-                model=torch.compile(model, dynamic=True)
-        else:
-            print("Trying compilation: fixed sequence length, max autotune")
-            try:
-                model=torch.compile(model, mode="max-autotune")
-            except:
-                print("Trying compilation: fixed sequence length, normale autotune")
-                model=torch.compile(model)
-    except:
-        print("Compilation failed! Running non-compiled model")
-    return model
+    return torch.compile(model)
 
 def get_model_class(model_class: str):
     """

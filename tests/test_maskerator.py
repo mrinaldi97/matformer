@@ -54,7 +54,7 @@ class TestMaskerator(unittest.TestCase):
             vocab_size=self.vocab_size
         )
         
-        output_ids, cloze_mask = maskerator(self.input_ids)
+        output_ids, cloze_mask, _ = maskerator(self.input_ids)
 
         # --- Assert: Shape and Types ---
         self.assertEqual(output_ids.shape, self.input_ids.shape)
@@ -101,7 +101,7 @@ class TestMaskerator(unittest.TestCase):
             same_prob=same_p
         )
         
-        output_ids, cloze_mask = maskerator(self.input_ids)
+        output_ids, cloze_mask, _ = maskerator(self.input_ids)
         
         # --- Assert: Shape and Padding (as before) ---
         self.assertEqual(output_ids.shape, self.input_ids.shape)
@@ -163,7 +163,7 @@ class TestMaskerator(unittest.TestCase):
             vocab_size=self.vocab_size
         )
         
-        output_ids, cloze_mask = maskerator(input_1d)
+        output_ids, cloze_mask, _ = maskerator(input_1d)
         
         # Assert: Shape and Types
         self.assertEqual(output_ids.shape, input_1d.shape)

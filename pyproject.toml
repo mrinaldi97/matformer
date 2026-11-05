@@ -10,14 +10,15 @@ authors = [
     {name = "Matteo Rinaldi" },
     {name = "Calogero Jerik Scozzaro"}
 ]
-readme = "README.md"
-requires-python = ">=3.6"
+readme = "readme.md"
+requires-python = ">=3.10"
 license = { text = "MIT" }
 
 dependencies = [
     "torch>=2.6.0",
     "zstandard",
-    "pytorch-lightning>=2.5.0",
+    "lightning>=2.5.0,<3",
+    "pytorch-lightning>=2.5.0,<3",
     "wandb",
     "einops>=0.8.1",
     "nltk",
@@ -25,11 +26,14 @@ dependencies = [
     "lmdb",
     "transformers",
     "tokenizers",
+    "numpy",
+    "tqdm",
 ]
 
 [project.optional-dependencies]
-nvidia = ["transfomer_engine",
+nvidia = ["transformer_engine",
 "liger_kernel","flash_attn"]
+test = ["pytest"]
 
 
 [tool.setuptools.packages.find]

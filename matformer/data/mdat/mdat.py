@@ -185,7 +185,8 @@ class MatformerDataset(IterableDataset):
         if strategy_name is not None:
             if max_seq_len is None and self.current_strategy is not None:
                 max_seq_len = self.max_seq_len
-            self.set_strategy(strategy_name, max_seq_len=max_seq_len, domains=domains)
+            active_domains = [name for name in domains if (config.domain_tokens or {}).get(name) != 0]
+            self.set_strategy(strategy_name, max_seq_len=max_seq_len, domains=active_domains)
         selected = SelectedView(self, config, domains)
         self._clear_selection()
         self.selection = selected
@@ -899,7 +900,9 @@ class MatformerDataset(IterableDataset):
                     except queue.Empty:
                         break
 
-            self._prefetch_thread.join(timeout=2.0)
+            # Do not replace the queue/event or close LMDB while an old reader
+            # can still access them (slow shared-filesystem reads may exceed 2s).
+            self._prefetch_thread.join()
             self._prefetch_thread = None
             self._prefetch_queue = None
 
@@ -1108,11 +1111,19 @@ class MatformerDataset(IterableDataset):
             end_step = min(chunk_step + self.chunk_multiplier, total_chunks)
             selected_chunks = chunks_list[chunk_step:end_step]
             new_chunk_step = end_step
-            chunk = np.concatenate(selected_chunks).tolist()
+            if self.add_special_tokens and len(selected_chunks) > 1:
+                # Cached chunks each have BOS/EOS. A longer packed context has
+                # one pair, preserving every content token within this document.
+                bos, eos = self.current_strategy.bos_token_id, self.current_strategy.eos_token_id
+                if any(len(part) < 2 or part[0] != bos or part[-1] != eos for part in selected_chunks):
+                    raise ValueError('Stored chunks do not have the declared BOS/EOS boundaries')
+                chunk = [bos] + [int(token) for part in selected_chunks for token in part[1:-1]] + [eos]
+            else:
+                chunk = np.concatenate(selected_chunks).tolist()
             if getattr(self, 'max_seq_len', None) is not None:
                 if len(chunk) > self.max_seq_len:
-                    print(f"WARNING: A sequence is longer than max length ({len(chunk)} > {self.max_seq_len}) and it's truncated")
-                    chunk = chunk[:self.max_seq_len]
+                    raise ValueError(f'Packed chunk has {len(chunk)} tokens, exceeds {self.max_seq_len}; '
+                                     'reserve space for BOS/EOS when pretokenizing. No tokens were truncated.')
             has_more_chunks = new_chunk_step < total_chunks
             return chunk, new_chunk_step, has_more_chunks
 

@@ -20,6 +20,7 @@ from matformer.utils.matformer_cache import CachedStuff
 from copy import deepcopy
 from matformer.matformer_module import MatformerModule
 from matformer.training.ckpt_manager import CheckpointDirectoryManager
+from matformer.training.causal_loss import causal_pairs
 class PL_ModelWrapper(MatformerModule):
     model: "transparent"
     def __init__(self,ModelClass,config,tokenizer,device,batch_size=None,train_config=None,inference=False,reset=None, skip_init=False, training_step_type='pretraining'):
@@ -80,7 +81,13 @@ class PL_ModelWrapper(MatformerModule):
 
     def validation_step(self, batch, batch_idx=None):
         if self.training_step_type == 'pretraining':
-            raise NotImplementedError
+            if self.config.training_objective != 'autoregressive':
+                raise NotImplementedError('Pretraining validation currently supports autoregressive models')
+            sequence = batch['sequence']
+            output = self(sequence, return_type='logits', is_causal=True)
+            inputs, targets = causal_pairs(output, sequence, self.config.pad_token_id)
+            loss_sum = F.cross_entropy(inputs.float(), targets, reduction='sum') if targets.numel() else output.tensor.sum() * 0
+            return {'loss_sum': loss_sum.detach(), 'tokens': targets.numel()}
         else:
             input_ids = batch["input_ids"].unpad()
             logits = self(input_ids)
@@ -129,9 +136,8 @@ class PL_ModelWrapper(MatformerModule):
             original_sequence = input_sequence
             batch['sequence'] = input_sequence
             
-            if batch.get('worker_has_finished', False):
-                zero_loss = sum(p.sum() for p in self.parameters()) * 0.0 # Questa roba è da riguardare attentamente!!!
-                return zero_loss
+            # Exhausted ranks still execute forward/backward to participate in
+            # DDP reductions. Their collator supplies an empty target mask.
             
             if self.config.training_objective == 'hybrid': # Hybrid MLM + GPT training regime
                 prob = getattr(self.config, 'hybrid_mlm_prob', 0.5) 
@@ -202,12 +208,10 @@ class PL_ModelWrapper(MatformerModule):
                 mask = cloze_mask_flat & base_mask
                 inputs = model_output_flat[mask]
                 targets = targets_flat[mask]
-            else: # Autoregressive
-                mask = base_mask[1:]
-                inputs = model_output_flat[:-1][mask]
-                targets = targets_flat[1:][mask]
+            else: # Shift within sequences, never across their boundaries.
+                inputs, targets = causal_pairs(model_output, original_sequence, self.config.pad_token_id)
             # 4. Getting the loss
-            loss = self.loss_function(inputs, targets, **loss_kwargs)  
+            loss = self.loss_function(inputs, targets, **loss_kwargs) if targets.numel() else model_output.tensor.sum() * 0.0
             self.log('train/loss', loss, prog_bar=True,batch_size=self.batch_size)      
             if 'aux_losses' in self.cache.storage:
                         aux_losses = self.cache.storage['aux_losses']
@@ -248,39 +252,9 @@ class PL_ModelWrapper(MatformerModule):
             ex a particularly long batch, the batch is skipped. The event will be logged. Be sure that this number is limited
             to a very small amount of steps.
             """
-        except Exception as e:
-            print("------------------  ALARM ------------------")
-            if not any(s in str(e).lower() for s in ("out of memory", "cuda out of memory", "cublas")):
-                print("CAUGHT EXCEPTION: ")
-                print(e)
-                print("Training will try to continue but this may be unreliable. Careful check what is happening")
-                import traceback
-                traceback.print_exc()
-                self.log("train/EXCEPTIONS",1,on_step=True,on_epoch=False,batch_size=self.batch_size)
-            else:
-                print("OUT OF MEMORY ERROR")
-                print("Training is continuing, but be sure that this happens very seldom or reduce the batch size.")
-                self.log(
-                    "train/skipped_oom", 1,
-                    on_step=True, on_epoch=False, batch_size=self.batch_size
-                )
-            print("All the gradients from the current batch and all the previous accumulated gradients were discarded.")
-            try:
-                opts = self.optimizers()
-                for o in opts if isinstance(opts, list) else (opts,):
-                    o.zero_grad(set_to_none=True)
-            except Exception:
-                pass
+        except Exception:
+            raise
 
-            if hasattr(self.cache, "storage"):
-                self.cache.storage.clear()
-
-            import gc
-            gc.collect()
-            torch.cuda.empty_cache()
-            torch.cuda.synchronize()
-
-            return sum(p.sum() for p in self.parameters()) * 0.0
     def setup_logging(self, logger, step_ref):
         self._matformer_logger = logger
         self._step_ref = step_ref
@@ -337,17 +311,20 @@ class PL_ModelWrapper(MatformerModule):
             key = key.strip()
             if key == 'lr_scheduler':
                 print("LR Scheduler is reset")
-                checkpoint["lr_schedulers"] = []
+                checkpoint["scheduler"] = []
             elif key == 'optimizer':
                 print("Optimizer states are reset")
-                checkpoint["optimizer_states"] = []
+                checkpoint["optimizer"] = []
             elif key == 'datamodule':
                 print("Datamodule is reset")
-                checkpoint.pop("MatformerDataModule", None)
+                checkpoint.pop("datamodule", None)
+                checkpoint['batch_in_epoch'] = 0
             elif key == 'steps':
                 print("Epoch and global step are reset")
                 checkpoint["epoch"] = 0
-                checkpoint["global_step"] = 0
+                checkpoint["step"] = 0
+                checkpoint['batch_in_epoch'] = 0
+                checkpoint['tokens_seen'] = 0
         return checkpoint
 
 
@@ -391,7 +368,9 @@ class PL_ModelWrapper(MatformerModule):
  
         datamodule_state = checkpoint.get('datamodule')
         if datamodule is not None and datamodule_state is not None:
-            datamodule.load_state_dict(datamodule_state)
+            epoch_complete = checkpoint.get('epoch', 0) > 0 and checkpoint.get('batch_in_epoch', -1) == 0
+            if not epoch_complete:
+                datamodule.load_state_dict(datamodule_state)
  
         missing    = [x for x in missing    if 'alibi' not in x]
         unexpected = [x for x in unexpected if 'alibi' not in x]
@@ -404,10 +383,11 @@ class PL_ModelWrapper(MatformerModule):
             "checkpoint": checkpoint,
             "step":       checkpoint.get("step", 0),
             "epoch":      checkpoint.get("epoch", 0),
+            "batch_in_epoch": checkpoint.get("batch_in_epoch", 0),
         }
  
     @staticmethod
-    def save_checkpoint(model, optimizer, scheduler, step, epoch, datamodule, ckpt_manager=None, save_path=None, what_to_reset=None, fabric=None):
+    def save_checkpoint(model, optimizer, scheduler, step, epoch, datamodule, ckpt_manager=None, save_path=None, what_to_reset=None, fabric=None, batch_in_epoch=0):
         """
         Cannot use both ckpt_manager and save_path.
         If ckpt_manager is used, save_path is automatically set to the one corresponding to the training step.
@@ -421,19 +401,32 @@ class PL_ModelWrapper(MatformerModule):
         checkpoint = {
             "state_dict": model.stable_state_dict(),
             "optimizer":  [o.state_dict() for o in optimizer] if isinstance(optimizer, list) else optimizer.state_dict(),
-            "scheduler":  [s.state_dict() for s in scheduler] if isinstance(scheduler, list) else scheduler.state_dict(),
+            "scheduler":  [s.state_dict() for s in scheduler] if isinstance(scheduler, list) else (scheduler.state_dict() if scheduler is not None else None),
             "datamodule": datamodule.state_dict(),
             "step":       step,
             "epoch":      epoch,
+            "batch_in_epoch": batch_in_epoch,
             "config":     model.config,
         }
  
         if what_to_reset is not None:
             checkpoint = model.reset_checkpoint_objects(checkpoint, what_to_reset)
-        if fabric: #Fabric does the barrier and allows writing only on rank 0
-            fabric.save(save_path,checkpoint)
+        from pathlib import Path
+        import os
+        destination = Path(save_path)
+        temporary = destination.with_name(destination.name + '.tmp')
+        if fabric:
+            fabric.save(temporary, checkpoint)
+            if fabric.global_rank == 0:
+                os.replace(temporary, destination)
+                if ckpt_manager is not None:
+                    ckpt_manager.write_resume(step, destination)
+            fabric.barrier()
         else:
-            torch.save(checkpoint, save_path)
+            torch.save(checkpoint, temporary)
+            os.replace(temporary, destination)
+            if ckpt_manager is not None:
+                ckpt_manager.write_resume(step, destination)
 
     @staticmethod
     def load_from_checkpoint(checkpoint_path,ModelClass,config=None,train_config=None,

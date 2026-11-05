@@ -29,10 +29,6 @@ class CheckpointDirectoryManager:
 
         self.save_path.mkdir(parents=True, exist_ok=True)
 
-        log = self.save_path / self.resume_file
-        if not log.exists():
-            log.write_text("model_name,version,step,filename,timestamp\n")
-
         self.current_version = version if version is not None else self._latest_version()
 
 
@@ -67,6 +63,9 @@ class CheckpointDirectoryManager:
         self.current_step = 0
 
     def write_resume(self, step: int, path: Path):
+        log = self.save_path / self.resume_file
+        if not log.exists():
+            log.write_text('model_name,version,step,filename,timestamp\n')
         with open(self.save_path / self.resume_file, "a", newline="") as f:
             csv.writer(f).writerow([
                 self.model_name, self.current_version, step,
@@ -74,10 +73,9 @@ class CheckpointDirectoryManager:
             ])
 
     def return_save_path(self, step: int) -> Path:
-        """Call this instead of torch.save to get the right path and log it."""
+        """Return destination; log only after a successful atomic publication."""
         self.current_step = step
         path = self._ckpt_path(step)
-        self.write_resume(step, path)
         return path
 
 

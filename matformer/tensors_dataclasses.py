@@ -36,16 +36,17 @@ class TensorDC:
     def device(self) -> torch.device: return self.tensor.device
     def to(self, *args, **kwargs):
         self.tensor = self.tensor.to(*args, **kwargs)
-        if self.cloze_mask is not None:
-            self.cloze_mask = self.cloze_mask.to(*args, **kwargs)
-        if self.document_mask is not None:
-            self.document_mask = self.document_mask.to(*args, **kwargs)
-        if self.recurrence_mask is not None:
-            self.recurrence_mask = self.recurrence_mask.to(*args, **kwargs)            
+        # Masks and sequence indices follow the data's device, while keeping
+        # their boolean/integer dtype even when the data dtype changes.
+        for name in ('cloze_mask', 'document_mask', 'recurrence_mask',
+                     'padding_mask', 'indices', 'cu_seqlens'):
+            value = getattr(self, name, None)
+            if value is not None:
+                setattr(self, name, value.to(device=self.tensor.device))
         if self.extra_attributes:
             for k, v in self.extra_attributes.items():
                 if isinstance(v, torch.Tensor):
-                    self.extra_attributes[k] = v.to(*args, **kwargs)
+                    self.extra_attributes[k] = v.to(device=self.tensor.device)
         return self
         
         

@@ -128,7 +128,7 @@ class CachedStuff:
             return self._build_attention_mask(B, L, S, nheads, device, dtype, causal, sliding_window, document_mask, add_alibi)
 
         # Cache only when no document_mask
-        cache_key = ("attn", nheads, L, S, causal, sliding_window, add_alibi, device, dtype)
+        cache_key = ("attn", B, nheads, L, S, causal, sliding_window, add_alibi, device, dtype)
         
         if cache_key not in self.mask_cache:
             self.mask_cache[cache_key] = self._build_attention_mask(B, L, S, nheads, device, dtype, causal, sliding_window, None, add_alibi)

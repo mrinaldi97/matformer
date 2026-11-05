@@ -9,8 +9,18 @@ def configure_lr_schedulers(train_config, optimizers):
         return None
 
     total_steps  = train_config["total_steps"]
-    warmup_steps = int(train_config.get("warmup_steps", 0.05) * total_steps)
-    hold_steps   = int(train_config.get("hold_steps",   0.0)  * total_steps)
+    def steps(value):
+        if isinstance(value, bool) or not isinstance(value, (int, float)) or value < 0:
+            raise ValueError('Warmup/hold must be non-negative integer steps or a fraction in [0, 1]')
+        if isinstance(value, float):
+            if value > 1:
+                raise ValueError('Fractional warmup/hold must be <= 1; use an integer for steps')
+            return int(value * total_steps)
+        return value
+    warmup_steps = steps(train_config.get('warmup_steps', 0.05))
+    hold_steps = steps(train_config.get('hold_steps', 0.0))
+    if warmup_steps + hold_steps > total_steps:
+        raise ValueError('Warmup + hold exceeds the LR schedule horizon')
     decay_steps  = max(1, total_steps - warmup_steps - hold_steps)
     anneal_step  = train_config.get("annealing_start_step")
      

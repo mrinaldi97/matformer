@@ -495,6 +495,9 @@ class SmallSplitter:
     def __init__(self, language: str, chunk_size: int, tokenizer: Any):
         self.punkt = PunktTokenizer(language)
         self.tokenizer = getattr(tokenizer, "tokenizer", tokenizer)
+        # PretokenizationStrategy already reserves the two special-token slots.
+        if chunk_size < 1:
+            raise ValueError('chunk_size must be positive')
         self.chunk_size = chunk_size
 
     def _get_encoding_data(self, encoding) -> tuple:
@@ -543,6 +546,14 @@ class SmallSplitter:
             else:
                 curr_chunk.extend(sent_toks)
 
+        # Tokenizers can emit trailing whitespace beyond the last sentence.
+        # Retain it, including input for which Punkt returns no sentences.
+        while tok_idx < n_tokens:
+            if len(curr_chunk) == self.chunk_size:
+                chunks.append(curr_chunk)
+                curr_chunk = []
+            curr_chunk.append(ids[tok_idx])
+            tok_idx += 1
         if curr_chunk: chunks.append(curr_chunk)
 
         ranges, cursor = [], 0

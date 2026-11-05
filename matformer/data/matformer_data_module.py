@@ -1,11 +1,9 @@
 """Connect an MDAT view/selection to the training loop and tensor collation."""
 from torch.utils.data import DataLoader
-import os
-from matformer.data.mdat.mdat import MatformerDataset
 import torch
+from pathlib import Path
+from matformer.data.mdat.mdat import MatformerDataset
 import torch.distributed as dist
-from matformer.tensors_dataclasses import PaddedTensor, UnpaddedTensor
-import torch.nn.functional as F
 
 class MatformerDataModule:
     """Load a saved view and optionally restrict domains and token budgets.
@@ -50,6 +48,16 @@ class MatformerDataModule:
         )
 
         self.mdat.set_iteration_modality(self.iteration_modality, with_meta=self.with_meta)
+        # Fast identity check for immutable, staged datasets. This deliberately
+        # rejects replacing files in place, even if lengths are unchanged.
+        paths = [Path(self.mdat.db_path)]
+        pointer = Path(self.mdat.shuffling_path) / f'{self.mdat.current_view}.mdat'
+        if pointer.exists():
+            paths.append(pointer)
+        for subdataset in self.mdat.loaded_submdats.values():
+            paths.extend(Path(db.path) for db in getattr(subdataset, 'pretok_db', {}).values())
+        self.source_identity = [(str(p.resolve()), p.stat().st_size, p.stat().st_mtime_ns)
+                                for p in sorted(set(paths))]
         if self.mdat.selection_summary is not None:
             print(f"Dataset selection: {self.mdat.selection_summary}")
 
@@ -57,137 +65,10 @@ class MatformerDataModule:
         if hasattr(self, 'mdat'):
             self.mdat.close()
     def collate_fn(self, batch):
-        if batch is None:
-            print("WARNING: GOT A None TOKEN SEQUENCES FROM THE DATALOADER!")
-            batch = []
+        from matformer.data.collator import TokenCollator
+        return TokenCollator(self.pad_token_id, self.max_seq_len,
+                             self.varlen_strategy, self.with_meta)(batch)
 
-        if self.varlen_strategy == 'nested':
-            sequence = torch.nested.nested_tensor(batch, layout=torch.jagged)
-            return sequence
-        token_sequences=[]
-        if self.with_meta:
-            metadata_sequences=[]
-        else:
-            metadata_sequences=None
-        #padded_ids = []
-        stacked_recurrence_masks = []
-        any_worker_finished = False
-
-        for item in batch:
-            recurrent_same = None
-            worker_finished = False
-            if isinstance(item, dict):
-                _object = item["object"]
-                if _object is None:
-                    print("WARNING: Get a None from the Mdat")
-                    print(item)
-                    continue
-                worker_finished = bool(item.get("worker_has_finished", False))
-                recurrent_same = item.get("is_same_document", None)
-            else:
-                _object = item
-            ### To debug the resume of checkpoint
-            debug_path = os.environ.get("DEBUG_DATALOADER_SAVE", None)
-            if debug_path is not None:
-                import json
-                if not hasattr(self, "_debug_save_index"):
-                    self._debug_save_index = 0
-                try:
-                    import torch.distributed as dist
-                    if dist.is_available() and dist.is_initialized():
-                        rank = dist.get_rank()
-                    else:
-                        rank = 0
-                except Exception:
-                    rank = 0
-                debug_file = f"{debug_path}_rank{rank}.jsonl"
-                def _to_serializable(x):
-                    if torch.is_tensor(x):
-                        return x.detach().cpu().tolist()
-                    return x
-                record = {
-                    "index": self._debug_save_index,
-                    "item": _to_serializable(item),
-                }
-                with open(debug_file, "a", encoding="utf-8") as f:
-                    f.write(json.dumps(record))
-                    f.write("\n")
-                self._debug_save_index += 1
-
-            any_worker_finished = any_worker_finished or worker_finished
-            if recurrent_same is True:
-                stacked_recurrence_masks.append(True)
-            elif recurrent_same is False:
-                stacked_recurrence_masks.append(False)
-            else:
-                stacked_recurrence_masks.append(None)
-
-            assert self.max_seq_len is not None
-            #padded = _object + [self.pad_token_id] * (self.max_seq_len - len(_object))
-            #padded_ids.append(padded)
-            token_sequences.append(_object)
-            if self.with_meta and 'metadata' in item.keys():
-                metadata_sequences.append(item['metadata'])
-        # For recurrence
-        if any(mask is not None for mask in stacked_recurrence_masks):
-            stacked = [
-                m if m is not None else False
-                for m in stacked_recurrence_masks
-            ]
-            recurrence_batch_mask = torch.tensor(stacked, dtype=torch.bool)  # shape [B]
-        else:
-            recurrence_batch_mask=None
-            #extra_follow_keys=None
-
-        if self.varlen_strategy == "unpadding":
-            # Build UnpaddedTensor directly
-            seqlens = torch.tensor([len(seq) for seq in token_sequences], dtype=torch.int32)
-            cu_seqlens = F.pad(torch.cumsum(seqlens, dim=0, dtype=torch.int32), (1, 0))
-
-            # Concatenate all sequences
-            unpadded_tensor = torch.tensor(
-                [token for seq in token_sequences for token in seq],
-                dtype=torch.long
-            )
-
-            # Compute indices: position in flattened padded tensor (batch_size * original_seq_len)
-            indices = []
-            for batch_idx, seq_len in enumerate(seqlens):
-                base_offset = batch_idx * self.max_seq_len
-                indices.extend(range(base_offset, base_offset + seq_len))
-            indices = torch.tensor(indices, dtype=torch.long)
-
-            max_seq_len_value = seqlens.max().item() if len(seqlens) > 0 else 0
-
-            sequence = UnpaddedTensor(
-                tensor=unpadded_tensor,
-                indices=indices,
-                cu_seqlens=cu_seqlens,
-                max_seq_len=max_seq_len_value,
-                original_seq_len=self.max_seq_len,
-                batch_size=len(token_sequences),
-                extra_attributes={'metadata':metadata_sequences} if self.with_meta else None,
-                recurrence_mask=recurrence_batch_mask
-            )
-        else:
-            padded_ids = []
-            for seq in token_sequences:
-                padded = seq + [self.pad_token_id] * (self.max_seq_len - len(seq))
-                padded_ids.append(padded)
-
-            tensors = torch.tensor(padded_ids, dtype=torch.long)
-            padding_masks = (tensors == self.pad_token_id)
-            sequence = PaddedTensor(
-                tensor=tensors,
-                padding_mask=padding_masks,
-                extra_attributes={'metadata':metadata_sequences} if self.with_meta else None,
-                recurrence_mask=recurrence_batch_mask
-            )
-
-        return {
-            "sequence": sequence,
-            "worker_has_finished": any_worker_finished
-        }
     def __len__(self):
         if self.num_devices == 1 or self.distributed_initialized:
             return len(self.mdat) if hasattr(self, 'mdat') else 0
@@ -200,7 +81,8 @@ class MatformerDataModule:
             batch_size=self.batch_size,
             num_workers=0,
             collate_fn=self.collate_fn,
-            shuffle=False
+            shuffle=False,
+            generator=torch.Generator().manual_seed(0),
         )
         dataloader._is_resumable = True
         return dataloader
@@ -217,7 +99,7 @@ class MatformerDataModule:
 
         # Single GPU
         if not is_dist:
-            return {"per_rank": [this_rank_state]}
+            return {"per_rank": [this_rank_state], 'source_identity': self.source_identity}
 
 
         # Distributed branch
@@ -228,7 +110,7 @@ class MatformerDataModule:
             states = [None for _ in range(world_size)]
             # rank 0 receives from all ranks (including itself)
             dist.gather_object(this_rank_state, object_gather_list=states, dst=0)
-            return {"per_rank": states}
+            return {"per_rank": states, 'source_identity': self.source_identity}
         else:
             # non-zero ranks send to rank 0
             dist.gather_object(this_rank_state, dst=0)
@@ -236,6 +118,8 @@ class MatformerDataModule:
 
 
     def load_state_dict(self, state_dict):
+        if state_dict.get('source_identity', self.source_identity) != self.source_identity:
+            raise ValueError('Dataset files changed since the checkpoint; use a new data stage')
         per_rank = state_dict.get("per_rank", None)
         if per_rank is None:
             return  # checkpoint did not contain data
@@ -249,25 +133,6 @@ class MatformerDataModule:
             rank = 0
             world_size = 1
 
-        saved_world_size = state_dict["per_rank"][0].get("saved_world_size")
-        STRICT_WORLD_SIZE_CHECK = False #If True, It will not work if GPU count changes
-        if is_dist and saved_world_size != world_size:
-            if STRICT_WORLD_SIZE_CHECK:
-                raise RuntimeError(
-                    f"Cannot restore dataset state: world size changed "
-                    f"(saved={saved_world_size}, current={world_size})."
-                )
-            else:
-                print("WARNING: world size changed")
-                print(f"saved={saved_world_size}, current={world_size}")
-                mapped_rank = rank #Rivedere la logica se si vuole supportare cambio numero GPU
-        else:
-            mapped_rank = rank
-
-        state_dict_rank = per_rank[mapped_rank]
-        self.mdat.restore_state_dict(state_dict_rank)
-        print("Restoring state dict")
-        print(self.mdat.document_index)
-        print(self.mdat.current_chunk_step)
-        if is_dist:
-            dist.barrier()
+        if len(per_rank) != world_size:
+            raise ValueError(f'Exact resume requires the same world size: saved={len(per_rank)}, current={world_size}')
+        self.mdat.restore_state_dict(per_rank[rank])

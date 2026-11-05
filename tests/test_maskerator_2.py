@@ -160,7 +160,8 @@ def test_multiple_strategies():
 def test_external_schedule():
     """Test external substitution rate scheduling"""
     torch.manual_seed(42)
-    input_tensor = torch.randint(1, 100, (2, 10))
+    # Twenty draws can legitimately contain zero masked tokens at p=0.1.
+    input_tensor = torch.randint(1, 100, (100, 100))
     
     maskerator = Maskerator(
         mask_token=1,
@@ -177,7 +178,7 @@ def test_external_schedule():
         
         # Check approximate mask rate
         mask_rate = mask.float().mean().item()
-        assert abs(mask_rate - rate) < 0.1
+        assert abs(mask_rate - rate) < 0.02
 
 def test_unpadded_tensor():
     """Test with UnpaddedTensor"""
@@ -188,7 +189,9 @@ def test_unpadded_tensor():
     
     tensor = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     cu_seqlens = torch.tensor([0, 3, 7, 10])
-    unpadded = UnpaddedTensor(tensor=tensor, cu_seqlens=cu_seqlens)
+    unpadded = UnpaddedTensor(tensor=tensor, cu_seqlens=cu_seqlens,
+        indices=torch.tensor([0, 1, 2, 4, 5, 6, 7, 8, 9, 10]),
+        max_seq_len=4, original_seq_len=4, batch_size=3)
     
     maskerator = Maskerator(
         mask_token=999,

@@ -255,6 +255,9 @@ class SelectionTests(unittest.TestCase):
             connection.execute("DELETE FROM pretok_strategy_submdat WHERE submdat_id=?", (domain_id,))
         dataset = self.load(strategy='tiny', selection={'domains': ['wiki'], 'max_tokens': 10})
         self.assertEqual(dataset.total_tokens, 10)
+        dataset.select({'max_tokens': 10, 'composition': {'wiki': '100%', 'web': '0%'}}, strategy='tiny')
+        self.assertEqual(dataset.total_tokens, 10)
+        self.assertEqual(dataset.selection_summary['domains']['web']['tokens'], 0)
         with self.assertRaisesRegex(SubMdatMissesStrategy, 'web'):
             dataset.select({'domains': ['web']}, strategy='tiny')
 

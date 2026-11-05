@@ -89,6 +89,7 @@ class TransformerBlock(MatformerModule):
             cache=self.cache,
             attn_impl=layer_config['attn_impl'],
             positional_encoding=layer_config['positional_encoding'],
+            rope_theta=config.rope_theta,
             is_causal=config.is_causal,
             is_hybrid=getattr(config, 'training_objective', None) == 'hybrid',
             sliding_window=layer_config['sliding_window_size'],
@@ -193,7 +194,8 @@ class NakedTransformer(MatformerModule):
         ])
     
     def forward(self, x, document_mask=None, **kwargs):
-        for layer in self.layers:
-            x = layer(x, **kwargs)
+        for _ in range(self.config.num_loops):
+            for layer in self.layers:
+                x = layer(x, **kwargs)
         return self.norm(x)
 

@@ -1,0 +1,69 @@
+{
+  "model_class": "Autoregressive_Model",
+  "model_config": {
+    "name": "BabyLM",
+    "hidden_size": 768,
+    "ffn_factor": 3.0,
+    "num_hidden_layers": 12,
+    "num_attention_heads": 12,
+    "vocab_size": 32768,
+    "bos_token_id": 5,
+    "eos_token_id": 6,
+    "pad_token_id": 0,
+    "tie_word_embeddings": false,
+    "rms_norm_eps": 1e-06,
+    "attention_type": [],
+    "max_position_embeddings": 512,
+    "block_size_for_attention": 128,
+    "rope_theta": 10000.0,
+    "compile_flexattn": false,
+    "bias": false,
+    "training_objective": "autoregressive",
+    "is_causal": true,
+    "default_layer": {
+      "attn_impl": "sdpa",
+      "sliding_window_size": null,
+      "positional_encoding": "alibi",
+      "normalization": "rmsnorm",
+      "normalization_position": "post",
+      "ffn_activation": "swiglu",
+      "hooks": {}
+    },
+    "custom_layers": {},
+    "mask_token_id": 4
+  },
+  "training": {
+    "optimizer": "muon",
+    "lr_scheduling": true,
+    "lr": 0.0008,
+    "final_lr": 8e-05,
+    "hold_steps": 0.013,
+    "weight_decay": 0.01,
+    "scheduler": "custom",
+    "gradient_clip_val": 1.0,
+    "warmup_steps": 0.029,
+    "max_epochs": 1,
+    "accumulate_grad_batches": 5,
+    "seed": 27,
+    "save_every_n_steps": 50,
+    "checkpoint_name": "babylm_piccolo_gettone",
+    "validate_every_n_steps": 50
+  },
+  "tokenizer": {
+    "type": "huggingface",
+    "pretrained_name": "datasets/babybabellm_ita_gettone/tokenizer",
+    "varlen_strategy": "padding"
+  },
+  "data": {
+    "data_root": "datasets/babybabellm_ita_gettone/mdat_v2/train",
+    "batch_size": 20,
+    "num_workers": 0,
+    "mdat_strategy": "gettone_512",
+    "mdat_view": "default",
+    "validation_data_root": "datasets/babybabellm_ita_gettone/mdat_v2/validation",
+    "prefetch_buffer": 0
+  },
+  "save_dir": "./checkpoints_babylm_piccolo_gettone",
+  "wandb_project": "UniTO-LLM",
+  "wandb_run_name": "BabyLM-piccolo-Gettone-1epoch"
+}

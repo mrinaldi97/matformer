@@ -1,5 +1,13 @@
 # Matformer
 
+For the current autoregressive pretraining runner, start with
+[the HPC pretraining guide](docs/pretraining.md),
+[the standard example](configs/pretraining/italian.json), and
+[the looped example](configs/pretraining/italian_looped.json).
+[WORK_DIARY.md](WORK_DIARY.md) records the audit, fixes, and validation.
+The older architectural overview below also describes experimental components;
+the pretraining guide defines the tested training/resume path.
+
 > **WARNING:** Matformer hasn't been released yet. It works, but it's still Work In Progress.
 
 Matformer is a library designed to train, finetune and execute state-of-the-art transformer models.
