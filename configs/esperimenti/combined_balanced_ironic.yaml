@@ -1,0 +1,39 @@
+# Sentence-level classification on ITA_Combinato/combined_balanced.csv: binary "ironic".
+# Data section only: merge it under your own model/tokenizer/training sections (see poli-ita.yaml),
+# and point training.ref_data at the entry you want ("train" here).
+#
+# "ironic" is complete (no empty labels) and already numeric, so label2id is an identity map:
+# no full scan of the file is needed to know that there are 2 classes.
+data:
+  - name: train
+    type: "lazy"
+    file_format: "csv"
+    precompute_len: true
+    text_column: "text"
+    label_column: "ironic"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 32
+    num_workers: 1
+    max_seq_len: 1024
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Unito/Tesi/Datasets/ITA_Combinato/combined_balanced.csv"
+    label2id:
+      0: 0
+      1: 1
+  - name: test
+    type: "lazy"
+    file_format: "csv"
+    precompute_len: true
+    text_column: "text"
+    label_column: "ironic"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 32
+    num_workers: 1
+    max_seq_len: 1024
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Unito/Tesi/Datasets/ITA_Combinato/combined_balanced.csv"
+    label2id:
+      0: 0
+      1: 1

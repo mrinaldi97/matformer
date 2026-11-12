@@ -1,0 +1,89 @@
+model:
+  type: "sequence_classification"
+  model_class: "sequence_classification"
+  base_model: ""
+  base_model_hf: false
+  freeze_base_model: true
+  num_classes: 2
+  pooling_type: "cls"
+  head_type: "linear"
+  classifier_dropout_p: 0.1
+  classifier_dropout_inplace: false
+  layers_to_remove: 0
+  pre_head: null
+
+training:
+  learning_signal_selector: "single"
+  learning_signals: ["sequence_classification"]
+  optimizer: "adamw"
+  lr: 2e-5
+  weight_decay: 0.01
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+  max_epochs: 3
+  checkpoint_name: "ironita_seqclf"
+  save_dir: "./checkpoints/ironita_seqclf"
+  logger: ["tqdm","wandb"]
+  project_name: "matformer-test"
+  run_name: "bert-frozen-cls-head"
+  seed: 27
+  varlen_strategy: "unpadding"
+  batch_size: 24
+  precision: "bf16-mixed"
+  
+tokenizer:
+    pretrained_name: "mrinaldi/Gettone"
+    tokenizer_type: "huggingface" #Type is still not-usable
+    bos_token_id: 5
+    eos_token_id: 6
+    pad_token_id: 0
+    mask_token_id: 4  
+data:
+  - name: train
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    text_column: "text"
+    label_column: "label"
+    tokenize: true
+    task: "sentence-level"
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/IRONITA/train.jsonl"
+    batch_size: 24
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    label2id:
+      normale: 0
+      ironica: 1
+    varlen_strategy: "unpadding"
+  - name: test
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    text_column: "text"
+    label_column: "label"
+    tokenize: true
+    task: "sentence-level"
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/IRONITA/test.jsonl"
+    batch_size: 24
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    label2id:
+      normale: 0
+      ironica: 1
+    varlen_strategy: "unpadding"
+
+validation:
+  ref_task: test
+  every_n_epochs: 1
+
+task:
+  - type: evaluation
+    name: test
+    learning_signal: sequence_classification
+    num_classes: 2
+    compute_confusion_matrix: true
+    topk: false
+
+

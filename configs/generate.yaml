@@ -1,0 +1,26 @@
+data:
+  dataloader:   lazy
+  name: mgsm
+  file_format:  hf
+  data_root:    mrinaldi/mgsm
+  split:        test
+  text_column:  question
+  tokenize:     true
+  add_bos:      true
+  head_samples: 100
+  batch_size:   32
+
+task:
+  task_class:     GenerationTask
+  name: mgsm_generation
+  max_new_tokens: 50
+  temperature:    0.7
+  top_p:          0.9
+  do_sample:      true
+  save_metadata:  false
+  ref_data: mgsm
+
+saver:
+  type: jsonl
+  filename: mgsm_results.jsonl
+  summary: mgsm_summary.json

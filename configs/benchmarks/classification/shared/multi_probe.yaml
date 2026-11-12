@@ -1,0 +1,11 @@
+model:
+  type: "multiprobe"
+  head_type: "linear"
+  classifier_dropout_p: 0.1
+  probe_targets:
+    - "residual_stream_output"          
+  probe_name_template: "layer{layer_idx}"
+
+training:
+  learning_signals: ["multiprobe_ls"]  
+

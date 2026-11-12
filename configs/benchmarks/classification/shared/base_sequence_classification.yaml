@@ -1,0 +1,46 @@
+model:                                                                                                                                        
+  type: "classification"
+  scope: "sequence"
+  base_model: null
+  base_model_hf: false
+  freeze_base_model: false
+  num_classes: 2
+  pre_head: null
+  pooling_type: "attention"
+  head_type: "linear"
+  classifier_dropout_p: 0.1
+  classifier_dropout_inplace: false
+
+
+training:
+  learning_signal_selector: "single"
+  learning_signals: ["sequence_classification"]
+  optimizer: "adamw"
+  lr_scheduling: false
+  lr: 5e-5
+  weight_decay: 0.01
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+  max_epochs: 3
+  logger: ["tqdm","wandb"]
+  project_name: "albertone_sequence_classification"
+  seed: 27
+  varlen_strategy: "unpadding"
+  batch_size: 128
+  precision: "bf16-mixed"
+  what_to_reset: "optimizer,lr_scheduler"
+tokenizer:
+  pretrained_name: "mrinaldi/Gettone"
+  tokenizer_type: "huggingface"
+  bos_token_id: 5
+  eos_token_id: 6
+  pad_token_id: 0
+  mask_token_id: 4
+
+validation:
+  every_n_epochs: 1
+
+saver:
+  type: jsonl
+  filename: "predictions.jsonl"
+  mode: "a"

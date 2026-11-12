@@ -1,0 +1,70 @@
+includes:
+  - "./shared/base_token_classification.yaml"
+  - "./shared/data_token_classification.yaml"
+
+model:
+  num_classes: 20
+
+training:
+  checkpoint_name: "pos"
+  save_dir: "./checkpoints/token_classification/pos"
+  run_name: "pos"
+
+data:
+  - name: train
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POS/train.jsonl"
+    label2id:
+      VERB: 0
+      NOUN: 1
+      DET: 2
+      PRON: 3
+      ADV: 4
+      ADP: 5
+      CCONJ: 6
+      ADJ: 7
+      SCONJ: 8
+      INTJ: 9
+      AUX: 10
+      PARA: 11
+      PROPN: 12
+      NEG: 13
+      ADP_A: 14
+      X: 15
+      _: 16
+      NUM: 17
+      VERB_PRON: 18
+      NOUN.LIN: 19
+  - name: test
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POS/test.jsonl"
+    label2id:
+      VERB: 0
+      NOUN: 1
+      DET: 2
+      PRON: 3
+      ADV: 4
+      ADP: 5
+      CCONJ: 6
+      ADJ: 7
+      SCONJ: 8
+      INTJ: 9
+      AUX: 10
+      PARA: 11
+      PROPN: 12
+      NEG: 13
+      ADP_A: 14
+      X: 15
+      _: 16
+      NUM: 17
+      VERB_PRON: 18
+      NOUN.LIN: 19
+
+validation:
+  ref_task: test
+
+task:
+  - type: evaluation
+    name: test
+    learning_signal: token_classification
+    num_classes: 20
+    compute_confusion_matrix: true
+    topk: false

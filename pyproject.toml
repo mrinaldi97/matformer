@@ -8,30 +8,56 @@ version = "0.1.0"
 description = "A modular transformer library"
 authors = [
     {name = "Matteo Rinaldi" },
-    {name = "Calogero Jerik Scozzaro"}
 ]
 readme = "README.md"
-requires-python = ">=3.6"
+requires-python = ">=3.9"
 license = { text = "MIT" }
 
+# Core dependencies discovered from your imports
 dependencies = [
     "torch>=2.6.0",
     "zstandard",
-    "pytorch-lightning>=2.5.0",
     "wandb",
     "einops>=0.8.1",
     "nltk",
     "orjson",
     "lmdb",
-    "transformers",
-    "tokenizers",
+    "matplotlib",
+    "numpy<2.4.0",
+    "omegaconf",
+    "rotary_embedding_torch",
+    "safetensors",
+    "sentencepiece",
+    "torchmetrics",
+    "tqdm",
+    "PyYAML",
+    "pytest",
 ]
 
 [project.optional-dependencies]
-nvidia = ["transfomer_engine",
-"liger_kernel","flash_attn"]
+duckdb = ["duckdb"]
+pandas = ["pandas"]
+xlstm = ["xlstm"]
+kernels = [
+    "flash_attn",
+    "liger_kernel",
+]
+huggingface = [
+    "transformers",
+    "tokenizers",
+    "datasets",
+    "huggingface_hub"
+]
+
 
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["matformer*"]
+[tool.uv.extra-build-dependencies]
+flash-attn = ["torch"]
+
+[dependency-groups]
+dev = [
+    "ipykernel>=6.31.0",
+]

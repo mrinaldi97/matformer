@@ -1,0 +1,123 @@
+
+=== File: deepseek_yaml_20260821_05cfe3.yaml ===
+  wandb_run_name: "postwita"
+include:
+  - "../shared/base_token_classification.yaml"
+  - "../shared/data_token_classification.yaml"
+
+model:
+
+=== File: deepseek_yaml_20260821_35aee8.yaml ===
+  wandb_run_name: "saoneg"
+include:
+  - "../shared/base_sequence_classification.yaml"
+  - "../shared/data_sentence_classification.yaml"
+
+model:
+
+=== File: deepseek_yaml_20260821_393573.yaml ===
+  wandb_run_name: "ironita"
+include:
+  - "../shared/base_sequence_classification.yaml"
+  - "../shared/data_sentence_classification.yaml"
+
+model:
+
+=== File: deepseek_yaml_20260821_67ba14.yaml ===
+  wandb_run_name: "pos"
+include:
+  - "../shared/base_token_classification.yaml"
+  - "../shared/data_token_classification.yaml"
+
+model:
+
+=== File: deepseek_yaml_20260821_6def39.yaml ===
+  wandb_run_name: "ner"
+include:
+  - "../shared/base_token_classification.yaml"
+  - "../shared/data_token_classification.yaml"
+
+model:
+
+=== File: deepseek_yaml_20260821_70eb86.yaml ===
+  wandb_run_name: "saopos"
+include:
+  - "../shared/base_sequence_classification.yaml"
+  - "../shared/data_sentence_classification.yaml"
+
+model:
+
+=== File: deepseek_yaml_20260821_804940.yaml ===
+  wandb_run_name: "itacola"
+include:
+  - "../shared/base_sequence_classification.yaml"
+  - "../shared/data_sentence_classification.yaml"
+
+model:
+
+=== File: deepseek_yaml_20260821_806a71.yaml ===
+data:
+  - name: train
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+
+=== File: deepseek_yaml_20260821_8ee9c9.yaml ===
+  wandb_run_name: "te"
+include:
+  - "../shared/base_sequence_classification.yaml"
+  - "../shared/data_pair_classification.yaml"
+
+model:
+
+=== File: deepseek_yaml_20260821_93e114.yaml ===
+  wandb_run_name: "sa"
+include:
+  - "../shared/base_sequence_classification.yaml"
+
+model:
+  num_labels: 2
+
+=== File: deepseek_yaml_20260821_9ec732.yaml ===
+  wandb_run_name: "hs"
+include:
+  - "../shared/base_sequence_classification.yaml"
+  - "../shared/data_sentence_classification.yaml"
+
+model:
+
+=== File: deepseek_yaml_20260821_bdb1dd.yaml ===
+model:
+  type: "sequence_classification"
+  model_class: "sequence_classification"
+  base_model: ""
+  base_model_hf: false
+
+=== File: deepseek_yaml_20260821_cad922.yaml ===
+model:
+  type: "token_classification"
+  model_class: "token_classification"
+  base_model: ""
+  base_model_hf: false
+
+=== File: deepseek_yaml_20260821_e407d7.yaml ===
+data:
+  - name: train
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+
+=== File: deepseek_yaml_20260821_f17538.yaml ===
+data:
+  - name: train
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+
+=== File: deepseek_yaml_20260821_fee5f6.yaml ===
+  wandb_run_name: "wic"
+include:
+  - "../shared/base_sequence_classification.yaml"
+  - "../shared/data_pair_classification.yaml"
+
+model:

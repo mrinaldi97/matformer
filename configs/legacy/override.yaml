@@ -1,0 +1,9 @@
+model_config:
+    default_layer:
+        hooks: {"residual_stream":"save_activations"}
+
+    hooks: {"pre_embed":"save activations", "logits":["save_activations","store_activations_duckdb"]}
+
+    custom_layers:
+          12: 
+               hooks: {"post_mlp":"ciao"}

@@ -1,0 +1,83 @@
+model:
+  type: default          # registry variant, optional — "default" is registered as default anyway
+  name: "Example BERT Model"
+  hidden_size: 768
+  num_hidden_layers: 12
+  num_attention_heads: 12
+  tie_word_embeddings: false
+  rms_norm_eps: 1e-6
+  max_position_embeddings: 1024
+  bias: false
+  ffn_factor: 4.0
+  vocab_size: 32768
+
+  default_layer:
+    attn_impl: "flash"
+    sliding_window_size: null
+    positional_encoding: ["alibi", "rope"]
+    normalization: "rmsnorm"
+    normalization_position: "pre"
+    ffn_activation: "swiglu"
+    hooks: {}
+
+  custom_layers:
+    odd:
+      attn_impl: "sdpa"
+      normalization_position: "post"
+    "range_0_2":
+      sliding_window_size: 128
+
+  tokenizer_config:
+    type: "huggingface"
+    pretrained_name: "mrinaldi/Gettone"
+    bos_token_id: 5
+    eos_token_id: 6
+    pad_token_id: 0
+    mask_token_id: 0
+
+  masking_config:
+    masked_substitution_rate: [0.1, 0.5]
+    cloze_probability: 1.0
+    random_probability: 0.0
+    same_probability: 0.0
+
+data:
+  type: "mdat"
+  data_root: "/data/pretrain"
+  batch_size: 64
+  num_workers: 4
+  max_seq_len: 1024
+  pad_token_id: 0
+  mdat_strategy: "sequential"
+  iteration_modality: "chunked_tokens"
+
+training:
+  learning_signal_selector: "single"
+  learning_signals: ["masked"]
+  optimizer: "adamw"
+  lr: 5e-4
+  final_lr: 2e-5
+  weight_decay: 0.01
+  scheduler: "cosine"
+  warmup_steps_fraction: 0.05
+  save_every_n_steps: 5000
+  max_epochs: 3
+  checkpoint_name: "bert_test"
+  save_dir: "./checkpoints/bert_test"
+  logger: "wandb"
+  project_name: "matformer_tests"
+  run_name: "bert_test_run"
+  seed: 27
+  precision: "bf16-mixed"
+
+saver:
+  type: JSONLSaver
+  filename: "predictions.jsonl"
+  mode: "a"
+
+task:
+  type: GenerationTask
+  max_new_tokens: 100
+  temperature: 0.8
+  top_p: 0.9
+  do_sample: true

@@ -1,0 +1,107 @@
+model:                                                                                                                                        
+  type: "multiprobe"
+  scope: "sequence"
+  base_model: /mnt/llmdata/data/FINALE_32768.ckpt
+  base_model_hf: false
+  freeze_base_model: true
+  pre_head: null
+  pooling_type: "mean"
+  head_type: "linear"
+  classifier_dropout_p: 0.0
+  classifier_dropout_inplace: false
+  num_classes: 2
+  do_rms_norm: true
+  rms_elementwise_affine: false
+  max_position_embeddings: 128
+  probe_targets: ["*.layers.*.mlp.hidden_act"]
+  in_features: 3072 #MLP DIM
+  l1_penalty: 1.0e-4
+training:
+  learning_signal_selector: "single"
+  learning_signals: ["multiprobe_ls"]
+  optimizer: "adamw"
+  lr_scheduling: false
+  lr: 5e-4
+  weight_decay: 0.01
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+  save_every_n_epochs: 1   
+  save_what: 'plugins'   
+  max_epochs: 2
+  logger: ["tqdm","wandb"]
+  project_name: "poli-ita_KSPARSE"
+  seed: 27
+  varlen_strategy: "padding"
+  batch_size: 32
+  precision: "bf16-mixed"
+  what_to_reset: "optimizer,lr_scheduler"
+  checkpoint_name: "poliita_KSPARSE"
+  save_dir: "./POLI_ITA_KSPARSE"
+  run_name: "poliita_KSPARSE" 
+tokenizer:
+  pretrained_name: "mrinaldi/Gettone"
+  tokenizer_type: "huggingface"
+  bos_token_id: 5
+  eos_token_id: 6
+  pad_token_id: 0
+  mask_token_id: 4
+
+
+saver:
+  name: save
+  type: jsonl
+  filename: "esperimenti_poliita_KSPARSE.jsonl"
+  summary_file: "esperimenti_poliita_summary_KSPARSE.jsonl"
+  mode: "a"
+  summary_mode: "a"
+
+data:
+  - name: train
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    text_column: "text"
+    label_column: "label"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 32
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POLI-ITA/train.jsonl"
+    label2id:
+      0: 0
+      1: 1    
+  - name: test
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    text_column: "text"
+    label_column: "label"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 24
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POLI-ITA/test.jsonl"
+    label2id:
+      0: 0
+      1: 1
+
+validation:
+  ref_task: test
+  every_n_epochs: 1
+
+
+task:
+  - type: evaluation
+    name: test
+    learning_signal: sequence_classification
+    num_classes: 2
+    compute_confusion_matrix: true
+    topk: false
+    ref_saver: save
+

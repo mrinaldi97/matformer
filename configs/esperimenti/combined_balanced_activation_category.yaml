@@ -1,0 +1,77 @@
+data:
+  - name: train
+    type: "lazy"
+    file_format: "csv"
+    precompute_len: true
+    text_column: "text"
+    label_column: "activation_type"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 32
+    num_workers: 1
+    max_seq_len: 1024
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Unito/Tesi/Datasets/ITA_Combinato/combined_balanced.csv"
+    label2id:
+      EXPLICIT: 0
+      IMPLICIT: 1
+  - name: test
+    type: "lazy"
+    file_format: "csv"
+    precompute_len: true
+    text_column: "text"
+    label_column: "activation_type"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 32
+    num_workers: 1
+    max_seq_len: 1024
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Unito/Tesi/Datasets/ITA_Combinato/combined_balanced.csv"
+    label2id:
+      EXPLICIT: 0
+      IMPLICIT: 1
+  - name: train_category
+    type: "lazy"
+    file_format: "csv"
+    precompute_len: true
+    text_column: "text"
+    label_column: "category"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 32
+    num_workers: 1
+    max_seq_len: 1024
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Unito/Tesi/Datasets/ITA_Combinato/combined_balanced.csv"
+    label2id:
+      ANALOGY: 0
+      EUPHEMISM: 1
+      "EX:CONTEXT SHIFT": 2
+      "EX:OXYMORON PARADOX": 3
+      HYPERBOLE: 4
+      "IM:FALSE ASSERTION": 5
+      OTHER: 6
+      "RHETORICAL QUESTION": 7
+  - name: test_category
+    type: "lazy"
+    file_format: "csv"
+    precompute_len: true
+    text_column: "text"
+    label_column: "category"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 32
+    num_workers: 1
+    max_seq_len: 1024
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Unito/Tesi/Datasets/ITA_Combinato/combined_balanced.csv"
+    label2id:
+      ANALOGY: 0
+      EUPHEMISM: 1
+      "EX:CONTEXT SHIFT": 2
+      "EX:OXYMORON PARADOX": 3
+      HYPERBOLE: 4
+      "IM:FALSE ASSERTION": 5
+      OTHER: 6
+      "RHETORICAL QUESTION": 7

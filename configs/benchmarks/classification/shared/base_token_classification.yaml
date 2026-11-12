@@ -1,0 +1,43 @@
+model:
+  type: "token_classification"
+  model_class: "token_classification"
+  base_model: ""
+  base_model_hf: false
+  freeze_base_model: false
+  head_type: "linear"
+  classifier_dropout_p: 0.1
+  classifier_dropout_inplace: false
+  layers_to_remove: 0
+  pre_head: null
+
+training:
+  learning_signal_selector: "single"
+  learning_signals: ["token_classification"]
+  optimizer: "adamw"
+  lr: 5e-5
+  weight_decay: 0.01
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+  max_epochs: 3
+  logger: ["tqdm","wandb"]
+  project_name: "albertone_token_classification"
+  seed: 27
+  varlen_strategy: "unpadding"
+  batch_size: 96
+  precision: "bf16-mixed"
+
+tokenizer:
+  pretrained_name: "mrinaldi/Gettone"
+  tokenizer_type: "huggingface"
+  bos_token_id: 5
+  eos_token_id: 6
+  pad_token_id: 0
+  mask_token_id: 4
+
+validation:
+  every_n_epochs: 1
+
+saver:
+  type: jsonl
+  filename: "predictions.jsonl"
+  mode: "a"

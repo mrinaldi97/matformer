@@ -1,0 +1,15 @@
+generation_task:
+    max_tokens: 0
+    keep_logits: false
+
+
+
+add_hooks:
+    - "./hookfile.yaml"
+
+process_results:
+    judge:
+      - config: ./judge.yaml
+output:
+    format: "jsonl"
+    keep_metadata: true

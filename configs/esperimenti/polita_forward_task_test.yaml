@@ -1,0 +1,45 @@
+data:
+  - name: test
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    text_column: "text"
+    label_column: "label"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 128
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POLI-ITA/test.jsonl"
+    label2id:
+      0: 0
+      1: 1   
+
+task:
+  - type: forward
+    name: avanti
+
+plugin:
+    - type: activation_cache
+      name: cache
+      targets:
+        - "*layer_output"
+        - "*model_input"
+        - "*before_unembed"      
+    - type: activation_store_lmdb
+      name: store
+      filename: polita_activations_albertone.dat
+      databank: test
+      targets: "*before_unembed"
+
+
+tokenizer:
+    pretrained_name: "mrinaldi/Gettone"
+    tokenizer_type: "huggingface" #Type is still not-usable
+    bos_token_id: 5
+    eos_token_id: 6
+    pad_token_id: 0
+    mask_token_id: 4
+      

@@ -1,0 +1,36 @@
+include:
+    - "./legacy/train.yaml"
+    - "legacy/data.yaml"
+model_config:
+  name: "Example BERT Model"
+  hidden_size: 768
+  num_hidden_layers: 12
+  num_attention_heads: 12
+  tie_word_embeddings: false
+  rms_norm_eps: 1e-6
+  max_position_embeddings: 1024
+  bias: false
+  ffn_factor: 4.0
+  vocab_size: 32768
+  default_layer:
+         attn_impl: "flash"
+         sliding_window_size: null
+         positional_encoding: ['alibi','rope']
+         normalization: "rmsnorm"
+         normalization_position: "pre"
+         ffn_activation: "swiglu"
+         hooks: {}
+  
+  tokenizer_config:
+    type: "huggingface"
+    pretrained_name: "mrinaldi/Gettone"
+    bos_token_id: 5
+    eos_token_id: 6
+    pad_token_id: 0
+    mask_token_id: 0
+  masking_config:
+     masked_substitution_rate: [0.1,0.5]
+     cloze_probability: 1.0
+     random_probability: 0.0
+     same_probability: 0.0
+

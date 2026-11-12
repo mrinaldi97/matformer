@@ -1,0 +1,33 @@
+data:
+  - name: "train"
+    type: "mdat"
+    data_root: "/mnt/llmdata/data/Albertina_4B_OK"
+    batch_size: 48
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    mdat_strategy: "Gettone1024_"
+    mdat_view: "default"
+    iteration_modality: "chunked_for_recurrence"
+    varlen_strategy: "unpadding"
+  - name: "test"
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    text_column: "text"
+    tokenize: true
+    data_root: "/home/matteo/piccolotest.jsonl"
+    batch_size: 96
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    varlen_strategy: "unpadding"
+    head_samples: 2000
+    
+tokenizer:
+    pretrained_name: "mrinaldi/Gettone"
+    tokenizer_type: "huggingface" #Type is still not-usable
+    bos_token_id: 5
+    eos_token_id: 6
+    pad_token_id: 0
+    mask_token_id: 4  

@@ -1,0 +1,62 @@
+includes:
+  - "./shared/base_token_classification.yaml"
+  - "./shared/data_token_classification.yaml"
+
+model:
+  num_classes: 16
+
+training:
+  checkpoint_name: "postwita"
+  save_dir: "./checkpoints/token_classification/postwita"
+  run_name: "postwita"
+
+data:
+  - name: train
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POSTWITA/train.jsonl"
+    label2id:
+      NOUN: 0
+      PUNCT: 1
+      SYM: 2
+      VERB: 3
+      PROPN: 4
+      DET: 5
+      ADP: 6
+      ADV: 7
+      PRON: 8
+      ADJ: 9
+      AUX: 10
+      CCONJ: 11
+      SCONJ: 12
+      NUM: 13
+      INTJ: 14
+      X: 15
+  - name: test
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POSTWITA/test.jsonl"
+    label2id:
+      NOUN: 0
+      PUNCT: 1
+      SYM: 2
+      VERB: 3
+      PROPN: 4
+      DET: 5
+      ADP: 6
+      ADV: 7
+      PRON: 8
+      ADJ: 9
+      AUX: 10
+      CCONJ: 11
+      SCONJ: 12
+      NUM: 13
+      INTJ: 14
+      X: 15
+
+validation:
+  ref_task: test
+
+task:
+  - type: evaluation
+    name: test
+    learning_signal: token_classification
+    num_classes: 16
+    compute_confusion_matrix: true
+    topk: false

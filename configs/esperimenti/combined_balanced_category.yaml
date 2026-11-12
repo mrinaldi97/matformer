@@ -1,0 +1,116 @@
+model:                                                                                                                                        
+  type: "multiprobe"
+  scope: "sequence"
+  base_model: null
+  base_model_hf: false
+  freeze_base_model: true
+  num_classes: 8
+  pre_head: null
+  pooling_type: "attention"
+  head_type: "linear"
+  classifier_dropout_p: 0.1
+  classifier_dropout_inplace: false
+
+  do_rms_norm: true
+  rms_elementwise_affine: false
+
+training:
+  learning_signal_selector: "single"
+  learning_signals: ["multiprobe_ls"]
+  optimizer: "adamw"
+  lr_scheduling: false
+  lr: 2e-4
+  weight_decay: 0.01
+  gradient_clip_val: 1.0
+  accumulate_grad_batches: 1
+  save_every_n_epochs: 1   
+  save_what: 'both'   
+  max_epochs: 5
+  logger: ["tqdm","wandb"]
+  project_name: "poli-ita"
+  seed: 27
+  varlen_strategy: "unpadding"
+  batch_size: 32
+  precision: "bf16-mixed"
+  what_to_reset: "optimizer,lr_scheduler"
+  checkpoint_name: "poliita_category"
+  save_dir: "./POLI_ITA_category"
+  run_name: "poliita_category" 
+
+data:
+  - name: train
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    text_column: "text"
+    label_column: "category"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 32
+    num_workers: 1
+    max_seq_len: 1024
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POLI-ITA/train.jsonl"
+    label2id:
+      ANALOGY: 0
+      EUPHEMISM: 1
+      "EX:CONTEXT SHIFT": 2
+      "EX:OXYMORON PARADOX": 3
+      HYPERBOLE: 4
+      "IM:FALSE ASSERTION": 5
+      OTHER: 6
+      "RHETORICAL QUESTION": 7
+  - name: test
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    text_column: "text"
+    label_column: "category"
+    tokenize: true
+    task: "sentence-level"
+    batch_size: 32
+    num_workers: 1
+    max_seq_len: 1024
+    varlen_strategy: "unpadding"
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POLI-ITA/test.jsonl"
+    label2id:
+      ANALOGY: 0
+      EUPHEMISM: 1
+      "EX:CONTEXT SHIFT": 2
+      "EX:OXYMORON PARADOX": 3
+      HYPERBOLE: 4
+      "IM:FALSE ASSERTION": 5
+      OTHER: 6
+      "RHETORICAL QUESTION": 7
+
+validation:
+  ref_task: test
+  every_n_epochs: 1
+
+
+task:
+  - type: evaluation
+    name: test
+    learning_signal: sequence_classification
+    num_classes: 8
+    compute_confusion_matrix: true
+    topk: false
+    ref_saver: save
+
+tokenizer:
+  pretrained_name: "mrinaldi/Gettone"
+  tokenizer_type: "huggingface"
+  bos_token_id: 5
+  eos_token_id: 6
+  pad_token_id: 0
+  mask_token_id: 4
+
+
+saver:
+  name: save
+  type: jsonl
+  filename: "esperimenti_poliita_category.jsonl"
+  summary_file: "esperimenti_poliita__category_summary.jsonl"
+  mode: "a"
+  summary_mode: "a"
+

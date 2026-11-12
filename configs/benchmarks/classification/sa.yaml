@@ -1,0 +1,57 @@
+includes:
+  - "./shared/base_sequence_classification.yaml"
+
+model:
+  num_classes: 2
+
+training:
+  checkpoint_name: "sa"
+  save_dir: "./checkpoints/sequence_classification/sa"
+  run_name: "sa"
+
+data:
+  - name: train
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    text_column: "text"
+    label_column: "label_pos"
+    tokenize: true
+    task: "sentence-level"
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/SA/train.jsonl"
+    batch_size: 24
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    label2id:
+      0: 0
+      1: 1
+    varlen_strategy: "unpadding"
+  - name: test
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    text_column: "text"
+    label_column: "label_pos"
+    tokenize: true
+    task: "sentence-level"
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/SA/test.jsonl"
+    batch_size: 24
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    label2id:
+      0: 0
+      1: 1
+    varlen_strategy: "unpadding"
+
+validation:
+  ref_task: test
+
+task:
+  - type: evaluation
+    name: test
+    learning_signal: sequence_classification
+    num_classes: 2
+    compute_confusion_matrix: true
+    topk: false

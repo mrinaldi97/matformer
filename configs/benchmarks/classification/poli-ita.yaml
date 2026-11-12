@@ -1,0 +1,34 @@
+includes:
+  - "./shared/base_sequence_classification.yaml"
+  - "./shared/data_sentence_classification.yaml"
+
+model:
+  num_classes: 2
+
+training:
+  checkpoint_name: "ironita"
+  save_dir: "./checkpoints/sequence_classification/ironita"
+  run_name: "ironita"
+
+data:
+  - name: train
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POLI-ITA/train.jsonl"
+    label2id:
+      0: 0
+      1: 1
+  - name: test
+    data_root: "/home/matteo/Albertone/benchmark-bert/data/POLI-ITA/test.jsonl"
+    label2id:
+      0: 0
+      1: 1
+
+validation:
+  ref_task: test
+
+task:
+  - type: evaluation
+    name: test
+    learning_signal: sequence_classification
+    num_classes: 2
+    compute_confusion_matrix: true
+    topk: false

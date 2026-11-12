@@ -4,7 +4,7 @@ import pytest
 import torch
 import numpy as np
 from matformer.utils.masked_models import Maskerator
-from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor,NormalTensor
+from matformer.dataclasses import PaddedTensor,UnpaddedTensor,NormalTensor
 def test_reproducibility():
     """Test that same seed produces identical results"""
     input_tensor = torch.randint(0, 100, (2, 10))
@@ -184,7 +184,7 @@ def test_unpadded_tensor():
     torch.manual_seed(42)
     
     # Create an UnpaddedTensor
-    from matformer.tensors_dataclasses import UnpaddedTensor
+    from matformer.dataclasses import UnpaddedTensor
     
     tensor = torch.tensor([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
     cu_seqlens = torch.tensor([0, 3, 7, 10])

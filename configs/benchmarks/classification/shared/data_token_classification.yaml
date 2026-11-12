@@ -1,0 +1,27 @@
+data:
+  - name: train
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    tokens_column: "tokens"
+    tags_column: "tags"
+    tokenize: false
+    task: "token-level"
+    batch_size: 24
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    varlen_strategy: "unpadding"
+  - name: test
+    type: "lazy"
+    file_format: "jsonl"
+    precompute_len: true
+    tokens_column: "tokens"
+    tags_column: "tags"
+    tokenize: false
+    task: "token-level"
+    batch_size: 24
+    num_workers: 1
+    max_seq_len: 1024
+    pad_token_id: 0
+    varlen_strategy: "unpadding"

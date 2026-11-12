@@ -1,4 +1,8 @@
 .gitignore
+.aid
+.crush
+.ipynb_checkpoints
+.pytest_cache
 checkpoints*
 wandb*
 wandb/
@@ -10,8 +14,9 @@ char_autoencoder/
 char_autoencoder/checkpoints/
 char_autoencoder/data/
 __pycache__*
-utils/
 .venv/
 test_data/fake/
 temp_grid_configs
 dataset
+experiments
+tests

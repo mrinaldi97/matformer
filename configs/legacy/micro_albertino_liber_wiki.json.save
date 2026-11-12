@@ -31,7 +31,7 @@
       "lr": 5e-5,
       "weight_decay": 0.01,
       "scheduler": "linear",
-      "warmup_steps": 7000,    
+      "warmup_steps_fraction": 7000,    
       "max_epochs": 1,
       "accumulate_grad_batches": 1,
       "seed": 27,

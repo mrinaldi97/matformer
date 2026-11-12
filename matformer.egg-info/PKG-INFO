@@ -1,0 +1,39 @@
+Metadata-Version: 2.4
+Name: matformer
+Version: 0.1.0
+Summary: A modular transformer library
+Author: Matteo Rinaldi
+License: MIT
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: torch>=2.6.0
+Requires-Dist: zstandard
+Requires-Dist: wandb
+Requires-Dist: einops>=0.8.1
+Requires-Dist: nltk
+Requires-Dist: orjson
+Requires-Dist: lmdb
+Requires-Dist: matplotlib
+Requires-Dist: numpy<2.4.0
+Requires-Dist: omegaconf
+Requires-Dist: rotary_embedding_torch
+Requires-Dist: safetensors
+Requires-Dist: sentencepiece
+Requires-Dist: torchmetrics
+Requires-Dist: tqdm
+Requires-Dist: PyYAML
+Requires-Dist: pytest
+Provides-Extra: duckdb
+Requires-Dist: duckdb; extra == "duckdb"
+Provides-Extra: pandas
+Requires-Dist: pandas; extra == "pandas"
+Provides-Extra: xlstm
+Requires-Dist: xlstm; extra == "xlstm"
+Provides-Extra: kernels
+Requires-Dist: flash_attn; extra == "kernels"
+Requires-Dist: liger_kernel; extra == "kernels"
+Provides-Extra: huggingface
+Requires-Dist: transformers; extra == "huggingface"
+Requires-Dist: tokenizers; extra == "huggingface"
+Requires-Dist: datasets; extra == "huggingface"
+Requires-Dist: huggingface_hub; extra == "huggingface"
