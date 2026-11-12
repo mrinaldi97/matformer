@@ -23,21 +23,16 @@ class CheckpointDirectoryManager:
     resume_file    = "matformer_resume.csv"
 
     def __init__(self, save_path: str, model_name: str, version: int = None):
-        self.save_path    = Path(save_path)
-        self.model_name   = model_name
+        self.save_path = Path(save_path)
+        self.model_name = model_name
         self.current_step = 0
-
-        self.save_path.mkdir(parents=True, exist_ok=True)
-
-        log = self.save_path / self.resume_file
-        if not log.exists():
-            log.write_text("model_name,version,step,filename,timestamp\n")
-
         self.current_version = version if version is not None else self._latest_version()
 
 
     def _scan(self) -> list[tuple[int, int, Path]]:
-        """Parse all on-disk checkpoints → [(version, step, path)]."""
+        """Parse all on-disk checkpoints -> [(version, step, path)]."""
+        if not self.save_path.is_dir():
+            return []
         out, prefix = [], self.model_name + self.version_string
         for p in self.save_path.glob(f"{prefix}*{self.extension}"):
             try:
@@ -66,20 +61,20 @@ class CheckpointDirectoryManager:
         self.current_version += 1
         self.current_step = 0
 
-    def write_resume(self, step: int, path: Path):
-        with open(self.save_path / self.resume_file, "a", newline="") as f:
-            csv.writer(f).writerow([
-                self.model_name, self.current_version, step,
-                path.name, datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            ])
-
     def return_save_path(self, step: int) -> Path:
-        """Call this instead of torch.save to get the right path and log it."""
         self.current_step = step
-        path = self._ckpt_path(step)
-        self.write_resume(step, path)
-        return path
-
+        self.save_path.mkdir(parents=True, exist_ok=True)
+        return self._ckpt_path(step)
+    def mark_saved(self, step: int, path: Path):
+        """Append to the resume log. Call on rank 0 only, after the save succeeded."""
+        log = self.save_path / self.resume_file
+        is_new = not log.exists()
+        with open(log, "a", newline="") as f:
+            writer = csv.writer(f)
+            if is_new:
+                writer.writerow(["model_name", "version", "step", "filename", "timestamp"])
+            writer.writerow([self.model_name, self.current_version, step,
+                            path.name, datetime.now().strftime("%Y-%m-%d %H:%M:%S")])
 
     def resume(self) -> tuple[Path | None, int]:
         """Last checkpoint of current version, or (None, 0) if none exists."""
@@ -103,3 +98,30 @@ class CheckpointDirectoryManager:
         self.advance_version()
         self.current_step = step
         return path, step
+    def plugins_dir(self, step: int) -> Path:
+        """Collision-free folder for one step's plugin checkpoints, next to the main ckpt."""
+        d = self.save_path / f"{self.model_name}{self.version_string}{self.current_version}{self.step_string}{step}_plugins"
+        d.mkdir(parents=True, exist_ok=True)
+        return d
+    def decide_checkpoint(self, checkpoint=None, start_from_scratch=False, start_from_step=None):
+        """
+        Decide what this run starts from. Returns (load_path, step, reason).
+  
+        - checkpoint: explicit Matformer .ckpt. Continues that run's state (optimizer, scheduler,
+        datamodule, step) in a new version; to fine-tune from it, set what_to_reset to "optimizer,lr_scheduler,datamodule,steps".
+        - start_from_scratch: new version, nothing loaded.
+        - start_from_step: closest checkpoint >= that step in the current version, then new version.
+        - otherwise: resume the latest checkpoint of the current version, or scratch if none.
+        """
+        if checkpoint:
+            if not Path(checkpoint).is_file():
+                raise FileNotFoundError(f"Explicit checkpoint not found: {checkpoint}")
+            self.advance_version()
+            return Path(checkpoint), 0, f"explicit checkpoint {checkpoint}"
+        if start_from_scratch:
+            path, step = self.start_from_scratch()
+            return path, step, "From scratch (new version)"
+        path, step = (self.restart_from_step(start_from_step) if start_from_step
+                    else self.resume())
+        reason = f"{path} at step {step}" if path else "From scratch (nothing to resume)"
+        return path, step, reason        

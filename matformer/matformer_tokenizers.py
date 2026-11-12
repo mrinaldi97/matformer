@@ -2,230 +2,194 @@
 File: matformer/tokenizers.py
 """
 import torch
-from typing import List, Union
-from matformer.model_config import ModelConfig
-from matformer.tensors_dataclasses import PaddedTensor, UnpaddedTensor
-from dataclasses import dataclass, replace
-from transformers import AutoTokenizer
-import sys
+from typing import List, Optional, Union
+from matformer.dataclasses.model_dataclasses import TokenizerConfig
+from matformer.matformer_registry import registry
 
+@registry.register("tokenizer", "huggingface", "default")
 class MatformerTokenizer:
     """
     This is an abstract tokenizer that will wrap other tokenizers (such as a ByteLevelTokenizer or an huggingface-compatible tokenizer)
-    to adapt it to the logic of the Matformer architecture. In particular, it will take care of the delicate batch encoding, working with
-    all the possibilities compatible with Matformers: PaddedTensors, UnpaddedTensors and Pytorch's Nested Tensors.
+    to adapt it to the logic of the Matformer architecture.
+    The best way to initialize is to provide a TokenizerConfig: the module will take care to initialize the tokenizer 
+    Alternatively, it is also possible to directly pass a tokenizer as argument. It will work with HF tokenizers, but to be used with other tokenizers, it is 
+    user's responsability to do the check.
+
+    Args:
+        config (TokenizerConfig): tokenizer configuration dataclass
+        tokenizer (optional): any tokenizer module (HF-compatible)
+        reload_hf_cfg (bool): instead of the special tokens id and vocab size provided in the config, reload them from the HF tokenizer
+        max_seq_len (optional, int): if set, truncates the sequence at max_seq_len
+        return_tensors (bool or str): if True/"pt", encode returns HF-style padded torch tensors; if "padded_tensor" or
+            "unpadded_tensor", encode returns a matformer PaddedTensor/UnpaddedTensor instead (padding_mask is derived
+            from the attention_mask, never from comparing token ids, so it stays correct even when pad_token_id == eos_token_id)
     """
-    def __init__(self, tokenizer=None,tokenizer_type=None, tokenizer_name=None, tokenizer_args=None, varlen_strategy=None, config=None):
+
+    TENSOR_TYPE = "pt"
+
+    def __init__(
+        self,
+        config: Optional[TokenizerConfig] = None,
+        tokenizer=None,
+        reload_hf_cfg: bool = False,
+        max_seq_len: Optional[int] = None,
+        return_tensors: Union[bool, str] = False,
+    ):
+        """Initialize tokenizer from a config or a raw tokenizer instance."""
         self.config = config
-        #tokenizer=tokenizer_type #[kept for compatibility, deprecated]
-        if tokenizer == 'bytes':
-            self.tokenizer = ByteLevelTokenizer(config)
-            self.tokenizer_modality='bytes'
-            self.vocab_size=255
-            self.return_type=int
-        elif tokenizer =='ae_bytes':
-            self.tokenizer=AutoencoderByteTokenizer(encoder_seq_len=config.encoder.max_position_embeddings, eos_token_id=config.encoder.eos_token_id)
-            self.tokenizer_modality='ae_bytes'
-            self.vocab:size=255
-            self.return_type=int
-        elif tokenizer=='huggingface':
-            #self.tokenizer=AutoTokenizer.from_pretrained(tokenizer_name,**tokenizer_args)
-            self.tokenizer=AutoTokenizer.from_pretrained(tokenizer_name.strip())            
-            self.vocab_size=self.tokenizer.vocab_size
-            self.mask_token_id=self.tokenizer.mask_token_id
-            self.bos_token_id=self.tokenizer.bos_token_id
-            self.eos_token_id=self.tokenizer.eos_token_id
-            self.return_type=int
-        else: #Directly pass an HuggingFace tokenizer [kept for compatibility, deprecated]
-            self.tokenizer = tokenizer
-            self.tokenizer_modality='huggingface'
-            self.vocab_size=tokenizer.vocab_size
-            self.return_type=int
+        self.max_seq_len = max_seq_len
 
-        self.seq_len = config.max_position_embeddings if config else None
-        self.pad_token_id = config.pad_token_id if config else None
-        self.varlen_strategy = varlen_strategy if varlen_strategy else None
-        
-        """
-        Note about self.config.varlen_strategy: this is very important!
-        It decides the type of tensor coming from the tokenizer:
-            => 'padding': PaddedTensor with tensor of seqlen padded with 0 and a padding mask
-            => 'unpadding': UnpaddedTensor
-            => 'nested': NormalTensor with a nested tensor inside
-
-        The parameter self.config['training_objective'] can be 'masked' for a bert-like model, or 'autoregressive' for a gpt-like model.
-        In case of masked, the tokenizer expects self.config.masked.substitution_rate (ex 0.2 to say that 20% of tokens are substituted),
-        self.config.masked.masking_percentage (how may tokens to substitute with [MASK], ex. 0.8 for 80%), then self.config.masked.random_percentage
-        and self.config.masked.same_percentage for the other possible masking strategies amounts.
-        """
-    def process_pretokenized_batch(self,token_sequences, config, varlen_strategy, pad_token_id):
-        """
-        Helper function to process pre-tokenized sequences from MatformerDataset
-        into the format expected by the model training code.
-        
-        Args:
-            token_sequences: List of token lists from MatformerDataset
-            config: ModelConfig
-            varlen_strategy: 'padding', 'unpadding', or 'nested'
-            pad_token_id: Padding token ID
-        
-        Returns:
-            Processed sequence in the format expected by PL_ModelWrapper
-        """
-        seq_len = config.max_position_embeddings
-        
-        if token_sequences is not None:
-            new_sequences = []
-            for seq in token_sequences:
-                if seq is None:
-                    print(f"WARNING: A sequence is None")
-                    new_sequences.append([])
-                    continue
-
-                if len(seq) > seq_len:
-                    print(f"WARNING: A sequence is longer than max length ({len(seq)} > {seq_len}) and it's truncated")
-                    seq = seq[:seq_len]
-
-                new_sequences.append(seq)
-            
-            token_sequences = new_sequences
+        if isinstance(return_tensors, bool):
+            self.return_tensors = self.TENSOR_TYPE if return_tensors else None
         else:
-            print("WARNING: GOT A None TOKEN SEQUENCES FROM THE DATALOADER!")
-            token_sequences = []
+            assert return_tensors in (self.TENSOR_TYPE, "padded_tensor", "unpadded_tensor"), (
+                f"return_tensors must be a bool, '{self.TENSOR_TYPE}', 'padded_tensor' or 'unpadded_tensor', "
+                f"got {return_tensors!r}"
+            )
+            self.return_tensors = return_tensors
 
-        
-        
-        if varlen_strategy == 'nested':
-            sequence = torch.nested.nested_tensor(token_sequences, layout=torch.jagged)
-            return sequence
-        
-        # Pad sequences
-        padded_ids = [ids + [pad_token_id] * (seq_len - len(ids)) for ids in token_sequences]
-        tensors = torch.tensor(padded_ids, dtype=torch.long)
-        padding_masks = (tensors == pad_token_id)
-        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks)
-        
-        if varlen_strategy == 'unpadding':
-            sequence = sequence.unpad()
-        
-        return sequence
+        if config:
+            from transformers import AutoTokenizer
+            if config.pretrained_name is None:
+                self.tokenizer=None
+            else:
+                self.tokenizer = AutoTokenizer.from_pretrained(config.pretrained_name,trust_remote_code=True)
+                if reload_hf_cfg:
+                    self._reload_huggingface_config()
+
+        else:
+            assert tokenizer is not None
+            self.tokenizer = tokenizer
+            self._reload_huggingface_config()
+
+    def _reload_huggingface_config(self) -> None:
+        """Reload special token ids and vocab size directly from the attached HF tokenizer."""
+        self.config = TokenizerConfig.from_dict(
+            {
+                "type": "huggingface",
+                "pretrained_name": self.tokenizer.name_or_path,
+                "bos_token_id": self.tokenizer.bos_token_id or 0,
+                "eos_token_id": self.tokenizer.eos_token_id or 0,
+                "pad_token_id": self.tokenizer.pad_token_id or 0,
+                "mask_token_id": self.tokenizer.mask_token_id or 0,
+                "vocab_size": self.tokenizer.vocab_size,
+            }
+        )
+    @classmethod
+    def from_huggingface(cls, repo) -> "MatformerTokenizer":
+        """Instantiate directly from a HuggingFace repo name or path."""
+        from transformers import AutoTokenizer
+        instance = cls(tokenizer=AutoTokenizer.from_pretrained(repo))
+        return instance
+
+    def _add_special_tokens(self, seq: List[int], add_bos: bool, add_eos: bool) -> List[int]:
+        """Prepend BOS and/or append EOS token id to a sequence list."""
+        if add_bos:
+            seq = [self.config.bos_token_id] + seq
+        if add_eos:
+            seq = seq + [self.config.eos_token_id]
+        return seq
+
     def encode(
         self,
-        text: str,
-        truncation: bool = False,
+        text: Union[str, List[str]],
+        max_length: Optional[int] = None,
         add_eos: bool = False,
         add_bos: bool = False,
-        add_special_tokens: bool = False,
-        return_offsets_mapping: bool = False
-    ):
-        # ByteLevelTokenizer already handles bos/eos tokens in __call__
-        if isinstance(self.tokenizer, ByteLevelTokenizer):
-            encoded = self.tokenizer(text)
-            input_ids = encoded["input_ids"]
+        return_offsets_mapping: bool = False,
+    ) -> dict:
+        """
+        Encode text into token ids.
+
+        Args:
+            text (str or List[str]): input text or batch of texts to encode
+            max_length (int, optional): maximum sequence length for this call; overrides self.max_seq_len
+            add_bos (bool): prepend BOS token id to each sequence
+            add_eos (bool): append EOS token id to each sequence
+            return_offsets_mapping (bool): whether to return character-to-token offset mapping
+
+        Returns:
+            dict with keys: input_ids, offset_mapping, was_truncated, attention_mask
+            (if self.return_tensors is "padded_tensor"/"unpadded_tensor", input_ids is a TensorDC and attention_mask is None,
+            since the mask is embedded in the returned PaddedTensor/UnpaddedTensor instead)
+        """
+        if isinstance(text, str):
+            text = [text]
+
+        max_len = max_length or self.max_seq_len
+
+        if self.return_tensors:
+            assert max_len is not None, "max_seq_len must be set at initialization when return_tensors=True"
+
+        # Any tensor-returning mode (incl. padded_tensor/unpadded_tensor) needs real "pt" tensors from HF first.
+        kwargs = dict(
+            return_offsets_mapping=return_offsets_mapping,
+            return_tensors=(self.TENSOR_TYPE if self.return_tensors else None),
+        )
+        if self.return_tensors:
+            reserved = int(add_bos) + int(add_eos)
+            effective_max_len = max_len - reserved if (add_bos or add_eos) else max_len
+            kwargs.update(padding="max_length", max_length=effective_max_len, truncation=True)
+
+        encoded = self.tokenizer(text, add_special_tokens=False, **kwargs)
+        input_ids = encoded["input_ids"]
+        attention_mask = encoded.get("attention_mask", None)
+
+        if self.return_tensors:
+            B = input_ids.shape[0]
+            if attention_mask is None:
+                # Some tokenizers don't return one; every position is real data.
+                attention_mask = torch.ones_like(input_ids)
+            if add_bos:
+                input_ids = torch.cat([torch.full((B, 1), self.config.bos_token_id, dtype=input_ids.dtype), input_ids], dim=1)
+                attention_mask = torch.cat([torch.ones(B, 1, dtype=attention_mask.dtype), attention_mask], dim=1)
+            if add_eos:
+                input_ids = torch.cat([input_ids, torch.full((B, 1), self.config.eos_token_id, dtype=input_ids.dtype)], dim=1)
+                attention_mask = torch.cat([attention_mask, torch.ones(B, 1, dtype=attention_mask.dtype)], dim=1)
+            if add_bos or add_eos:
+                input_ids = input_ids[:, :max_len]
+                attention_mask = attention_mask[:, :max_len]
+
+            if self.return_tensors in ("padded_tensor", "unpadded_tensor"):
+                from matformer.dataclasses.tensors_dataclasses import PaddedTensor
+
+                # padding_mask is derived positionally from attention_mask, never from comparing token ids
+                # against pad_token_id: this keeps a real appended EOS distinguishable from padding even
+                # when pad_token_id == eos_token_id (a common HF setup for tokenizers without a dedicated pad token).
+                padded = PaddedTensor(tensor=input_ids, padding_mask=~attention_mask.bool())
+                result = padded.unpad() if self.return_tensors == "unpadded_tensor" else padded
+
+                return {
+                    "input_ids": result,
+                    "offset_mapping": encoded.get("offset_mapping", None),
+                    "was_truncated": max_len is not None,
+                    "attention_mask": None,
+                }
         else:
-            # HuggingFace tokenizers
-            encoded = self.tokenizer(
-                text,
-                add_special_tokens=add_special_tokens,
-                return_offsets_mapping=return_offsets_mapping
-            )
-            input_ids = encoded["input_ids"]
+            for i, seq in enumerate(input_ids):
+                input_ids[i] = self._add_special_tokens(seq, add_bos, add_eos)
+                if max_len:
+                    input_ids[i] = input_ids[i][:max_len]
 
-            if add_bos and getattr(self.tokenizer, "bos_token_id", None) is not None:
-                input_ids = [self.tokenizer.bos_token_id] + input_ids
+        return {
+            "input_ids": input_ids,
+            "offset_mapping": encoded.get("offset_mapping", None),
+            "was_truncated": max_len is not None,
+            "attention_mask": attention_mask,
+        }
 
-            if add_eos and getattr(self.tokenizer, "eos_token_id", None) is not None:
-                input_ids = input_ids + [self.tokenizer.eos_token_id]
-
-        if truncation and hasattr(self, "seq_len"):
-            input_ids = input_ids[:self.seq_len]
-
-        if return_offsets_mapping:
-            return {
-                "input_ids": input_ids,
-                "offset_mapping": encoded.get("offset_mapping", None)
-            }
-
-        return input_ids
-
-
-    def decode(self, ids: List[int]) -> str:
+    def decode(self, ids: Union[List[int], List[List[int]], torch.Tensor]) -> Union[str, List[str]]:
+        """Decode token ids back to text. Supports single sequences and batches."""
+        if isinstance(ids, torch.Tensor):
+            ids = ids.tolist()
+        if isinstance(ids[0], list):
+            return self.tokenizer.batch_decode(ids)
         return self.tokenizer.decode(ids)
 
-    def batch_decode(self, batch_ids: List[List[int]]) -> List[str]:
-        return [self.decode(ids) for ids in batch_ids]
-        
-    def batch_encode(self, batch: List[Union[str, List[str]]]):
-        if len(batch) > 0 and isinstance(batch[0], list):
-            #### This branch is intended to be used only for the char autoencoder experiment ###
-            ae_tok = self.tokenizer
-            
-            # 1. Get tensors and masks from the nested batches
-            per_seq = [ae_tok.batch_encode(patches) for patches in batch]
-            per_seq_tensors, per_seq_masks = zip(*per_seq)
-            
-            B = len(per_seq_tensors)
-            S = self.config.encoder.max_position_embeddings
-            P_pad = self.seq_len
 
-            # 2. Initializing "empty patches" filled with only PAD ids
-            tensors = torch.full((B, P_pad, S), self.config.encoder.pad_token_id, dtype=torch.long)
-            padding_masks_external = torch.ones((B, P_pad, S), dtype=torch.bool)
-            padding_masks_internal=torch.ones((B, P_pad, S), dtype=torch.bool)
-            # 3. Fill the tensors and masks
-            for b in range(B):
-                t_batch = per_seq_tensors[b]
-                m_batch = per_seq_masks[b]
-                P = min(t_batch.shape[0], P_pad)
-                
-                if P > 0:
-                    tensors[b, :P, :] = t_batch[:P]  # Fill with token IDs from the inner batch
-                    padding_masks_external[b, :P, :] = False #These boolean value refers only to fully padded patches, to be used to perform unpadding on the big transformer
-                    padding_masks_internal[b, :P, :] = m_batch[:P]    # Fill with the actual padding mask from the tokenizer, to be used in the autoencoder
-                    return {'tensor':tensors,'padding_masks_external':padding_masks_external,'padding_masks_internal':padding_masks_internal,'varlen_strategy':self.varlen_strategy}
-        else:
-            ### This is the normal Matformer branch ###
-            #print("DEBUG: SOno nel ramo normale")
-            all_input_ids = []
-            for s in batch:
-                input_ids = self.encode(s, truncation=True)
-                all_input_ids.append(input_ids)
 
-            if self.varlen_strategy == 'nested':
-                sequence = torch.nested.nested_tensor(all_input_ids, layout=torch.jagged)
-                inputs = torch.nested.nested_tensor([ids[:-1] for ids in all_input_ids], layout=torch.jagged)
-                targets = torch.nested.nested_tensor([ids[1:] for ids in all_input_ids], layout=torch.jagged)
-                return inputs, targets, sequence
 
-            padded_ids = [ids + [self.pad_token_id] * (self.seq_len - len(ids)) for ids in all_input_ids]
-            tensors = torch.tensor(padded_ids, dtype=torch.long)
-            padding_masks = (tensors == self.pad_token_id)
-        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks)
-        if self.varlen_strategy == 'unpadding':
-            sequence = sequence.unpad()
-        return sequence
 
-    def _batch_encode(self, batch: List[str]):
-        
-        all_input_ids = []
-
-        for s in batch:
-            input_ids = self.encode(s, truncation=True)
-            all_input_ids.append(input_ids)
-
-        if self.varlen_strategy == 'nested':
-            sequence = torch.nested.nested_tensor(all_input_ids, layout=torch.jagged)
-            inputs = torch.nested.nested_tensor([ids[:-1] for ids in all_input_ids], layout=torch.jagged)
-            targets = torch.nested.nested_tensor([ids[1:] for ids in all_input_ids], layout=torch.jagged)
-            return inputs, targets, sequence
-
-        padded_ids = [ids + [self.pad_token_id] * (self.seq_len - len(ids)) for ids in all_input_ids]
-        tensors = torch.tensor(padded_ids, dtype=torch.long)
-        padding_masks = (tensors == self.pad_token_id)
-        sequence = PaddedTensor(tensor=tensors, padding_mask=padding_masks)
-        if self.varlen_strategy == 'unpadding':
-                sequence = sequence.unpad()
-        return sequence
 
 class ByteTokenizer:
     def __init__(self, eos_token, pad_token):
@@ -281,9 +245,9 @@ class AutoencoderByteTokenizer:
 
 class ByteLevelTokenizer:
     def __init__(self, config):
-        self.bos_token_id = config.bos_token_id
-        self.eos_token_id = config.eos_token_id
-        self.pad_token_id = config.pad_token_id
+        self.bos_token_id = config.tokenizer.bos_token_id
+        self.eos_token_id = config.tokenizer.eos_token_id
+        self.pad_token_id = config.tokenizer.pad_token_id
         self.offset = 0
 
     def __call__(self, text: str) -> dict:

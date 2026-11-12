@@ -7,9 +7,9 @@ import torch.nn as nn
 import torch.nn.functional as F
 #Matformer
 from matformer.matformer_module import MatformerModule
-from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor, ModuleWrapper
-from matformer.model_config import ModelConfig  
-from matformer.utils.matformer_cache import ensure_cache_and_registry, CachedStuff
+from matformer.dataclasses.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
+from matformer.dataclasses.model_dataclasses import ModelConfig
+from matformer.utils.matformer_cache import ensure_cache, CachedStuff
 from matformer.matformer_registry import registry
 from matformer.utils.masked_models import Maskerator
 from matformer.matformer_tokenizers import ByteLevelTokenizer,MatformerTokenizer
@@ -249,8 +249,8 @@ class TransformerWithCharAutoencoder(MatformerModule):
         self.encoder = TransCharAutoencoder_Encoder(config=config.encoder)
         self.decoder = TransCharAutoencoder_Decoder(config=config.decoder)
         self.transformer = NakedTransformer(config)
-        self.projection_in = ModuleWrapper(nn.Linear(config.encoder.hidden_size, config.hidden_size))
-        self.projection_out = ModuleWrapper(nn.Linear(config.hidden_size, config.decoder.hidden_size))
+        self.projection_in = registry.create("linear", "linear", in_features=config.encoder.hidden_size, out_features=config.hidden_size)
+        self.projection_out = registry.create("linear", "linear", in_features=config.hidden_size, out_features=config.decoder.hidden_size)
         self.config = config
         
         # Training phase state

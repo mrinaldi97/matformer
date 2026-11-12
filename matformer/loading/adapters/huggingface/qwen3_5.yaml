@@ -1,0 +1,165 @@
+# Qwen3.5 (text-only, dense-decoder path) architecture => Matformer config mapping
+# NOTE: vision tower (model.visual.*) and MTP layers (mtp.*) intentionally omitted from
+# weight_mapping — will land in `unexpected` harmlessly.
+# NOTE: mrope_section/mrope_interleaved ignored — degenerates to plain RoPE for text-only
+# input. Worth a numerical spot-check before production use.
+# NOTE: q_proj.weight (full_attention layers) is a fused Q+attention-gate projection —
+# handled via weight_transforms, not weight_mapping.
+# NOTE: linear_attn in_proj_qkv / conv1d are HF-fused tensors; fla's GatedDeltaNet wants
+# them split into separate q/k/v projections and per-branch conv weights — handled via
+# weight_transforms (verified against fla 0.5.x: q_proj/k_proj/v_proj, q_conv1d/k_conv1d/
+# v_conv1d, a_proj/b_proj, g_proj, o_norm, o_proj all match one to one).
+# NOTE: full_attention_interval=4 puts full-attention layers at idx%4==3 (last of each
+# group of 4) — expressed via every_4_offset_3, generalizing across checkpoint sizes.
+# NOTE: all attention head counts/dims are pulled from text_config below rather than
+# hardcoded, since they differ across Qwen3.5 checkpoint sizes (e.g. 2B: 8 heads/2 kv
+# heads/16 linear v-heads; 27B: 24 heads/4 kv heads/48 linear v-heads).
+
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: true
+    bias: false
+    training_objective: clm
+    lm_head_bias: false
+    default_layer:
+      normalization: rmsnorm_zc
+      normalization_position: pre
+      ffn_activation: swiglu
+      mlp_bias: false
+      sequence_mixer: gated_deltanet
+      sequence_mixer_config:
+        conv_size: 4
+        use_gate: true
+        use_short_conv: true
+        conv_bias: false
+    custom_layers:
+      every_4_offset_3:
+        sequence_mixer: attention
+        sequence_mixer_config:
+          positional_encoding: rope
+          qkv_bias: false
+          attn_output_bias: false
+          q_norm: true
+          k_norm: true
+          # Qwen3_5RMSNorm scales by (1 + weight) for every norm in the model, q/k norms
+          # included, so the QK-norms must be zero-centered like the layer norms above.
+          qk_norm_zero_centered: true
+          qk_norm_per_head: false
+          gated_attention: true
+
+model_mapping:
+  hidden_size: text_config.hidden_size
+  num_hidden_layers: text_config.num_hidden_layers
+  vocab_size: text_config.vocab_size
+  rms_norm_eps: text_config.rms_norm_eps
+  max_position_embeddings: text_config.max_position_embeddings
+  tie_word_embeddings: text_config.tie_word_embeddings
+
+  default_layer.sequence_mixer_config.head_dim: text_config.linear_key_head_dim
+  default_layer.sequence_mixer_config.num_heads: text_config.linear_num_key_heads
+  default_layer.sequence_mixer_config.num_v_heads: text_config.linear_num_value_heads
+  default_layer.sequence_mixer_config.conv_size: text_config.linear_conv_kernel_dim
+  # fla's own norm_eps default (1e-5) differs from Qwen3.5's rms_norm_eps (1e-6)
+  default_layer.sequence_mixer_config.norm_eps: text_config.rms_norm_eps
+
+  # head_dim must be given explicitly: Qwen3.5 decouples it from hidden_size
+  # (0.8B: hidden 1024, 8 heads, head_dim 256), and without it the linear-attention
+  # head_dim would leak in from default_layer and shrink every Q/K/V/O projection.
+  custom_layers.every_4_offset_3.sequence_mixer_config.head_dim: text_config.head_dim
+  custom_layers.every_4_offset_3.sequence_mixer_config.num_attention_heads: text_config.num_attention_heads
+  custom_layers.every_4_offset_3.sequence_mixer_config.num_key_value_heads: text_config.num_key_value_heads
+  custom_layers.every_4_offset_3.sequence_mixer_config.rope_theta: text_config.rope_parameters.rope_theta
+  custom_layers.every_4_offset_3.sequence_mixer_config.partial_rotary_factor: text_config.rope_parameters.partial_rotary_factor
+
+tokenizer_mapping:
+  vocab_size: text_config.vocab_size
+  bos_token_id: text_config.bos_token_id
+  eos_token_id: text_config.eos_token_id
+  pad_token_id: text_config.pad_token_id
+
+derived:
+  model.ffn_factor: "text_config['intermediate_size'] / text_config['hidden_size']"
+  # fla derives head_v_dim = head_dim * expand_v (head_dim being the KEY head dim), so
+  # expand_v is a pure per-head ratio: head counts must stay out of it, otherwise any
+  # size with more value heads than key heads (Qwen3-Next-style 16 k / 32 v) inflates
+  # v_proj and out_proj.
+  model.default_layer.sequence_mixer_config.expand_v: >
+    text_config['linear_value_head_dim'] / text_config['linear_key_head_dim']
+
+weight_mapping:
+  - lm_head.weight:                                     lm_head.weight
+  - encoder.embed_tokens.weight:                         model.language_model.embed_tokens.weight
+  - encoder.blocks.norm.weight:                          model.language_model.norm.weight
+  - encoder.blocks.layers.N.attn_norm.weight:            model.language_model.layers.N.input_layernorm.weight
+  - encoder.blocks.layers.N.mlp_norm.weight:             model.language_model.layers.N.post_attention_layernorm.weight
+
+  # --- full_attention layers (idx % 4 == 3) ---
+  - encoder.blocks.layers.N.attn.k_proj.weight:          model.language_model.layers.N.self_attn.k_proj.weight
+  - encoder.blocks.layers.N.attn.v_proj.weight:          model.language_model.layers.N.self_attn.v_proj.weight
+  - encoder.blocks.layers.N.attn.o_proj.weight:          model.language_model.layers.N.self_attn.o_proj.weight
+  - encoder.blocks.layers.N.attn.q_norm.weight:          model.language_model.layers.N.self_attn.q_norm.weight
+  - encoder.blocks.layers.N.attn.k_norm.weight:          model.language_model.layers.N.self_attn.k_norm.weight
+  # q_proj.weight NOT mapped here — see weight_transforms (fused Q+gate)
+
+  # --- linear_attention (gated_deltanet) layers ---
+  - encoder.blocks.layers.N.attn.a_proj.weight:    model.language_model.layers.N.linear_attn.in_proj_a.weight
+  - encoder.blocks.layers.N.attn.b_proj.weight:    model.language_model.layers.N.linear_attn.in_proj_b.weight
+  - encoder.blocks.layers.N.attn.g_proj.weight:    model.language_model.layers.N.linear_attn.in_proj_z.weight
+  - encoder.blocks.layers.N.attn.o_proj.weight:    model.language_model.layers.N.linear_attn.out_proj.weight
+  - encoder.blocks.layers.N.attn.o_norm.weight:    model.language_model.layers.N.linear_attn.norm.weight
+  - encoder.blocks.layers.N.attn.A_log:            model.language_model.layers.N.linear_attn.A_log
+  - encoder.blocks.layers.N.attn.dt_bias:          model.language_model.layers.N.linear_attn.dt_bias
+  # in_proj_qkv.weight and conv1d.weight NOT mapped here — see weight_transforms
+
+  - encoder.blocks.layers.N.mlp.gate_proj.weight:        model.language_model.layers.N.mlp.gate_proj.weight
+  - encoder.blocks.layers.N.mlp.up_proj.weight:           model.language_model.layers.N.mlp.up_proj.weight
+  - encoder.blocks.layers.N.mlp.down_proj.weight:          model.language_model.layers.N.mlp.down_proj.weight
+
+weight_transforms:
+  # Fused Q + attention-output-gate projection (full_attention layers only).
+  # HF forward: query_states, gate = q_proj(hidden_states).view(*, num_heads, 2*head_dim).chunk(2, dim=-1)
+  # The chunk is on the LAST dim of the per-head view, so the rows are head-interleaved
+  # (q of head h, then gate of head h, then head h+1...): a plain first-half/second-half
+  # split would mix the wrong rows up. (q + g) are the two size-1 members of that pair axis.
+  # Rules run through einx: `op` defaults to rearrange, `axes` resolve axis sizes from
+  # the HF config via dotted paths (or int literals / products with '*').
+  - sources: [model.language_model.layers.N.self_attn.q_proj.weight]
+    outputs: [encoder.blocks.layers.N.attn.q_proj.weight, encoder.blocks.layers.N.attn.gate_proj.weight]
+    pattern: "(h (q + g) d) c -> (h q d) c, (h g d) c"
+    axes:
+      h: text_config.num_attention_heads
+      q: 1
+      g: 1
+      d: text_config.head_dim
+
+  # HF's in_proj_qkv is one fused Linear producing [q | k | v] concatenated on dim 0;
+  # fla's GatedDeltaNet wants these as three separate projections.
+  - sources: [model.language_model.layers.N.linear_attn.in_proj_qkv.weight]
+    outputs:
+      - encoder.blocks.layers.N.attn.q_proj.weight
+      - encoder.blocks.layers.N.attn.k_proj.weight
+      - encoder.blocks.layers.N.attn.v_proj.weight
+    pattern: "(q + k + v) c -> q c, k c, v c"
+    axes:
+      q: text_config.linear_key_head_dim * text_config.linear_num_key_heads
+      k: text_config.linear_key_head_dim * text_config.linear_num_key_heads
+      v: text_config.linear_value_head_dim * text_config.linear_num_value_heads
+
+  # HF's conv1d is one fused depthwise Conv1d over [q | k | v] channels (groups=conv_dim);
+  # fla wants three separate per-branch conv weights, split along the same channel ranges.
+  # The "..." absorbs the trailing (features=1, kernel_size) dims untouched.
+  - sources: [model.language_model.layers.N.linear_attn.conv1d.weight]
+    outputs:
+      - encoder.blocks.layers.N.attn.q_conv1d.weight
+      - encoder.blocks.layers.N.attn.k_conv1d.weight
+      - encoder.blocks.layers.N.attn.v_conv1d.weight
+    pattern: "(q + k + v) ... -> q ..., k ..., v ..."
+    axes:
+      q: text_config.linear_key_head_dim * text_config.linear_num_key_heads
+      k: text_config.linear_key_head_dim * text_config.linear_num_key_heads
+      v: text_config.linear_value_head_dim * text_config.linear_num_value_heads
+# Automated suite (tests/test_hf_adapters.py): smallest Qwen3.5 (hybrid full-attention /
+# linear-attention).
+tests:
+  - model: Qwen/Qwen3.5-0.8B

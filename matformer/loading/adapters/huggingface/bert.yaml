@@ -1,0 +1,109 @@
+# BERT architecture => Matformer config mapping
+# NOTE: BERT packs nothing on the HF side, but Matformer builds a single fused
+# `attn.qkv_proj` for plain MHA (no QK-norm), so q/k/v weights AND biases are merged
+# via weight_transforms `stack` rules, not plain renames.
+# NOTE: Matformer applies a final LayerNorm by default (encoder.blocks.norm.*); HF BERT
+# has none, so final_norm: false below removes that socket entirely (identity in the
+# stream. BERT's segment embeddings (token_type), post-embedding LayerNorm and the
+# cls.predictions.transform head are enabled via type_vocab_size / embedding_norm /
+# lm_head_transform. Full forward-pass parity vs HF verified (max abs diff ~1e-6).
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: false
+    bias: true
+    training_objective: masked
+    lm_head_bias: true
+    lm_head_transform: true
+    final_norm: false
+    embedding_norm: true
+    default_layer:
+      normalization: layernorm
+      normalization_position: post
+      ffn_activation: gelu
+      mlp_bias: true
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: learnable
+        qkv_bias: true
+        attn_output_bias: true
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_attention_heads
+  vocab_size: vocab_size
+  rms_norm_eps: layer_norm_eps
+  max_position_embeddings: max_position_embeddings
+  type_vocab_size: type_vocab_size
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  pad_token_id: pad_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+  model.tie_word_embeddings: "True"
+
+# List form (one entry per line) rather than a plain YAML mapping: BERT checkpoints come in
+# two LayerNorm naming flavours, and a stable key needs two possible sources. A mapping would
+# silently keep only the last duplicate; the list keeps both, and whichever source the
+# checkpoint doesn't have simply fails to resolve and is skipped (as the conv/attention
+# entries do in lfm2.yaml). google-bert/bert-base-uncased and most mirrors ship TF-style
+# gamma/beta (transformers renames them on load); google/bert_uncased_* use weight/bias.
+weight_mapping:
+  - lm_head.weight:                                    cls.predictions.decoder.weight
+  - lm_head.bias:                                      cls.predictions.bias
+  - lm_head_transform.dense.weight:                    cls.predictions.transform.dense.weight
+  - lm_head_transform.dense.bias:                      cls.predictions.transform.dense.bias
+  - lm_head_transform.norm.weight:                     cls.predictions.transform.LayerNorm.weight
+  - lm_head_transform.norm.bias:                       cls.predictions.transform.LayerNorm.bias
+  - lm_head_transform.norm.weight:                     cls.predictions.transform.LayerNorm.gamma
+  - lm_head_transform.norm.bias:                       cls.predictions.transform.LayerNorm.beta
+  - encoder.embed_tokens.weight:                       bert.embeddings.word_embeddings.weight
+  - encoder.embed_positions.weight:                    bert.embeddings.position_embeddings.weight
+  - encoder.embed_token_type.weight:                   bert.embeddings.token_type_embeddings.weight
+  - encoder.embeddings_norm.weight:                    bert.embeddings.LayerNorm.weight
+  - encoder.embeddings_norm.bias:                      bert.embeddings.LayerNorm.bias
+  - encoder.embeddings_norm.weight:                    bert.embeddings.LayerNorm.gamma
+  - encoder.embeddings_norm.bias:                      bert.embeddings.LayerNorm.beta
+  - encoder.blocks.layers.N.attn_norm.weight:          bert.encoder.layer.N.attention.output.LayerNorm.weight
+  - encoder.blocks.layers.N.attn_norm.bias:            bert.encoder.layer.N.attention.output.LayerNorm.bias
+  - encoder.blocks.layers.N.attn_norm.weight:          bert.encoder.layer.N.attention.output.LayerNorm.gamma
+  - encoder.blocks.layers.N.attn_norm.bias:            bert.encoder.layer.N.attention.output.LayerNorm.beta
+  - encoder.blocks.layers.N.mlp_norm.weight:           bert.encoder.layer.N.output.LayerNorm.weight
+  - encoder.blocks.layers.N.mlp_norm.bias:             bert.encoder.layer.N.output.LayerNorm.bias
+  - encoder.blocks.layers.N.mlp_norm.weight:           bert.encoder.layer.N.output.LayerNorm.gamma
+  - encoder.blocks.layers.N.mlp_norm.bias:             bert.encoder.layer.N.output.LayerNorm.beta
+  - encoder.blocks.layers.N.attn.o_proj.weight:        bert.encoder.layer.N.attention.output.dense.weight
+  - encoder.blocks.layers.N.attn.o_proj.bias:          bert.encoder.layer.N.attention.output.dense.bias
+  - encoder.blocks.layers.N.mlp.up_proj.weight:        bert.encoder.layer.N.intermediate.dense.weight
+  - encoder.blocks.layers.N.mlp.up_proj.bias:          bert.encoder.layer.N.intermediate.dense.bias
+  - encoder.blocks.layers.N.mlp.down_proj.weight:      bert.encoder.layer.N.output.dense.weight
+  - encoder.blocks.layers.N.mlp.down_proj.bias:        bert.encoder.layer.N.output.dense.bias
+
+weight_transforms:
+  # HF ships separate q/k/v; Matformer's plain-MHA layer wants one fused qkv_proj.
+  - sources:
+      - bert.encoder.layer.N.attention.self.query.weight
+      - bert.encoder.layer.N.attention.self.key.weight
+      - bert.encoder.layer.N.attention.self.value.weight
+    stack: true
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.weight]
+    pattern: "s o i -> (s o) i"
+    axes: {o: hidden_size}
+  - sources:
+      - bert.encoder.layer.N.attention.self.query.bias
+      - bert.encoder.layer.N.attention.self.key.bias
+      - bert.encoder.layer.N.attention.self.value.bias
+    stack: true
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.bias]
+    pattern: "s o -> (s o)"
+    axes: {o: hidden_size}
+
+# Automated suite (tests/test_hf_adapters.py): one checkpoint per LayerNorm naming flavour,
+# google/bert_uncased_* uses weight/bias, google-bert/bert-base-uncased uses gamma/beta.
+tests:
+  - model: google/bert_uncased_L-2_H-128_A-2
+  - model: google-bert/bert-base-uncased

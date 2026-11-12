@@ -1,16 +1,17 @@
 #matformer/training/optimizers.py
 
 import torch
+import math
 from matformer.extra.muon import Muon
 from torch.optim import AdamW, Adam
 
-def configure_optimizers(model,train_config):
-    if train_config.get("no_decay_for_embedding", False) and train_config["optimizer"] != "muon":
+def configure_optimizers(model, train_config):
+    if train_config.no_decay_for_embedding and train_config.optimizer != "muon":
         raise ValueError("no_decay_for_embedding for optimizers different than Muon not implemented yet! (Altough it's easy). Please remove it ")
 
-    if train_config["optimizer"] == "muonclip":
+    if train_config.optimizer == "muonclip":
         from muon import MuonClip, MuonConfig
-        base_lr = train_config["lr"]
+        base_lr = train_config.lr
         
         from types import SimpleNamespace
 
@@ -26,16 +27,16 @@ def configure_optimizers(model,train_config):
         
         muon_config = MuonConfig(
             lr=base_lr, ###To check!!!
-            muon_beta=train_config.get("muon_momentum", 0.95),
-            muon_decay=train_config.get("weight_decay", 0.01),
-            ns_steps=train_config.get("muon_ns_steps", 5),
-            adam_betas=train_config.get("betas", (0.9, 0.95)),
-            adam_decay=train_config.get("weight_decay", 0.01),
-            adam_eps=train_config.get("eps", 1e-10),
+            muon_beta=train_config.muon_momentum,
+            muon_decay=train_config.weight_decay,
+            ns_steps=train_config.muon_ns_steps,
+            adam_betas=train_config.betas,
+            adam_decay=train_config.weight_decay,
+            adam_eps=train_config.eps,
             enable_clipping=True,
             clipping_layers_mapping={"q_proj": "packed_proj", "k_proj": "packed_proj"},
-            clipping_threshold=train_config.get("clip_threshold", 50.0),
-            clipping_alpha=train_config.get("clip_alpha", 0.5),
+            clipping_threshold=train_config.clip_threshold,
+            clipping_alpha=train_config.clip_alpha,
             log_max_logits=False,
             cans_ortho=False,
             estimate_lower_bound=False
@@ -43,7 +44,7 @@ def configure_optimizers(model,train_config):
         
         optimizer = MuonClip(self, model_config, muon_config)
         
-    elif train_config["optimizer"] == "muonflash":
+    elif train_config.optimizer == "muonflash":
         muon_params = []
         adamw_params = []
         for name, param in model.named_parameters():
@@ -59,19 +60,19 @@ def configure_optimizers(model,train_config):
                 muon_params.append(param)
                 #print(f"{name} in Muon")
         
-        base_lr = train_config["lr"]
+        base_lr = train_config.lr
         
         from flash_muon import Muon as FlashMuon
         muon_lr = base_lr * 0.2 * math.sqrt(max(muon_params[0].shape[:2])) if muon_params else base_lr
         optimizer = [
             FlashMuon(muon_params, lr=muon_lr, 
-                     momentum=train_config.get("muon_momentum", 0.95), rank=0, world_size=1),
+                     momentum=train_config.muon_momentum, rank=0, world_size=1),
             torch.optim.AdamW(adamw_params, lr=base_lr, 
-                            betas=train_config.get("betas", (0.9, 0.95)),
-                            weight_decay=train_config.get("weight_decay", 0.01))
+                            betas=train_config.betas,
+                            weight_decay=train_config.weight_decay)
         ]
         
-    elif train_config["optimizer"] == "muon":
+    elif train_config.optimizer == "muon":
         muon_params = []
         adamw_params = []
         no_decay_params = []
@@ -87,37 +88,37 @@ def configure_optimizers(model,train_config):
             else:
                 muon_params.append(param)
                 #print(f"{name} in Muon")
-            if train_config.get("no_decay_for_embedding", False) and ("lm_head" in name or "embed_tokens" in name):
+            if train_config.no_decay_for_embedding and ("lm_head" in name or "embed_tokens" in name):
                 no_decay_params.append(param)
                 #print(f"{name} has weight decay disabled.")
                           
-        base_lr = train_config["lr"]
+        base_lr = train_config.lr
         
         optimizer = Muon(
             lr=base_lr,
-            wd=train_config.get("weight_decay", 0.01),
+            wd=train_config.weight_decay,
             muon_params=muon_params,
-            momentum=train_config.get("muon_momentum", 0.95),
-            nesterov=train_config.get("muon_nesterov", True),
-            ns_steps=train_config.get("muon_ns_steps", 5),
+            momentum=train_config.muon_momentum,
+            nesterov=train_config.muon_nesterov,
+            ns_steps=train_config.muon_ns_steps,
             adamw_params=adamw_params,
-            adamw_betas=train_config.get("betas", (0.9, 0.95)),
-            adamw_eps=train_config.get("eps", 1e-10),
+            adamw_betas=train_config.betas,
+            adamw_eps=train_config.eps,
             no_decay_params=no_decay_params
         )
         
-    elif train_config["optimizer"] == "adamw":
+    elif train_config.optimizer == "adamw":
         optimizer = AdamW(
             model.parameters(),
-            lr=train_config["lr"],
-            weight_decay=train_config.get("weight_decay", 0.01),
+            lr=train_config.lr,
+            weight_decay=train_config.weight_decay,
         )
-    elif train_config["optimizer"] == "adam":
+    elif train_config.optimizer == "adam":
         optimizer = Adam(
             model.parameters(),
-            lr=train_config["lr"],
-            weight_decay=train_config.get("weight_decay", 0.01),
+            lr=train_config.lr,
+            weight_decay=train_config.weight_decay,
         )
-    if not isinstance(optimizer,list):
-        optimizer=[optimizer]
+    if not isinstance(optimizer, list):
+        optimizer = [optimizer]
     return optimizer

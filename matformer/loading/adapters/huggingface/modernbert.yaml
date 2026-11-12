@@ -1,0 +1,105 @@
+# ModernBERT (answerdotai) => Matformer adapter. Masked-LM, bidirectional (is_causal: false).
+# Covers all sizes (base/large) — every pattern is layer-count agnostic.
+# NOTE: ModernBERT quirks handled:
+#  - Layer 0 applies the attention branch on the raw stream (HF attn_norm is Identity there),
+#    while every other layer is classic pre-norm -> custom_layers "0" switches to the
+#    "pre_no_attn" norm style (empty pre_attn socket = identity).
+#  - Local/global attention pattern: global (full attention, rope_theta 160000) on every
+#    3rd layer, sliding elsewhere -> sliding_type: partial, every_3 patch nulls the window.
+#    RoPE on ALL layers: local layers use local_rope_theta (10000).
+#  - Sliding window: HF stores local_attention (128), the module uses an inclusive
+#    local_attention // 2 + 1 bound; Matformer's mask is |q-k| < window (exclusive) ->
+#    derived sliding_window_size = local_attention // 2 + 1.
+#  - Gated GELU MLP with a fused Wi tensor (2 * intermediate): first half is the GELU'd
+#    "input" (= mlp.gate_proj), second the multiplicative gate (= mlp.up_proj) -> geglu
+#    + einx split of Wi.
+#  - Fused Wqkv (plain MHA, no QK-norm, no biases): matches Matformer's fused
+#    attn.qkv_proj row layout [q; k; v] exactly -> plain rename.
+#  - All LayerNorms are bias-free (norm_bias: false); the MLM head is BERT-style
+#    (head.dense bias-free -> lm_head_transform_bias: false, head.norm -> lm_head_transform)
+#    and decoder.weight is tied to the token embeddings (decoder ships only decoder.bias).
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: false
+    training_objective: masked
+    bias: false
+    lm_head_bias: true
+    lm_head_transform: true
+    lm_head_transform_bias: false
+    norm_bias: false
+    embedding_norm: true
+    sliding_type: partial
+    custom_layers:
+      every_3:
+        sequence_mixer_config:
+          sliding_window_size: null
+      0:
+        normalization_position: pre_no_attn
+    default_layer:
+      normalization: layernorm
+      normalization_position: pre
+      ffn_activation: geglu
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: rope
+        qkv_bias: false
+        attn_output_bias: false
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  vocab_size: vocab_size
+  rms_norm_eps: norm_eps
+  max_position_embeddings: max_position_embeddings
+  tie_word_embeddings: tie_word_embeddings
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_attention_heads
+  default_layer.sequence_mixer_config.rope_theta: local_rope_theta
+  custom_layers.every_3.sequence_mixer_config.rope_theta: global_rope_theta
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  bos_token_id: bos_token_id
+  eos_token_id: eos_token_id
+  pad_token_id: pad_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+  # inclusive HF bound (local_attention // 2 + 1) == Matformer's exclusive |q-k| < window
+  model.default_layer.sequence_mixer_config.sliding_window_size: "local_attention // 2 + 1"
+
+weight_mapping:
+  lm_head.weight:                                    lm_head.weight          # tied, absent in checkpoint (harmless)
+  lm_head.bias:                                      decoder.bias
+  lm_head_transform.dense.weight:                    head.dense.weight
+  lm_head_transform.norm.weight:                     head.norm.weight
+  encoder.embed_tokens.weight:                       model.embeddings.tok_embeddings.weight
+  encoder.embeddings_norm.weight:                    model.embeddings.norm.weight
+  encoder.blocks.norm.weight:                        model.final_norm.weight
+  encoder.blocks.layers.N.mlp_norm.weight:           model.layers.N.mlp_norm.weight
+  encoder.blocks.layers.N.attn.qkv_proj.weight:      model.layers.N.attn.Wqkv.weight
+  encoder.blocks.layers.N.attn.o_proj.weight:        model.layers.N.attn.Wo.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:      model.layers.N.mlp.Wo.weight
+
+weight_transforms:
+  # No-op rename for the pre-attn norm: a transform rule whose source is absent in
+  # the checkpoint is skipped by the loader, which is exactly what layer 0 needs
+  # (HF attn_norm is Identity there, so no tensor exists for N=0).
+  - sources: [model.layers.N.attn_norm.weight]
+    outputs: [encoder.blocks.layers.N.attn_norm.weight]
+    pattern: "c -> c"
+  # HF's fused Wi packs the GELU'd "input" (= gate_proj) and the multiplicative gate
+  # (= up_proj) into one (2 * intermediate, hidden) tensor.
+  - sources: [model.layers.N.mlp.Wi.weight]
+    outputs: [encoder.blocks.layers.N.mlp.gate_proj.weight, encoder.blocks.layers.N.mlp.up_proj.weight]
+    pattern: "(g + u) c -> g c, u c"
+    axes: {g: intermediate_size, u: intermediate_size}
+
+# Automated suite (tests/test_hf_adapters.py). seq_len 512 exercises the sliding
+# window; atol 2e-3 because at that length fp32 kernel noise (sdpa vs eager, also
+# within HF itself: ~6e-4) accumulates through the 22 bidirectional layers.
+tests:
+  - model: answerdotai/ModernBERT-base
+    seq_len: 512
+    atol: 2.0e-3

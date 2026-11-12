@@ -7,12 +7,12 @@ import torch.nn as nn
 import torch.nn.functional as F
 #Matformer
 from matformer.matformer_module import MatformerModule
-from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor, ModuleWrapper
-from matformer.model_config import ModelConfig  
-from matformer.utils.matformer_cache import ensure_cache_and_registry, CachedStuff
+from matformer.dataclasses.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
+from matformer.dataclasses.model_dataclasses import ModelConfig  
+from matformer.utils.matformer_cache import ensure_cache, CachedStuff
 from matformer.matformer_registry import registry
 from matformer.utils.masked_models import Maskerator
-from matformer.transformer_blocks import TransformerWithLMHead
+from matformer.transformer_blocks import TransformerWithLMHead, GenerationMixin
 
 #Other
 from dataclasses import replace
@@ -27,7 +27,7 @@ class BERTModel(TransformerWithLMHead):
     def init_training(self,config: ModelConfig,tokenizer=None,device=None,cache=None):
         # Training a BERT-Like model
         self.config=config
-        self.cache = ensure_cache_and_registry(cache) 
+        self.cache = ensure_cache(cache) 
         super().__init__()
         
         # 1. Init the maskerator
@@ -44,10 +44,10 @@ class BERTModel(TransformerWithLMHead):
         if masking_ratio is not None: # The bert model was not istantiated with the config, masking ratio parameter has to be passed as argument (case for inference)
              assert masking_ratio is not None
              self.masking_ratio=masking_ratio
-             self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
+             self.maskerator=Maskerator(mask_token=self.config.tokenizer.mask_token_id,
                     substitution_rate=masking_ratio,
                     random_seed=random_seed,
-                    pad_token_id=self.config.pad_token_id,
+                    pad_token_id=self.config.tokenizer.pad_token_id,
                     vocab_size=self.config.vocab_size)
              print(f"Masking ratio: {self.masking_ratio}")
         else: # We get the maskerator settings from the config
@@ -73,9 +73,9 @@ class BERTModel(TransformerWithLMHead):
                     except:
                         vocab_size=None
                 print(f"Setting up maskerator with {self.masking_ratio}% substitution rate.")
-                self.maskerator=Maskerator(mask_token=self.config.mask_token_id,
+                self.maskerator=Maskerator(mask_token=self.config.tokenizer.mask_token_id,
                                            substitution_rate=self.masking_ratio,
-                                           pad_token_id=self.config.pad_token_id,
+                                           pad_token_id=self.config.tokenizer.pad_token_id,
                                            cloze_prob=cloze_prob,
                                            random_prob=random_prob,
                                            same_prob=same_prob,
@@ -86,10 +86,10 @@ class BERTModel(TransformerWithLMHead):
 
     def init_classification_head(self, num_labels=2, pooling_type='cls',cache=None):
         """Initialize classification head. Compatible with HuggingFace Trainer."""
-        self.cache = ensure_cache_and_registry(cache)                               
-        self.classification_head = ModuleWrapper(self.cache.registry.create(
+        self.cache = ensure_cache(cache)                               
+        self.classification_head = registry.create(
             "linear", "linear", in_features=config.hidden_size, out_features=num_labels
-        ))
+        )
         self.pooling_type = pooling_type
         self.num_labels = num_labels
         
@@ -108,7 +108,7 @@ class BERTModel(TransformerWithLMHead):
         else:
             raise ValueError(f"pooling_type must be 'cls' or 'mean', got {self.pooling_type}")
             
-        return self.classification_head(pooled).tensor        
+        return self.classification_head(NormalTensor(tensor=pooled)).tensor        
     def inference_testing(self, input_text=None, masking_ratio=0.25,datatype=torch.bfloat16, tokens=None, recurrence_mask=None,random_seed=None):
         #assert (is input_text or is_tokens)
         if not hasattr(self,'maskerator') or masking_ratio!=self.masking_ratio:
@@ -144,7 +144,7 @@ class BERTModel(TransformerWithLMHead):
         else:
             token_list = squeezed_tensor.tolist()
         for i,token in enumerate(token_list):        
-            if token != self.config.mask_token_id:
+            if token != self.config.tokenizer.mask_token_id:
                 out_tokens.append(self.tokenizer.decode(token))
             else:
                 out_tokens.append(f"[ {self.tokenizer.decode(predictions.squeeze()[i])} ]")
@@ -162,8 +162,8 @@ class BERTModel(TransformerWithLMHead):
             pseudo_perplexity=float("inf")
         return accuracy, out_tokens, pseudo_perplexity
 
-class Autoregressive_Model(TransformerWithLMHead):
-    def generate(
+class Autoregressive_Model(TransformerWithLMHead, GenerationMixin):
+    def legacy_generate(
         self, 
         prompt=None, 
         input_ids=None, 
@@ -185,13 +185,13 @@ class Autoregressive_Model(TransformerWithLMHead):
         self.eval()
         
         if pad_token_id is None:
-            pad_token_id = self.config.pad_token_id
+            pad_token_id = self.config.tokenizer.pad_token_id
             if pad_token_id is None: #dirty
                 pad_token_id=0
         if eos_token_id is None:
-            eos_token_id = self.config.eos_token_id
+            eos_token_id = self.config.tokenizer.eos_token_id
         if bos_token_id is None:
-            bos_token_id = self.config.bos_token_id
+            bos_token_id = self.config.tokenizer.bos_token_id
         
         if input_ids is None:
             if prompt is None:
@@ -199,11 +199,14 @@ class Autoregressive_Model(TransformerWithLMHead):
             else:
                 assert isinstance(prompt, str), "Prompt expected as string"
                 tokenizer = self.tokenizer
-                prompt_ids = tokenizer.encode(text=prompt, add_bos=True, add_eos=False, add_special_tokens=False)
+
+                prompt_ids = tokenizer.encode(text=prompt, add_bos=True, add_eos=False)['input_ids'][0]
                 current_ids = torch.tensor([prompt_ids], device=self.device).repeat(num_return_sequences, 1)
         else:
             if isinstance(input_ids, NormalTensor):
                 current_ids = input_ids.tensor
+            elif isinstance(input_ids, TensorDC):
+                current_ids=input_ids.pad().tensor                
             elif isinstance(input_ids, torch.Tensor):
                 current_ids = input_ids
                 if current_ids.dim() == 1:

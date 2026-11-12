@@ -13,18 +13,19 @@ def _load(module: str, attr: str):
     "liger",
     requires=["liger_kernel"],
     priority=10,
-    params_names={'inner.weight': 'weight'}
+    params_names={'inner.weight': 'weight'},
+    metadata={"is_interpretable": False}
 )
 class LigerRMSNorm(nn.Module):
     inner: "transparent"
     def __init__(self, normalized_shape, eps=1e-6, elementwise_affine=True):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerRMSNorm")
-        self.inner = cls(normalized_shape, eps=eps)
+        self.inner = cls(normalized_shape, eps=eps, elementwise_affine=elementwise_affine)
     #def is_available(self):
     #    return torch.cuda.is_available() 
     def forward(self, x):
-        return self.inner(x)
+        return x.apply(self.inner)
 
 
 @registry.register(
@@ -33,18 +34,19 @@ class LigerRMSNorm(nn.Module):
     "liger",
     requires=["liger_kernel"],
     priority=10,
-    params_names={'inner.weight': 'weight', 'inner.bias': 'bias'}
+    params_names={'inner.weight': 'weight', 'inner.bias': 'bias'},
+    metadata={"is_interpretable": False}
 )
 class LigerLayerNorm(nn.Module):
     inner: "transparent"
-    def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True):
+    def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True, bias=True):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerLayerNorm")
-        self.inner = cls(normalized_shape, eps=eps)
+        self.inner = cls(normalized_shape, eps=eps, bias=bias)
     #def is_available(self):
     #    return torch.cuda.is_available() 
     def forward(self, x):
-        return self.inner(x)
+        return x.apply(self.inner)
 
 
 @registry.register(
@@ -57,12 +59,14 @@ class LigerLayerNorm(nn.Module):
         'inner.gate_proj.weight': 'gate_proj.weight',
         'inner.up_proj.weight':   'up_proj.weight',
         'inner.down_proj.weight': 'down_proj.weight'
-    }
+    },
+    metadata={"is_interpretable": False}
 )
 class LigerSwiGLU(nn.Module):
     inner: "transparent"
-    def __init__(self, hidden_size, ffn_factor):
+    def __init__(self, hidden_size, ffn_factor, bias=False):
         super().__init__()
+        assert bias is not True
         from liger_kernel.transformers import LigerSwiGLUMLP
         config = type("ConfigStub", (), {})()
         config.hidden_size = hidden_size
@@ -72,7 +76,7 @@ class LigerSwiGLU(nn.Module):
     #def is_available(self):
     #    return torch.cuda.is_available() 
     def forward(self, x):
-        return self.inner(x)
+        return x.apply(self.inner)
 
 
 @registry.register(
@@ -85,12 +89,14 @@ class LigerSwiGLU(nn.Module):
         'inner.gate_proj.weight': 'gate_proj.weight',
         'inner.up_proj.weight':   'up_proj.weight',
         'inner.down_proj.weight': 'down_proj.weight'
-    }
+    },
+    metadata={"is_interpretable": False}
 )
 class LigerGEGLU(nn.Module):
     inner: "transparent"
-    def __init__(self, hidden_size, ffn_factor):
+    def __init__(self, hidden_size, ffn_factor, bias=False):
         super().__init__()
+        assert bias is not True
         from liger_kernel.transformers import LigerGEGLUMLP
         config = type("ConfigStub", (), {})()
         config.hidden_size = hidden_size
@@ -100,7 +106,7 @@ class LigerGEGLU(nn.Module):
     #def is_available(self):
     #    return torch.cuda.is_available() 
     def forward(self, x):
-        return self.inner(x)
+        return x.apply(self.inner)
 
 
 @registry.register(

@@ -1,169 +1,259 @@
-"""
-File: matformer/transformer_blocks/models/classification_models.py
-"""
-import sys
-sys.path.append('../')
-#Torch
+from dataclasses import dataclass, field
+from typing import Any, Dict, List, Literal, Optional
+from copy import deepcopy
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-#Matformer
+from matformer.matformer_registry import registry               
+from matformer.dataclasses.model_dataclasses import ModelConfig
+from matformer.plugins.plugin_classes import Plugin, PluginConfig
+from matformer.utils.matformer_cache import ensure_cache, CachedStuff
+from matformer.transformer_blocks import TransformerWithEmbeddingHead, TransformerWithLMHead, NakedTransformer
 from matformer.matformer_module import MatformerModule
-from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor, ModuleWrapper
-from matformer.model_config import ModelConfig  
-from matformer.utils.matformer_cache import ensure_cache_and_registry, CachedStuff
-from matformer.matformer_registry import registry
-from matformer.transformer_blocks import TransformerWithLMHead, TransformerWithEmbeddingHead
-#Other
-from dataclasses import replace
-from copy import deepcopy
-from warnings import warn
-from typing import Optional, List, Literal, Any
+from matformer.dataclasses.tensors_dataclasses import NormalTensor
 
+@registry.register_dataclass("plugin", "classification", default=True)
+@dataclass
+class ClassificationPluginConfig(PluginConfig):
+    scope: Literal["sequence", "token"] = "sequence"
+    pooling_type: Literal["cls", "mean", "last", "max", "attention"] = "cls"
+    num_classes: Optional[int] = None
+    pre_head: Optional[str] = None                 # Another model before the head ("transformer")
+    additional_transformer_layers: Optional[int] = 1
+    head_type: Literal["linear", "mlp"] = "linear"
+    head_config: Dict[str, Any] = field(default_factory=dict)
+    classifier_dropout_p: float = 0.1
+    classifier_dropout_inplace: bool = False
+    # attention pooling (pooling_type="attention"); unrelated to the transformer's own attention heads
+    attention_pool_heads: int = 8                  # number of learned pooling queries
+    attention_pool_use_tanh: bool = False          # tanh weights instead of softmax
+    attention_pool_dropout_p: float = 0.0          # drops pooling keys during training
+    # if True, the plugin stores its logits in the cache instead of returning them
+    # (used for probes; keeps the plugin "passive")
+    as_probe: bool = False
+    do_rms_norm: bool = False
+    rms_elementwise_affine: bool = False
+    exclude_end_from_norm: bool = True #Don't compute RMS norm if plugin is mounted on "final_norm"
+    in_features: Optional[int] = None #If None, models' hidden size
+    l1_penalty: float = 0.0
+    random_proj_dim: Optional[int] = None
+    random_proj_seed: int = 0
 
-class _ClassificationModel(MatformerModule):
-    def __init__(self, config: ModelConfig, tokenizer=None, pooling_type='cls',
-                 num_features=None, head_type='linear', head_config=None,
-                 pre_head=None, layers_to_remove=0, device=None, cache=None):
-        super().__init__()
-        self.cache = ensure_cache_and_registry(cache)
+@registry.register("plugin", "classification", "default")
+class ClassificationPlugin(Plugin):
+    name = "classification"
+    classification_head: "param_name:classifier"
+    dropout: "param_name:dropout"
+    attn_q: "param_name:attn_q"
+
+    def __init__(self, config, model_config, cache):
+        super().__init__(config, model_config, ensure_cache(cache))
+        self.cache = ensure_cache(cache)
         self.config = config
-        self.tokenizer = tokenizer
-        self.pooling_type = pooling_type
-        self.head_type  = head_type  or getattr(config, 'head_type',  'linear')
-        self.head_config = head_config if head_config is not None else getattr(config, 'head_config', {})
-        self.pre_head   = pre_head   or getattr(config, 'pre_head',   None)
-        self.layers_to_remove = layers_to_remove or getattr(config, 'layers_to_remove', 0)
-        self.num_features = (
-            num_features or
-            getattr(config, 'num_features', None) or
-            2
-        )
-        self.classifier_dropout_p = getattr(config, "classifier_dropout_p", 0.1)
-        self.classifier_dropout_inplace = getattr(config, "classifier_dropout_inplace", False)
-
-        self.dropout = ModuleWrapper(
-            self.cache.registry.create(
-                "dropout", "dropout",
-                p=self.classifier_dropout_p,
-                inplace=self.classifier_dropout_inplace
-            )
+        in_features=config.in_features if config.in_features else model_config.hidden_size
+        self.dropout = registry.create(
+            "dropout", "dropout",
+            p=config.classifier_dropout_p,
+            inplace=config.classifier_dropout_inplace,
         )
 
-        encoder_config = config
-        if self.layers_to_remove > 0: # In Matformer it's easy to attach the classification head to a layer that is not the last
-            encoder_config = deepcopy(config)
-            encoder_config.num_hidden_layers -= self.layers_to_remove
-        self.encoder = TransformerWithLMHead(config=encoder_config, cache=self.cache) # TODO: EmbeddingHead not working (probably bad loading)
-
-        self.classification_transformer = None # Similarly, it is easy to add new transformer layers before the classification head
-        if self.pre_head == 'transformer':
-            pre_cfg = deepcopy(config)
-            pre_cfg.num_hidden_layers = self.head_config.get('transformer_layers', 1)
+        self.classification_transformer = None # It is easy to add new transformer layers before the classification head
+        if config.pre_head == 'transformer':
+            pre_cfg = deepcopy(model_config)
+            pre_cfg.num_hidden_layers = config.additional_transformer_layers
+            pre_cfg.layer_schedule = None            # otherwise the main model's schedule is inherited
+            pre_cfg._layer_cache = {}                # so per-layer configs are recomputed
             self.classification_transformer = NakedTransformer(pre_cfg, cache=self.cache)
-
-        self.classification_head = self._build_head(config.hidden_size, self.num_features)
+        if config.do_rms_norm:
+           norm_kwargs = {"normalized_shape": in_features, "elementwise_affine":config.rms_elementwise_affine}
+           self.norm = registry.create("norm", "rmsnorm", **norm_kwargs)
+        self.attn_q = None
+        if config.scope == 'sequence' and config.pooling_type == 'attention':
+            self._init_attn_pool()
+            in_features *= config.attention_pool_heads   # head sees concat of the pooled vectors
+        Q = None
+        if config.random_proj_dim:
+            g = torch.Generator().manual_seed(config.random_proj_seed)
+            Q = torch.linalg.qr(torch.randn(in_features, config.random_proj_dim, generator=g)).Q  # (D, k)
+            in_features = config.random_proj_dim
+        self.register_buffer("random_proj", Q, persistent=False)
+        self.classification_head = self._build_head(in_features, config.num_classes or 2)
+        if config.l1_penalty:
+            self.l1("classifier.weight", config.l1_penalty)
     def _build_head(self, in_features, out_features):
-        if self.head_type == 'linear':
-            return ModuleWrapper(
-                self.cache.registry.create(
-                    "linear", "linear",
-                    in_features=in_features,
-                    out_features=out_features
-                )
+        if self.config.head_type == 'linear':
+            return registry.create(
+                "linear", "linear",
+                in_features=in_features, out_features=out_features,
             )
-        return ModuleWrapper(
-            self.cache.registry.create(
-                "classification_head", self.head_type,
-                in_features=in_features,
-                out_features=out_features,
-                **{k: v for k, v in self.head_config.items() if k != 'transformer_layers'}
-            )
+        return registry.create(
+            "classification_head", self.config.head_type,
+            in_features=in_features, out_features=out_features,
+            **{k: v for k, v in self.config.head_config.items()
+               if k != 'transformer_layers'},
         )
 
-    def freeze_encoder(self):
-        """Freeze encoder parameters."""
-        for param in self.encoder.parameters():
-            param.requires_grad = False
+    def _init_attn_pool(self):
+        c, d = self.config, self.model_config.hidden_size
+        self.attn_q = registry.create(
+            "linear", "linear", in_features=d, out_features=c.attention_pool_heads, bias=False)
+        self.attn_q.inner.weight.data.zero_()                       # start from uniform attention
+        self.attn_position_weight = nn.Parameter(torch.zeros(c.attention_pool_heads))  # per-head bias on position
+        self.attn_hook = nn.Identity()                               # register_forward_hook to read the weights
 
-    def unfreeze_encoder(self):
-        """Unfreeze encoder parameters."""
-        for param in self.encoder.parameters():
-            param.requires_grad = True
+    def _attn_pooled(self, tensor, padding_mask):
+        """tensor (B,T,D), padding_mask (B,T) True = padding  ->  (B, heads*D)"""
+        c = self.config
+        mask = (~padding_mask).float()                               # (B,T), 1 = real token
+        position = torch.arange(tensor.shape[1], device=tensor.device, dtype=torch.float32)
 
-    def change_num_labels(self, new_num_labels):
-        """Change the number of output features of the classification head."""
-        self.num_features = new_num_labels
-        self.classification_head = self._build_head(self.config.hidden_size, new_num_labels)
-        reference_param = next(self.encoder.parameters())
-        # Move to the same device and dtype as the model
-        self.classification_head = self.classification_head.to(
-            device=reference_param.device,
-            dtype=reference_param.dtype
-        )
-        print(f"Number of labels changed to {new_num_labels}")
-    
+        k = self.attn_q(NormalTensor(tensor=tensor)).tensor.float() + position[None, :, None] * self.attn_position_weight.float()  # (B,T,H)
+        if self.training:
+            k = torch.where(torch.rand_like(k) < c.attention_pool_dropout_p, -1e9, k)
+        k = k - (1 - mask)[..., None] * 1e9                          # padding always below everything else
 
-class TransformerWithClassificationHead(_ClassificationModel):
-    classification_head: "param_name:classifier"
-    dropout: "param_name:dropout"
-    classification_transformer: "param_name:classification_transformer"
-    encoder: "transparent" 
-    def _pool(self, hidden_states, attention_mask=None):
-        """Pool hidden states (PaddedTensor) into a single vector for classification."""
-        if self.pooling_type == 'cls':
-            # [CLS] in pos. 0
-            return hidden_states.tensor[:, 0, :]
-        elif self.pooling_type == 'mean':
-            #TODO: check if the mask works
-            if attention_mask is None:
-                return hidden_states.tensor.mean(dim=1)
-            mask_expanded = attention_mask.unsqueeze(-1).expand(
-                hidden_states.tensor.size()
-            ).to(hidden_states.dtype)
-            sum_hidden = torch.sum(hidden_states.tensor * mask_expanded, dim=1)
-            sum_mask = torch.clamp(mask_expanded.sum(dim=1), min=1e-9)
-            return sum_hidden / sum_mask
+        if c.attention_pool_use_tanh:
+            p = torch.tanh(k) * mask[..., None]                      # tanh(-1e9) = -1, so zero padding explicitly
         else:
-            raise ValueError(f"{self.pooling_type} not in 'cls','mean'")
-    def forward(self, x, attention_mask=None, **kwargs):
-        """
-        Args:
-            x: Input tensor or PaddedTensor
-            attention_mask: Optional explicit mask. If None, extracted from PaddedTensor
-        """
+            p = torch.softmax(k, dim=-2)                             # over T; padded weights are exactly 0
+        self.attn_hook(p)                                            # (B,T,H)
+        p = p.to(tensor.dtype)
+        return torch.einsum('bth,btd->bhd', p, tensor).flatten(1)    # pooled_h = Σ_t p[t,h] x_t, head-major
 
-        #print(f"[FORWARD] x type: {type(x)}")
-        #if isinstance(x, PaddedTensor):
-        #    print(f"[FORWARD] x.tensor.shape: {x.tensor.shape}")
-        #    print(f"[FORWARD] x.padding_mask.shape: {x.padding_mask.shape}")
+    def _pooled(self, hidden_states):
+        tensor = hidden_states.tensor
+        padding_mask = getattr(
+            hidden_states, 'padding_mask',
+            torch.zeros(tensor.shape[:2], dtype=torch.bool, device=tensor.device),
+        ).to(device=tensor.device, dtype=torch.bool)
+        pt = self.config.pooling_type
+        if pt == 'cls':
+            return tensor[:, 0, :]
+        if pt == 'attention':
+            return self._attn_pooled(tensor, padding_mask)
+        keep = (~padding_mask).unsqueeze(-1)
+        if pt == 'mean':
+            return (tensor * keep).sum(1) / keep.sum(1).clamp(min=1e-9)
+        if pt == 'max':
+            return tensor.masked_fill(
+                padding_mask.unsqueeze(-1), float('-inf')
+            ).max(1).values
+        if pt == 'last':
+            last = (~padding_mask).sum(1).clamp(min=1) - 1
+            return tensor.gather(
+                1, last[:, None, None].expand(-1, 1, tensor.shape[-1])
+            ).squeeze(1)
+        raise ValueError(f"Pooling type '{pt}' not in ['cls', 'mean', 'max', 'last', 'attention']")
 
-        # Remove return_type before passing to encoder
-        # TODO: perchè?
-        kwargs.pop('return_type', None)
-        if self.classification_transformer is not None:
-            hidden_states = self.classification_transformer(self.encoder(x, return_type='hidden', **kwargs)).pad()
-        else:
-            hidden_states = self.encoder(x, return_type='hidden', **kwargs).pad() # (B,S,D)
-        # Warning: hidden states are now a PaddedTensor so that pooling can be accomplished
-        pooled_output = self._pool(hidden_states, attention_mask)
-        pooled_output = self.dropout(pooled_output)
-        logits = self.classification_head(pooled_output)
-        return logits            
-            
+    def _compute(self, x):
+        if self.classification_transformer:
+            x = self.classification_transformer(x)
+        if self.config.do_rms_norm:
+            if self.config.exclude_end_from_norm and "final_norm" in self.id:
+                pass
+            else:
+                x=self.norm(x)
+        if self.config.scope == 'token':
+            t = x.tensor.to(self.classification_head.inner.weight.dtype)
+            return self.classification_head(self.dropout(NormalTensor(tensor=t))).tensor
+        if self.config.do_rms_norm:
+            F.rms_norm(x.tensor.float(), x.tensor.shape[-1:])
+        pooled = self._pooled(x.pad()) # Padding before pooling
+        if self.random_proj is not None:
+            pooled = pooled.float() @ self.random_proj
+        pooled = pooled.to(self.classification_head.inner.weight.dtype)
+        return self.classification_head(self.dropout(NormalTensor(tensor=pooled))).tensor
 
-class TransformerWithTokenClassificationHead(MatformerModule):
-    classification_head: "param_name:classifier"
-    dropout: "param_name:dropout"
-    classification_transformer: "param_name:classification_transformer"
-    encoder: "transparent"
-    def forward(self, x, attention_mask=None, **kwargs):
-        kwargs.pop('return_type', None)
-        if self.classification_transformer is not None:
-            hidden_states = self.classification_transformer(self.encoder(x, **kwargs)).tensor
-        else:
-            hidden_states = self.encoder(x, **kwargs).tensor
-        hidden_states = self.dropout(hidden_states)
-        logits = self.classification_head(hidden_states)
+    def forward(self, x, position=None, **kwargs):
+        logits = self._compute(x)
+        if self.config.as_probe:
+            # stored under the socket address; "@n" marks the n-th pass in looped models
+            key = self.address if not self.visit else f"{self.address}@{self.visit}"
+            self.cache.storage.setdefault('probe_outputs', {})[key] = logits
+            return None
         return logits
 
+
+def classification_plugin_config(model_config, **overrides):
+    """Plugin config built from the same-named fields of a model config."""
+    probe_fields = registry.get_definition_defaults("plugin", "classification").keys()
+    values = {k: getattr(model_config, k) for k in probe_fields if hasattr(model_config, k)}
+    return registry.get_definition("plugin", "classification").from_dict({**values, **overrides})
+
+
+# ClassificationModel
+
+@registry.register_dataclass("model","classification")
+@dataclass
+class ClassificationConfig(ModelConfig):
+    """Base configuration for classification tasks"""
+    scope: Literal["sequence", "token"] = "sequence"
+    pooling_type: Literal["cls", "mean", "last", "max", "attention"] = "cls"
+    num_classes: Optional[int] = None
+    head_type: Literal["linear", "mlp"] = "linear"
+    head_config: Dict[str, Any] = field(default_factory=dict)
+    pre_head: Optional[str] = None #Another model before the head
+    additional_transformer_layers: Optional[int] = 1
+    classifier_dropout_p: float = 0.1
+    classifier_dropout_inplace: bool = False
+    # attention pooling (pooling_type="attention"); unrelated to the transformer's own attention heads
+    attention_pool_heads: int = 8                  # number of learned pooling queries
+    attention_pool_use_tanh: bool = False          # tanh weights instead of softmax
+    attention_pool_dropout_p: float = 0.0          # drops pooling keys during training
+    freeze_base_model: bool = False
+    base_model: Optional[str] = None #The path (or repo name) of the base model to take config and weights from
+    base_model_hf: bool = False #wether the base model is from huggingface or not
+    do_rms_norm: bool = False 
+    rms_elementwise_affine: bool = False
+    in_features: Optional[int] = None 
+@registry.register("model", "classification", "default")
+class TransformerWithClassificationHead(MatformerModule):
+    encoder: "transparent"
+
+    def __init__(self, config, cache=None, **kwargs):
+        super().__init__()
+        self.cache = ensure_cache(cache)
+        self.config = config
+        self.encoder = TransformerWithLMHead(config=config, cache=self.cache)
+
+    def default_plugins(self):
+        return [("*.final_norm", classification_plugin_config(self.config, as_probe=False))]
+    def forward(self, x, attention_mask=None, **kwargs):
+        return self.encoder(x, return_type='hidden', **kwargs)
+
+
+# MultiProbeConfig / MultiProbeClassifier
+
+@registry.register_dataclass("model", "multiprobe")
+@dataclass
+class MultiProbeConfig(ClassificationConfig):
+    probe_targets: List[str] = field(default_factory=lambda: ["*.layers.*.layer_output","*final_norm"])
+    base_model: Optional[str] = None
+    base_model_hf: bool = False
+    base_model: Optional[str] = None #The path (or repo name) of the base model to take config and weights from
+    base_model_hf: bool = False #wether the base model is from huggingface or not
+    do_rms_norm: bool = False
+    rms_elementwise_affine: bool = False
+    l1_penalty: float = 0.0
+    random_proj_dim: Optional[int] = None
+    random_proj_seed: int = 0
+    in_features: Optional[int] = None
+@registry.register("model", "multiprobe", "default")
+class MultiProbeClassifier(MatformerModule):
+    def __init__(self, config, cache=None, **kwargs):
+        super().__init__()
+        self.cache = ensure_cache(cache)
+        self.config = config
+        self.encoder = TransformerWithEmbeddingHead(config=config, cache=self.cache)
+
+    def default_plugins(self):
+        targets = self.config.probe_targets
+        if isinstance(targets, str):
+            targets = [targets]
+        cfg = classification_plugin_config(self.config, as_probe=True)
+        return [(target, cfg) for target in targets]
+
+    def forward(self, x, **kwargs):
+        self.cache.storage['probe_outputs'] = {}
+        self.encoder(x, **kwargs)
+        return self.cache.storage['probe_outputs']   # {address: logits}

@@ -1,0 +1,57 @@
+# Phi-3 (mini-4k, model_type phi3) => Matformer config mapping
+# Standard LLaMA-like: pre-RMSNorm, swiglu, RoPE, no biases, tied embeddings.
+# NOTE: only the 4k context variant — phi3-mini-128k uses "longrope" scaling, which is
+# NOT supported (see REFUSE rules).
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: true
+    bias: false
+    training_objective: clm
+    lm_head_bias: false
+    default_layer:
+      normalization: rmsnorm
+      normalization_position: pre
+      ffn_activation: swiglu
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: rope
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  vocab_size: vocab_size
+  rms_norm_eps: rms_norm_eps
+  max_position_embeddings: max_position_embeddings
+  tie_word_embeddings: tie_word_embeddings
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_key_value_heads
+  default_layer.sequence_mixer_config.rope_theta: rope_theta
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  bos_token_id: bos_token_id
+  eos_token_id: eos_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+
+weight_mapping:
+  lm_head.weight:                                    lm_head.weight
+  encoder.embed_tokens.weight:                      model.embed_tokens.weight
+  encoder.blocks.norm.weight:                        model.norm.weight
+  encoder.blocks.layers.N.attn_norm.weight:          model.layers.N.input_layernorm.weight
+  encoder.blocks.layers.N.mlp_norm.weight:           model.layers.N.post_attention_layernorm.weight
+  encoder.blocks.layers.N.attn.q_proj.weight:        model.layers.N.self_attn.q_proj.weight
+  encoder.blocks.layers.N.attn.k_proj.weight:        model.layers.N.self_attn.k_proj.weight
+  encoder.blocks.layers.N.attn.v_proj.weight:        model.layers.N.self_attn.v_proj.weight
+  encoder.blocks.layers.N.attn.o_proj.weight:        model.layers.N.self_attn.o_proj.weight
+  encoder.blocks.layers.N.mlp.gate_proj.weight:      model.layers.N.mlp.gate_proj.weight
+  encoder.blocks.layers.N.mlp.up_proj.weight:        model.layers.N.mlp.up_proj.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:     model.layers.N.mlp.down_proj.weight
+
+# Automated suite (tests/test_hf_adapters.py): 4k variant only (128k uses longrope, unsupported).
+tests:
+  - model: microsoft/Phi-3-mini-4k-instruct
+    dtype: bfloat16
+    atol: 1.0e-2

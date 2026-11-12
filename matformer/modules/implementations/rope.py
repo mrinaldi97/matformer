@@ -8,7 +8,7 @@ from matformer.matformer_registry import registry
 @registry.register(
     'positional_encoding', 'rope', 'flash',
     requires=['flash_attn'],
-    priority=10,
+    priority=10, #Check against new FA3/FA4!!!
     metadata={
         'tensor_order_input': 'BSHD',
         'tensor_order_output': 'BSHD',
@@ -174,25 +174,29 @@ from torch import Tensor
     priority=1,
     metadata={
         'tensor_order_input': 'BSHD',
-        'supports_unpadding': False,
+        'tensor_order_output': 'BSHD',
+        'tensor_order_qkv_packed_input': None,  # packed qkv not accepted; the loader unpacks it
+        'supports_unpadding': True,
         'supports_packed_qkv': False,
-    }
+        }
 )
 class TorchRotaryEmbedding(nn.Module):
     """
     Pure PyTorch RoPE implementation (fallback when Flash Attention unavailable).
-    
-    Applies rotary positional embeddings by rotating pairs of features.
-    Features i and i+d/2 are treated as 2D coordinates and rotated by
-    position-dependent angles.
+
+    Supports both padded ((B, S, H, D) with position-indexed cos/sin) and
+    varlen-packed ((T, H, D) with cu_seqlens) inputs. Positions for a pack are
+    computed with a vectorized searchsorted (no python loops, no GPU->CPU
+    syncs), so this implementation never forces a pad/unpad round trip.
     """
     
     @staticmethod
     def is_available():
         return True
     
-    def __init__(self, **kwargs):
+    def __init__(self, interleaved: bool = False, **kwargs):
         super().__init__()
+        self.interleaved = interleaved
     
     def _neg_half(self, x: Tensor) -> Tensor:
         """
@@ -201,8 +205,29 @@ class TorchRotaryEmbedding(nn.Module):
         This creates the "rotated" version needed for the rotation formula:
         x_rot = x * cos + neg_half(x) * sin
         """
+        if self.interleaved:
+
+            # GPT-J style: rotate the (even, odd) pairs - x[..., 2i] pairs with x[..., 2i+1]
+
+            return torch.stack([-x[..., 1::2], x[..., 0::2]], dim=-1).flatten(-2)
+
         d_2 = x.shape[-1] // 2
+
         return torch.cat([-x[..., d_2:], x[..., :d_2]], dim=-1)
+
+    @staticmethod
+    def _positions(cu_seqlens: Tensor, total: int) -> Tensor:
+        """Per-token positions within each packed segment, (T,), all vectorized."""
+        ar = torch.arange(total, device=cu_seqlens.device)
+        seg = torch.searchsorted(cu_seqlens, ar, right=True) - 1
+        return ar - cu_seqlens[seg]
+
+    def _rotate_3d(self, x: Tensor, cos: Tensor, sin: Tensor) -> Tensor:
+        """x: (T, H, D); cos/sin: (T, dim) already indexed per token."""
+        rot_dim = cos.shape[-1]
+        x_rot, x_pass = x[..., :rot_dim], x[..., rot_dim:]
+        c, s = cos.unsqueeze(1), sin.unsqueeze(1)  # broadcast over heads
+        return torch.cat([x_rot * c + self._neg_half(x_rot) * s, x_pass], dim=-1)
     
     def _apply_rotary(self, x: Tensor, cos: Tensor, sin: Tensor) -> Tensor:
         """
@@ -217,13 +242,15 @@ class TorchRotaryEmbedding(nn.Module):
             Rotated tensor of same shape as x
         """
         seq_len = x.shape[1]
-        
-        # Reshape cos/sin for broadcasting: (seq_len, dim) -> (1, seq_len, 1, dim)
+        rot_dim = cos.shape[-1]
+        x_rot, x_pass = x[..., :rot_dim], x[..., rot_dim:]
+
         cos = cos[:seq_len].unsqueeze(0).unsqueeze(2)
         sin = sin[:seq_len].unsqueeze(0).unsqueeze(2)
-        
-        # Apply rotation: x_rot = x * cos + neg_half(x) * sin
-        return x * cos + self._neg_half(x) * sin
+
+        rotated = self._neg_half(x_rot)   # note: _neg_half must operate on rot_dim width now
+        x_rotated = x_rot * cos + rotated * sin
+        return torch.cat([x_rotated, x_pass], dim=-1)
     
     def forward(
         self,
@@ -241,26 +268,38 @@ class TorchRotaryEmbedding(nn.Module):
         
         Args:
             qkv: Not supported in this implementation, must be None.
-            q: Query tensor of shape (batch, seq_len, nheads, headdim)
-            k: Key tensor of shape (batch, seq_len, nheads, headdim)
+            q: Query tensor of shape (batch, seq_len, nheads, headdim) or (T, nheads, headdim)
+            k: Key tensor of shape (batch, seq_len, nheads, headdim) or (T, nheads, headdim)
             cos: Cosine values, shape (seq_len, headdim)
             sin: Sine values, shape (seq_len, headdim)
-            cu_seqlens: Not supported, must be None.
-            max_seq_len: Ignored.
+            cu_seqlens: cumulative sequence lengths of the pack (T path).
+            max_seq_len: ignored (kept for interface compatibility).
             seqlen_offsets: Position offset for KV cache (int only).
         
         Returns:
             Tuple of (None, rotated_q, rotated_k)
         """
         assert qkv is None, "TorchRotaryEmbedding does not support packed QKV"
-        assert cu_seqlens is None, "TorchRotaryEmbedding does not support unpadding"
         assert q is not None and k is not None, "Must provide both q and k"
-        
-        # Handle sequence offset (for KV cache during inference)
-        if isinstance(seqlen_offsets, int) and seqlen_offsets > 0:
+        offset = seqlen_offsets if isinstance(seqlen_offsets, int) else 0
+
+        if cu_seqlens is not None:
+            # Varlen: x may arrive either as a pack (T, H, D) or as a padded-grid
+            # (B, S, H, D) laid out so that each segment is a contiguous span of
+            # grid rows (the layout _transpose_for_kernel produces from cu_seqlens).
+            # Flatten to (T, H, D) and index cos/sin per token with vectorized positions.
+            x = q.reshape(-1, *q.shape[2:]) if q.dim() == 4 else q
+            # k keeps its own head count: grouped-query keys have fewer heads than queries,
+            # and cos/sin are per token, so they broadcast over heads either way.
+            k_x = k.reshape(-1, *k.shape[2:]) if k.dim() == 4 else k
+            positions = self._positions(cu_seqlens, x.shape[0]) + offset
+            return None, self._rotate_3d(x, cos[positions], sin[positions]), self._rotate_3d(k_x, cos[positions], sin[positions])
+
+        # Padded path
+        if offset > 0:
             seq_len = q.shape[1]
-            cos = cos[seqlen_offsets:seqlen_offsets + seq_len]
-            sin = sin[seqlen_offsets:seqlen_offsets + seq_len]
+            cos = cos[offset:offset + seq_len]
+            sin = sin[offset:offset + seq_len]
         
         q_rot = self._apply_rotary(q, cos, sin)
         k_rot = self._apply_rotary(k, cos, sin)

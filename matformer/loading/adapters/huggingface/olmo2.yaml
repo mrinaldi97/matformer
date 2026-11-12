@@ -1,0 +1,67 @@
+# OLMo 2 (allenai) => Matformer config mapping
+# Llama-like (RMSNorm, swiglu, MHA, no projection biases) with "inner" normalization:
+# the block has NO input_layernorm — attention and MLP run on the raw residual
+# stream, and post_attention_layernorm / post_feedforward_layernorm are applied
+# to the sublayer output BEFORE the residual add (HF modeling_olmo2 forward order).
+# QK-norm: FULL-WIDTH RMSNorm over the flattened q/k projections (not per-head)
+# -> qk_norm_full_width. Present in the 0325/0425 releases; the older 1124 release
+# has NO QK-norm — for those checkpoints remove the q_norm/k_norm lines below and
+# the three qk flags (no config key distinguishes the two).
+# MHA -> Matformer builds the fused qkv_proj: the three HF projections are stacked
+# into it via weight_transforms.
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: true
+    bias: false
+    training_objective: clm
+    lm_head_bias: false
+    default_layer:
+      normalization: rmsnorm
+      normalization_position: inner
+      ffn_activation: swiglu
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: rope
+        q_norm: true
+        k_norm: true
+        qk_norm_full_width: true
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  vocab_size: vocab_size
+  rms_norm_eps: rms_norm_eps
+  max_position_embeddings: max_position_embeddings
+  tie_word_embeddings: tie_word_embeddings
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_key_value_heads
+  default_layer.sequence_mixer_config.rope_theta: rope_theta
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  eos_token_id: eos_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+
+# QK-norm forces separate q/k/v projections in Matformer (no fused qkv_proj).
+weight_mapping:
+  lm_head.weight:                                    lm_head.weight
+  encoder.embed_tokens.weight:                       model.embed_tokens.weight
+  encoder.blocks.norm.weight:                        model.norm.weight
+  encoder.blocks.layers.N.attn_norm.weight:          model.layers.N.post_attention_layernorm.weight
+  encoder.blocks.layers.N.mlp_norm.weight:           model.layers.N.post_feedforward_layernorm.weight
+  encoder.blocks.layers.N.attn.q_proj.weight:        model.layers.N.self_attn.q_proj.weight
+  encoder.blocks.layers.N.attn.k_proj.weight:        model.layers.N.self_attn.k_proj.weight
+  encoder.blocks.layers.N.attn.v_proj.weight:        model.layers.N.self_attn.v_proj.weight
+  encoder.blocks.layers.N.attn.o_proj.weight:        model.layers.N.self_attn.o_proj.weight
+  encoder.blocks.layers.N.attn.q_norm.weight:        model.layers.N.self_attn.q_norm.weight
+  encoder.blocks.layers.N.attn.k_norm.weight:        model.layers.N.self_attn.k_norm.weight
+  encoder.blocks.layers.N.mlp.gate_proj.weight:      model.layers.N.mlp.gate_proj.weight
+  encoder.blocks.layers.N.mlp.up_proj.weight:        model.layers.N.mlp.up_proj.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:      model.layers.N.mlp.down_proj.weight
+
+# Automated suite (tests/test_hf_adapters.py).
+tests:
+  - model: allenai/OLMo-2-0425-1B-Instruct

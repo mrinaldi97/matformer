@@ -21,7 +21,8 @@ Da implementare il Fused Layer norm mlp
     "transformer-engine",
     requires=["transformer_engine"],
     priority=20,
-    params_names={'inner.weight': 'weight'}
+    params_names={'inner.weight': 'weight'},
+    metadata={"is_interpretable": False}
 )
 class TE_RMSNorm(nn.Module):
     inner: "transparent"
@@ -32,10 +33,10 @@ class TE_RMSNorm(nn.Module):
         if isinstance(normalized_shape, (list, tuple)):
             # take last dim as inner-most
             size = int(normalized_shape[-1])
-        self.inner = cls(size, eps=eps, **kwargs)
+        self.inner = cls(size, eps=eps, elementwise_affine=elementwise_affine, **kwargs)
 
     def forward(self, x):
-        return self.inner(x)
+        return x.apply(self.inner)
 
 
 @registry.register(
@@ -44,7 +45,8 @@ class TE_RMSNorm(nn.Module):
     "transformer-engine",
     requires=["transformer_engine"],
     priority=20,
-    params_names={'inner.weight': 'weight', 'inner.bias': 'bias'}
+    params_names={'inner.weight': 'weight', 'inner.bias': 'bias'},
+    metadata={"is_interpretable": False}
 )
 class TE_LayerNorm(nn.Module):
     inner: "transparent"
@@ -57,7 +59,7 @@ class TE_LayerNorm(nn.Module):
         self.inner = cls(size, eps=eps, **kwargs)
 
     def forward(self, x):
-        return self.inner(x)
+        return x.apply(self.inner)
 
 
 @registry.register(
@@ -66,7 +68,8 @@ class TE_LayerNorm(nn.Module):
     "transformer-engine",
     requires=["transformer_engine"],
     priority=20,
-    params_names={'inner.weight': 'weight', 'inner.bias': 'bias'}
+    params_names={'inner.weight': 'weight', 'inner.bias': 'bias'},
+    metadata={"is_interpretable": False}
 )
 class TE_Linear(nn.Module):
     inner: "transparent"
@@ -76,4 +79,4 @@ class TE_Linear(nn.Module):
         self.inner = cls(in_features, out_features, bias=bias, **kwargs)
 
     def forward(self, inp, *args, **kwargs):
-        return self.inner(inp, *args, **kwargs)
+        return inp.apply(self.inner, *args, **kwargs)

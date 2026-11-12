@@ -1,0 +1,87 @@
+# DistilBERT (model_type "distilbert") => Matformer config mapping.
+# A distilled BERT: post-norm LayerNorm, gelu MLP, MHA with q/k/v AND o biases,
+# learned position embeddings (offset 0, like BERT), embedding LayerNorm,
+# NO token-type embeddings, NO final norm, MLM head (transform + biased decoder,
+# tied to word embeddings). Config uses GPT-2 style keys (dim, n_layers, n_heads).
+# NOTE: LayerNorm eps is hardcoded to 1e-12 in HF (no config field).
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: false
+    bias: true
+    training_objective: masked
+    lm_head_bias: true
+    lm_head_transform: true
+    final_norm: false
+    embedding_norm: true
+    default_layer:
+      normalization: layernorm
+      normalization_position: post
+      ffn_activation: gelu
+      mlp_bias: true
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: learnable
+        qkv_bias: true
+        attn_output_bias: true
+
+model_mapping:
+  hidden_size: dim
+  num_hidden_layers: n_layers
+  default_layer.sequence_mixer_config.num_attention_heads: n_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: n_heads
+  vocab_size: vocab_size
+  max_position_embeddings: max_position_embeddings
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  pad_token_id: pad_token_id
+
+derived:
+  model.ffn_factor: "hidden_dim / dim"
+  model.tie_word_embeddings: "True"
+  model.rms_norm_eps: "1e-12"
+
+weight_mapping:
+  lm_head.weight:                                     vocab_projector.weight
+  lm_head.bias:                                       vocab_projector.bias
+  lm_head_transform.dense.weight:                    vocab_transform.weight
+  lm_head_transform.dense.bias:                      vocab_transform.bias
+  lm_head_transform.norm.weight:                     vocab_layer_norm.weight
+  lm_head_transform.norm.bias:                       vocab_layer_norm.bias
+  encoder.embed_tokens.weight:                       distilbert.embeddings.word_embeddings.weight
+  encoder.embed_positions.weight:                    distilbert.embeddings.position_embeddings.weight
+  encoder.embeddings_norm.weight:                    distilbert.embeddings.LayerNorm.weight
+  encoder.embeddings_norm.bias:                      distilbert.embeddings.LayerNorm.bias
+  encoder.blocks.layers.N.attn_norm.weight:          distilbert.transformer.layer.N.sa_layer_norm.weight
+  encoder.blocks.layers.N.attn_norm.bias:            distilbert.transformer.layer.N.sa_layer_norm.bias
+  encoder.blocks.layers.N.mlp_norm.weight:           distilbert.transformer.layer.N.output_layer_norm.weight
+  encoder.blocks.layers.N.mlp_norm.bias:             distilbert.transformer.layer.N.output_layer_norm.bias
+  encoder.blocks.layers.N.attn.o_proj.weight:        distilbert.transformer.layer.N.attention.out_lin.weight
+  encoder.blocks.layers.N.attn.o_proj.bias:          distilbert.transformer.layer.N.attention.out_lin.bias
+  encoder.blocks.layers.N.mlp.up_proj.weight:        distilbert.transformer.layer.N.lin1.weight
+  encoder.blocks.layers.N.mlp.up_proj.bias:          distilbert.transformer.layer.N.lin1.bias
+  encoder.blocks.layers.N.mlp.down_proj.weight:      distilbert.transformer.layer.N.lin2.weight
+  encoder.blocks.layers.N.mlp.down_proj.bias:        distilbert.transformer.layer.N.lin2.bias
+
+weight_transforms:
+  - sources:
+      - distilbert.transformer.layer.N.attention.q_lin.weight
+      - distilbert.transformer.layer.N.attention.k_lin.weight
+      - distilbert.transformer.layer.N.attention.v_lin.weight
+    stack: true
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.weight]
+    pattern: "s o i -> (s o) i"
+    axes: {o: dim}
+  - sources:
+      - distilbert.transformer.layer.N.attention.q_lin.bias
+      - distilbert.transformer.layer.N.attention.k_lin.bias
+      - distilbert.transformer.layer.N.attention.v_lin.bias
+    stack: true
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.bias]
+    pattern: "s o -> (s o)"
+    axes: {o: dim}
+
+# Automated suite (tests/test_hf_adapters.py).
+tests:
+  - model: distilbert/distilbert-base-cased

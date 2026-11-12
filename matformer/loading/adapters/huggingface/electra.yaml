@@ -1,0 +1,100 @@
+# ELECTRA (model_type "electra") => Matformer config mapping.
+# BERT-skeleton encoder (post-norm, gelu, qkv biases, learned positions at offset 0,
+# embedding LayerNorm, token types, NO final norm). Two checkpoint flavours, selected
+# at runtime via `architectures`:
+#  - discriminator ("ElectraForPreTraining", the usual pretrained artefact): bare
+#    encoder, no LM head — compared as last hidden states (check_adapter bare mode);
+#    discriminator_predictions.* land unresolved, harmless.
+#  - generator ("ElectraForMaskedLM"): masked LM with a BERT-style head
+#    (generator_predictions.dense/gelu/LayerNorm + tied generator_lm_head with bias).
+# NOTE: small generators with embedding_size != hidden_size ship an extra
+#    embeddings_project dense — NOT mapped (unresolved); use the base/large sizes.
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: false
+    bias: true
+    training_objective: masked
+    final_norm: false
+    embedding_norm: true
+    default_layer:
+      normalization: layernorm
+      normalization_position: post
+      ffn_activation: gelu
+      mlp_bias: true
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: learnable
+        qkv_bias: true
+        attn_output_bias: true
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_attention_heads
+  vocab_size: vocab_size
+  rms_norm_eps: layer_norm_eps
+  max_position_embeddings: max_position_embeddings
+  type_vocab_size: type_vocab_size
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  pad_token_id: pad_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+  # generator-only field (missing keys are skipped silently, so the discriminator
+  # keeps lm_head_transform false and builds as a bare encoder). tie_word_embeddings
+  # is always true: the generator IS tied in HF, and for the headless discriminator
+  # it merely aliases lm_head.weight to the embeddings so no head tensor is expected.
+  model.lm_head_transform: "'ElectraForMaskedLM' in architectures"
+  model.lm_head_bias: "'ElectraForMaskedLM' in architectures"
+  model.tie_word_embeddings: "True"
+
+weight_mapping:
+  lm_head.weight:                                     generator_lm_head.weight
+  lm_head.bias:                                       generator_lm_head.bias
+  lm_head_transform.dense.weight:                    generator_predictions.dense.weight
+  lm_head_transform.dense.bias:                      generator_predictions.dense.bias
+  lm_head_transform.norm.weight:                     generator_predictions.LayerNorm.weight
+  lm_head_transform.norm.bias:                       generator_predictions.LayerNorm.bias
+  encoder.embed_tokens.weight:                       electra.embeddings.word_embeddings.weight
+  encoder.embed_positions.weight:                    electra.embeddings.position_embeddings.weight
+  encoder.embed_token_type.weight:                   electra.embeddings.token_type_embeddings.weight
+  encoder.embeddings_norm.weight:                    electra.embeddings.LayerNorm.weight
+  encoder.embeddings_norm.bias:                      electra.embeddings.LayerNorm.bias
+  encoder.blocks.layers.N.attn_norm.weight:          electra.encoder.layer.N.attention.output.LayerNorm.weight
+  encoder.blocks.layers.N.attn_norm.bias:            electra.encoder.layer.N.attention.output.LayerNorm.bias
+  encoder.blocks.layers.N.mlp_norm.weight:           electra.encoder.layer.N.output.LayerNorm.weight
+  encoder.blocks.layers.N.mlp_norm.bias:             electra.encoder.layer.N.output.LayerNorm.bias
+  encoder.blocks.layers.N.attn.o_proj.weight:        electra.encoder.layer.N.attention.output.dense.weight
+  encoder.blocks.layers.N.attn.o_proj.bias:          electra.encoder.layer.N.attention.output.dense.bias
+  encoder.blocks.layers.N.mlp.up_proj.weight:        electra.encoder.layer.N.intermediate.dense.weight
+  encoder.blocks.layers.N.mlp.up_proj.bias:          electra.encoder.layer.N.intermediate.dense.bias
+  encoder.blocks.layers.N.mlp.down_proj.weight:      electra.encoder.layer.N.output.dense.weight
+  encoder.blocks.layers.N.mlp.down_proj.bias:        electra.encoder.layer.N.output.dense.bias
+
+weight_transforms:
+  - sources:
+      - electra.encoder.layer.N.attention.self.query.weight
+      - electra.encoder.layer.N.attention.self.key.weight
+      - electra.encoder.layer.N.attention.self.value.weight
+    stack: true
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.weight]
+    pattern: "s o i -> (s o) i"
+    axes: {o: hidden_size}
+  - sources:
+      - electra.encoder.layer.N.attention.self.query.bias
+      - electra.encoder.layer.N.attention.self.key.bias
+      - electra.encoder.layer.N.attention.self.value.bias
+    stack: true
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.bias]
+    pattern: "s o -> (s o)"
+    axes: {o: hidden_size}
+
+# Automated suite (tests/test_hf_adapters.py): discriminator (bare) + generator (MLM).
+tests:
+  - model: google/electra-base-discriminator
+  - model: google/electra-small-generator
+    atol: 1.0e-3

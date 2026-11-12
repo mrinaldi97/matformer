@@ -2,7 +2,6 @@
 
 from .classification_models import (
     TransformerWithClassificationHead,
-    TransformerWithTokenClassificationHead,
 )
 from .language_models import (
     Autoregressive_Model,
@@ -17,7 +16,7 @@ from .full_models import LanguageModel
 
 __all__ = [
     "TransformerWithClassificationHead",
-    "TransformerWithTokenClassificationHead",
+
     "Autoregressive_Model",
     "BERTModel",
     "TextDiffusionModel",

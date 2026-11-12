@@ -1,0 +1,83 @@
+# Gemma 2 (google) => Matformer config mapping
+# Gemma quirks (see gemma3_text.yaml for the sibling family):
+#  - embeddings scaled by sqrt(hidden_size) -> derived model.embedding_scale
+#  - ALL norms are zero-centered (1+weight) RMSNorm -> normalization: rmsnorm_zc
+#  - hidden_activation gelu_pytorch_tanh, gated MLP -> geglu_tanh
+#  - QK-norm (zero-centered, shared across heads) -> q_norm/k_norm + qk_norm_zero_centered
+#  - Sandwich norm layout (same tensors/roles as Gemma3) -> normalization_position: sandwich
+#  - uniform sliding window on ALL layers (4096 for released sizes)
+#  - attention-logit tanh softcapping (attn_logit_softcapping, 50) and final-logit
+#    softcapping (final_logit_softcapping, 30): the flash-attn kernel cannot cap
+#    attention logits, so those checkpoints fall back to the SDPA kernel (which
+#    materializes the scores); kernels without softcap support must refuse.
+# NOTE: query_pre_attn_scalar (256) == head_dim (256), so Matformer's
+#  1/sqrt(head_dim) attention scale is correct.
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: true
+    bias: false
+    training_objective: clm
+    lm_head_bias: false
+    sliding_type: full
+    default_layer:
+      normalization: rmsnorm_zc
+      normalization_position: sandwich
+      ffn_activation: geglu_tanh
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: rope
+        q_norm: true
+        k_norm: true
+        qk_norm_zero_centered: true
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  vocab_size: vocab_size
+  rms_norm_eps: rms_norm_eps
+  max_position_embeddings: max_position_embeddings
+  tie_word_embeddings: tie_word_embeddings
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_key_value_heads
+  default_layer.sequence_mixer_config.head_dim: head_dim
+  default_layer.sequence_mixer_config.sliding_window_size: sliding_window
+  default_layer.sequence_mixer_config.rope_theta: rope_theta
+  default_layer.sequence_mixer_config.attn_logit_softcap: attn_logit_softcapping
+  final_logit_softcap: final_logit_softcapping
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  bos_token_id: bos_token_id
+  eos_token_id: eos_token_id
+  pad_token_id: pad_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+  model.embedding_scale: "hidden_size ** 0.5"
+  # gemma-2 configs omit the key (HF class default: tied)
+  model.tie_word_embeddings: "vars().get('tie_word_embeddings', True)"
+
+weight_mapping:
+  lm_head.weight:                                    lm_head.weight
+  encoder.embed_tokens.weight:                       model.embed_tokens.weight
+  encoder.blocks.norm.weight:                        model.norm.weight
+  encoder.blocks.layers.N.attn_norm.weight:          model.layers.N.input_layernorm.weight
+  encoder.blocks.layers.N.attn_post_norm.weight:     model.layers.N.post_attention_layernorm.weight
+  encoder.blocks.layers.N.mlp_norm.weight:           model.layers.N.pre_feedforward_layernorm.weight
+  encoder.blocks.layers.N.mlp_post_norm.weight:      model.layers.N.post_feedforward_layernorm.weight
+  encoder.blocks.layers.N.attn.q_proj.weight:        model.layers.N.self_attn.q_proj.weight
+  encoder.blocks.layers.N.attn.k_proj.weight:        model.layers.N.self_attn.k_proj.weight
+  encoder.blocks.layers.N.attn.v_proj.weight:        model.layers.N.self_attn.v_proj.weight
+  encoder.blocks.layers.N.attn.o_proj.weight:        model.layers.N.self_attn.o_proj.weight
+  encoder.blocks.layers.N.attn.q_norm.weight:        model.layers.N.self_attn.q_norm.weight
+  encoder.blocks.layers.N.attn.k_norm.weight:        model.layers.N.self_attn.k_norm.weight
+  encoder.blocks.layers.N.mlp.gate_proj.weight:      model.layers.N.mlp.gate_proj.weight
+  encoder.blocks.layers.N.mlp.up_proj.weight:        model.layers.N.mlp.up_proj.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:      model.layers.N.mlp.down_proj.weight
+
+# Automated suite (tests/test_hf_adapters.py).
+tests:
+  - model: google/gemma-2-2b
+    dtype: bfloat16
+    atol: 1.0e-2

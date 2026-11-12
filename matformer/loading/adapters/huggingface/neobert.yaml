@@ -1,0 +1,60 @@
+# NeoBERT (chandar-lab, remote-code model: model.py + rotary.py in the HF repo,
+# trust_remote_code) => Matformer config mapping.
+# Bidirectional masked-LM encoder with llama-style internals: pre-norm RMSNorm,
+# SwiGLU, FUSED unbiased QKV (ships one `qkv` tensor -> direct rename onto
+# Matformer's fused qkv_proj, no transform needed), INTERLEAVED (GPT-J pairs) RoPE
+# -> rope_interleaved: true, plain decoder lm_head WITH bias, final RMSNorm,
+# no position/token-type embeddings.
+# NOTE: HF addresses padded positions as padding_idx (row 0 of the position table);
+# irrelevant here (no position embeddings). xformers SwiGLU names: w1=gate, w3=up, w2=down.
+# NOTE: effective swiglu width = round-to-8(2/3 * intermediate_size) -> derived ffn_factor.
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: false
+    bias: false
+    training_objective: masked
+    lm_head_bias: true
+    final_norm: true
+    default_layer:
+      normalization: rmsnorm
+      normalization_position: pre
+      ffn_activation: swiglu
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: rope
+        rope_interleaved: true
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  vocab_size: vocab_size
+  rms_norm_eps: norm_eps
+  max_position_embeddings: max_length
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_attention_heads
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  pad_token_id: pad_token_id
+
+derived:
+  model.ffn_factor: "8 * ((int(2 * intermediate_size / 3) + 7) // 8) / hidden_size"
+
+weight_mapping:
+  lm_head.weight:                                    decoder.weight
+  lm_head.bias:                                      decoder.bias
+  encoder.embed_tokens.weight:                       model.encoder.weight
+  encoder.blocks.norm.weight:                        model.layer_norm.weight
+  encoder.blocks.layers.N.attn_norm.weight:          model.transformer_encoder.N.attention_norm.weight
+  encoder.blocks.layers.N.mlp_norm.weight:           model.transformer_encoder.N.ffn_norm.weight
+  encoder.blocks.layers.N.attn.qkv_proj.weight:      model.transformer_encoder.N.qkv.weight
+  encoder.blocks.layers.N.attn.o_proj.weight:        model.transformer_encoder.N.wo.weight
+  encoder.blocks.layers.N.mlp.gate_proj.weight:      model.transformer_encoder.N.ffn.w1.weight
+  encoder.blocks.layers.N.mlp.up_proj.weight:        model.transformer_encoder.N.ffn.w3.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:      model.transformer_encoder.N.ffn.w2.weight
+
+# Automated suite (tests/test_hf_adapters.py). check_adapter must load with
+# trust_remote_code (the holder's snapshot download does).
+tests:
+  - model: chandar-lab/NeoBERT

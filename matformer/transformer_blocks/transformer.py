@@ -7,16 +7,24 @@ import torch.nn as nn
 import torch.nn.functional as F
 #Matformer
 from matformer.matformer_module import MatformerModule
-from matformer.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor, ModuleWrapper
-from matformer.model_config import ModelConfig  
-from matformer.utils.matformer_cache import ensure_cache_and_registry, CachedStuff
+from matformer.dataclasses.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor
+from matformer.dataclasses.model_dataclasses import ModelConfig
+from matformer.utils.matformer_cache import ensure_cache, CachedStuff
 from matformer.matformer_registry import registry
-from matformer.transformer_blocks import MultiHeadAttention
 
 #Other
 from dataclasses import replace
 from typing import Optional, List, Literal, Any
+def repeat(layers, times):
+    return list(layers) * times
 
+def cut(ids, start=None, stop=None):
+    """start: enter at the first visit of that layer. stop: exit after its last visit."""
+    if start is not None:
+        ids = ids[ids.index(start):]
+    if stop is not None:
+        ids = ids[:len(ids) - ids[::-1].index(stop)]
+    return ids
 class TransformerBlock(MatformerModule):
     """Transformer self-attention block with pre/post normalization and flexible hooks.
     
@@ -36,110 +44,54 @@ class TransformerBlock(MatformerModule):
     mlp_norm: "param_name:mlp_norm"
     self_attn: "param_name:attn"
     mlp: "param_name:mlp"
+    NORM_SLOTS = ["pre_attn", "post_attn", "post_add_attn", "pre_mlp", "post_mlp", "post_add_mlp"]
 
-    available_hooks = [
-        'pre_attn', 'post_norm_pre_attn', 'post_attn',
-        'pre_mlp',  'post_norm_pre_mlp',  'post_mlp',
-        'post_attn_norm', 'post_mlp_norm',
-        'residual_stream_output'
-    ]
-    def __init__(self, config: ['ModelConfig', 'LayerConfig'], 
-                 block_mask=None, layer_idx=None, cache=None):
+    def __init__(self, config, layer_idx=None, cache=None):
         """Initialize transformer block. 
         Args:
             config: ModelConfig or LayerConfig for this layer
-            block_mask: Optional block mask (TODO: maybe deprecated)
             layer_idx: Layer index for layer-specific configs
             cache: Shared cache for registry and precomputed values
         """
         super().__init__()
-        self.cache = ensure_cache_and_registry(cache)
+        self.cache = ensure_cache(cache)
         
-        # Extract layer-specific configuration
         if isinstance(config, ModelConfig):
             layer_config = (config.get_layer_config(layer_idx) 
                           if layer_idx is not None 
                           else config.default_layer)
         else:
             layer_config = config
-        
         self.config = config
         self.layer_config = layer_config
-        self.norm_position = layer_config['normalization_position']
-        self.layer_idx=layer_idx
+        self.init_sockets(stream_type=layer_config.stream_type)
         # Initialize normalization layers
-        norm_kwargs = {
-            "normalized_shape": config.hidden_size,
-            "eps": config.rms_norm_eps,
-            "elementwise_affine": True
-        }
-        self.attn_norm = ModuleWrapper(
-            self.cache.registry.create("norm", layer_config['normalization'], **norm_kwargs)
-        )
-        self.mlp_norm = ModuleWrapper(
-            self.cache.registry.create("norm", layer_config['normalization'], **norm_kwargs)
-        )
-        
-        # Initialize self-attention
-        self.self_attn = MultiHeadAttention(
-            bias=config.bias,
-            q_dim=config.hidden_size,
-            nheads=config.num_attention_heads,
-            num_key_value_heads=config.num_key_value_heads,
-            cache=self.cache,
-            attn_impl=layer_config['attn_impl'],
-            positional_encoding=layer_config['positional_encoding'],
-            is_causal=config.is_causal,
-            is_hybrid=getattr(config, 'training_objective', None) == 'hybrid',
-            sliding_window=layer_config['sliding_window_size'],
-            device=self.device,
-            layer_idx=layer_idx,
-            interpretability_friendly=layer_config.get('interpretability_friendly',False),
-            hooks=layer_config.get('hooks', {})
-            
-        )
-        # Initialize MLP
-        self.mlp = ModuleWrapper(
-            self.cache.registry.create(
-                "mlp", 
-                layer_config["ffn_activation"],
-                hidden_size=config.hidden_size,
-                ffn_factor=config.ffn_factor
-            )
-        )
-        
-        # Initialize hook system
-        self.hooks = self._init_hooks(layer_config.get('hooks', {}))
+        # bias only when explicitly disabled: RMSNorm kernels take no bias argument
+        norm_kwargs = {"normalized_shape": config.hidden_size,
+                       "eps": config.rms_norm_eps,
+                       "elementwise_affine": getattr(config, "norm_affine", True)}
+        if not getattr(config, "norm_bias", True):
+            norm_kwargs["bias"] = False
+        norm_style = registry.create("norm_style", layer_config.normalization_position)
+        for slot in self.NORM_SLOTS:
+            if norm_style(slot):
+                norm = registry.create("norm", layer_config.normalization, **norm_kwargs)
+                self.register_socket(slot, norm, attr=norm_style.attr(slot))
+            else:
+                self.add_socket(slot)            # empty = identity
 
-    def _norm_attn_residual(self, x, original_x, is_causal=None, interpretability=False):
-        """Apply normalization, attention, and residual connection."""
-        if self.norm_position == 'pre':
-            normed = self.attn_norm(x)
-            normed = self._apply_hook("post_norm_pre_attn", normed)
-            attn_out = self.self_attn(normed, original_x=original_x, is_causal=is_causal, interpretability=interpretability)
-            attn_out = self._apply_hook("post_attn", attn_out)
-            return x + attn_out
-        else:  # post normalization
-            attn_out = self.self_attn(x, original_x=original_x, is_causal=is_causal, interpretability=interpretability)
-            attn_out = self._apply_hook("post_attn", attn_out)
-            x = x + attn_out
-            x = self.attn_norm(x)
-            return self._apply_hook("post_attn_norm", x)
-    
-    def _norm_mlp_residual(self, x):
-        """Apply normalization, MLP, and residual connection."""
-        if self.norm_position == 'pre':
-            normed = self.mlp_norm(x)
-            normed = self._apply_hook("post_norm_pre_mlp", normed)
-            mlp_out = self.mlp(normed)
-            mlp_out = self._apply_hook("post_mlp", mlp_out)
-            return x + mlp_out
-        else:  # post normalization
-            mlp_out = self.mlp(x)
-            mlp_out = self._apply_hook("post_mlp", mlp_out)
-            x = x + mlp_out
-            x = self.mlp_norm(x)
-            return self._apply_hook("post_mlp_norm", x)
+        self.register_socket("self_attn", registry.create(
+            "sequence_mixer", layer_config.sequence_mixer,
+            config=layer_config.sequence_mixer_config, hidden_size=config.hidden_size,
+            layer_idx=layer_idx, cache=self.cache, is_causal=config.is_causal,
+            is_hybrid=config.training_objective == "hybrid", device=self.device),
+            attr="self_attn")
+        self.register_socket("mlp", registry.create(
+            "mlp", layer_config.ffn_activation, hidden_size=config.hidden_size,
+            ffn_factor=config.ffn_factor, bias=layer_config.mlp_bias),
+            attr="mlp")
+        self.add_socket("layer_output")
+
     
     def forward(self, x, block_mask=None, sliding=False, is_causal=None, interpretability=False):
         """Forward pass through transformer block.     
@@ -147,21 +99,23 @@ class TransformerBlock(MatformerModule):
             pre_attn => norm => attn => residual => pre_mlp => norm => mlp => residual => output
         else (self.norm_position == post):
             pre_attn => attn => norm => residual => pre_mlp => mlp => norm => residual => output
+        # WERSA attention requires original input
 
         """
-        # WERSA attention requires original input
-        original_x = x if self.layer_config['attn_impl'] == 'wersa' else None
-        
-        # Attention block
-        x = self._apply_hook("pre_attn", x)
-        x = self._norm_attn_residual(x, original_x, is_causal, interpretability)
-        
-        # MLP block
-        x = self._apply_hook("pre_mlp", x)
-        x = self._norm_mlp_residual(x)
-        
-        # Final output hook
-        return self._apply_hook("residual_stream_output", x)
+        self.stream.init(x)
+        with self.stream.branch() as s:
+            s.apply("pre_attn")
+            s.apply("self_attn", original_x=None, is_causal=is_causal, interpretability=interpretability)
+            s.apply("post_attn")
+        self.stream.apply("post_add_attn")
+
+        with self.stream.branch() as s:
+            s.apply("pre_mlp")
+            s.apply("mlp")
+            s.apply("post_mlp")
+        self.stream.apply("post_add_mlp")
+        self.stream.apply("layer_output")
+        return self.stream.exit()
 
 class NakedTransformer(MatformerModule):
     """
@@ -172,28 +126,45 @@ class NakedTransformer(MatformerModule):
     # Stable parameter names
     norm: "param_name:norm"
     layers: "param_name:layers"
-    
-    def __init__(self, config: ModelConfig, cache=None):
+    def __init__(self, config: ModelConfig, cache=None, **kwargs):
         super().__init__()
         self.config = config
-        self.cache = ensure_cache_and_registry(cache)
+        self.cache = ensure_cache(cache)
+        self.init_sockets(stream_type=config.stream_type)
         
+        # bias only when explicitly disabled: RMSNorm kernels take no bias argument
         norm_kwargs = {
             "normalized_shape": config.hidden_size,
             "eps": config.rms_norm_eps,
-            "elementwise_affine": True
+            "elementwise_affine": getattr(config, "norm_affine", True)
         }
-        self.norm = ModuleWrapper(
-            self.cache.registry.create("norm", config.default_layer['normalization'], **norm_kwargs)
-        )
-        
+        if not getattr(config, "norm_bias", True):
+            norm_kwargs["bias"] = False
+        n = config.num_hidden_layers
+        self.schedule = config.layer_schedule or list(range(n)) #Can be used for looped transformers
         self.layers = nn.ModuleList([
-            TransformerBlock(config=config, layer_idx=idx, cache=self.cache)
-            for idx in range(config.num_hidden_layers)
-        ])
-    
-    def forward(self, x, document_mask=None, **kwargs):
-        for layer in self.layers:
-            x = layer(x, **kwargs)
-        return self.norm(x)
+            TransformerBlock(config=config, layer_idx=i, cache=self.cache) for i in range(n)])
+        for i, layer in enumerate(self.layers):
+            self.register_socket(f"layer_{i}", layer)           
+
+        # Final norm (after the last block). Models whose reference architecture ships no
+        # final norm (e.g. HF BERT) set final_norm: false in the config: the socket is
+        # registered empty, which is identity in the stream — no special-casing downstream.
+        if getattr(config, "final_norm", True):
+            self.register_socket("final_norm",
+                registry.create("norm", config.default_layer["normalization"], **norm_kwargs),
+                attr="norm")
+        else:
+            self.add_socket("final_norm")
+
+        self.add_socket("before_unembed")
+
+    def forward(self, x, start=None, stop=None, **kwargs):
+        self.stream.init(x)
+        for i in cut(self.schedule, start, stop):
+            name = f"layer_{i}"
+            self.stream.apply(name, **kwargs)
+        self.stream.apply("final_norm")
+        self.stream.apply("before_unembed")
+        return self.stream.exit()
 

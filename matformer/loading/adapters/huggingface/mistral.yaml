@@ -1,0 +1,65 @@
+# Mistral architecture => Matformer config mapping
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: true
+    bias: false
+    training_objective: clm
+    lm_head_bias: false
+    default_layer:
+      normalization: rmsnorm
+      normalization_position: pre
+      ffn_activation: swiglu
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: rope
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  vocab_size: vocab_size
+  rms_norm_eps: rms_norm_eps
+  max_position_embeddings: max_position_embeddings
+  tie_word_embeddings: tie_word_embeddings
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_key_value_heads
+  default_layer.sequence_mixer_config.rope_theta: rope_theta
+tokenizer_mapping:
+  vocab_size: vocab_size
+  bos_token_id: bos_token_id
+  eos_token_id: eos_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+  # Plain checkpoints (v0.x): sliding_window applies to EVERY layer (None = full attention,
+  # e.g. Nemo / Small). layer_types checkpoints (Ministral-8B): only the 'sliding_attention'
+  # layers slide (full every 4th layer at offset 0) -> default layer gets no window and the
+  # sliding_window_size is restored per-pattern via custom_layers below.
+  model.default_layer.sequence_mixer_config.sliding_window_size: "sliding_window if 'layer_types' not in vars() or not any(t == 'sliding_attention' for t in layer_types) else None"
+  model.sliding_type: "'partial' if 'layer_types' in vars() and any(t == 'sliding_attention' for t in layer_types) else 'full'"
+  model.custom_layers: "{'every_4_offset_%d' % o: {'sequence_mixer_config': {'sliding_window_size': sliding_window}} for o in (1, 2, 3)} if 'layer_types' in vars() and any(t == 'sliding_attention' for t in layer_types) else {}"
+
+
+weight_mapping:
+  lm_head.weight:                                    lm_head.weight
+  encoder.embed_tokens.weight:                       model.embed_tokens.weight
+  encoder.blocks.norm.weight:                        model.norm.weight
+  encoder.blocks.layers.N.attn_norm.weight:          model.layers.N.input_layernorm.weight
+  encoder.blocks.layers.N.mlp_norm.weight:           model.layers.N.post_attention_layernorm.weight
+  encoder.blocks.layers.N.attn.q_proj.weight:        model.layers.N.self_attn.q_proj.weight
+  encoder.blocks.layers.N.attn.k_proj.weight:        model.layers.N.self_attn.k_proj.weight
+  encoder.blocks.layers.N.attn.v_proj.weight:        model.layers.N.self_attn.v_proj.weight
+  encoder.blocks.layers.N.attn.o_proj.weight:        model.layers.N.self_attn.o_proj.weight
+  encoder.blocks.layers.N.mlp.gate_proj.weight:      model.layers.N.mlp.gate_proj.weight
+  encoder.blocks.layers.N.mlp.up_proj.weight:        model.layers.N.mlp.up_proj.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:      model.layers.N.mlp.down_proj.weight
+# Automated suite (tests/test_hf_adapters.py): no small ungated official Mistral exists,
+# unsloth's full-precision mirror is used; big model -> bf16 + looser atol.
+# The Ministral entry covers the layer_types partial-sliding path.
+tests:
+  - model: unsloth/mistral-7b-v0.3
+    dtype: bfloat16
+    atol: 1.0e-2
+  - model: mistralai/Ministral-8B-Instruct-2410
+    dtype: bfloat16
+    atol: 1.0e-2

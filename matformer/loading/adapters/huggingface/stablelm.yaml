@@ -1,0 +1,76 @@
+# StableLM 2 (stabilityai) => Matformer config mapping
+# Pre-norm LayerNorm (with bias), swiglu, MHA with q/k/v biases (none on o_proj),
+# partial RoPE (25% of head_dim), untied embeddings.
+# Plain MHA without QK-norm -> Matformer builds the fused qkv_proj, so the three
+# HF projections (weight and bias) are stacked into it via weight_transforms.
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: true
+    training_objective: clm
+    lm_head_bias: false
+    default_layer:
+      normalization: layernorm
+      normalization_position: pre
+      ffn_activation: swiglu
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: rope
+        qkv_bias: true
+        attn_output_bias: false
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  vocab_size: vocab_size
+  rms_norm_eps: layer_norm_eps
+  max_position_embeddings: max_position_embeddings
+  tie_word_embeddings: tie_word_embeddings
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_key_value_heads
+  default_layer.sequence_mixer_config.rope_theta: rope_theta
+  default_layer.sequence_mixer_config.partial_rotary_factor: partial_rotary_factor
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  bos_token_id: bos_token_id
+  eos_token_id: eos_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+
+weight_mapping:
+  lm_head.weight:                                    lm_head.weight
+  encoder.embed_tokens.weight:                       model.embed_tokens.weight
+  encoder.blocks.norm.weight:                        model.norm.weight
+  encoder.blocks.norm.bias:                          model.norm.bias
+  encoder.blocks.layers.N.attn_norm.weight:          model.layers.N.input_layernorm.weight
+  encoder.blocks.layers.N.attn_norm.bias:            model.layers.N.input_layernorm.bias
+  encoder.blocks.layers.N.mlp_norm.weight:           model.layers.N.post_attention_layernorm.weight
+  encoder.blocks.layers.N.mlp_norm.bias:             model.layers.N.post_attention_layernorm.bias
+  encoder.blocks.layers.N.attn.o_proj.weight:        model.layers.N.self_attn.o_proj.weight
+  encoder.blocks.layers.N.mlp.gate_proj.weight:      model.layers.N.mlp.gate_proj.weight
+  encoder.blocks.layers.N.mlp.up_proj.weight:        model.layers.N.mlp.up_proj.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:      model.layers.N.mlp.down_proj.weight
+
+weight_transforms:
+  - sources: [model.layers.N.self_attn.q_proj.weight,
+              model.layers.N.self_attn.k_proj.weight,
+              model.layers.N.self_attn.v_proj.weight]
+    stack: true
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.weight]
+    pattern: "s o i -> (s o) i"
+    axes: {o: hidden_size}
+  - sources: [model.layers.N.self_attn.q_proj.bias,
+              model.layers.N.self_attn.k_proj.bias,
+              model.layers.N.self_attn.v_proj.bias]
+    stack: true
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.bias]
+    pattern: "s o -> (s o)"
+    axes: {o: hidden_size}
+
+# Automated suite (tests/test_hf_adapters.py).
+tests:
+  - model: stabilityai/stablelm-2-1_6b
+    dtype: bfloat16
+    atol: 1.0e-2

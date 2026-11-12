@@ -5,28 +5,30 @@ def configure_lr_schedulers(train_config, optimizers):
     if not isinstance(optimizers,list):
         print("Warning: configure_lr_schedulers expects optimizers to be a list")
         optimizers=[optimizers]
-    if not train_config.get("lr_scheduling", False):
+    if not train_config.lr_scheduling:
         return None
 
-    total_steps  = train_config["total_steps"]
-    warmup_steps = int(train_config.get("warmup_steps", 0.05) * total_steps)
-    hold_steps   = int(train_config.get("hold_steps",   0.0)  * total_steps)
+    total_steps  = train_config.total_steps
+    warmup_steps = train_config.warmup_steps_fraction * total_steps
+    hold_steps   = train_config.hold_steps_fraction * total_steps
     decay_steps  = max(1, total_steps - warmup_steps - hold_steps)
-    anneal_step  = train_config.get("annealing_start_step")
+    anneal_step  = train_config.annealing_start_step
      
     DECAY_FNS = {
         "custom":     lambda p, s, e: e + (s - e) * 0.5 * (1 + math.cos(math.pi * p)), #deprecated, is the same as 'cosine'
         "cosine":     lambda p, s, e: e + (s - e) * 0.5 * (1 + math.cos(math.pi * p)),
         "linear":     lambda p, s, e: s + (e - s) * p,
-        "polynomial": lambda p, s, e: e + (s - e) * (1 - p) ** train_config.get("poly_power", 2),
+        "polynomial": lambda p, s, e: e + (s - e) * (1 - p) ** train_config.polynomial_lr_power,
         "constant":   lambda p, s, e: s,
     }
-    decay = DECAY_FNS[train_config.get("scheduler", "cosine")]
+    decay = DECAY_FNS[train_config.scheduler]
      
     def make_schedule(opt):
         lr           = opt.param_groups[0]["lr"]
-        end_factor   = train_config.get("final_lr", 0.0) / lr
-        anneal_factor = train_config.get("annealing_lr", lr) / lr if anneal_step else None
+        end_factor   = train_config.final_lr / lr
+        if train_config.annealing_lr is None:
+            train_config.annealing_lr=lr
+        anneal_factor = train_config.annealing_lr / lr if anneal_step else None
      
         def lr_schedule(step):
             if anneal_step and step >= anneal_step:

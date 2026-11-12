@@ -1,0 +1,113 @@
+# LFM2 / LFM2.5 (LiquidAI) dense hybrid conv+attention => Matformer config mapping
+# Dense decoders only (lfm2 model_type); the MoE variants (lfm2_moe: 8B-A1B, 24B-A2B, ...)
+# are out of scope.
+# Hybrid layout: most layers are "conv" (GatedShortConv, implemented from scratch in
+# matformer/transformer_blocks/sequence_mixer/gated_short_conv.py), a few are
+# "full_attention". Attention positions differ across checkpoint sizes (layer_types /
+# full_attn_idxs) with no regular pattern, so custom_layers is derived from the HF config
+# itself — one attention patch per full_attention layer — keeping this adapter correct
+# for every dense size of the family.
+# Weight naming: HF conv layers are model.layers.N.conv.{in_proj,conv,out_proj};
+# attention layers are model.layers.N.self_attn.{q,k,v}_proj / out_proj with per-head
+# RMSNorms (q_layernorm/k_layernorm) applied before RoPE; the MLP is swiglu w1/w3/w2;
+# the final norm is model.embedding_norm (HF calls it that despite being the last norm).
+
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: true
+    bias: false
+    training_objective: clm
+    lm_head_bias: false
+    default_layer:
+      normalization: rmsnorm
+      normalization_position: pre
+      ffn_activation: swiglu
+      mlp_bias: false
+      sequence_mixer: gated_short_conv
+      sequence_mixer_config:
+        conv_bias: false
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  vocab_size: vocab_size
+  rms_norm_eps: norm_eps
+  max_position_embeddings: max_position_embeddings
+  default_layer.sequence_mixer_config.conv_size: conv_L_cache
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  bos_token_id: bos_token_id
+  eos_token_id: eos_token_id
+  pad_token_id: pad_token_id
+
+derived:
+  # HF's Lfm2MLP doesn't take intermediate_size verbatim: when block_auto_adjust_ff_dim is set
+  # (every LFM2-era checkpoint plus LFM2.5-350M, but not 230M/2.6B) it keeps 2/3 of it and
+  # rounds that up to block_multiple_of, e.g. 350M: 6656 -> 4608. Skipping that step builds the
+  # MLP too wide, and w1/w3/w2 then fail to load without raising, leaving random MLPs.
+  # Older configs (LFM2-350M) have no intermediate_size at all: Lfm2Config fills it from
+  # block_ff_dim, hence the fallback chain.
+  model.ffn_factor: >
+    (
+      (lambda ii, auto, mult, q: (lambda s: q * ((int(mult * s) + q - 1) // q) if mult is not None else s)
+        (int(2 * ii / 3)) if auto else ii)
+      (vars().get('intermediate_size', vars().get('block_ff_dim', 12288)),
+       vars().get('block_auto_adjust_ff_dim', True),
+       vars().get('block_ffn_dim_multiplier', 1.0), vars().get('block_multiple_of', 256))
+      / hidden_size)
+  # HF's effective tie flag: raw tie_word_embeddings, else legacy tie_embedding, else the
+  # Lfm2Config default (True).
+  model.tie_word_embeddings: "vars().get('tie_word_embeddings', vars().get('tie_embedding', True))"
+  # Attention head counts / RoPE are stamped per full_attention layer (they differ across
+  # checkpoint sizes). Accepts both layer_types (new) and full_attn_idxs (older) configs;
+  # when neither is present every layer is attention, as in Lfm2Config.__post_init__.
+  model.custom_layers: >
+    {str(i): {"sequence_mixer": "attention",
+              "sequence_mixer_config": {
+                  "positional_encoding": "rope",
+                  "qkv_bias": False, "attn_output_bias": False,
+                  "q_norm": True, "k_norm": True,
+                  "qk_norm_eps": vars().get("norm_eps", 1e-5),
+                  "num_attention_heads": num_attention_heads,
+                  "num_key_value_heads": num_key_value_heads,
+                  "rope_theta": (vars().get("rope_parameters") or {}).get("rope_theta")
+                                 or vars().get("rope_theta", 1000000.0)}}
+     for i in ([j for j, t in enumerate(layer_types) if t == "full_attention"]
+               if vars().get("layer_types") is not None
+               else (vars().get("full_attn_idxs")
+                     if vars().get("full_attn_idxs") is not None
+                     else list(range(num_hidden_layers))))}
+
+weight_mapping:
+  - lm_head.weight:                                     lm_head.weight
+  - encoder.embed_tokens.weight:                        model.embed_tokens.weight
+  - encoder.blocks.norm.weight:                         model.embedding_norm.weight
+  - encoder.blocks.layers.N.attn_norm.weight:           model.layers.N.operator_norm.weight
+  - encoder.blocks.layers.N.mlp_norm.weight:            model.layers.N.ffn_norm.weight
+
+  # --- conv (gated_short_conv) layers. The N-mappings below span every layer: entries
+  # whose HF source doesn't exist on a given layer (conv keys on attention layers and
+  # vice versa) simply fail to resolve and are skipped, so both layer kinds coexist. ---
+  - encoder.blocks.layers.N.attn.in_proj.weight:        model.layers.N.conv.in_proj.weight
+  - encoder.blocks.layers.N.attn.conv.weight:           model.layers.N.conv.conv.weight
+  - encoder.blocks.layers.N.attn.out_proj.weight:       model.layers.N.conv.out_proj.weight
+
+  # --- full_attention layers ---
+  - encoder.blocks.layers.N.attn.q_proj.weight:         model.layers.N.self_attn.q_proj.weight
+  - encoder.blocks.layers.N.attn.k_proj.weight:         model.layers.N.self_attn.k_proj.weight
+  - encoder.blocks.layers.N.attn.v_proj.weight:         model.layers.N.self_attn.v_proj.weight
+  - encoder.blocks.layers.N.attn.o_proj.weight:         model.layers.N.self_attn.out_proj.weight
+  - encoder.blocks.layers.N.attn.q_norm.weight:         model.layers.N.self_attn.q_layernorm.weight
+  - encoder.blocks.layers.N.attn.k_norm.weight:         model.layers.N.self_attn.k_layernorm.weight
+
+  - encoder.blocks.layers.N.mlp.gate_proj.weight:       model.layers.N.feed_forward.w1.weight
+  - encoder.blocks.layers.N.mlp.up_proj.weight:         model.layers.N.feed_forward.w3.weight
+  - encoder.blocks.layers.N.mlp.down_proj.weight:       model.layers.N.feed_forward.w2.weight
+
+# Automated suite (tests/test_hf_adapters.py): smallest dense LFM2 checkpoint plus 350M, the
+# size that exercises the block_auto_adjust_ff_dim path (FFN 4608, not the 6656 of the config).
+tests:
+  - model: LiquidAI/LFM2.5-230M-Base
+  - model: LiquidAI/LFM2.5-350M

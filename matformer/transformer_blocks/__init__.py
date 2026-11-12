@@ -2,8 +2,9 @@
 
 
 
-
-from .attention import MultiHeadAttention
+from .mixin import (
+    GenerationMixin
+)
 from .transformer import (
       TransformerBlock,
       NakedTransformer
@@ -12,23 +13,23 @@ from .heads import (
    TransformerWithEmbeddingHead,
    TransformerWithLMHead
 )
+
 from .models import (
     Autoregressive_Model,
     BERTModel,
     EntropyModel,
-    TransformerWithClassificationHead,
-    TransformerWithTokenClassificationHead,
+    TransformerWithClassificationHead
 )
 
 __all__ = [
     "Autoregressive_Model",
     "BERTModel",
     "EntropyModel",
-    "TransformerWithClassificationHead",
-    "TransformerWithTokenClassificationHead",
+    "TransformerWithClassificationHead"
     "TransformerWithEmbeddingHead",
     "TransformerWithLMHead",
     "MultiHeadAttention",
     "TransformerBlock",
     "NakedTransformer",
+    "GenerationMixin"
 ]

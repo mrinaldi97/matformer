@@ -1,0 +1,94 @@
+# RoBERTa (and XLM-RoBERTa / CamemBERT via alias yamls) => Matformer config mapping.
+# Same skeleton as BERT (post-norm, gelu, token-type size 1, embedding LayerNorm,
+# MLM head transform + decoder bias, tied embeddings) with ONE quirk: learned
+# position embeddings are addressed from padding_idx + 1 (positions start at 2,
+# max_position_embeddings 514) -> derived position_embedding_offset.
+# NOTE: HF additionally maps PAD positions to the padding row (index 0, untrained);
+# Matformer indexes pads like any token — harmless for masked/attention purposes,
+# but padded-batch parity checks may differ on pad positions.
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: false
+    bias: true
+    training_objective: masked
+    lm_head_bias: true
+    lm_head_transform: true
+    final_norm: false
+    embedding_norm: true
+    default_layer:
+      normalization: layernorm
+      normalization_position: post
+      ffn_activation: gelu
+      mlp_bias: true
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: learnable
+        qkv_bias: true
+        attn_output_bias: true
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_attention_heads
+  vocab_size: vocab_size
+  rms_norm_eps: layer_norm_eps
+  max_position_embeddings: max_position_embeddings
+  type_vocab_size: type_vocab_size
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  pad_token_id: pad_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+  model.tie_word_embeddings: "True"
+  model.position_embedding_offset: "pad_token_id + 1"
+
+weight_mapping:
+  lm_head.weight:                                     roberta.lm_head.decoder.weight
+  lm_head.bias:                                       roberta.lm_head.bias
+  lm_head_transform.dense.weight:                    roberta.lm_head.dense.weight
+  lm_head_transform.dense.bias:                      roberta.lm_head.dense.bias
+  lm_head_transform.norm.weight:                     roberta.lm_head.layer_norm.weight
+  lm_head_transform.norm.bias:                       roberta.lm_head.layer_norm.bias
+  encoder.embed_tokens.weight:                       roberta.embeddings.word_embeddings.weight
+  encoder.embed_positions.weight:                    roberta.embeddings.position_embeddings.weight
+  encoder.embed_token_type.weight:                   roberta.embeddings.token_type_embeddings.weight
+  encoder.embeddings_norm.weight:                    roberta.embeddings.LayerNorm.weight
+  encoder.embeddings_norm.bias:                      roberta.embeddings.LayerNorm.bias
+  encoder.blocks.layers.N.attn_norm.weight:          roberta.encoder.layer.N.attention.output.LayerNorm.weight
+  encoder.blocks.layers.N.attn_norm.bias:            roberta.encoder.layer.N.attention.output.LayerNorm.bias
+  encoder.blocks.layers.N.mlp_norm.weight:           roberta.encoder.layer.N.output.LayerNorm.weight
+  encoder.blocks.layers.N.mlp_norm.bias:             roberta.encoder.layer.N.output.LayerNorm.bias
+  encoder.blocks.layers.N.attn.o_proj.weight:        roberta.encoder.layer.N.attention.output.dense.weight
+  encoder.blocks.layers.N.attn.o_proj.bias:          roberta.encoder.layer.N.attention.output.dense.bias
+  encoder.blocks.layers.N.mlp.up_proj.weight:        roberta.encoder.layer.N.intermediate.dense.weight
+  encoder.blocks.layers.N.mlp.up_proj.bias:          roberta.encoder.layer.N.intermediate.dense.bias
+  encoder.blocks.layers.N.mlp.down_proj.weight:      roberta.encoder.layer.N.output.dense.weight
+  encoder.blocks.layers.N.mlp.down_proj.bias:        roberta.encoder.layer.N.output.dense.bias
+
+weight_transforms:
+  - sources:
+      - roberta.encoder.layer.N.attention.self.query.weight
+      - roberta.encoder.layer.N.attention.self.key.weight
+      - roberta.encoder.layer.N.attention.self.value.weight
+    stack: true
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.weight]
+    pattern: "s o i -> (s o) i"
+    axes: {o: hidden_size}
+  - sources:
+      - roberta.encoder.layer.N.attention.self.query.bias
+      - roberta.encoder.layer.N.attention.self.key.bias
+      - roberta.encoder.layer.N.attention.self.value.bias
+    stack: true
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.bias]
+    pattern: "s o -> (s o)"
+    axes: {o: hidden_size}
+
+# Automated suite (tests/test_hf_adapters.py).
+tests:
+  - model: FacebookAI/roberta-base
+  - model: FacebookAI/xlm-roberta-base
+    atol: 1.0e-3

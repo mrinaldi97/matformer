@@ -1,0 +1,77 @@
+HF ADAPTER ROADMAP — families considered, not yet supported (schematic)
+=======================================================================
+Status legend: [cheap]  config/yaml work only, existing machinery
+               [option] needs a small new config option / kernel branch
+               [mixer]  needs a new sequence-mixer class
+               [refuse] out of scope for the current single-stack design
+
+ENCODERS / MASKED LMs
+---------------------
+family          model_type        verdict    blocking feature / notes
+ALBERT          albert            [option]   cross-layer weight sharing; maybe expressible
+                                              via ModelConfig.layer_schedule (looped
+                                              transformers) — investigate; also shared
+                                              big embedding + factorized embedding matrix
+DeBERTa(v2/v3)  deberta           [refuse]   disentangled content+position attention
+                                              (extra projections, disentangled softmax)
+MobileBERT      mobilebert        [refuse]   bottleneck + stacked feed-forward, no-GELU
+SqueezeBERT     squeezebert       [refuse]   grouped convolutions
+ConvBERT        convbert          [refuse]   conv-based mixed attention
+MegatronBERT    megatron_bert     [cheap]    BERT with parallel residual? check; likely
+                                              post-norm + gelu, key renames
+RemBERT         rembert           [cheap]    BERT-ish (large embeddings, tied) — verify
+RemBERTXL/XLM-R XL roberta_prelayernorm [cheap] prelayernorm variant of roberta.yaml
+HerBERT         herbert           [cheap]    roberta clone -> alias: roberta (verify pos emb)
+
+DECODER LMs
+-----------
+family          model_type        verdict    blocking feature / notes
+OLMo 3          olmo3             [cheap]    check vs olmo2 (QK-norm? rope?) — own yaml
+                                              or alias: olmo2; dry-check first
+Phi-4           phi3              [cheap]    model_type phi3 -> likely already covered by
+                                              phi3.yaml; just dry-check
+GPT-Neo/Pythia  gpt_neo, gpt_neox [option]   parallel residual (x + attn(ln1 x) + mlp(ln2 x))
+                                              needs a stream variant; rotary interleaved
+                                              (neo) vs half-split (neox); LN pre? (post!)
+Granite         granite           [option]   embedding_multiplier, residual_multiplier,
+                                              logits_scaling (embedding_scale already
+                                              exists); attention softcap-ish
+Qwen3-Next      qwen3_next        [mixer]    hybrid gated_deltanet + gated attention;
+                                              matformer HAS both mixers — needs per-layer
+                                              custom_layers wiring + FLA weight-mapping
+                                              conventions (prompt section 4, unestablished)
+Falcon-H1       falcon_h1         [mixer]    hybrid attention + (gated deltanet-like)
+                                              recurrence — same bucket as qwen3_next
+Codestral Mamba mistral           [mixer]    mamba/SSM blocks
+Falcon-Mamba    falcon_mamba      [mixer]    mamba/SSM blocks
+RecurrentGemma  recurrent_gemma   [mixer]    griffin (RG-LRU + local attention)
+GPT-NeoX        gpt_neox          [option]   see GPT-Neo (parallel residual)
+DeepSeek V2/V3  deepseek_v2/v3    [refuse]   MLA (latent KV compression) attention
+GPT-OSS         gpt_oss           [refuse]   MoE (router MLP)
+Qwen3-MoE       qwen3_moe         [refuse]   MoE
+Qwen3.5-MoE     qwen3_5_moe       [refuse]   MoE
+Llama 4         llama4            [refuse]   MoE (+chunked attention)
+OLMoE           olmoe             [refuse]   MoE
+GraniteMoE      granitemoe        [refuse]   MoE
+EXAONE 4        exaone4           [cheap]    llama-style names; dry-check vs exaone.yaml
+                                              conventions (rope_parameters style)
+ModernBERT dec. modernbert_decoder [cheap]   modernbert.yaml exists for the encoder; the
+                                              decoder variant is llama-like — check
+
+MULTIMODAL (text backbone only, section 4b of the conversion prompt)
+--------------------------------------------------------------------
+family          model_type        verdict    notes
+Gemma3 (mm)     gemma3            [cheap]    gemma3_text.yaml covers the text_config;
+                                              a gemma3.yaml aliasing it would enable the
+                                              full checkpoints (vision weights unresolved)
+Qwen3-VL        qwen3_vl          [cheap?]   text_config conversion; mrope sections
+                                              collapse for text-only (prompt 4b)
+Phi-4 multimodal phi4_multimodal  [cheap?]   text_config conversion
+
+PRIORITY SUGGESTION
+-------------------
+1. olmo3 + phi4 + exaone4 dry-checks (possibly zero new code)
+2. ALBERT via layer_schedule (scientifically interesting: looped/shared layers)
+3. GPT-Neo/NeoX parallel-residual stream option (Pythia = interpretability workhorse)
+4. Qwen3-Next / Falcon-H1 hybrid wiring (gated_deltanet already registered)
+5. Granite multipliers (small options, IBM's permissive license)

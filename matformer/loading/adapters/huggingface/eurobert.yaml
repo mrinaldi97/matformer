@@ -1,0 +1,58 @@
+# EuroBERT (model_type "eurobert"; the released checkpoints are remote-code but
+# expose a native-style config) => Matformer config mapping.
+# Bidirectional masked-LM encoder with llama-style internals: pre-norm RMSNorm,
+# swiglu, no biases, full-width RoPE, untied lm_head without bias, final RMSNorm,
+# no position/token-type embeddings. Released sizes: 210m is plain MHA, 610m/2.1b
+# use GQA (num_key_value_heads < num_attention_heads) -> separate q/k/v renames
+# (the fused qkv_proj stack only exists for MHA; GQA runs the separate q/k/v path).
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: false
+    bias: false
+    training_objective: masked
+    lm_head_bias: false
+    default_layer:
+      normalization: rmsnorm
+      normalization_position: pre
+      ffn_activation: swiglu
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: rope
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  vocab_size: vocab_size
+  rms_norm_eps: rms_norm_eps
+  max_position_embeddings: max_position_embeddings
+  tie_word_embeddings: tie_word_embeddings
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_key_value_heads
+  default_layer.sequence_mixer_config.head_dim: head_dim
+  default_layer.sequence_mixer_config.rope_theta: rope_theta
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  pad_token_id: pad_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+
+weight_mapping:
+  lm_head.weight:                                    lm_head.weight
+  encoder.embed_tokens.weight:                       model.embed_tokens.weight
+  encoder.blocks.norm.weight:                        model.norm.weight
+  encoder.blocks.layers.N.attn_norm.weight:          model.layers.N.input_layernorm.weight
+  encoder.blocks.layers.N.mlp_norm.weight:           model.layers.N.post_attention_layernorm.weight
+  encoder.blocks.layers.N.attn.q_proj.weight:        model.layers.N.self_attn.q_proj.weight
+  encoder.blocks.layers.N.attn.k_proj.weight:        model.layers.N.self_attn.k_proj.weight
+  encoder.blocks.layers.N.attn.v_proj.weight:        model.layers.N.self_attn.v_proj.weight
+  encoder.blocks.layers.N.attn.o_proj.weight:        model.layers.N.self_attn.o_proj.weight
+  encoder.blocks.layers.N.mlp.gate_proj.weight:      model.layers.N.mlp.gate_proj.weight
+  encoder.blocks.layers.N.mlp.up_proj.weight:        model.layers.N.mlp.up_proj.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:     model.layers.N.mlp.down_proj.weight
+
+# Automated suite (tests/test_hf_adapters.py).
+tests:
+  - model: EuroBERT/EuroBERT-210m

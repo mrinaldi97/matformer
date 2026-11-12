@@ -1,0 +1,66 @@
+# EXAONE 3.5 (LGAI-EXAONE, model_type "exaone") => Matformer config mapping
+# Llama-equivalent block (RMSNorm pre-norm, swiglu, GQA, full-head_dim RoPE with
+# llama3-style rope_scaling) but GPT-style weight names: wte, ln_f, h.N.ln_1/ln_2,
+# h.N.attn.attention.*_proj, h.N.mlp.c_fc_0/c_fc_1/c_proj.
+# NOTE: EXAONE 4 (model_type "exaone4") is a different family, not covered here.
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: true
+    bias: false
+    training_objective: clm
+    lm_head_bias: false
+    default_layer:
+      normalization: rmsnorm
+      normalization_position: pre
+      ffn_activation: swiglu
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: rope
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_layers
+  vocab_size: vocab_size
+  rms_norm_eps: layer_norm_epsilon
+  max_position_embeddings: max_position_embeddings
+  tie_word_embeddings: tie_word_embeddings
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_key_value_heads
+  default_layer.sequence_mixer_config.head_dim: head_dim
+  default_layer.sequence_mixer_config.rope_theta: rope_theta
+  default_layer.sequence_mixer_config.rope_scaling_type: rope_scaling.rope_type
+  default_layer.sequence_mixer_config.rope_scaling_factor: rope_scaling.factor
+  default_layer.sequence_mixer_config.rope_scaling_original_max_position_embeddings: rope_scaling.original_max_position_embeddings
+  default_layer.sequence_mixer_config.rope_scaling_low_freq_factor: rope_scaling.low_freq_factor
+  default_layer.sequence_mixer_config.rope_scaling_high_freq_factor: rope_scaling.high_freq_factor
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  bos_token_id: bos_token_id
+  eos_token_id: eos_token_id
+  pad_token_id: pad_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+
+# lm_head is tied to the embeddings (tie_word_embeddings: true -> no lm_head tensor).
+weight_mapping:
+  lm_head.weight:                                    lm_head.weight
+  encoder.embed_tokens.weight:                       transformer.wte.weight
+  encoder.blocks.norm.weight:                        transformer.ln_f.weight
+  encoder.blocks.layers.N.attn_norm.weight:          transformer.h.N.ln_1.weight
+  encoder.blocks.layers.N.mlp_norm.weight:           transformer.h.N.ln_2.weight
+  encoder.blocks.layers.N.attn.q_proj.weight:        transformer.h.N.attn.attention.q_proj.weight
+  encoder.blocks.layers.N.attn.k_proj.weight:        transformer.h.N.attn.attention.k_proj.weight
+  encoder.blocks.layers.N.attn.v_proj.weight:        transformer.h.N.attn.attention.v_proj.weight
+  encoder.blocks.layers.N.attn.o_proj.weight:        transformer.h.N.attn.attention.out_proj.weight
+  encoder.blocks.layers.N.mlp.gate_proj.weight:      transformer.h.N.mlp.c_fc_0.weight
+  encoder.blocks.layers.N.mlp.up_proj.weight:        transformer.h.N.mlp.c_fc_1.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:      transformer.h.N.mlp.c_proj.weight
+
+# Automated suite (tests/test_hf_adapters.py).
+tests:
+  - model: LGAI-EXAONE/EXAONE-3.5-2.4B-instruct
+    dtype: bfloat16
+    atol: 1.0e-2

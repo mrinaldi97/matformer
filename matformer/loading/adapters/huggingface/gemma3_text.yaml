@@ -1,0 +1,108 @@
+# Gemma3 (text-only, model_type gemma3_text => Gemma3ForCausalLM / Gemma3TextModel)
+# => Matformer config mapping. Covers causal Gemma3 LMs AND the embedding variant
+#    (embeddinggemma-300m: bare Gemma3TextModel, use_bidirectional_attention: true,
+#    no lm_head tensor, tied to embed_tokens).
+# NOTE: the multimodal Gemma3 (model_type "gemma3") is NOT covered here.
+# NOTE: Gemma quirks handled:
+#  - embeddings scaled by sqrt(hidden_size) -> derived model.embedding_scale
+#  - ALL norms are zero-centered (1+weight) RMSNorm -> normalization: rmsnorm_zc
+#  - hidden_activation gelu_pytorch_tanh, gated MLP -> geglu_tanh
+#  - QK-norm (zero-centered, shared across heads) -> q_norm/k_norm + qk_norm_zero_centered
+#  - Sandwich norm layout (HF Gemma3 layer forward): input_layernorm (pre-attn),
+#    post_attention_layernorm (post-attn, before the residual add), pre_feedforward_
+#    layernorm (pre-mlp), post_feedforward_layernorm (post-mlp, before the residual add)
+#    -> normalization_position: sandwich.
+#  - 5:1 local:global attention (_sliding_window_pattern: 6) -> default layer is local
+#    (sliding window, rope theta from rope_local_base_freq=10k); every_6_offset_5 layers
+#    are global (full attention, rope_theta=1M). Matches all gemma3 sizes since the
+#    pattern is fixed at 6.
+# NOTE: query_pre_attn_scalar (256) == head_dim (256) for all gemma3 text sizes, so
+#   Matformer's 1/sqrt(head_dim) attention scale is correct.
+# NOTE: sliding-window semantics: HF masks attend to |q-k| < window (the config stores
+#   the exclusive bound); the SDPA/interpretability kernels use the same `<`.
+#   For bidirectional checkpoints HF additionally HALVES the window at config-load
+#   time (configuration_gemma3: sliding_window = sliding_window // 2 + 1): the
+#   effective bidirectional window is half the raw one -> derived below, so causal
+#   Gemma3 keeps the raw window while embeddinggemma gets 257 (=512//2+1), i.e. a
+#   |q-k| <= 256 visible band, matching HF exactly.
+# NOTE: bidirectional attention (embeddinggemma): is_causal is derived from
+#   use_bidirectional_attention with a vars() guard so causal checkpoints (which lack
+#   the key) stay is_causal: true. training_objective stays clm: the objective only
+#   selects the training learning signal, and the HF embedding model is used here for
+#   plain (unmasked) forward parity.
+source_key_aliases:
+  - model.   # embeddinggemma checkpoints ship the backbone without the "model." prefix
+
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    bias: false
+    training_objective: clm
+    lm_head_bias: false
+    sliding_type: partial
+    default_layer:
+      normalization: rmsnorm_zc
+      normalization_position: sandwich
+      ffn_activation: geglu_tanh
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: rope
+        q_norm: true
+        k_norm: true
+        qk_norm_zero_centered: true
+    custom_layers:
+      every_6_offset_5:
+        sequence_mixer_config:
+          sliding_window_size: null
+
+model_mapping:
+  hidden_size: hidden_size
+  num_hidden_layers: num_hidden_layers
+  vocab_size: vocab_size
+  rms_norm_eps: rms_norm_eps
+  max_position_embeddings: max_position_embeddings
+  tie_word_embeddings: tie_word_embeddings
+  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+  default_layer.sequence_mixer_config.num_key_value_heads: num_key_value_heads
+  default_layer.sequence_mixer_config.head_dim: head_dim
+  default_layer.sequence_mixer_config.sliding_window_size: sliding_window
+  default_layer.sequence_mixer_config.rope_theta: rope_local_base_freq
+  custom_layers.every_6_offset_5.sequence_mixer_config.rope_theta: rope_theta
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  bos_token_id: bos_token_id
+  eos_token_id: eos_token_id
+  pad_token_id: pad_token_id
+
+derived:
+  model.ffn_factor: "intermediate_size / hidden_size"
+  model.embedding_scale: "hidden_size ** 0.5"
+  model.is_causal: "(True if 'use_bidirectional_attention' not in vars() else not use_bidirectional_attention)"
+  # overrides the raw `sliding_window` mapping (derived wins): HF halves the window
+  # for bidirectional checkpoints (see NOTE above); causal ones keep it as-is
+  model.default_layer.sequence_mixer_config.sliding_window_size: "sliding_window // 2 + 1 if vars().get('use_bidirectional_attention') else sliding_window"
+
+weight_mapping:
+  lm_head.weight:                                    lm_head.weight
+  encoder.embed_tokens.weight:                       model.embed_tokens.weight
+  encoder.blocks.norm.weight:                        model.norm.weight
+  encoder.blocks.layers.N.attn_norm.weight:          model.layers.N.input_layernorm.weight
+  encoder.blocks.layers.N.attn_post_norm.weight:     model.layers.N.post_attention_layernorm.weight
+  encoder.blocks.layers.N.mlp_norm.weight:           model.layers.N.pre_feedforward_layernorm.weight
+  encoder.blocks.layers.N.mlp_post_norm.weight:      model.layers.N.post_feedforward_layernorm.weight
+  encoder.blocks.layers.N.attn.q_proj.weight:        model.layers.N.self_attn.q_proj.weight
+  encoder.blocks.layers.N.attn.k_proj.weight:        model.layers.N.self_attn.k_proj.weight
+  encoder.blocks.layers.N.attn.v_proj.weight:        model.layers.N.self_attn.v_proj.weight
+  encoder.blocks.layers.N.attn.o_proj.weight:        model.layers.N.self_attn.o_proj.weight
+  encoder.blocks.layers.N.attn.q_norm.weight:        model.layers.N.self_attn.q_norm.weight
+  encoder.blocks.layers.N.attn.k_norm.weight:        model.layers.N.self_attn.k_norm.weight
+  encoder.blocks.layers.N.mlp.gate_proj.weight:      model.layers.N.mlp.gate_proj.weight
+  encoder.blocks.layers.N.mlp.up_proj.weight:        model.layers.N.mlp.up_proj.weight
+  encoder.blocks.layers.N.mlp.down_proj.weight:      model.layers.N.mlp.down_proj.weight
+
+# Automated suite (tests/test_hf_adapters.py): embeddinggemma covers the bidirectional
+# (bare, tied, no lm_head tensor) variant; a causal Gemma3ForCausalLM checkpoint would
+# additionally cover the clm path if one is added.
+tests:
+  - model: google/embeddinggemma-300m

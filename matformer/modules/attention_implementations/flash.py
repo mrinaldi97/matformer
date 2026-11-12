@@ -3,7 +3,7 @@ from matformer.matformer_registry import registry
 import torch
 import torch.nn as nn
 from typing import Optional
-from matformer.tensors_dataclasses import PaddedTensor,UnpaddedTensor,NormalTensor
+from matformer.dataclasses.tensors_dataclasses import TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor,UnpaddedTensor,PaddedTensor
 try:
     from flash_attn import flash_attn_func,flash_attn_qkvpacked_func,flash_attn_varlen_func,flash_attn_varlen_qkvpacked_func
 except:
@@ -35,8 +35,11 @@ class FlashAttentionKernel(nn.Module):
         except Exception:
             return False
     
-    def __init__(self, nheads, head_dim, is_causal, sliding_window, positional_encoding, cache, device, **kwargs):
+    def __init__(self, nheads, head_dim, is_causal, sliding_window, positional_encoding, cache, device, attn_logit_softcap=None, **kwargs):
         super().__init__()
+        if attn_logit_softcap:
+            # flash-attn has no tanh softcapping; the registry then falls back to SDPA
+            raise NotImplementedError("flash-attn kernel does not support attn_logit_softcap")
         self.nheads = nheads
         self.head_dim = head_dim
         self.is_causal = is_causal
@@ -51,10 +54,13 @@ class FlashAttentionKernel(nn.Module):
             self.register_buffer('alibi_slopes', None)
     
     def forward(self, qkv=None, q=None, k=None, v=None, query_input=None, key_input=None, **kwargs):   
+        """
+        By default, PaddedTensor are automatically Unpadded because flash attention doesn't support padding mask
+        """
         sliding = self.sliding_window is not None
         if sliding:
-            right_window = 0 if self.is_causal else -self.sliding_window
-            sliding_window = (-self.sliding_window, right_window)
+            right_window = 0 if self.is_causal else self.sliding_window
+            sliding_window = (self.sliding_window, right_window)
         else:
             sliding_window = (-1, -1)
 
@@ -67,8 +73,8 @@ class FlashAttentionKernel(nn.Module):
         if isinstance(query_input, UnpaddedTensor):
             # Version with Unpadding
             device = (qkv if qkv is not None else q).device
-            cu_q = query_input.cu_seqlens.to(device=device, dtype=torch.int32)
-            cu_k = key_input.cu_seqlens.to(device=device, dtype=torch.int32)
+            cu_q = query_input.cu_seqlens_device(device, torch.int32)
+            cu_k = key_input.cu_seqlens_device(device, torch.int32)
             
             alibi_slopes = self.alibi_slopes
             

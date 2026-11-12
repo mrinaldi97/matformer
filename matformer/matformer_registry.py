@@ -1,3 +1,4 @@
+#matformer/matformer_registry.py
 from matformer.utils.matformer_registry_implementation import MatformerRegistry
 registry = MatformerRegistry()
-registry.load_modules()
+registry.populate_registry()

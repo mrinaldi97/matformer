@@ -1,0 +1,82 @@
+# GPT-2 => Matformer config mapping
+# NOTE: GPT-2 quirks handled:
+#  - Conv1D layers store weights as (in, out), the transpose of nn.Linear -> all four
+#    Conv1D projections are transposed via weight_transforms (einx "i o -> o i").
+#  - the fused c_attn (q|k|v) maps 1:1 onto Matformer's packed attn.qkv_proj.
+#  - gelu_new == tanh-approximated GELU -> gelu_tanh; learned positions; post... pre-norm
+#    (ln_1/ln_2 before the sublayers); everything biased except the (tied) lm_head.
+# Weight tying: HF stores only wte; the tied lm_head.weight resolves via the alias-free
+# direct mapping (gpt2 checkpoints do not ship a separate lm_head tensor, which is fine).
+defaults:
+  model:
+    model_class: Autoregressive_Model
+    is_causal: true
+    bias: true
+    training_objective: clm
+    lm_head_bias: false
+    default_layer:
+      normalization: layernorm
+      normalization_position: pre
+      ffn_activation: gelu_tanh
+      mlp_bias: true
+      sequence_mixer: attention
+      sequence_mixer_config:
+        positional_encoding: learnable
+        qkv_bias: true
+        attn_output_bias: true
+
+model_mapping:
+  hidden_size: n_embd
+  num_hidden_layers: n_layer
+  vocab_size: vocab_size
+  rms_norm_eps: layer_norm_epsilon
+  max_position_embeddings: n_positions
+  default_layer.sequence_mixer_config.num_attention_heads: n_head
+  default_layer.sequence_mixer_config.num_key_value_heads: n_head
+
+tokenizer_mapping:
+  vocab_size: vocab_size
+  bos_token_id: bos_token_id
+  eos_token_id: eos_token_id
+
+derived:
+  # gpt2's config often omits n_inner (or sets it null): HF then defaults to 4 * n_embd
+  model.ffn_factor: "((n_inner if 'n_inner' in vars() and n_inner else 4 * n_embd) / n_embd)"
+  model.tie_word_embeddings: "True"
+
+weight_mapping:
+  encoder.embed_tokens.weight:                      wte.weight
+  encoder.embed_positions.weight:                   wpe.weight
+  encoder.blocks.norm.weight:                      ln_f.weight
+  encoder.blocks.norm.bias:                        ln_f.bias
+  encoder.blocks.layers.N.attn_norm.weight:         h.N.ln_1.weight
+  encoder.blocks.layers.N.attn_norm.bias:           h.N.ln_1.bias
+  encoder.blocks.layers.N.mlp_norm.weight:          h.N.ln_2.weight
+  encoder.blocks.layers.N.mlp_norm.bias:            h.N.ln_2.bias
+  encoder.blocks.layers.N.attn.qkv_proj.bias:       h.N.attn.c_attn.bias
+  encoder.blocks.layers.N.attn.o_proj.weight:       h.N.attn.c_proj.weight
+  encoder.blocks.layers.N.attn.o_proj.bias:         h.N.attn.c_proj.bias
+  encoder.blocks.layers.N.mlp.up_proj.weight:       h.N.mlp.c_fc.weight
+  encoder.blocks.layers.N.mlp.up_proj.bias:         h.N.mlp.c_fc.bias
+  encoder.blocks.layers.N.mlp.down_proj.weight:     h.N.mlp.c_proj.weight
+  encoder.blocks.layers.N.mlp.down_proj.bias:       h.N.mlp.c_proj.bias
+  lm_head.weight:                                   lm_head.weight
+
+weight_transforms:
+  # Conv1D (in, out) -> nn.Linear (out, in), fused q|k|v into the packed qkv_proj
+  - sources: [h.N.attn.c_attn.weight]
+    outputs: [encoder.blocks.layers.N.attn.qkv_proj.weight]
+    pattern: "i o -> o i"
+  - sources: [h.N.attn.c_proj.weight]
+    outputs: [encoder.blocks.layers.N.attn.o_proj.weight]
+    pattern: "i o -> o i"
+  - sources: [h.N.mlp.c_fc.weight]
+    outputs: [encoder.blocks.layers.N.mlp.up_proj.weight]
+    pattern: "i o -> o i"
+  - sources: [h.N.mlp.c_proj.weight]
+    outputs: [encoder.blocks.layers.N.mlp.down_proj.weight]
+    pattern: "i o -> o i"
+
+# Automated suite (tests/test_hf_adapters.py).
+tests:
+  - model: openai-community/gpt2
