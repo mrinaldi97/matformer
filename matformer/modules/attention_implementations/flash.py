@@ -13,6 +13,7 @@ except:
     'attention', 'normal', 'flash',
     requires=['flash_attn'],
     priority=10,
+    constraints={'softcap': False}, # tanh softcapping is not implemented: SDPA takes over
     metadata={
         'tensor_order_input': 'BSHD',
         'tensor_order_qkv_packed_input': 'BS3HD',
@@ -27,19 +28,19 @@ except:
 )
 class FlashAttentionKernel(nn.Module):
     @staticmethod
-    def is_available():
-        try:
-            from flash_attn import flash_attn_func,flash_attn_qkvpacked_func,flash_attn_varlen_func,flash_attn_varlen_qkvpacked_func
-            import torch
-            return torch.cuda.is_available()
-        except Exception:
-            return False
+    def _test():
+        """flash-attn can be installed and still be useless here: no GPU at all, or a wheel built
+        for another torch/CUDA version, which blows up only when a kernel is really launched.
+        The registry runs this once per process, at instantiation time."""
+        from flash_attn import flash_attn_func
+        if not torch.cuda.is_available():
+            raise RuntimeError("flash-attn requires a CUDA device, none is available")
+        q, k, v = (torch.zeros(1, 2, 1, 16, dtype=torch.float16, device='cuda') for _ in range(3))
+        flash_attn_func(q, k, v, causal=True)
+        return True
     
     def __init__(self, nheads, head_dim, is_causal, sliding_window, positional_encoding, cache, device, attn_logit_softcap=None, **kwargs):
         super().__init__()
-        if attn_logit_softcap:
-            # flash-attn has no tanh softcapping; the registry then falls back to SDPA
-            raise NotImplementedError("flash-attn kernel does not support attn_logit_softcap")
         self.nheads = nheads
         self.head_dim = head_dim
         self.is_causal = is_causal

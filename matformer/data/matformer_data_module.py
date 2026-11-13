@@ -4,7 +4,8 @@ from torch.utils.data import DataLoader
 from matformer.dataclasses.model_dataclasses import ModelConfig
 from matformer.dataclasses.data_dataclasses import DataConfig 
 import os
-from matformer.data.mdat.mdat import MatformerDataset
+from matformer.data.mdat.container import MDatContainer
+from matformer.data.mdat.mdat_common import MDatIsReadOnly, MDatNotFound, MDatNotShuffled
 from matformer.data.lazy_dataset import LazyIterableDataset
 import torch
 import torch.distributed as dist
@@ -72,6 +73,38 @@ class MatformerDataModule:
         """
         if dist.is_initialized():
             self.distributed_initialized = True
+
+    # ------------------------------------------------ shared state-dict plumbing
+    def _gather_state(self, this_rank_state: Dict[str, Any]) -> Dict[str, Any]:
+        """Collect per-rank dataset states: rank 0 receives them all, the
+        others return an empty dict (shared by every data module)."""
+        if not dist.is_initialized():
+            return {"per_rank": [this_rank_state]}
+        if dist.get_rank() == 0:
+            states = [None] * dist.get_world_size()
+            dist.gather_object(this_rank_state, object_gather_list=states, dst=0)
+            return {"per_rank": states}
+        dist.gather_object(this_rank_state, dst=0)
+        return {}
+
+    def _restore_state(self, state_dict: Dict[str, Any], restore_fn) -> None:
+        """Hand each rank its saved state (restore_fn) from a checkpoint
+        produced by _gather_state. Resuming with a different world size is
+        tolerated (positions may overlap/skip across ranks, epochs still
+        terminate)."""
+        per_rank = (state_dict or {}).get("per_rank")
+        if not per_rank:
+            return  # checkpoint did not contain data state
+        is_dist = dist.is_initialized()
+        rank = dist.get_rank() if is_dist else 0
+        world_size = dist.get_world_size() if is_dist else 1
+        saved_world_size = per_rank[0].get("saved_world_size")
+        if is_dist and saved_world_size is not None and saved_world_size != world_size:
+            print(f"WARNING: dataset state restored with a changed world size "
+                  f"(saved={saved_world_size}, current={world_size})")
+        restore_fn(per_rank[rank % len(per_rank)])
+        if is_dist:
+            dist.barrier()
 
 
     def collate_fn(self, batch: List[Any]) -> Dict[str, Any]:
@@ -336,76 +369,39 @@ class LazyDataModule(MatformerDataModule):
         return dataloader
 
     def state_dict(self) -> Dict[str, Any]:
-        try:
-            is_dist = dist.is_available() and dist.is_initialized()
-        except Exception:
-            is_dist = False
-
-        this_rank_state = self.lazy_dataset.get_state_dict()
-
-        # Single GPU
-        if not is_dist:
-            return {"per_rank": [this_rank_state]}
-
-        # Distributed branch
-        rank       = dist.get_rank()
-        world_size = dist.get_world_size()
-
-        if rank == 0:
-            states = [None for _ in range(world_size)]
-            # rank 0 receives from all ranks (including itself)
-            dist.gather_object(this_rank_state, object_gather_list=states, dst=0)
-            return {"per_rank": states}
-        else:
-            # non-zero ranks send to rank 0
-            dist.gather_object(this_rank_state, dst=0)
-            return {}
+        return self._gather_state(self.lazy_dataset.get_state_dict())
 
     def load_state_dict(self, state_dict: Dict[str, Any]) -> None:
-        per_rank = state_dict.get("per_rank", None)
-        if per_rank is None:
-            return  # checkpoint did not contain data
-
-        try:
-            is_dist   = dist.is_available() and dist.is_initialized()
-            rank       = dist.get_rank()       if is_dist else 0
-            world_size = dist.get_world_size() if is_dist else 1
-        except Exception:
-            is_dist    = False
-            rank       = 0
-            world_size = 1
-
-        saved_world_size     = per_rank[0].get("saved_world_size")
-        STRICT_WORLD_SIZE_CHECK = False  # If True, it will not work if GPU count changes
-        if is_dist and saved_world_size != world_size:
-            if STRICT_WORLD_SIZE_CHECK:
-                raise RuntimeError(
-                    f"Cannot restore dataset state: world size changed "
-                    f"(saved={saved_world_size}, current={world_size})."
-                )
-            else:
-                print(f"WARNING: world size changed")
-                print(f"saved={saved_world_size}, current={world_size}")
-                mapped_rank = rank  # Rivedere la logica se si vuole supportare cambio numero GPU
-        else:
-            mapped_rank = rank
-
-        self.lazy_dataset.restore_state_dict(per_rank[mapped_rank])
-
-        if is_dist:
-            dist.barrier()
+        self._restore_state(state_dict, self.lazy_dataset.restore_state_dict)
 
 
 @registry.register("data", "mdat", "default")
 class MDATDataModule(MatformerDataModule):
-    def __init__(self,config,num_devices=1,*args, **kwargs):
-        super().__init__(config, num_devices)      
+    """Data module serving a whole MDat container (or a standalone MDat
+    folder, which transparently uses its own mini-container).
+
+    Configuration knobs (MDATDataModuleConfig):
+        data_root         path of the container / standalone dataset folder
+        mdat_view         view to train on (default: 'default', must be shuffled)
+        mdat_strategy     pretokenization strategy (required for chunked modalities)
+        iteration_modality 'chunked_tokens' (default), 'document', 'tokens', ...
+        partition_start / partition_end
+                          train on a [start, end) window of the shuffled view:
+                          a deterministic "range view" is derived on first use
+                          (created with a one-shot writable open, then reused)
+    """
+
+    def __init__(self, config, num_devices=1, *args, **kwargs):
+        super().__init__(config, num_devices)
+        self.mdat = None
+
     def __len__(self):
+        if self.mdat is None:
+            return 0
         if self.num_devices == 1 or self.distributed_initialized:
-            return len(self.mdat) if hasattr(self, 'mdat') else 0
-        else:
-            return self.mdat.get_distributed_length_before_training(num_devices=self.num_devices)
-            
+            return len(self.mdat)
+        return self.mdat.get_distributed_length_before_training(num_devices=self.num_devices)
+
     def train_dataloader(self):
         dataloader = DataLoader(
             self.mdat,
@@ -417,87 +413,84 @@ class MDATDataModule(MatformerDataModule):
         dataloader._is_resumable = True
         return dataloader
 
-    def setup(self):
-        super().setup()
-        self.mdat = MatformerDataset.load_dataset(
-            path=self.config.data_root,
+    def setup(self, stage: Optional[str] = None):
+        super().setup(stage)
+        path = os.path.abspath(self.config.data_root)
+        if not os.path.isdir(path):
+            raise MDatNotFound(f"data_root '{path}' does not exist. Point it to a container folder "
+                               "(MDatContainer.create_new) or a standalone dataset folder "
+                               "(MDat.create_standalone), or migrate an old mdat with: "
+                               "python -m matformer.data.mdat.migrate OLD --inplace")
+        base_view = self.config.mdat_view or 'default'
+        probe = MDatContainer.load_catalog(path)
+        if base_view not in probe.list_views():
+            raise ValueError(f"View '{base_view}' not found in {path}. "
+                             f"Available views: {probe.list_views()}. "
+                             "Create one with the mdat shell (`view-add ...`) or register_new_view().")
+        view = self._ensure_partition_view(path, probe, base_view)
+        # A standalone dataset folder is its own (mini) container, so the very
+        # same load path serves both layouts.
+        self.mdat = MDatContainer.load_dataset(
+            path=path,
             readonly=True,
-            distributed=dist.is_initialized(),
-            shuffle=True,
-            ds_view=self.config.mdat_view,
-            batch_size=self.config.batch_size
+            distributed=self.distributed_initialized,
+            shuffle=False,
+            ds_view=None,
+            batch_size=self.config.batch_size,
         )
-        
-        if self.config.mdat_view is not None:
-            self.mdat.set_view(self.config.mdat_view)        
-        if self.config.mdat_strategy is not None:
-            self.mdat.set_strategy(self.config.mdat_strategy,max_seq_len=self.config.max_seq_len) 
-            
-        self.mdat.set_iteration_modality(self.config.iteration_modality, with_meta=self.config.keep_metadata)
-        print(f"Len attuale: {len(self)}")
-    
+        self.mdat.set_view(view)
+        if not getattr(self.mdat, '_active_view_shuffled', False):
+            self.mdat.close()  # release handles so the fix can run in this same process
+            self.mdat = None
+            raise MDatNotShuffled(
+                f"View '{view}' is not shuffled: training requires a shuffled view. Fix (writable):\n"
+                f"  python -m matformer.data.mdat.tui {path} -c 'shuffle {view}'\n"
+                "  or: MDatContainer.load_dataset(path).shuffle(view)")
+        if self.config.mdat_strategy:
+            # max_seq_len may be absent when no model section is linked
+            self.mdat.set_strategy(self.config.mdat_strategy,
+                                   max_seq_len=getattr(self.config, 'max_seq_len', None))
+            if self.mdat.current_strategy is None:
+                self.mdat.close()
+                self.mdat = None
+                raise ValueError(
+                    f"No dataset of view '{view}' is pretokenized with strategy "
+                    f"'{self.config.mdat_strategy}'. Pretokenize first (mdat shell: `pretok-all --strategy "
+                    f"{self.config.mdat_strategy}`) or pick another strategy/view.")
+        modality = self.config.iteration_modality or 'document'
+        if modality in ('chunked_tokens', 'chunked_for_recurrence') and self.mdat.current_strategy is None:
+            self.mdat.close()
+            self.mdat = None
+            raise ValueError(
+                f"iteration_modality='{modality}' requires mdat_strategy to be set and the datasets "
+                "pretokenized with it (or choose iteration_modality='document'/'tokens').")
+        self.mdat.set_iteration_modality(modality, with_meta=self.config.keep_metadata)
+        print(f"MDAT data module: path={path} view={view} strategy="
+              f"{self.mdat.current_strategy.strategy_name if self.mdat.current_strategy else None} "
+              f"modality={modality} len={len(self)}")
+
+    def _ensure_partition_view(self, path: str, probe: MDatContainer, base_view: str) -> str:
+        """Map partition_start/partition_end to a derived range view, created
+        on first use with a one-shot writable open (LMDB handles released
+        afterwards so the training open can be read-only)."""
+        start = getattr(self.config, 'partition_start', None)
+        end = getattr(self.config, 'partition_end', None)
+        if start is None and end is None:
+            return base_view
+        view = f"{base_view}_p{start if start is not None else 0}_{end if end is not None else 'end'}"
+        if view in probe.list_views():
+            return view
+        if not probe.db.get_view_row(base_view).get('shuffle_struct_format'):
+            raise MDatNotShuffled(
+                f"partition_start/partition_end slice the shuffled '{base_view}' view, but it is not "
+                f"shuffled yet. Fix: python -m matformer.data.mdat.tui {path} -c 'shuffle {base_view}'")
+        # Catalog-only writable open: slicing the pointer file needs no LMDB handles
+        probe.ensure_range_view(base_view, start=start, end=end)
+        return view
+
     def state_dict(self):
-        try:
-            import torch.distributed as dist
-            is_dist = dist.is_available() and dist.is_initialized()
-        except Exception:
-            is_dist = False
-
-        this_rank_state = self.mdat.get_state_dict()
-
-        # Single GPU
-        if not is_dist:
-            return {"per_rank": [this_rank_state]}
-
-        
-        # Distributed branch
-        rank = dist.get_rank()
-        world_size = dist.get_world_size()
-
-        if rank == 0:
-            states = [None for _ in range(world_size)]
-            # rank 0 receives from all ranks (including itself)
-            dist.gather_object(this_rank_state, object_gather_list=states, dst=0)
-            return {"per_rank": states}
-        else:
-            # non-zero ranks send to rank 0
-            dist.gather_object(this_rank_state, dst=0)
-            return {}
-
+        return self._gather_state(self.mdat.get_state_dict())
 
     def load_state_dict(self, state_dict):
-        per_rank = state_dict.get("per_rank", None)
-        if per_rank is None:
-            return  # checkpoint did not contain data
-        try:
-            import torch.distributed as dist
-            is_dist = dist.is_available() and dist.is_initialized()
-            rank = dist.get_rank() if is_dist else 0
-            world_size = dist.get_world_size() if is_dist else 1
-        except Exception:
-            is_dist = False
-            rank = 0
-            world_size = 1
-
-        saved_world_size = state_dict["per_rank"][0].get("saved_world_size")
-        STRICT_WORLD_SIZE_CHECK = False #If True, It will not work if GPU count changes
-        if is_dist and saved_world_size != world_size:
-            if STRICT_WORLD_SIZE_CHECK:
-                raise RuntimeError(
-                    f"Cannot restore dataset state: world size changed "
-                    f"(saved={saved_world_size}, current={world_size})."
-                )
-            else:
-                print(f"WARNING: world size changed")
-                print(f"saved={saved_world_size}, current={world_size}")
-                mapped_rank = rank #Rivedere la logica se si vuole supportare cambio numero GPU
-        else:
-            mapped_rank = rank
-            
-        state_dict_rank = per_rank[mapped_rank]
-        self.mdat.restore_state_dict(state_dict_rank)
-        print("Restoring state dict")
-        print(self.mdat.document_index)
-        print(self.mdat.current_chunk_step)
-        if is_dist:
-            dist.barrier()
+        print("Restoring mdat state dict")
+        self._restore_state(state_dict, self.mdat.restore_state_dict)

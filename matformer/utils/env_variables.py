@@ -20,6 +20,5 @@ ddp_gradient_as_bucket = _bool("DDP_GRADIENT_AS_BUCKET", False)
 ddp_find_unused_parameters = _bool("DDP_FIND_UNUSED_PARAMETERS", True)
 
 # Registry
-registry_behaviour = os.environ.get("MATFORMER_REGISTRY_BEHAVIOUR", "LAZY").strip().upper()
-registry_verbose =  _bool("MATFORMER_REGISTRY_BEHAVIOUR", True)
+registry_verbose =  _bool("MATFORMER_REGISTRY_VERBOSE", True)
 

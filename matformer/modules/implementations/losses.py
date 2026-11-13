@@ -56,8 +56,6 @@ class CrossEntropyLoss(_ClassificationLossBase):
             label_smoothing=kw.get("label_smoothing", 0.0),
         )
 
-#<<<<<<< HEAD
-
 @registry.register("loss_fn", "focal", "torch", requires=["torch"], priority=10)
 class FocalLoss(_ClassificationLossBase):
     """
@@ -85,7 +83,6 @@ class FocalLoss(_ClassificationLossBase):
 
 @registry.register("loss_fn", "bce", "torch", requires=["torch"], priority=10)
 class BCELoss(_ClassificationLossBase):
-	# Mi sembra sbagliata
     """
     Args: pos_weight, ignore_index
     """
@@ -118,8 +115,6 @@ class BCELoss(_ClassificationLossBase):
         return self._apply_ignore_mask(loss, labels, kw.get("ignore_index", -100))
 
 
-#=======
-#>>>>>>> 82d808b8df9eeba1290c978fdf263086c21eb951
 class _RegressionLossBase(nn.Module):
     def __init__(self, *args, **kwargs):
         super().__init__()

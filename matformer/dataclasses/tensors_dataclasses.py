@@ -325,3 +325,9 @@ class UnpaddedTensor(TensorDC):
 
     def __len__(self):
         return self.batch_size
+
+def apply_kernel(module, x, *args, **kwargs):
+    """Run a kernel on `x`, which is either a TensorDC (its padding/unpadding wrapper rides along)
+    or a plain tensor. Registered kernels must accept both: nested inside another kernel - a linear
+    used by an MLP, for instance - there is no TensorDC left to carry the wrapper."""
+    return x.apply(module, *args, **kwargs) if isinstance(x, TensorDC) else module(x, *args, **kwargs)

@@ -2,6 +2,8 @@ from matformer.matformer_registry import registry
 import importlib
 import torch.nn as nn
 import torch
+from matformer.dataclasses.tensors_dataclasses import apply_kernel
+from matformer.utils.kernel_tests import kernel_runs
 
 def _load(module: str, attr: str):
     return getattr(importlib.import_module(module), attr)
@@ -22,7 +24,7 @@ Da implementare il Fused Layer norm mlp
     requires=["transformer_engine"],
     priority=20,
     params_names={'inner.weight': 'weight'},
-    metadata={"is_interpretable": False}
+    constraints={'is_interpretable': False}
 )
 class TE_RMSNorm(nn.Module):
     inner: "transparent"
@@ -35,8 +37,12 @@ class TE_RMSNorm(nn.Module):
             size = int(normalized_shape[-1])
         self.inner = cls(size, eps=eps, elementwise_affine=elementwise_affine, **kwargs)
 
+    @staticmethod
+    def _test():
+        return kernel_runs(lambda: TE_RMSNorm(16), torch.randn(2, 3, 16))
+
     def forward(self, x):
-        return x.apply(self.inner)
+        return apply_kernel(self.inner, x)
 
 
 @registry.register(
@@ -46,7 +52,7 @@ class TE_RMSNorm(nn.Module):
     requires=["transformer_engine"],
     priority=20,
     params_names={'inner.weight': 'weight', 'inner.bias': 'bias'},
-    metadata={"is_interpretable": False}
+    constraints={'is_interpretable': False}
 )
 class TE_LayerNorm(nn.Module):
     inner: "transparent"
@@ -58,8 +64,12 @@ class TE_LayerNorm(nn.Module):
             size = int(normalized_shape[-1])
         self.inner = cls(size, eps=eps, **kwargs)
 
+    @staticmethod
+    def _test():
+        return kernel_runs(lambda: TE_LayerNorm(16), torch.randn(2, 3, 16))
+
     def forward(self, x):
-        return x.apply(self.inner)
+        return apply_kernel(self.inner, x)
 
 
 @registry.register(
@@ -69,7 +79,7 @@ class TE_LayerNorm(nn.Module):
     requires=["transformer_engine"],
     priority=20,
     params_names={'inner.weight': 'weight', 'inner.bias': 'bias'},
-    metadata={"is_interpretable": False}
+    constraints={'is_interpretable': False}
 )
 class TE_Linear(nn.Module):
     inner: "transparent"
@@ -78,5 +88,9 @@ class TE_Linear(nn.Module):
         cls = _load("transformer_engine.pytorch", "Linear")
         self.inner = cls(in_features, out_features, bias=bias, **kwargs)
 
+    @staticmethod
+    def _test():
+        return kernel_runs(lambda: TE_Linear(16, 8), torch.randn(2, 3, 16))
+
     def forward(self, inp, *args, **kwargs):
-        return inp.apply(self.inner, *args, **kwargs)
+        return apply_kernel(self.inner, inp, *args, **kwargs)

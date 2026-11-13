@@ -13,7 +13,6 @@ from matformer.matformer_registry import registry
         'tensor_order_input': 'BSHD',
         'tensor_order_output': 'BSHD',
         'tensor_order_qkv_packed_input': 'BS3HD',
-        'tensor_order_qkv_packed_input': 'BS3HD',
         'supports_unpadding': True,
         'supports_packed_qkv': False,  # But NOT simultaneously with unpadding
     }
@@ -28,13 +27,12 @@ class FlashRotaryEmbedding(nn.Module):
     """
     
     @staticmethod
-    def is_available():
-        try:
-            from flash_attn.layers.rotary import apply_rotary_emb, apply_rotary_emb_qkv_
-            import torch
-            return torch.cuda.is_available()
-        except Exception:
-            return False
+    def _test():
+        """flash-attn's rotary kernels need CUDA and are installed only as a side effect of
+        flash-attn itself: try one real rotation on the smallest possible tensor."""
+        q = torch.randn(1, 2, 1, 16)
+        FlashRotaryEmbedding()(q=q, k=q.clone(), cos=torch.ones(2, 16), sin=torch.zeros(2, 16))
+        return True
     
     def __init__(self, interleaved: bool = False, **kwargs):
         """
@@ -161,11 +159,6 @@ class FlashRotaryEmbedding(nn.Module):
                 max_seqlen=max_seq_len if is_unpadded else None,
             )
             return None, q_rot, k_rot
-            
-from typing import Optional, Tuple, Union
-import torch
-import torch.nn as nn
-from torch import Tensor
 
 
 @registry.register(
@@ -191,7 +184,9 @@ class TorchRotaryEmbedding(nn.Module):
     """
     
     @staticmethod
-    def is_available():
+    def _test():
+        q = torch.randn(1, 2, 1, 16)
+        TorchRotaryEmbedding()(q=q, k=q.clone(), cos=torch.ones(2, 16), sin=torch.zeros(2, 16))
         return True
     
     def __init__(self, interleaved: bool = False, **kwargs):

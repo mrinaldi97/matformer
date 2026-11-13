@@ -1,12 +1,14 @@
 """
 File: matformer/tokenizers.py
 """
+import warnings
+
 import torch
 from typing import List, Optional, Union
 from matformer.dataclasses.model_dataclasses import TokenizerConfig
 from matformer.matformer_registry import registry
 
-@registry.register("tokenizer", "huggingface", "default")
+@registry.register("tokenizer", "huggingface", "default", priority=0)
 class MatformerTokenizer:
     """
     This is an abstract tokenizer that will wrap other tokenizers (such as a ByteLevelTokenizer or an huggingface-compatible tokenizer)
@@ -49,18 +51,25 @@ class MatformerTokenizer:
             self.return_tensors = return_tensors
 
         if config:
-            from transformers import AutoTokenizer
             if config.pretrained_name is None:
                 self.tokenizer=None
             else:
-                self.tokenizer = AutoTokenizer.from_pretrained(config.pretrained_name,trust_remote_code=True)
+                self.tokenizer = self._load_backend(config.pretrained_name)
                 if reload_hf_cfg:
                     self._reload_huggingface_config()
 
         else:
             assert tokenizer is not None
-            self.tokenizer = tokenizer
+            self.tokenizer = self._load_backend(tokenizer)
             self._reload_huggingface_config()
+
+    def _load_backend(self, source):
+        """Instantiate the underlying tokenizer from a pretrained name; a ready-made instance
+        is passed through untouched. Subclasses override this to plug other backends."""
+        if isinstance(source, str):
+            from transformers import AutoTokenizer
+            return AutoTokenizer.from_pretrained(source, trust_remote_code=True)
+        return source
 
     def _reload_huggingface_config(self) -> None:
         """Reload special token ids and vocab size directly from the attached HF tokenizer."""
@@ -134,6 +143,10 @@ class MatformerTokenizer:
         encoded = self.tokenizer(text, add_special_tokens=False, **kwargs)
         input_ids = encoded["input_ids"]
         attention_mask = encoded.get("attention_mask", None)
+        if torch.is_tensor(input_ids) and input_ids.dtype != torch.long:
+            input_ids = input_ids.long()  # gigatoken's "pt" buffers are int32
+        if torch.is_tensor(attention_mask) and attention_mask.dtype != torch.long:
+            attention_mask = attention_mask.long()
 
         if self.return_tensors:
             B = input_ids.shape[0]
@@ -186,6 +199,41 @@ class MatformerTokenizer:
             return self.tokenizer.batch_decode(ids)
         return self.tokenizer.decode(ids)
 
+
+@registry.register("tokenizer", "huggingface", "gigatoken", priority=10,
+                   requires=["gigatoken"], constraints={"offset_mapping": False})
+class GigatokenTokenizer(MatformerTokenizer):
+    """
+    gigatoken backend (https://github.com/marcelroed/gigatoken)
+    """
+
+    def _load_backend(self, source):
+        """Wrap the model with gigatoken's HF-compatible facade; raises (after a warning) if
+        gigatoken cannot load it, so the registry moves on to the next implementation."""
+        import gigatoken
+        try:
+            backend = gigatoken.Tokenizer(source).as_hf()
+        except Exception as error:
+            warnings.warn(f"gigatoken cannot load {source!r} ({error}); "
+                          "falling back to the default huggingface tokenizer implementation.")
+            raise
+        backend.name_or_path = source if isinstance(source, str) else getattr(source, "name_or_path", "")
+        return backend
+
+    def encode(
+        self,
+        text: Union[str, List[str]],
+        max_length: Optional[int] = None,
+        add_eos: bool = False,
+        add_bos: bool = False,
+        return_offsets_mapping: bool = False,
+    ) -> dict:
+        if return_offsets_mapping:
+            raise NotImplementedError(
+                "the gigatoken implementation has no offset mapping; create the tokenizer with "
+                "registry.create('tokenizer', 'huggingface', constraints=['offset_mapping'], ...) "
+                "to get the huggingface implementation")
+        return super().encode(text, max_length=max_length, add_eos=add_eos, add_bos=add_bos)
 
 
 

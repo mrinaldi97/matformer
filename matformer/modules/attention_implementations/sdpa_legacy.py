@@ -24,18 +24,18 @@ from matformer.dataclasses.tensors_dataclasses import TensorDC, NormalTensor, Pa
         'supports_packed_qkv': False,
         'supports_sliding_window': True,
         'supports_alibi': True,
-        'supports_gqa': False,
-        'supports_softcap': True
+        'supports_gqa': False
     }
 )
 class SDPALegacyKernel(nn.Module):
     @staticmethod
-    def is_available():
-        try:
-            from torch.nn.functional import scaled_dot_product_attention
-            return True
-        except Exception:
-            return False
+    def _test():
+        """One minimal attention call: cheaper to check than to discover a broken torch backend
+        halfway through a model build. Runs once per process, at instantiation time."""
+        from torch.nn.functional import scaled_dot_product_attention
+        q, k, v = (torch.zeros(1, 1, 2, 4) for _ in range(3))
+        scaled_dot_product_attention(q, k, v, is_causal=True)
+        return True
 
     def __init__(self, nheads, head_dim, is_causal, sliding_window, positional_encoding, cache, attn_logit_softcap=None, **kwargs):
         super().__init__()

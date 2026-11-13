@@ -142,49 +142,27 @@ class MultiHeadAttention(MatformerModule):
             self.rotary_embedding_meta=self.rotary_embedding._matformer_metadata
         if not self.config.interpretability_friendly:
             # Initialize fast attention kernel
+            kernel_kwargs = dict(
+                nheads=self.config.num_attention_heads,
+                head_dim=self.head_dim,
+                num_key_value_heads=self.config.num_key_value_heads,
+                sliding_window=self.config.sliding_window_size,
+                positional_encoding=self.config.positional_encoding,
+                attn_logit_softcap=self.config.attn_logit_softcap,
+                cache=cache,
+                device=device
+            )
+            kernel_constraints = {'softcap': self.config.attn_logit_softcap is not None} # Kernels unable to softcap (flash) are not candidates
             if is_hybrid: #Initialize two kernels
-                self.attn_kernel_causal= registry.create(
-                    'attention',
-                    'normal',
-                    nheads=self.config.num_attention_heads,
-                    head_dim=self.head_dim,
-                    num_key_value_heads=self.config.num_key_value_heads,
-                    is_causal=True,
-                    sliding_window=self.config.sliding_window_size,
-                    positional_encoding=self.config.positional_encoding,
-                    attn_logit_softcap=self.config.attn_logit_softcap,
-                    cache=cache,
-                    device=device
-                )
-                self.attn_kernel_noncausal= registry.create(
-                    'attention',
-                    'normal',
-                    nheads=self.config.num_attention_heads,
-                    head_dim=self.head_dim,
-                    num_key_value_heads=self.config.num_key_value_heads,
-                    is_causal=False,
-                    sliding_window=self.config.sliding_window_size,
-                    positional_encoding=self.config.positional_encoding,
-                    attn_logit_softcap=self.config.attn_logit_softcap,
-                    cache=cache,
-                    device=device
-                )
+                self.attn_kernel_causal= registry.create('attention', 'normal', is_causal=True,
+                                                         constraints=kernel_constraints, **kernel_kwargs)
+                self.attn_kernel_noncausal= registry.create('attention', 'normal', is_causal=False,
+                                                            constraints=kernel_constraints, **kernel_kwargs)
                 self.causal_kernel_meta=self.attn_kernel_causal._matformer_metadata
                 self.noncausal_kernel_meta=self.attn_kernel_noncausal._matformer_metadata
             else: #Normal branch
-                self.attn_kernel = registry.create(
-                    'attention',
-                    'normal',
-                    nheads=self.config.num_attention_heads,
-                    head_dim=self.head_dim,
-                    num_key_value_heads=self.config.num_key_value_heads,
-                    is_causal=is_causal,
-                    sliding_window=self.config.sliding_window_size,
-                    positional_encoding=self.config.positional_encoding,
-                    attn_logit_softcap=self.config.attn_logit_softcap,
-                    cache=cache,
-                    device=device
-                )
+                self.attn_kernel = registry.create('attention', 'normal', is_causal=is_causal,
+                                                   constraints=kernel_constraints, **kernel_kwargs)
                 # Get kernel metadata
                 self.kernel_meta = self.attn_kernel._matformer_metadata
 

@@ -2,6 +2,8 @@ from matformer.matformer_registry import registry
 import importlib
 import torch.nn as nn
 import torch
+from matformer.dataclasses.tensors_dataclasses import apply_kernel
+from matformer.utils.kernel_tests import kernel_runs
 
 def _load(module: str, attr: str):
     return getattr(importlib.import_module(module), attr)
@@ -14,7 +16,7 @@ def _load(module: str, attr: str):
     requires=["liger_kernel"],
     priority=10,
     params_names={'inner.weight': 'weight'},
-    metadata={"is_interpretable": False}
+    constraints={'is_interpretable': False}
 )
 class LigerRMSNorm(nn.Module):
     inner: "transparent"
@@ -22,10 +24,13 @@ class LigerRMSNorm(nn.Module):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerRMSNorm")
         self.inner = cls(normalized_shape, eps=eps, elementwise_affine=elementwise_affine)
-    #def is_available(self):
-    #    return torch.cuda.is_available() 
+
+    @staticmethod
+    def _test():
+        return kernel_runs(lambda: LigerRMSNorm(16), torch.randn(2, 3, 16))
+
     def forward(self, x):
-        return x.apply(self.inner)
+        return apply_kernel(self.inner, x)
 
 
 @registry.register(
@@ -35,7 +40,7 @@ class LigerRMSNorm(nn.Module):
     requires=["liger_kernel"],
     priority=10,
     params_names={'inner.weight': 'weight', 'inner.bias': 'bias'},
-    metadata={"is_interpretable": False}
+    constraints={'is_interpretable': False}
 )
 class LigerLayerNorm(nn.Module):
     inner: "transparent"
@@ -43,10 +48,13 @@ class LigerLayerNorm(nn.Module):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerLayerNorm")
         self.inner = cls(normalized_shape, eps=eps, bias=bias)
-    #def is_available(self):
-    #    return torch.cuda.is_available() 
+
+    @staticmethod
+    def _test():
+        return kernel_runs(lambda: LigerLayerNorm(16), torch.randn(2, 3, 16))
+
     def forward(self, x):
-        return x.apply(self.inner)
+        return apply_kernel(self.inner, x)
 
 
 @registry.register(
@@ -60,7 +68,7 @@ class LigerLayerNorm(nn.Module):
         'inner.up_proj.weight':   'up_proj.weight',
         'inner.down_proj.weight': 'down_proj.weight'
     },
-    metadata={"is_interpretable": False}
+    constraints={'is_interpretable': False}
 )
 class LigerSwiGLU(nn.Module):
     inner: "transparent"
@@ -73,10 +81,13 @@ class LigerSwiGLU(nn.Module):
         config.intermediate_size = int(hidden_size * ffn_factor)
         config.hidden_act = "silu"
         self.inner = LigerSwiGLUMLP(config)
-    #def is_available(self):
-    #    return torch.cuda.is_available() 
+
+    @staticmethod
+    def _test():
+        return kernel_runs(lambda: LigerSwiGLU(16, 2), torch.randn(2, 3, 16))
+
     def forward(self, x):
-        return x.apply(self.inner)
+        return apply_kernel(self.inner, x)
 
 
 @registry.register(
@@ -90,7 +101,7 @@ class LigerSwiGLU(nn.Module):
         'inner.up_proj.weight':   'up_proj.weight',
         'inner.down_proj.weight': 'down_proj.weight'
     },
-    metadata={"is_interpretable": False}
+    constraints={'is_interpretable': False}
 )
 class LigerGEGLU(nn.Module):
     inner: "transparent"
@@ -103,10 +114,13 @@ class LigerGEGLU(nn.Module):
         config.intermediate_size = int(hidden_size * ffn_factor)
         config.hidden_act = "gelu"
         self.inner = LigerGEGLUMLP(config)
-    #def is_available(self):
-    #    return torch.cuda.is_available() 
+
+    @staticmethod
+    def _test():
+        return kernel_runs(lambda: LigerGEGLU(16, 2), torch.randn(2, 3, 16))
+
     def forward(self, x):
-        return x.apply(self.inner)
+        return apply_kernel(self.inner, x)
 
 
 @registry.register(
@@ -122,8 +136,12 @@ class LigerCrossEntropyLoss(nn.Module):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerCrossEntropyLoss")
         self.inner = cls(*args, **kwargs)
-    #def is_available(self):
-    #    return torch.cuda.is_available() 
+
+    @staticmethod
+    def _test():
+        LigerCrossEntropyLoss()(torch.randn(2, 4), torch.tensor([1, 2]))
+        return True
+
     def forward(self, logits, targets, **kwargs):
         return self.inner(logits, targets, **kwargs)
 
@@ -141,8 +159,12 @@ class LigerCrossEntropyLossFused(nn.Module):
         super().__init__()
         cls = _load("liger_kernel.transformers", "LigerFusedLinearCrossEntropyLoss")
         self.inner = cls(*args, **kwargs)
-    #def is_available(self):
-    #    return torch.cuda.is_available() 
+
+    @staticmethod
+    def _test():
+        LigerCrossEntropyLossFused()(torch.randn(2, 4), torch.tensor([1, 2]), lm_head_weight=torch.randn(4, 4))
+        return True
+
     def forward(self, hidden, targets, **kwargs):
         return self.inner(
             _input=hidden.float(),

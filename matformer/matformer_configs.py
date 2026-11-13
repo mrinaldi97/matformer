@@ -151,7 +151,7 @@ class GroupConfig:
 class MatformerConfigs(GroupConfig):
     def __init__(self):
         super().__init__()
-        self.known_categories = registry.list_categories(without_definition=False)
+        self.known_categories = registry.list_categories()
 
     def load_config(self, configs_paths=None, stdin=None, resolve=True):
         """Load one or more YAML/JSON files, or a YAML/JSON string via `stdin`. Each file's own
@@ -183,7 +183,7 @@ class MatformerConfigs(GroupConfig):
         if declared_sections - self.known_categories:
             raise ValueError(f"Unknown config section(s) {sorted(declared_sections - self.known_categories)}. Available: {sorted(self.known_categories)}")
         for section_name, sections_config in config_dict.items():
-            listed = section_name in registry.list_categories(without_definition=False, single=False)
+            listed = section_name in registry.list_categories(multi_only=True)
             if not listed:
                 assert isinstance(sections_config, dict), f"You are providing a list of configs for section '{section_name}', but it supports only a single configuration. More than one {section_name} sections cannot co-exist in the same config."
             if listed and not hasattr(self, section_name):
