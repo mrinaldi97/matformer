@@ -107,7 +107,8 @@ class TransformerWithLMHead(MatformerModule):
             self.cache.registry.create(
                 "linear", "linear",
                 in_features=config.hidden_size,
-                out_features=config.vocab_size
+                out_features=config.vocab_size,
+                bias=config.lm_head_bias
             )
         )
         

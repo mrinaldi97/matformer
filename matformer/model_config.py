@@ -64,6 +64,8 @@ class BaseSubModelConfig:
     # compilation & bias
     compile_flexattn: Optional[bool] = None
     bias: Optional[bool] = None
+    initializer_range: Optional[float] = None
+    lm_head_bias: bool = True  # Preserve legacy models; Mistral uses False.
     loss_type: str = "cross_entropy_loss"  
     # behavior
     training_objective: Optional[str] = None

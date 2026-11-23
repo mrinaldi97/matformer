@@ -42,6 +42,7 @@ class FlashAttentionKernel(nn.Module):
         self.is_causal = is_causal
         self.sliding_window = sliding_window
         self.cache = cache
+        self.deterministic = bool(kwargs.get('deterministic', False))
         
         # Alibi initialization
         if 'alibi' in positional_encoding:
@@ -51,12 +52,14 @@ class FlashAttentionKernel(nn.Module):
             self.register_buffer('alibi_slopes', None)
     
     def forward(self, qkv=None, q=None, k=None, v=None, query_input=None, key_input=None, **kwargs):   
-        sliding = self.sliding_window is not None
-        if sliding:
-            right_window = 0 if self.is_causal else -self.sliding_window
-            sliding_window = (-self.sliding_window, right_window)
-        else:
+        # FlashAttention expects nonnegative left/right radii; -1 means unlimited.
+        # A causal window W includes the current token and W-1 previous tokens.
+        if self.sliding_window is None:
             sliding_window = (-1, -1)
+        elif self.is_causal:
+            sliding_window = (self.sliding_window - 1, 0)
+        else:
+            sliding_window = (self.sliding_window, self.sliding_window)
 
         if key_input is None:
             key_input = query_input
@@ -79,6 +82,7 @@ class FlashAttentionKernel(nn.Module):
                     max_seqlen=query_input.max_seq_len,
                     alibi_slopes=alibi_slopes,
                     causal=self.is_causal,
+                    deterministic=self.deterministic,
                     window_size=sliding_window
                 )
             else:
@@ -90,6 +94,7 @@ class FlashAttentionKernel(nn.Module):
                     max_seqlen_k=key_input.max_seq_len,
                     alibi_slopes=alibi_slopes,
                     causal=self.is_causal,
+                    deterministic=self.deterministic,
                     window_size=sliding_window
                 )
         
@@ -101,6 +106,7 @@ class FlashAttentionKernel(nn.Module):
                 qkv,
                 alibi_slopes=alibi_slopes,
                 causal=self.is_causal,
+                deterministic=self.deterministic,
                 window_size=sliding_window
             )
         else:
@@ -108,6 +114,7 @@ class FlashAttentionKernel(nn.Module):
                 q, k, v,
                 alibi_slopes=alibi_slopes,
                 causal=self.is_causal,
+                deterministic=self.deterministic,
                 window_size=sliding_window
             )
 

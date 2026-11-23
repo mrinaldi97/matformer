@@ -80,6 +80,7 @@ class MultiHeadAttention(MatformerModule):
         self.kv_nheads = num_key_value_heads  
         self.n_groups = nheads // self.kv_nheads  #1 for MHA, >1 for GQA
         self.attn_variant = attn_variant
+        self.requested_attn_impl = attn_impl
         self.positional_encoding = positional_encoding
         self.is_causal = is_causal
         self.is_cross_attention = is_cross_attention
@@ -435,7 +436,10 @@ class MultiHeadAttention(MatformerModule):
                 k = self._transpose_for_kernel(k, self.rotary_embedding_meta['tensor_order_input'])
 
             # 1. Get sin and cos from cache
-            cos, sin = self.cache.get_rotary_cos_sin(max_seq_len, self.head_dim, device=query_input.device, dtype=query_input.dtype, theta=self.rope_theta)
+            # Autocast can leave the residual stream FP32 while Q/K are BF16.
+            # Rotary kernels require tables matching the projected tensor dtype.
+            rotary_dtype = qkv_projected.dtype if qkv_projected is not None else q.dtype
+            cos, sin = self.cache.get_rotary_cos_sin(max_seq_len, self.head_dim, device=query_input.device, dtype=rotary_dtype, theta=self.rope_theta)
 
             # 2. Rotate query and keys
             qkv_t, q_t, k_t = self.rotary_embedding(
