@@ -1,19 +1,0 @@
-======================================================================
-WARNING: view 'default' has a STALE shuffle file (10 pointers, 15 documents selected now).
-Documents were appended: run `repair`/`shuffle` before training on this view.
-======================================================================
-mdat> append {'dataset': 'toy', 'type': 'jsonl', 'source': '/tmp/mdat_test/b.jsonl'}
-Inferred size of the input file: 1073741824. Reloading the DB with the appropriate size.
-Closed db:  meta
-Closed db:  data
-Processing JSONL file...:   0%|          | 0.00/615 [00:00<?, ?B/s]Processing JSONL file...: 100%|██████████| 615/615 [00:00<00:00, 3.02MB/s]
-Closed db:  meta
-Closed db:  data
-Closed db:  meta
-Closed db:  data
-======================================================================
-WARNING: view 'default' has a STALE shuffle file (10 pointers, 20 documents selected now).
-Documents were appended: run `repair`/`shuffle` before training on this view.
-======================================================================
-append: {'document_number': 20, 'rows_inserted': 5, 'errors_counters': '{"hasDataError": 0, "generatorReturnedNone": 0, "missingDataKey": 0, "data<=10": 0}'}
-NOTE: shuffle files that include 'toy' are stale and pretokenizations are desynced; run `sync` and `shuffle`/`repair` before training.
