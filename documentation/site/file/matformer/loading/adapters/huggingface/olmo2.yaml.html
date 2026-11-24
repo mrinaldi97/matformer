@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/loading/adapters/huggingface/olmo2.yaml · Matformer</title>
+<link rel="stylesheet" href="../../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../../index.html">Documentation</a><a class="" href="../../../../../registry/index.html">Registry</a><a class="" href="../../../../../configuration/index.html">Configuration</a><a class="" href="../../../../../tools/commands.html">Commands</a><a class="current" href="../../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../../index.html">Matformer</a></li><li><a href="../../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../../components/cache.html">The cache</a></li><li><a href="../../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../../training/logger.html">Logging</a></li><li><a href="../../../../../training/control.html">Control</a></li><li><a href="../../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../../data/index.html">Data</a></li><li><a href="../../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../../data/data-module.html">Data module</a></li><li><a href="../../../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../../tools/server.html">Server</a></li><li><a href="../../../../../tools/gui.html">GUI</a></li><li><a href="../../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../../about/repository.html">Repository</a></li><li><a href="../../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../../index.html">Repository</a> <span class="sep">/</span> matformer/loading/adapters/huggingface/olmo2.yaml</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="olmo2.yaml.html"><code>matformer/loading/adapters/huggingface/olmo2.yaml</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/loading/adapters/huggingface/</code></a></p><h1><code>olmo2.yaml</code></h1><p class="muted">matformer/loading/adapters/huggingface/olmo2.yaml · 67 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/loading/adapters/huggingface/olmo2.yaml">view on GitHub</a></p></div><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># OLMo 2 (allenai) =&gt; Matformer config mapping</span>
+<a id="L2" name="L2"></a><span class="c1"># Llama-like (RMSNorm, swiglu, MHA, no projection biases) with &quot;inner&quot; normalization:</span>
+<a id="L3" name="L3"></a><span class="c1"># the block has NO input_layernorm — attention and MLP run on the raw residual</span>
+<a id="L4" name="L4"></a><span class="c1"># stream, and post_attention_layernorm / post_feedforward_layernorm are applied</span>
+<a id="L5" name="L5"></a><span class="c1"># to the sublayer output BEFORE the residual add (HF modeling_olmo2 forward order).</span>
+<a id="L6" name="L6"></a><span class="c1"># QK-norm: FULL-WIDTH RMSNorm over the flattened q/k projections (not per-head)</span>
+<a id="L7" name="L7"></a><span class="c1"># -&gt; qk_norm_full_width. Present in the 0325/0425 releases; the older 1124 release</span>
+<a id="L8" name="L8"></a><span class="c1"># has NO QK-norm — for those checkpoints remove the q_norm/k_norm lines below and</span>
+<a id="L9" name="L9"></a><span class="c1"># the three qk flags (no config key distinguishes the two).</span>
+<a id="L10" name="L10"></a><span class="c1"># MHA -&gt; Matformer builds the fused qkv_proj: the three HF projections are stacked</span>
+<a id="L11" name="L11"></a><span class="c1"># into it via weight_transforms.</span>
+<a id="L12" name="L12"></a><span class="nt">defaults</span><span class="p">:</span>
+<a id="L13" name="L13"></a><span class="w">  </span><span class="nt">model</span><span class="p">:</span>
+<a id="L14" name="L14"></a><span class="w">    </span><span class="nt">model_class</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Autoregressive_Model</span>
+<a id="L15" name="L15"></a><span class="w">    </span><span class="nt">is_causal</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L16" name="L16"></a><span class="w">    </span><span class="nt">bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L17" name="L17"></a><span class="w">    </span><span class="nt">training_objective</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">clm</span>
+<a id="L18" name="L18"></a><span class="w">    </span><span class="nt">lm_head_bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L19" name="L19"></a><span class="w">    </span><span class="nt">default_layer</span><span class="p">:</span>
+<a id="L20" name="L20"></a><span class="w">      </span><span class="nt">normalization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rmsnorm</span>
+<a id="L21" name="L21"></a><span class="w">      </span><span class="nt">normalization_position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">inner</span>
+<a id="L22" name="L22"></a><span class="w">      </span><span class="nt">ffn_activation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">swiglu</span>
+<a id="L23" name="L23"></a><span class="w">      </span><span class="nt">sequence_mixer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">attention</span>
+<a id="L24" name="L24"></a><span class="w">      </span><span class="nt">sequence_mixer_config</span><span class="p">:</span>
+<a id="L25" name="L25"></a><span class="w">        </span><span class="nt">positional_encoding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rope</span>
+<a id="L26" name="L26"></a><span class="w">        </span><span class="nt">q_norm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L27" name="L27"></a><span class="w">        </span><span class="nt">k_norm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L28" name="L28"></a><span class="w">        </span><span class="nt">qk_norm_full_width</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L29" name="L29"></a>
+<a id="L30" name="L30"></a><span class="nt">model_mapping</span><span class="p">:</span>
+<a id="L31" name="L31"></a><span class="w">  </span><span class="nt">hidden_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hidden_size</span>
+<a id="L32" name="L32"></a><span class="w">  </span><span class="nt">num_hidden_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">num_hidden_layers</span>
+<a id="L33" name="L33"></a><span class="w">  </span><span class="nt">vocab_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vocab_size</span>
+<a id="L34" name="L34"></a><span class="w">  </span><span class="nt">rms_norm_eps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rms_norm_eps</span>
+<a id="L35" name="L35"></a><span class="w">  </span><span class="nt">max_position_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">max_position_embeddings</span>
+<a id="L36" name="L36"></a><span class="w">  </span><span class="nt">tie_word_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tie_word_embeddings</span>
+<a id="L37" name="L37"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.num_attention_heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">num_attention_heads</span>
+<a id="L38" name="L38"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.num_key_value_heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">num_key_value_heads</span>
+<a id="L39" name="L39"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.rope_theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rope_theta</span>
+<a id="L40" name="L40"></a>
+<a id="L41" name="L41"></a><span class="nt">tokenizer_mapping</span><span class="p">:</span>
+<a id="L42" name="L42"></a><span class="w">  </span><span class="nt">vocab_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vocab_size</span>
+<a id="L43" name="L43"></a><span class="w">  </span><span class="nt">eos_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">eos_token_id</span>
+<a id="L44" name="L44"></a>
+<a id="L45" name="L45"></a><span class="nt">derived</span><span class="p">:</span>
+<a id="L46" name="L46"></a><span class="w">  </span><span class="nt">model.ffn_factor</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;intermediate_size</span><span class="nv"> </span><span class="s">/</span><span class="nv"> </span><span class="s">hidden_size&quot;</span>
+<a id="L47" name="L47"></a>
+<a id="L48" name="L48"></a><span class="c1"># QK-norm forces separate q/k/v projections in Matformer (no fused qkv_proj).</span>
+<a id="L49" name="L49"></a><span class="nt">weight_mapping</span><span class="p">:</span>
+<a id="L50" name="L50"></a><span class="w">  </span><span class="nt">lm_head.weight</span><span class="p">:</span><span class="w">                                    </span><span class="l l-Scalar l-Scalar-Plain">lm_head.weight</span>
+<a id="L51" name="L51"></a><span class="w">  </span><span class="nt">encoder.embed_tokens.weight</span><span class="p">:</span><span class="w">                       </span><span class="l l-Scalar l-Scalar-Plain">model.embed_tokens.weight</span>
+<a id="L52" name="L52"></a><span class="w">  </span><span class="nt">encoder.blocks.norm.weight</span><span class="p">:</span><span class="w">                        </span><span class="l l-Scalar l-Scalar-Plain">model.norm.weight</span>
+<a id="L53" name="L53"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn_norm.weight</span><span class="p">:</span><span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.post_attention_layernorm.weight</span>
+<a id="L54" name="L54"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.mlp_norm.weight</span><span class="p">:</span><span class="w">           </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.post_feedforward_layernorm.weight</span>
+<a id="L55" name="L55"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.q_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.q_proj.weight</span>
+<a id="L56" name="L56"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.k_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.k_proj.weight</span>
+<a id="L57" name="L57"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.v_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.v_proj.weight</span>
+<a id="L58" name="L58"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.o_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.o_proj.weight</span>
+<a id="L59" name="L59"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.q_norm.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.q_norm.weight</span>
+<a id="L60" name="L60"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.k_norm.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.k_norm.weight</span>
+<a id="L61" name="L61"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.mlp.gate_proj.weight</span><span class="p">:</span><span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.mlp.gate_proj.weight</span>
+<a id="L62" name="L62"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.mlp.up_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.mlp.up_proj.weight</span>
+<a id="L63" name="L63"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.mlp.down_proj.weight</span><span class="p">:</span><span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.mlp.down_proj.weight</span>
+<a id="L64" name="L64"></a>
+<a id="L65" name="L65"></a><span class="c1"># Automated suite (tests/test_hf_adapters.py).</span>
+<a id="L66" name="L66"></a><span class="nt">tests</span><span class="p">:</span>
+<a id="L67" name="L67"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">allenai/OLMo-2-0425-1B-Instruct</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/tasks/generation.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/tasks/generation.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="generation.py.html"><code>matformer/tasks/generation.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/tasks/</code></a></p><h1><code>generation.py</code></h1><p class="muted">matformer/tasks/generation.py · 188 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/tasks/generation.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L13"><code>GenerationTaskConfig</code></a><span class="line">L13</span> <span class="bases">(<a href="task.py.html#L14"><code>TaskConfig</code></a>)</span><div class="mro">MRO: <code>GenerationTaskConfig</code> -> <a href="task.py.html#L14"><code>TaskConfig</code></a> -> <a href="../dataclasses/matformer_config.py.html#L162"><code>MatformerMultiConfig</code></a> -> <a href="../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a></div></li><li class="depth-1"><a href="#L39"><code>GenerationTaskConfig.generate_kwargs</code></a><span class="line">L39</span></li><li class="depth-0"><a href="#L43"><code>GenerationTask</code></a><span class="line">L43</span> <span class="bases">(<a href="task.py.html#L93"><code>MatformerTask</code></a>)</span><div class="mro">MRO: <code>GenerationTask</code> -> <a href="task.py.html#L93"><code>MatformerTask</code></a></div></li><li class="depth-1"><a href="#L56"><code>GenerationTask.begin_task</code></a><span class="line">L56</span></li><li class="depth-1"><a href="#L60"><code>GenerationTask.reset</code></a><span class="line">L60</span></li><li class="depth-1"><a href="#L65"><code>GenerationTask.context_tokens</code></a><span class="line">L65</span></li><li class="depth-1"><a href="#L68"><code>GenerationTask.window</code></a><span class="line">L68</span></li><li class="depth-1"><a href="#L72"><code>GenerationTask.show_context</code></a><span class="line">L72</span></li><li class="depth-1"><a href="#L78"><code>GenerationTask.clear</code></a><span class="line">L78</span></li><li class="depth-1"><a href="#L86"><code>GenerationTask.kv_budget</code></a><span class="line">L86</span></li><li class="depth-1"><a href="#L93"><code>GenerationTask.set_system_prompt</code></a><span class="line">L93</span></li><li class="depth-1"><a href="#L98"><code>GenerationTask.set_chat_template</code></a><span class="line">L98</span></li><li class="depth-1"><a href="#L103"><code>GenerationTask._with_context</code></a><span class="line">L103</span></li><li class="depth-1"><a href="#L109"><code>GenerationTask._continue</code></a><span class="line">L109</span></li><li class="depth-1"><a href="#L128"><code>GenerationTask.process_batch</code></a><span class="line">L128</span></li><li class="depth-1"><a href="#L174"><code>GenerationTask._candidates</code></a><span class="line">L174</span></li><li class="depth-1"><a href="#L183"><code>GenerationTask.present</code></a><span class="line">L183</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="task.py.html"><code>matformer.tasks.task</code></a> <span class="muted">MatformerTask, TaskConfig, top_k</span></li><li><a href="../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li><li><a href="../dataclasses/tensors_dataclasses.py.html"><code>matformer.dataclasses.tensors_dataclasses</code></a> <span class="muted">PaddedTensor</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># matformer/tasks/generation.py</span>
+<a id="L2" name="L2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<a id="L3" name="L3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">ClassVar</span>
+<a id="L4" name="L4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L5" name="L5"></a><span class="kn">from</span><span class="w"> </span><a href="task.py.html"><span class="nn">matformer.tasks.task</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerTask</span><span class="p">,</span> <span class="n">TaskConfig</span><span class="p">,</span> <span class="n">top_k</span>
+<a id="L6" name="L6"></a><span class="kn">from</span><span class="w"> </span><a href="../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L7" name="L7"></a><span class="kn">from</span><span class="w"> </span><a href="../dataclasses/tensors_dataclasses.py.html"><span class="nn">matformer.dataclasses.tensors_dataclasses</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">PaddedTensor</span>
+<a id="L8" name="L8"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<a id="L9" name="L9"></a>
+<a id="L10" name="L10"></a>
+<a id="L11" name="L11"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;generation&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L12" name="L12"></a><span class="nd">@dataclass</span>
+<a id="L13" name="L13"></a><span class="k">class</span><span class="w"> </span><span class="nc">GenerationTaskConfig</span><span class="p">(</span><a href="task.py.html#L14"><span class="n">TaskConfig</span></a><span class="p">):</span>
+<a id="L14" name="L14"></a>    <span class="n">max_new_tokens</span><span class="p">:</span>       <span class="nb">int</span>           <span class="o">=</span> <span class="mi">200</span>
+<a id="L15" name="L15"></a>    <span class="n">min_new_tokens</span><span class="p">:</span>       <span class="nb">int</span>           <span class="o">=</span> <span class="mi">0</span>
+<a id="L16" name="L16"></a>    <span class="n">temperature</span><span class="p">:</span>          <span class="nb">float</span>         <span class="o">=</span> <span class="mf">1.0</span>
+<a id="L17" name="L17"></a>    <span class="n">top_k</span><span class="p">:</span>                <span class="nb">int</span>           <span class="o">=</span> <span class="mi">0</span>
+<a id="L18" name="L18"></a>    <span class="n">top_p</span><span class="p">:</span>                <span class="nb">float</span>         <span class="o">=</span> <span class="mf">0.9</span>
+<a id="L19" name="L19"></a>    <span class="n">repetition_penalty</span><span class="p">:</span>   <span class="nb">float</span>         <span class="o">=</span> <span class="mf">1.0</span>
+<a id="L20" name="L20"></a>    <span class="n">no_repeat_ngram_size</span><span class="p">:</span> <span class="nb">int</span>           <span class="o">=</span> <span class="mi">0</span>
+<a id="L21" name="L21"></a>    <span class="n">do_sample</span><span class="p">:</span>            <span class="nb">bool</span>          <span class="o">=</span> <span class="kc">True</span>
+<a id="L22" name="L22"></a>    <span class="n">prompt</span><span class="p">:</span>               <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L23" name="L23"></a>    <span class="n">stream</span><span class="p">:</span>               <span class="nb">bool</span>          <span class="o">=</span> <span class="kc">True</span>   <span class="c1"># print tokens as they are produced (interactive)</span>
+<a id="L24" name="L24"></a>    <span class="n">keep_context</span><span class="p">:</span>         <span class="nb">bool</span>          <span class="o">=</span> <span class="kc">True</span>   <span class="c1"># interactive: every request continues the previous ones</span>
+<a id="L25" name="L25"></a>    <span class="n">max_context_tokens</span><span class="p">:</span>   <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># left-trim of the kept context, default: the model window</span>
+<a id="L26" name="L26"></a>    <span class="n">use_cache</span><span class="p">:</span>            <span class="nb">bool</span>          <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># paged KV cache: needs an attention that reads it</span>
+<a id="L27" name="L27"></a>                                                 <span class="c1"># (--attention flash_kv / sdpa_kv / flashinfer)</span>
+<a id="L28" name="L28"></a>    <span class="n">max_kv_tokens</span><span class="p">:</span>        <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># conversation budget the cache is reserved for</span>
+<a id="L29" name="L29"></a>    <span class="n">topk_present</span><span class="p">:</span>         <span class="nb">int</span>           <span class="o">=</span> <span class="mi">0</span>      <span class="c1"># interactive: keep the top-k candidates of every</span>
+<a id="L30" name="L30"></a>                                                 <span class="c1"># generated token, so a UI can hover one and see</span>
+<a id="L31" name="L31"></a>                                                 <span class="c1"># what the model had instead of it. 0 = plain text</span>
+<a id="L32" name="L32"></a>                                                 <span class="c1"># (fastest), -1 = the whole vocabulary</span>
+<a id="L33" name="L33"></a>
+<a id="L34" name="L34"></a>    <span class="n">_GENERATE_FIELDS</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+<a id="L35" name="L35"></a>        <span class="s2">&quot;max_new_tokens&quot;</span><span class="p">,</span> <span class="s2">&quot;min_new_tokens&quot;</span><span class="p">,</span> <span class="s2">&quot;temperature&quot;</span><span class="p">,</span> <span class="s2">&quot;top_k&quot;</span><span class="p">,</span>
+<a id="L36" name="L36"></a>        <span class="s2">&quot;top_p&quot;</span><span class="p">,</span> <span class="s2">&quot;repetition_penalty&quot;</span><span class="p">,</span> <span class="s2">&quot;no_repeat_ngram_size&quot;</span><span class="p">,</span> <span class="s2">&quot;do_sample&quot;</span><span class="p">,</span>
+<a id="L37" name="L37"></a>    <span class="p">)</span>
+<a id="L38" name="L38"></a>
+<a id="L39" name="L39"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L40" name="L40"></a>        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_GENERATE_FIELDS</span><span class="p">}</span>
+<a id="L41" name="L41"></a>
+<a id="L42" name="L42"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;generation&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<a id="L43" name="L43"></a><span class="k">class</span><span class="w"> </span><span class="nc">GenerationTask</span><span class="p">(</span><a href="task.py.html#L93"><span class="n">MatformerTask</span></a><span class="p">):</span>
+<a id="L44" name="L44"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Autoregressive generation: one decoded text per item of the batch.</span>
+<a id="L45" name="L45"></a>
+<a id="L46" name="L46"></a><span class="sd">    Streaming is enabled by passing stream_callback to the task (see MatformerTask.__call__):</span>
+<a id="L47" name="L47"></a><span class="sd">    it receives (next_tokens, step) after every decoding step, so a UI can print tokens as</span>
+<a id="L48" name="L48"></a><span class="sd">    they are produced.</span>
+<a id="L49" name="L49"></a>
+<a id="L50" name="L50"></a><span class="sd">    With config.keep_context the task owns a running context: what was asked and what was</span>
+<a id="L51" name="L51"></a><span class="sd">    answered stays in front of the next prompt, and only the newly produced text is returned.</span>
+<a id="L52" name="L52"></a><span class="sd">    clear() throws it away. The chat plumbing (system prompt, template) is stored but not</span>
+<a id="L53" name="L53"></a><span class="sd">    applied yet: applying it needs the tokenizer&#39;s template, which is the next step.</span>
+<a id="L54" name="L54"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L55" name="L55"></a>
+<a id="L56" name="L56"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">begin_task</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L57" name="L57"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">begin_task</span><span class="p">()</span>
+<a id="L58" name="L58"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<a id="L59" name="L59"></a>
+<a id="L60" name="L60"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L61" name="L61"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L62" name="L62"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L63" name="L63"></a>
+<a id="L64" name="L64"></a>    <span class="nd">@property</span>
+<a id="L65" name="L65"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">context_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="L66" name="L66"></a>        <span class="k">return</span> <span class="mi">0</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">numel</span><span class="p">())</span>
+<a id="L67" name="L67"></a>
+<a id="L68" name="L68"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">window</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="L69" name="L69"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_context_tokens</span> \
+<a id="L70" name="L70"></a>            <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;max_position_embeddings&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_new_tokens</span>
+<a id="L71" name="L71"></a>
+<a id="L72" name="L72"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">show_context</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="L73" name="L73"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">keep_context</span><span class="p">:</span>
+<a id="L74" name="L74"></a>            <span class="k">return</span> <span class="s2">&quot;context is off: every request starts fresh (&#39;set keep_context true&#39; to keep it)&quot;</span>
+<a id="L75" name="L75"></a>        <span class="n">cached</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;, </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span><span class="o">.</span><span class="n">lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> of them cached&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+<a id="L76" name="L76"></a>        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">context_tokens</span><span class="si">}</span><span class="s2"> tokens in context</span><span class="si">{</span><span class="n">cached</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="L77" name="L77"></a>
+<a id="L78" name="L78"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">clear</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="L79" name="L79"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span>
+<a id="L80" name="L80"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L81" name="L81"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>
+<a id="L82" name="L82"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L83" name="L83"></a>        <span class="k">return</span> <span class="s2">&quot;context cleared&quot;</span> <span class="o">+</span> <span class="p">(</span><span class="s2">&quot; (keep_context is off, so nothing was kept)&quot;</span>
+<a id="L84" name="L84"></a>                                    <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">keep_context</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="L85" name="L85"></a>
+<a id="L86" name="L86"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">kv_budget</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="L87" name="L87"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Tokens of conversation the cache is reserved for: the window the context will ever</span>
+<a id="L88" name="L88"></a><span class="sd">        need, so that no turn has to reallocate it behind the running state.&quot;&quot;&quot;</span>
+<a id="L89" name="L89"></a>        <span class="n">window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_kv_tokens</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_context_tokens</span> \
+<a id="L90" name="L90"></a>            <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;max_position_embeddings&#39;</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<a id="L91" name="L91"></a>        <span class="k">return</span> <span class="nb">int</span><span class="p">(</span><span class="n">window</span><span class="p">)</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">max_new_tokens</span>
+<a id="L92" name="L92"></a>
+<a id="L93" name="L93"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_system_prompt</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="L94" name="L94"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">system_prompt</span> <span class="o">=</span> <span class="n">text</span> <span class="ow">or</span> <span class="kc">None</span>
+<a id="L95" name="L95"></a>        <span class="k">return</span> <span class="p">(</span><span class="s2">&quot;system prompt stored, but no chat template is applied yet: generation is &quot;</span>
+<a id="L96" name="L96"></a>                <span class="s2">&quot;unchanged&quot;</span> <span class="k">if</span> <span class="n">text</span> <span class="k">else</span> <span class="s2">&quot;system prompt cleared&quot;</span><span class="p">)</span>
+<a id="L97" name="L97"></a>
+<a id="L98" name="L98"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_chat_template</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="L99" name="L99"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span> <span class="o">=</span> <span class="p">(</span><span class="n">text</span> <span class="ow">or</span> <span class="s1">&#39;&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">or</span> <span class="kc">None</span>
+<a id="L100" name="L100"></a>        <span class="k">return</span> <span class="p">(</span><span class="sa">f</span><span class="s2">&quot;chat template &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span><span class="si">}</span><span class="s2">&#39; stored, but applying it to the context &quot;</span>
+<a id="L101" name="L101"></a>                <span class="s2">&quot;is not implemented yet&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chat_template</span> <span class="k">else</span> <span class="s2">&quot;chat template cleared&quot;</span><span class="p">)</span>
+<a id="L102" name="L102"></a>
+<a id="L103" name="L103"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_with_context</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+<a id="L104" name="L104"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Rebuild the batch with the kept context in front of every row.&quot;&quot;&quot;</span>
+<a id="L105" name="L105"></a>        <span class="n">pad</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;pad_token_id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span>
+<a id="L106" name="L106"></a>        <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="n">row</span><span class="p">])</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">pad</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()]</span>
+<a id="L107" name="L107"></a>        <span class="k">return</span> <span class="n">PaddedTensor</span><span class="o">.</span><span class="n">from_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">pad_value</span><span class="o">=</span><span class="n">pad</span><span class="p">)</span>
+<a id="L108" name="L108"></a>
+<a id="L109" name="L109"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_continue</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+<a id="L110" name="L110"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;The turn to feed when the conversation is cached: only what is new, since the state</span>
+<a id="L111" name="L111"></a><span class="sd">        already holds everything before it. A state that no longer matches the context (first</span>
+<a id="L112" name="L112"></a><span class="sd">        turn, context trimmed away, cache cleared) starts over with the whole thing.&quot;&quot;&quot;</span>
+<a id="L113" name="L113"></a>        <span class="n">rows</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">pad</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span>
+<a id="L114" name="L114"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> \
+<a id="L115" name="L115"></a>                <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span><span class="o">.</span><span class="n">lengths</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">numel</span><span class="p">())</span> \
+<a id="L116" name="L116"></a>                <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span><span class="o">.</span><span class="n">lengths</span><span class="p">):</span>
+<a id="L117" name="L117"></a>            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span>
+<a id="L118" name="L118"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L119" name="L119"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L120" name="L120"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span><span class="o">.</span><span class="n">release</span><span class="p">()</span>    <span class="c1"># that conversation is over: give its pages back</span>
+<a id="L121" name="L121"></a>            <span class="n">pad</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;pad_token_id&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span>
+<a id="L122" name="L122"></a>            <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="n">row</span><span class="p">])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">row</span>
+<a id="L123" name="L123"></a>                    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
+<a id="L124" name="L124"></a>            <span class="n">batch</span> <span class="o">=</span> <span class="n">PaddedTensor</span><span class="o">.</span><span class="n">from_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="n">pad_value</span><span class="o">=</span><span class="n">pad</span><span class="p">)</span>
+<a id="L125" name="L125"></a>            <span class="n">state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">paged_cache</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kv_budget</span><span class="p">())</span><span class="o">.</span><span class="n">new_state</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">))</span>
+<a id="L126" name="L126"></a>        <span class="k">return</span> <span class="n">batch</span><span class="p">,</span> <span class="n">state</span>
+<a id="L127" name="L127"></a>
+<a id="L128" name="L128"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">process_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+<a id="L129" name="L129"></a>        <span class="n">keeping</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">keep_context</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactive</span>
+<a id="L130" name="L130"></a>        <span class="n">caching</span> <span class="o">=</span> <span class="n">keeping</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">use_cache</span>
+<a id="L131" name="L131"></a>        <span class="k">if</span> <span class="n">caching</span><span class="p">:</span>
+<a id="L132" name="L132"></a>            <span class="n">batch</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_continue</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<a id="L133" name="L133"></a>        <span class="k">elif</span> <span class="n">keeping</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L134" name="L134"></a>            <span class="n">batch</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_with_context</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<a id="L135" name="L135"></a>        <span class="n">prompt_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">((</span><span class="o">~</span><span class="n">batch</span><span class="o">.</span><span class="n">pad</span><span class="p">()</span><span class="o">.</span><span class="n">padding_mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<a id="L136" name="L136"></a>        <span class="n">first</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L137" name="L137"></a>        <span class="n">callback</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream_callback</span>
+<a id="L138" name="L138"></a>
+<a id="L139" name="L139"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">stream</span><span class="p">(</span><span class="n">next_tokens</span><span class="p">,</span> <span class="n">step</span><span class="p">):</span>
+<a id="L140" name="L140"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">first</span><span class="p">:</span>
+<a id="L141" name="L141"></a>                <span class="n">first</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">())</span>
+<a id="L142" name="L142"></a>            <span class="k">if</span> <span class="n">callback</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L143" name="L143"></a>                <span class="n">callback</span><span class="p">(</span><span class="n">next_tokens</span><span class="p">,</span> <span class="n">step</span><span class="p">)</span>
+<a id="L144" name="L144"></a>
+<a id="L145" name="L145"></a>        <span class="n">started</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+<a id="L146" name="L146"></a>        <span class="n">detailed</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactive</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">topk_present</span> <span class="o">!=</span> <span class="mi">0</span>
+<a id="L147" name="L147"></a>        <span class="n">generated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">generate</span><span class="p">(</span>
+<a id="L148" name="L148"></a>            <span class="n">input_ids</span><span class="o">=</span><span class="n">batch</span><span class="p">,</span>
+<a id="L149" name="L149"></a>            <span class="n">stream_callback</span><span class="o">=</span><span class="n">stream</span><span class="p">,</span>
+<a id="L150" name="L150"></a>            <span class="n">output_scores</span><span class="o">=</span><span class="n">detailed</span><span class="p">,</span> <span class="n">return_timing</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">use_cache</span><span class="p">,</span>
+<a id="L151" name="L151"></a>            <span class="n">kv_state</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kv_state</span><span class="p">,</span>
+<a id="L152" name="L152"></a>            <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">generate_kwargs</span><span class="p">(),</span>
+<a id="L153" name="L153"></a>        <span class="p">)</span>
+<a id="L154" name="L154"></a>        <span class="n">ids</span><span class="p">,</span> <span class="n">scores</span> <span class="o">=</span> <span class="n">generated</span> <span class="k">if</span> <span class="n">detailed</span> <span class="k">else</span> <span class="p">(</span><span class="n">generated</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L155" name="L155"></a>        <span class="n">new_tokens</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">prompt_len</span><span class="p">)</span>
+<a id="L156" name="L156"></a>        <span class="n">ended</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">perf_counter</span><span class="p">()</span>
+<a id="L157" name="L157"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;in_tokens&#39;</span><span class="p">:</span> <span class="n">prompt_len</span><span class="p">,</span> <span class="s1">&#39;new_tokens&#39;</span><span class="p">:</span> <span class="n">new_tokens</span><span class="p">,</span>
+<a id="L158" name="L158"></a>                        <span class="s1">&#39;prefill_tokens&#39;</span><span class="p">:</span> <span class="n">prompt_len</span><span class="p">,</span> <span class="s1">&#39;prefill_seconds&#39;</span><span class="p">:</span> <span class="nb">max</span><span class="p">(</span><span class="n">first</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">started</span><span class="p">,</span> <span class="mf">1e-9</span><span class="p">)</span>
+<a id="L159" name="L159"></a>                        <span class="k">if</span> <span class="n">first</span> <span class="k">else</span> <span class="n">ended</span> <span class="o">-</span> <span class="n">started</span><span class="p">}</span>
+<a id="L160" name="L160"></a>        <span class="k">if</span> <span class="n">new_tokens</span> <span class="ow">and</span> <span class="n">first</span><span class="p">:</span>
+<a id="L161" name="L161"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">decode_tokens</span><span class="o">=</span><span class="n">new_tokens</span><span class="p">,</span> <span class="n">decode_seconds</span><span class="o">=</span><span class="nb">max</span><span class="p">(</span><span class="n">ended</span> <span class="o">-</span> <span class="n">first</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">1e-9</span><span class="p">))</span>
+<a id="L162" name="L162"></a>        <span class="k">if</span> <span class="n">keeping</span><span class="p">:</span>
+<a id="L163" name="L163"></a>            <span class="n">whole</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="p">,</span> <span class="n">ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]])</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L164" name="L164"></a>            <span class="n">window</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">window</span><span class="p">()</span>
+<a id="L165" name="L165"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">whole</span><span class="p">[</span><span class="o">-</span><span class="n">window</span><span class="p">:]</span> <span class="k">if</span> <span class="n">window</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">whole</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">&gt;</span> <span class="n">window</span> <span class="k">else</span> <span class="n">whole</span>
+<a id="L166" name="L166"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">status</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;ctx </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">context_tokens</span><span class="si">}</span><span class="s2"> tok&quot;</span>
+<a id="L167" name="L167"></a>        <span class="n">rows</span> <span class="o">=</span> <span class="n">ids</span><span class="p">[:,</span> <span class="n">prompt_len</span><span class="p">:]</span> <span class="k">if</span> <span class="n">keeping</span> <span class="k">else</span> <span class="n">ids</span>
+<a id="L168" name="L168"></a>        <span class="n">texts</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
+<a id="L169" name="L169"></a>        <span class="k">if</span> <span class="n">detailed</span><span class="p">:</span>
+<a id="L170" name="L170"></a>            <span class="k">return</span> <span class="n">batch</span><span class="p">,</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_candidates</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">texts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+<a id="L171" name="L171"></a>                           <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">ids</span><span class="p">[:,</span> <span class="n">prompt_len</span><span class="p">:])]</span>
+<a id="L172" name="L172"></a>        <span class="k">return</span> <span class="n">batch</span><span class="p">,</span> <span class="n">texts</span>
+<a id="L173" name="L173"></a>
+<a id="L174" name="L174"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_candidates</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">step_logits</span><span class="p">,</span> <span class="n">text</span><span class="p">):</span>
+<a id="L175" name="L175"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;The text the model wrote, next to what it could have written: the surface form of every</span>
+<a id="L176" name="L176"></a><span class="sd">        generated token and the probability of its top-k. Kept hidden until a UI asks for it.&quot;&quot;&quot;</span>
+<a id="L177" name="L177"></a>        <span class="n">k</span> <span class="o">=</span> <span class="n">top_k</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">topk_present</span><span class="p">,</span> <span class="n">step_logits</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<a id="L178" name="L178"></a>        <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">step_logits</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L179" name="L179"></a>        <span class="n">values</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L180" name="L180"></a>        <span class="k">return</span> <span class="p">{</span><span class="s1">&#39;generated&#39;</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span> <span class="s1">&#39;tokens&#39;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">tokens</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">tolist</span><span class="p">()),</span>
+<a id="L181" name="L181"></a>                <span class="s1">&#39;topk_ids&#39;</span><span class="p">:</span> <span class="n">indices</span><span class="p">,</span> <span class="s1">&#39;topk_probs&#39;</span><span class="p">:</span> <span class="n">values</span><span class="p">}</span>
+<a id="L182" name="L182"></a>
+<a id="L183" name="L183"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">present</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rows</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="L184" name="L184"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">presentation</span> <span class="o">==</span> <span class="s1">&#39;full&#39;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">rows</span><span class="p">:</span>
+<a id="L185" name="L185"></a>            <span class="k">return</span> <span class="kc">None</span>
+<a id="L186" name="L186"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="L187" name="L187"></a>            <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">)</span>
+<a id="L188" name="L188"></a>        <span class="k">return</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;generated&#39;</span><span class="p">]</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

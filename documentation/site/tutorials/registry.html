@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Use the registry · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section" open><summary>Tutorials</summary><ul><li><a href="index.html">Tutorials</a></li><li><a class="current" href="registry.html">Use the registry</a></li><li><a href="add-a-task.html">Add a task</a></li><li><a href="use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="write-a-plugin.html">Write a plugin</a></li><li><a href="custom-tokenizer.html">Add a tokenizer</a></li><li><a href="train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Tutorials <span class="sep">/</span> Use the registry</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/matformer_registry.py.html"><code>matformer/matformer_registry.py</code></a> <a href="../file/matformer/utils/matformer_registry_implementation.py.html"><code>matformer/utils/matformer_registry_implementation.py</code></a></div>
+<h1 id="use-the-registry">Use the registry<a class="headerlink" href="#use-the-registry" title="Permanent link"></a></h1>
+<p>The registry maps a category and a variant to one or more implementations. A model asks for a variant; the registry returns an instance of an implementation that is available and compatible with the current call.</p>
+<h2 id="inspect-it">Inspect it<a class="headerlink" href="#inspect-it" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+
+<span class="n">registry</span><span class="o">.</span><span class="n">list_categories</span><span class="p">()</span>
+<span class="n">registry</span><span class="o">.</span><span class="n">print_registry</span><span class="p">()</span>
+<span class="n">registry</span><span class="o">.</span><span class="n">print_registry</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="s2">&quot;mlp&quot;</span><span class="p">)</span>
+<span class="n">registry</span><span class="o">.</span><span class="n">get_registry_info</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="n">as_json</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+
+<p><code>get_registry_info</code> returns the dataclass and the implementations of every variant, with file path, line range, priority, required packages and constraints. The generated pages in <a href="../components/registry.html">the registry reference</a> use the same data.</p>
+<h2 id="how-an-implementation-is-chosen">How an implementation is chosen<a class="headerlink" href="#how-an-implementation-is-chosen" title="Permanent link"></a></h2>
+<p><code>registry.create(category, variant, **kwargs)</code> selects an implementation in this order:</p>
+<ol>
+<li><code>preferred=&lt;name&gt;</code>, when the caller passes it;</li>
+<li>the environment variable <code>MATFORMER_&lt;CATEGORY&gt;_&lt;VARIANT&gt;</code>, for example <code>MATFORMER_MLP_SWIGLU=torch</code>;</li>
+<li>the implementation with the highest <code>priority</code>.</li>
+</ol>
+<p>A candidate is skipped when a package in <code>requires</code> cannot be imported, when its class cannot be imported, or when its <code>_test()</code> raises or returns <code>False</code>. The same test is not repeated in the process: the first result is stored and reused.</p>
+<p>Constraints filter the candidates for the current call. <code>constraints=["is_training"]</code> skips an implementation that declares <code>{"is_training": False}</code>. <code>registry.set_default_constraints(["is_training"])</code> applies the same filter to every later call. An implementation without constraints is accepted everywhere.</p>
+<p>If a candidate fails during construction, the registry tries the next candidate. If every candidate fails, <code>NoImplementationAvailable</code> lists the reason for each attempt. A successful selection returns the implementation instance; the registry does not replace it later.</p>
+<h2 id="add-an-implementation">Add an implementation<a class="headerlink" href="#add-an-implementation" title="Permanent link"></a></h2>
+<p>Register a class in the category and variant it implements:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="s2">&quot;swiglu&quot;</span><span class="p">,</span> <span class="s2">&quot;my_kernel&quot;</span><span class="p">,</span>
+                   <span class="n">priority</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                   <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;torch&quot;</span><span class="p">,</span> <span class="s2">&quot;my_package&quot;</span><span class="p">],</span>
+                   <span class="n">params_names</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;w13.weight&quot;</span><span class="p">:</span> <span class="s2">&quot;gate_proj.weight&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;w2.weight&quot;</span><span class="p">:</span> <span class="s2">&quot;down_proj.weight&quot;</span><span class="p">})</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MySwiGLU</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_test</span><span class="p">():</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+        <span class="n">module</span> <span class="o">=</span> <span class="n">MySwiGLU</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mf">4.0</span><span class="p">)</span>
+        <span class="n">module</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+        <span class="k">return</span> <span class="kc">True</span>
+</code></pre></div>
+
+<p>Place the file in <code>matformer/modules</code> or in <code>MATFORMER_ASSETS/extra_plugins</code>; both are scanned at import time. <code>_test()</code> runs at the first instantiation, not during the scan. <code>params_names</code> maps the internal parameter names to the stable names used by checkpoints, so the new kernel can load a checkpoint written by another implementation.</p>
+<p>Test a selection directly:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="n">module</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="s2">&quot;swiglu&quot;</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="mi">768</span><span class="p">,</span> <span class="n">ffn_factor</span><span class="o">=</span><span class="mf">4.0</span><span class="p">)</span>
+<span class="n">module</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">768</span><span class="p">))</span>
+</code></pre></div>
+
+<p><code>registry.create</code> accepts the constructor arguments of the implementation. The model code passes <code>config</code>, <code>hidden_size</code> and the other fields of the layer; a custom implementation must accept the arguments of the variant it replaces.</p>
+<h2 id="conditions">Conditions<a class="headerlink" href="#conditions" title="Permanent link"></a></h2>
+<p><code>requires</code> is for external libraries that must exist for the implementation to be considered. <code>constraints</code> is for the context: <code>is_training</code>, <code>is_inference</code>, a softcap the kernel does not support, and so on. <code>metadata</code> is free data attached to the instance as <code>_matformer_metadata</code>; it describes how to call the selected implementation and does not affect the choice.</p>
+<h2 id="dataclasses">Dataclasses<a class="headerlink" href="#dataclasses" title="Permanent link"></a></h2>
+<p>A variant can carry a configuration dataclass:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="s2">&quot;swiglu&quot;</span><span class="p">)</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SwiGLUConfig</span><span class="p">(</span><span class="n">MatformerConfig</span><span class="p">):</span>
+    <span class="n">hidden_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">768</span>
+    <span class="n">ffn_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.0</span>
+</code></pre></div>
+
+<p><code>registry.get_definition("mlp", "swiglu")</code> returns the class. A section with <code>type: swiglu</code> in YAML is parsed with that class, and <code>instantiate()</code> calls <code>registry.create</code> for the same category and variant.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

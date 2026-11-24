@@ -12,12 +12,12 @@ training:
 
 data:
   - name: train
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/IRONITA/train.jsonl"
+    data_root: "$DATA_ASSETS/IRONITA/train.jsonl"
     label2id:
       0: 0
       1: 1
   - name: test
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/IRONITA/test.jsonl"
+    data_root: "$DATA_ASSETS/IRONITA/test.jsonl"
     label2id:
       0: 0
       1: 1

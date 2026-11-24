@@ -2,8 +2,55 @@ includes:
   - "./shared/base_token_classification.yaml"
   - "./shared/data_token_classification.yaml"
 
+# Full EVALITA/ISRL tag set of the dataset (41 tags): the rare .LIN/.DIA variants and the
+# one-off misspellings (AVV, CCON, INTERJ, NON, PROP) are kept as their own classes, so no
+# token is silently dropped from training. The vocabulary belongs to the head, so it is declared
+# on the model: both datasets read it through their linked 'model' field, it is saved with the
+# checkpoint, and every prediction can be named instead of shown as a bare id.
 model:
-  num_classes: 20
+  num_classes: 41
+  label2id:
+    VERB: 0
+    NOUN: 1
+    DET: 2
+    PRON: 3
+    ADV: 4
+    ADP: 5
+    CCONJ: 6
+    ADJ: 7
+    SCONJ: 8
+    INTJ: 9
+    AUX: 10
+    PARA: 11
+    PROPN: 12
+    NEG: 13
+    ADP_A: 14
+    X: 15
+    _: 16
+    NUM: 17
+    VERB_PRON: 18
+    NOUN.LIN: 19
+    ADJ.LIN: 20
+    ADP.DIA: 21
+    ADP.LIN: 22
+    ADV.LIN: 23
+    AUX.DIA: 24
+    AVV: 25
+    CCON: 26
+    CCONJ.LIN: 27
+    DET.LIN: 28
+    INTERJ: 29
+    INTJ.DIA: 30
+    INTJ.LIN: 31
+    NON: 32
+    NOUN.DIA: 33
+    PRON.DIA: 34
+    PRON.LIN: 35
+    PROP: 36
+    PROPN.LIN: 37
+    PUNCT: 38
+    VERB.DIA: 39
+    VERB.LIN: 40
 
 training:
   checkpoint_name: "pos"
@@ -12,51 +59,9 @@ training:
 
 data:
   - name: train
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/POS/train.jsonl"
-    label2id:
-      VERB: 0
-      NOUN: 1
-      DET: 2
-      PRON: 3
-      ADV: 4
-      ADP: 5
-      CCONJ: 6
-      ADJ: 7
-      SCONJ: 8
-      INTJ: 9
-      AUX: 10
-      PARA: 11
-      PROPN: 12
-      NEG: 13
-      ADP_A: 14
-      X: 15
-      _: 16
-      NUM: 17
-      VERB_PRON: 18
-      NOUN.LIN: 19
+    data_root: "$DATA_ASSETS/POS/train.jsonl"
   - name: test
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/POS/test.jsonl"
-    label2id:
-      VERB: 0
-      NOUN: 1
-      DET: 2
-      PRON: 3
-      ADV: 4
-      ADP: 5
-      CCONJ: 6
-      ADJ: 7
-      SCONJ: 8
-      INTJ: 9
-      AUX: 10
-      PARA: 11
-      PROPN: 12
-      NEG: 13
-      ADP_A: 14
-      X: 15
-      _: 16
-      NUM: 17
-      VERB_PRON: 18
-      NOUN.LIN: 19
+    data_root: "$DATA_ASSETS/POS/test.jsonl"
 
 validation:
   ref_task: test
@@ -65,6 +70,6 @@ task:
   - type: evaluation
     name: test
     learning_signal: token_classification
-    num_classes: 20
+    num_classes: 41
     compute_confusion_matrix: true
     topk: false

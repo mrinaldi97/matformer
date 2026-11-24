@@ -27,12 +27,30 @@ patches its existing fields rather than replacing the instance (see MatformerCon
 A file may declare "includes: [other.yaml, ...]" (or a bare string), resolved relative to that
 file's own directory and merged in first, so the including file's own content always wins.
 
+Every string of a document (paths in it, includes, override values) goes through MATFORMER_ASSETS
+token expansion, so a config may address the shared assets folder without machine-specific paths:
+
+data_root: "$DATA_ASSETS/IRONITA/train.jsonl"   # also $ASSETS, $CONFIG_ASSETS, $CHECKPOINT_ASSETS...
+
     configs = MatformerConfigs()
     configs.load_config("base.yaml")
     configs.set_overrides(["data.train.batch_size=64", "model.num_labels=5"])
     configs.resolve_references()
     model = configs.instantiate("model")
     configs.save_config("run_config.yaml", exclude=["data", "validation"])
+
+A value may declare several candidates instead of one, separated by a pipe, and the file then
+stands for a sweep rather than for a single run:
+
+    training:
+      lr: 2e-3 | 1e-4
+    model:
+      positional_encoding: alibi | [alibi, rope]
+
+The candidates land in `configs.sweeps` and the configs themselves keep the first one, so a config
+nobody expands is still a perfectly valid run. `configs.sweep_variants()` is the expansion: one
+detached config per combination, each renamed so its logs, checkpoints and saved outputs can never
+collide with another point's. See matformer/sweeps.py.
 """
 import os
 import json
@@ -40,6 +58,9 @@ import dataclasses
 import yaml
 from collections import defaultdict
 from matformer.matformer_registry import registry
+from matformer.utils import matformer_assets
+from matformer.dataclasses.matformer_config import MatformerConfig
+from matformer import sweeps
 
 def _set_nested(d: dict, dotted_path: str, value):
     *path, leaf = dotted_path.split('.')
@@ -55,6 +76,67 @@ def _get_nested(mapping, path):
             raise KeyError(part)
         value = value[part]
     return value
+
+
+_MISSING = object()
+
+
+def _literal(text):
+    """An override's right-hand side as a Python value. What is not valid YAML on its own -- a
+    sweep declaration like `[alibi,rope] | alibi` -- stays the string the sweep parser splits."""
+    try:
+        return yaml.safe_load(text)
+    except yaml.YAMLError:
+        return text.strip().strip('"\'')
+
+
+def _patch_value(node, keys, value, path=''):
+    """Set `keys` -- a path inside one config instance -- to `value`, and return the instance.
+
+    `update()` writes the leaf; a path that goes through a plain dict or list field rebuilds just
+    that container first, so 'training.lr', 'task.test.topk' and 'data.train.label2id.0' all
+    address something real."""
+    if not keys:
+        return value
+    head, *rest = keys
+    if not rest:
+        return node.update({head: value})
+    inner = node.get(head)
+    if isinstance(inner, MatformerConfig):
+        return node.update({head: _patch_value(inner, rest, value, path)})
+    patched = _patch_container(inner, rest, value)
+    if patched is _MISSING:
+        raise ValueError(f"'{path}': no such field inside '{head}' of {type(node).__name__}")
+    return node.update({head: patched})
+
+
+def _patch_container(node, keys, value):
+    """The dict/list twin of _patch_value: copy the branch, set the leaf, hand the whole rebuilt
+    container back to the config that owns it. _MISSING when the path is not there."""
+    head, *rest = keys
+    index = _lookup(node, head)
+    if index is _MISSING:
+        return _MISSING
+    child = value if not rest else _patch_container(node[index], rest, value)
+    if child is _MISSING:
+        return _MISSING
+    out = list(node) if isinstance(node, (list, tuple)) else dict(node)
+    out[index] = child
+    return out
+
+
+def _lookup(node, head):
+    """The key `head` names inside a plain container -- dict keys and list positions both arrive
+    from a dotted path as strings, and YAML dict keys may be ints."""
+    number = head.lstrip('-').isdigit()
+    if isinstance(node, dict):
+        if head in node:
+            return head
+        if number and int(head) in node:
+            return int(head)
+    elif isinstance(node, (list, tuple)) and number and 0 <= int(head) < len(node):
+        return int(head)
+    return _MISSING
 class GroupConfig:
     """Holds one or more named MatformerConfig instances under a shared section, e.g.
     configs.data.train / configs.data.test. MatformerConfigs itself is the root of this same
@@ -152,6 +234,9 @@ class MatformerConfigs(GroupConfig):
     def __init__(self):
         super().__init__()
         self.known_categories = registry.list_categories()
+        # Sweeps: the candidates each field declares ('training.lr' -> [2e-3, 1e-4]), and the point
+        # of a sweep this very instance stands for (None unless it is one of sweep_variants()).
+        self.sweeps, self.active_sweep = {}, None
 
     def load_config(self, configs_paths=None, stdin=None, resolve=True):
         """Load one or more YAML/JSON files, or a YAML/JSON string via `stdin`. Each file's own
@@ -164,6 +249,7 @@ class MatformerConfigs(GroupConfig):
                 self.import_config(yaml.safe_load(stdin))
         if configs_paths is not None:
             for config_path in ([configs_paths] if isinstance(configs_paths, str) else configs_paths):
+                config_path = matformer_assets.expand(config_path)
                 extension = config_path.split('.')[-1]
                 assert extension in ('yaml', 'json'), "Please provide either a yaml or a json file."
                 with open(config_path) as f:
@@ -171,7 +257,9 @@ class MatformerConfigs(GroupConfig):
                 self.import_config(config_dict, base_dir=os.path.dirname(os.path.abspath(config_path)))
         if resolve:
             self.resolve_references()
-    def import_config(self, config_dict, base_dir='.'):
+    def import_config(self, config_dict, base_dir='.', sweeps_on=True):
+        # 0. Magic MATFORMER_ASSETS tokens ($ASSETS, $DATA_ASSETS, ...) become absolute paths.
+        config_dict = matformer_assets.expand_tree(config_dict)
         # 1. Resolve and merge includes first, relative to this dict's own file -- so this
         # file's own content is imported afterwards and wins on conflicts.
         includes = config_dict.pop('includes', None)
@@ -197,25 +285,138 @@ class MatformerConfigs(GroupConfig):
                 if object_name is None:
                     object_name = getattr(dataclass_obj, 'name', None) or f'default_{section_type}'
                 target = getattr(self, section_name) if listed else self
+                if sweeps_on:      # 'lr: 2e-3 | 1e-4' declares a sweep, not a broken float
+                    prefix = f"{section_name}.{object_name}" if listed else section_name
+                    section_config, found, touched = sweeps.harvest(section_config, prefix)
+                    self.sweeps.update(found)
+                    for path in touched:    # re-declared without pipes: that dimension is closed
+                        if path not in found:
+                            self.sweeps.pop(path, None)
                 target.add_or_update_dataclass(section_name, object_name, section_config, dataclass_obj)
+
+    def set_value(self, path, value, declare=True, resolve=True):
+        """Set one value in place, addressed the way the configs themselves address it:
+        'training.lr', 'task.test.topk', and -- going through plain dict/list fields --
+        'data.train.label2id.0'. With `declare`, a value holding pipes declares a sweep instead of
+        setting a single value (see matformer/sweeps.py)."""
+        section, *rest = str(path).split('.')
+        held = getattr(self, section, None)
+        if held is None:
+            raise ValueError(f"'{path}': these configs have no '{section}' section "
+                             f"({', '.join(self.objects) or 'none loaded'})")
+        if declare:
+            value = sweeps.declare(path, value, self.sweeps)
+        if isinstance(held, GroupConfig):
+            if rest and rest[0] in held.objects:
+                name, rest = rest[0], rest[1:]
+            elif held.default is not None:
+                name = held.default
+            else:
+                raise ValueError(f"'{path}': section '{section}' has no entry named "
+                                 f"{rest[:1]} and no default one ({', '.join(held.objects)})")
+            setattr(held, name, _patch_value(getattr(held, name), rest, value, path))
+        else:
+            setattr(self, section, _patch_value(held, rest, value, path))
+        if resolve:
+            self.resolve_references()
+        return self
 
     def set_override(self, overrides):
         """Apply hydra-style dotlist override(s), e.g. 'data.train.batch_size=64'. The entry
-        name may be omitted for a listed section with a single/default entry ('model.num_labels=5')."""
-        if isinstance(overrides,str):
-            overrides=[overrides]
+        name may be omitted for a listed section with a single/default entry ('model.num_labels=5').
+        An override whose value holds pipes ('training.lr=2e-3|1e-4') declares a sweep."""
+        if isinstance(overrides, str):
+            overrides = [overrides]
         for override in overrides:
             path, value = override.split('=', 1)
-            value = yaml.safe_load(value)  
-            section_name, *rest = path.split('.')
-            *object_name, field_name = rest
-            target = getattr(self, section_name)
-            if isinstance(target, GroupConfig):
-                name = object_name[0] if object_name else target.default
-                setattr(target, name, getattr(target, name).update({field_name: value}))
-            else:
-                setattr(self, section_name, target.update({field_name: value}))
-            self.resolve_references()
+            self.set_value(path.strip(), matformer_assets.expand(_literal(value)))
+
+    # -- sweeps -------------------------------------------------------------------------
+    def checkpoint_path(self, name=None):
+        """The saved model these configs say to load, or None when they say nothing: the config
+        answer to `--model`, and what load_model falls back to when no path was given."""
+        group = getattr(self, 'checkpoint', None)
+        if group is None:
+            return None
+        if not isinstance(group, GroupConfig):
+            return group.get('path')
+        entry = getattr(group, name or group.default, None)
+        return entry.get('path') if entry is not None else None
+
+    def check_sweeps(self):
+        """Fail on a swept path that addresses nothing.
+
+        A dimension pointing at a field that does not exist would be substituted with its first
+        candidate, silently produce N identical runs, and name them all differently: the one sweep
+        mistake that goes unnoticed in a table of results, so it is raised instead."""
+        for path in self.sweeps:
+            section, *rest = path.split('.')
+            node = getattr(self, section, None)
+            if node is None:
+                raise ValueError(f"swept '{path}': these configs have no '{section}' section "
+                                 f"({', '.join(self.objects) or 'none loaded'})")
+            if isinstance(node, GroupConfig):
+                if rest and rest[0] in node.objects:
+                    node, rest = getattr(node, rest[0]), rest[1:]
+                elif node.default is not None:
+                    node = getattr(node, node.default)
+                else:
+                    raise ValueError(f"swept '{path}': section '{section}' has no entries yet")
+            for key in rest:
+                valid = ([f.name for f in dataclasses.fields(node)]
+                         if hasattr(node, '__dataclass_fields__') else [])
+                if valid and key not in valid:
+                    raise ValueError(f"swept '{path}': '{key}' is not a field of "
+                                     f"{type(node).__name__} (available: {', '.join(sorted(valid))}). "
+                                     f"Hint: 'type' and 'name' pick which config an entry *is*, "
+                                     f"and cannot be swept.")
+                node = node.get(key)
+        return self
+
+    def model_axes(self):
+        """The `checkpoint` entries standing for more than one saved model, as sweep dimensions.
+
+        A folder with a cadence, or a `a | b` path, is a *series* of models -- and a series is just
+        another dimension, so the models a run evaluates cross-multiply with the learning rates it
+        sweeps exactly as the two folders of checkpoints cross-multiply with each other. An entry
+        that resolves to one model adds nothing: it is simply the model the run loads."""
+        group = getattr(self, 'checkpoint', None)
+        if not isinstance(group, GroupConfig):
+            return {}
+        axes = {}
+        for name, entry in group.items():
+            path = f"checkpoint.{name}.path"
+            found = [one for candidate in (self.sweeps.get(path) or [entry.path])
+                     for one in entry.expand(candidate)]
+            if len(found) > 1:
+                axes[path] = found
+        return axes
+
+    def sweep_points(self, selection=None):
+        """Every combination the declared candidates span, in product order; `selection` narrows it
+        down to point numbers or name globs ('1,3', 'lr-2e-3*'). Empty when nothing is swept."""
+        self.check_sweeps()
+        axes = self.model_axes()
+        return sweeps.select(sweeps.plan({**axes,
+                                         **{path: values for path, values in self.sweeps.items()
+                                            if path not in axes}}), selection)
+
+    def sweep_variant(self, point):
+        """One point of the sweep, applied to a detached copy of these configs (matformer/sweeps.py)."""
+        return sweeps.apply(self, point)
+
+    def sweep_variants(self, selection=None):
+        """One ready-to-run config per point of the sweep, and exactly [self] when nothing is
+        swept -- so a caller never has to know which of the two it is facing.
+
+        A variant shares nothing with the configs it came from: it is re-imported from their dict
+        form, has its point applied, and has every artifact name its config classes declare
+        (`_sweep_scoped`) tagged with the point's short name. The trainer, the loggers
+        and the activation stores therefore keep reading their own configs, and each point of a
+        sweep lands on a shelf of its own: one run folder, one checkpoint stem, one predictions
+        file per point -- which is what makes the whole product comparable afterwards."""
+        points = self.sweep_points(selection)
+        return [self] if not points else [sweeps.apply(self, point) for point in points]
 
     def resolve_references(self, strict=False):
         """Validate that every '_ref_fields' entry declared on a config instance (e.g.

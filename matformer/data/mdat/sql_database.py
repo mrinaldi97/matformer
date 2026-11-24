@@ -59,6 +59,71 @@ class DatabaseManager:
         for col, decl in _SUBMDAT_EXTRA_COLUMNS.items():
             if col not in existing:
                 self.conn.execute(f"ALTER TABLE submdat ADD COLUMN {col} {decl}")
+        # Distributed iteration lengths used to be stored per (view, workers) alone: the chunk multiplier
+        # arrived later, with variable context lengths. Rows written before it were all counted at the
+        # strategy's own chunk size, which is multiplier 1, so that is what they are stamped with --
+        # after that a lookup at any multiplier dividing the stored worker count answers exactly, the way
+        # `get_worker_length_distributed` already intends.
+        if 'pretok_strategy_view_distributed_length' in tables:
+            lengths = {x[1] for x in self.conn.execute(
+                "PRAGMA table_info('pretok_strategy_view_distributed_length')").fetchall()}
+            if 'chunk_multiplier' not in lengths:
+                self.conn.execute("ALTER TABLE pretok_strategy_view_distributed_length "
+                                  "ADD COLUMN chunk_multiplier INTEGER DEFAULT 1")
+                self.conn.execute("UPDATE pretok_strategy_view_distributed_length "
+                                  "SET chunk_multiplier = 1 WHERE chunk_multiplier IS NULL")
+        # Views created before appending existed have no record of how many pointers
+        # their shuffle file holds. NULL means "unknown": the file size is used.
+        if 'view' in tables:
+            view_cols = {x[1] for x in self.conn.execute("PRAGMA table_info('view')").fetchall()}
+            if 'shuffle_document_number' not in view_cols:
+                self.conn.execute("ALTER TABLE view ADD COLUMN shuffle_document_number INTEGER")
+        if 'view_submdat' in tables:
+            vs_cols = {x[1] for x in self.conn.execute("PRAGMA table_info('view_submdat')").fetchall()}
+            if 'max_document_number' not in vs_cols:
+                # Highest original doc id + 1 used by the shuffle file of a
+                # partial dataset: appending above it cannot invalidate the view.
+                self.conn.execute("ALTER TABLE view_submdat ADD COLUMN max_document_number INTEGER")
+        self._create_append_schema()
+
+    def _create_append_schema(self):
+        """Tables backing document appends: per-strategy pretokenization
+        coverage (ranges, never one row per document) and the ingestion log."""
+        conn = self.connect()
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS pretok_strategy_coverage (
+            strategy_name TEXT NOT NULL,
+            submdat_id INTEGER NOT NULL,
+            start INTEGER NOT NULL CHECK (start >= 0),
+            end INTEGER NOT NULL CHECK (end >= start),
+            PRIMARY KEY (strategy_name, submdat_id, start),
+            FOREIGN KEY (strategy_name) REFERENCES pretok_strategy(strategy_name) ON DELETE CASCADE,
+            FOREIGN KEY (submdat_id) REFERENCES submdat(ds_map_id) ON DELETE CASCADE
+        );
+        """)
+        conn.execute("""
+        CREATE TABLE IF NOT EXISTS ingestion_log (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            submdat_id INTEGER NOT NULL,
+            operation TEXT NOT NULL,
+            source TEXT,
+            start_key INTEGER NOT NULL DEFAULT 0,
+            rows_inserted INTEGER NOT NULL DEFAULT 0,
+            source_consumed INTEGER NOT NULL DEFAULT 0,
+            status TEXT NOT NULL DEFAULT 'running',
+            created_at TEXT NOT NULL,
+            updated_at TEXT,
+            FOREIGN KEY (submdat_id) REFERENCES submdat(ds_map_id) ON DELETE CASCADE
+        );
+        """)
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_coverage_strategy "
+                     "ON pretok_strategy_coverage(strategy_name, submdat_id);")
+        conn.execute("CREATE INDEX IF NOT EXISTS idx_ingestion_log_submdat "
+                     "ON ingestion_log(submdat_id);")
+        log_cols = {x[1] for x in conn.execute("PRAGMA table_info('ingestion_log')").fetchall()}
+        if 'source_consumed' not in log_cols:
+            conn.execute("ALTER TABLE ingestion_log ADD COLUMN source_consumed INTEGER NOT NULL DEFAULT 0")
+        conn.commit()
 
     def _initialize_db(self):
         """
@@ -239,7 +304,8 @@ class DatabaseManager:
         cur.execute("""
         CREATE TABLE IF NOT EXISTS view (
             view_name TEXT PRIMARY KEY,
-            shuffle_struct_format TEXT
+            shuffle_struct_format TEXT,
+            shuffle_document_number INTEGER  -- pointers currently in the shuffle file
         );
         """)
 
@@ -253,6 +319,7 @@ class DatabaseManager:
             is_partial INTEGER DEFAULT 0 CHECK (is_partial IN (0,1)),
             document_number INTEGER,  -- NULL if skipped or preserved, otherwise number of selected documents
             bytes_criteria INTEGER,   -- reference if selection was based on data size
+            max_document_number INTEGER, -- highest doc id + 1 used by the shuffle file (partial views)
             PRIMARY KEY (view_name, submdat_id)      
         );
         """)
@@ -290,6 +357,7 @@ class DatabaseManager:
         cur.execute("CREATE INDEX IF NOT EXISTS idx_view_submdat_view ON view_submdat(view_name);")
 
         conn.commit()
+        self._create_append_schema()
 
     # ------------------------------------------------------------------ helpers
     def _dict_from_row(self, cursor, row):
@@ -661,6 +729,74 @@ class DatabaseManager:
                   (strategy_name, submdat_id, multiplier, precomputed_length))
         self.connect().commit()
 
+    def clear_strategy_submdat_precomp(self, strategy_name, submdat_id):
+        c = self.connect().cursor()
+        c.execute("DELETE FROM pretok_strategy_submdat_precomputed_length "
+                  "WHERE strategy_name=? AND submdat_id=?", (strategy_name, submdat_id))
+        self.connect().commit()
+
+    # ------------------------------------------------ pretokenization coverage
+    # Coverage of every strategy over a dataset as half-open [start, end) ranges.
+    # A range is recorded once its output bytes are durably flushed, so an
+    # interrupted pretokenization leaves a clean prefix/segment to resume from.
+    def get_strategy_coverage(self, strategy_name, submdat_id):
+        return self._fetchall(
+            "SELECT start, end FROM pretok_strategy_coverage "
+            "WHERE strategy_name=? AND submdat_id=? ORDER BY start",
+            (strategy_name, submdat_id))
+
+    def set_strategy_coverage(self, strategy_name, submdat_id, ranges):
+        c = self.connect().cursor()
+        c.execute("DELETE FROM pretok_strategy_coverage WHERE strategy_name=? AND submdat_id=?",
+                  (strategy_name, submdat_id))
+        if ranges:
+            c.executemany(
+                "INSERT OR REPLACE INTO pretok_strategy_coverage"
+                "(strategy_name,submdat_id,start,end) VALUES(?,?,?,?)",
+                [(strategy_name, submdat_id, int(s), int(e)) for s, e in ranges])
+        self.connect().commit()
+
+    def add_strategy_coverage(self, strategy_name, submdat_id, start, end):
+        if end <= start:
+            return
+        self._insert('pretok_strategy_coverage', {
+            'strategy_name': strategy_name, 'submdat_id': submdat_id,
+            'start': int(start), 'end': int(end)})
+
+    def remove_strategy_coverage(self, strategy_name, submdat_id):
+        c = self.connect().cursor()
+        c.execute("DELETE FROM pretok_strategy_coverage WHERE strategy_name=? AND submdat_id=?",
+                  (strategy_name, submdat_id))
+        self.connect().commit()
+
+    # ---------------------------------------------------------- ingestion log
+    def add_ingestion_log(self, submdat_id, operation, source, start_key, rows_inserted,
+                          status='running'):
+        now = datetime.utcnow().isoformat()
+        return self._insert('ingestion_log', {
+            'submdat_id': submdat_id, 'operation': operation, 'source': source,
+            'start_key': int(start_key), 'rows_inserted': int(rows_inserted),
+            'source_consumed': 0, 'status': status, 'created_at': now, 'updated_at': now})
+
+    def update_ingestion_log(self, log_id, data):
+        allowed = {'rows_inserted', 'source_consumed', 'status', 'updated_at'}
+        upd = {k: v for k, v in (data or {}).items() if k in allowed}
+        if not upd:
+            return
+        upd.setdefault('updated_at', datetime.utcnow().isoformat())
+        self._update_table('ingestion_log', upd, 'id=?', (log_id,))
+
+    def get_ingestion_log(self, submdat_id, limit=100):
+        return self._fetchall(
+            "SELECT * FROM ingestion_log WHERE submdat_id=? ORDER BY id DESC LIMIT ?",
+            (submdat_id, int(limit)))
+
+    def get_resumable_ingestion(self, submdat_id, source):
+        """The latest unfinished ingestion of `source`, if any."""
+        return self._fetchone(
+            "SELECT * FROM ingestion_log WHERE submdat_id=? AND source=? AND status='running' "
+            "ORDER BY id DESC LIMIT 1", (submdat_id, source))
+
     # --------------------------------------------------------- view <-> submdat
     def link_submdat_view(self, submdat_id, view_name, is_skipped, is_partial, is_preserved, document_number, bytes_criteria):
         """Insert or update link into view_submdat (UPSERT semantics)."""
@@ -694,12 +830,13 @@ class DatabaseManager:
 
     def get_view_submdat(self, view_name, submdat_id):
         return self._fetchone(
-            "SELECT view_name, submdat_id, is_skipped, is_preserved, is_partial, document_number, bytes_criteria FROM view_submdat WHERE view_name=? AND submdat_id=?",
+            "SELECT view_name, submdat_id, is_skipped, is_preserved, is_partial, document_number, bytes_criteria, max_document_number FROM view_submdat WHERE view_name=? AND submdat_id=?",
             (view_name, submdat_id)
         )
 
     def update_view_submdat(self, view_name, submdat_id, data):
-        allowed = {'is_skipped', 'is_preserved', 'is_partial', 'document_number', 'bytes_criteria'}
+        allowed = {'is_skipped', 'is_preserved', 'is_partial', 'document_number',
+                   'bytes_criteria', 'max_document_number'}
         upd = {k: v for k, v in (data or {}).items() if k in allowed}
         if not upd:
             return

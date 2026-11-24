@@ -9,11 +9,14 @@ class MatformerConfig:
     """
     Base for all Matformer config dataclasses.
     A subclass can be linked to its registered implementation with the registry decorator:
-        @registry.register_dataclass("saver", "JSONLSaver", default=True)
+        @registry.register_dataclass("logger", "sqlite", default=True)
     which stamps _matformer_category / _matformer_variant onto the class.
     When this function is used, load_config.py resolves everything through the registry.
     """
     _merge_fields: ClassVar[frozenset] = frozenset()
+    # The fields naming something this config writes. A sweep gives each of its runs its own copy
+    # of them, so two points can never overwrite each other (see matformer/sweeps.py).
+    _sweep_scoped: ClassVar[list] = []
     _matformer_category: ClassVar[Optional[str]] = None
     type: ClassVar[Optional[str]] = None
     _matformer_variant:  ClassVar[Optional[str]] = None

@@ -1,0 +1,73 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add a tokenizer · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section" open><summary>Tutorials</summary><ul><li><a href="index.html">Tutorials</a></li><li><a href="registry.html">Use the registry</a></li><li><a href="add-a-task.html">Add a task</a></li><li><a href="use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="write-a-plugin.html">Write a plugin</a></li><li><a class="current" href="custom-tokenizer.html">Add a tokenizer</a></li><li><a href="train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Tutorials <span class="sep">/</span> Add a tokenizer</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/matformer_tokenizers.py.html"><code>matformer/matformer_tokenizers.py</code></a> <a href="../file/matformer/dataclasses/model_dataclasses.py.html"><code>matformer/dataclasses/model_dataclasses.py</code></a></div>
+<h1 id="add-a-tokenizer">Add a tokenizer<a class="headerlink" href="#add-a-tokenizer" title="Permanent link"></a></h1>
+<p>A tokenizer backend is a registry entry in the <code>tokenizer</code> category. For a backend compatible with a HuggingFace tokenizer, subclass <code>MatformerTokenizer</code> and override <code>_load_backend</code>.</p>
+<h2 id="class">Class<a class="headerlink" href="#class" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_tokenizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerTokenizer</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">,</span> <span class="s2">&quot;my_backend&quot;</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                   <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;my_backend&quot;</span><span class="p">])</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyTokenizer</span><span class="p">(</span><span class="n">MatformerTokenizer</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_backend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">my_backend</span>
+        <span class="k">return</span> <span class="n">my_backend</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">))</span>
+</code></pre></div>
+
+<p><code>requires</code> is checked before the implementation is considered. If <code>my_backend</code> is not installed, the registry uses the next implementation. <code>priority=100</code> wins when the package is available. The variant is <code>huggingface</code> because the config section already uses that variant; another family would need a new config dataclass.</p>
+<h2 id="selection">Selection<a class="headerlink" href="#selection" title="Permanent link"></a></h2>
+<p>The registry reads <code>MATFORMER_&lt;CATEGORY&gt;_&lt;VARIANT&gt;</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nv">MATFORMER_TOKENIZER_HUGGINGFACE</span><span class="o">=</span>my_backend<span class="w"> </span>python<span class="w"> </span>train_model.py<span class="w"> </span>--cfg<span class="w"> </span>my.yaml
+</code></pre></div>
+
+<p>or programmatically:</p>
+<div class="highlight"><pre><span></span><code><span class="n">model</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">configs</span><span class="o">=</span><span class="n">configs</span><span class="p">,</span> <span class="n">preferred</span><span class="o">=</span><span class="s2">&quot;my_backend&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The config names the variant (<code>tokenizer: {type: huggingface, ...}</code>). The registry selects the implementation.</p>
+<h2 id="backends-without-the-huggingface-interface">Backends without the HuggingFace interface<a class="headerlink" href="#backends-without-the-huggingface-interface" title="Permanent link"></a></h2>
+<p>Implement the methods called by the rest of the framework:</p>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MyPureTokenizer</span><span class="p">:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">encode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">add_bos</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">...</span><span class="p">):</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">decode</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">):</span> <span class="o">...</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ids</span><span class="p">):</span> <span class="o">...</span>
+</code></pre></div>
+
+<p>The object also needs a <code>config</code> attribute with <code>bos_token_id</code>, <code>eos_token_id</code>, <code>pad_token_id</code>, <code>mask_token_id</code> and <code>vocab_size</code>.</p>
+<h2 id="test">Test<a class="headerlink" href="#test" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<span class="n">tok</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">configs</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
+<span class="n">ids</span> <span class="o">=</span> <span class="n">tok</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s2">&quot;Ciao mondo&quot;</span><span class="p">,</span> <span class="n">add_bos</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">add_eos</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">tok</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="n">ids</span><span class="p">),</span> <span class="n">tok</span><span class="o">.</span><span class="n">tokens</span><span class="p">(</span><span class="n">ids</span><span class="p">))</span>
+</code></pre></div>
+
+<p>Check the round trip and the special-token ids. The data module uses <code>pad_token_id</code> for padding. The masked learning signal uses <code>mask_token_id</code>.</p>
+<h2 id="preprocessing">Preprocessing<a class="headerlink" href="#preprocessing" title="Permanent link"></a></h2>
+<p>Text normalization before tokenization belongs to the dataset. The lazy dataset reads <code>text_column</code>; a custom dataset or a splitter function can normalize, strip, lowercase or split the text. The tokenizer maps text to ids.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

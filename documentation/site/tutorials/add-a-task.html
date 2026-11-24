@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Add a task · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section" open><summary>Tutorials</summary><ul><li><a href="index.html">Tutorials</a></li><li><a href="registry.html">Use the registry</a></li><li><a class="current" href="add-a-task.html">Add a task</a></li><li><a href="use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="write-a-plugin.html">Write a plugin</a></li><li><a href="custom-tokenizer.html">Add a tokenizer</a></li><li><a href="train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Tutorials <span class="sep">/</span> Add a task</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/tasks/task.py.html"><code>matformer/tasks/task.py</code></a> <a href="../file/matformer/tasks/forward.py.html"><code>matformer/tasks/forward.py</code></a></div>
+<h1 id="add-a-task">Add a task<a class="headerlink" href="#add-a-task" title="Permanent link"></a></h1>
+<p>This example defines a task that returns the argmax of the model for each item. It needs a config dataclass, a task class and a YAML section.</p>
+<h2 id="config">Config<a class="headerlink" href="#config" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matformer.tasks.task</span><span class="w"> </span><span class="kn">import</span> <span class="n">TaskConfig</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;argmax&quot;</span><span class="p">)</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ArgmaxTaskConfig</span><span class="p">(</span><span class="n">TaskConfig</span><span class="p">):</span>
+    <span class="n">save_ids</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+</code></pre></div>
+
+<p><code>TaskConfig</code> provides <code>ref_data</code>, <code>ref_saver</code>, <code>batch_preprocessors</code>, <code>batch_postprocessors</code>, the <code>save_*</code> flags and <code>presentation</code>. The decorator makes <code>type: argmax</code> valid in a YAML file and adds the task to the configuration reference.</p>
+<h2 id="task">Task<a class="headerlink" href="#task" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matformer.tasks.task</span><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerTask</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;argmax&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ArgmaxTask</span><span class="p">(</span><span class="n">MatformerTask</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+        <span class="n">ids</span> <span class="o">=</span> <span class="n">predictions</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;argmax&quot;</span><span class="p">:</span> <span class="n">ids</span><span class="p">}</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">save_ids</span><span class="p">:</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">&quot;input_ids&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">pad</span><span class="p">()</span><span class="o">.</span><span class="n">tensor</span>
+        <span class="k">return</span> <span class="n">batch</span><span class="p">,</span> <span class="n">result</span>
+</code></pre></div>
+
+<p><code>wrap_process_batch</code> runs the preprocessors, calls <code>process_batch</code>, runs the postprocessors and calls <code>save_batch</code>. <code>save_batch</code> splits the result into one record per item.</p>
+<p>A task that accumulates state implements <code>compute()</code> and returns a dictionary. The dictionary becomes the summary, is logged under the task name and is saved by the saver. A task that needs code before or after the batch loop overrides <code>begin_task</code> and <code>end_task</code>; call <code>super()</code> in both methods.</p>
+<h2 id="config-section">Config section<a class="headerlink" href="#config-section" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="nt">task</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mine</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">argmax</span>
+<span class="w">    </span><span class="nt">ref_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">    </span><span class="nt">ref_saver</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">results_processors</span>
+<span class="w">    </span><span class="nt">save_ids</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+
+<p><code>ref_data</code> and <code>ref_saver</code> refer to named entries in the <code>data</code> and <code>saver</code> sections. Without <code>ref_data</code>, the task has no dataloader and is driven one batch at a time.</p>
+<h2 id="run">Run<a class="headerlink" href="#run" title="Permanent link"></a></h2>
+<p>From the console:</p>
+<div class="highlight"><pre><span></span><code>task mine
+run
+show mine
+</code></pre></div>
+
+<p>From Python:</p>
+<div class="highlight"><pre><span></span><code><span class="n">task</span> <span class="o">=</span> <span class="n">configs</span><span class="o">.</span><span class="n">instantiate</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;mine&quot;</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
+<span class="n">summary</span> <span class="o">=</span> <span class="n">task</span><span class="p">()</span>
+</code></pre></div>
+
+<h2 id="notes">Notes<a class="headerlink" href="#notes" title="Permanent link"></a></h2>
+<ul>
+<li>Return the batch received by <code>process_batch</code>. A postprocessor may need it, and <code>save_batch</code> uses it to count items.</li>
+<li>A result that is not a dictionary is saved under <code>result</code>. <code>flatten_dict: true</code> merges a dictionary result into the record.</li>
+<li>The base class checks the <code>save_*</code> flags before calling the saver.</li>
+<li><code>self.model</code> is a <code>MatformerModelWrapper</code>, so <code>self.model(batch)</code> expects a <code>TensorDC</code>. Use <code>batch.pad()</code> or <code>batch.unpad()</code> for the other layout.</li>
+<li>The registry constructs the task with <code>config=...</code>, <code>model=...</code>, <code>logger=...</code> and <code>trainer=...</code>.</li>
+</ul>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

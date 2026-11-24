@@ -48,6 +48,10 @@ huggingface = [
     "datasets",
     "huggingface_hub"
 ]
+docs = [
+    "markdown",
+    "Pygments",
+]
 
 
 

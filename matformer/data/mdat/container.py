@@ -373,7 +373,7 @@ class MDatContainer(IterableDataset):
 
     def _populate_submdat(self) -> None:
         """Load every dataset used by the current view (skipping loaded ones)."""
-        self.total_documents = self.db.get_view_totals(view_name=self.current_view)['document_number']
+        self.total_documents = self._view_expected_documents(self.current_view)
         view_data = self.db.ask_view(view=self.current_view, keys=['preserved_submdats', 'partial_submdats'])
         for sbm_id in view_data['preserved_submdats'] + view_data['partial_submdats']:
             sbm_name = self.db.get_dsmap(key='id', value=sbm_id)
@@ -405,8 +405,8 @@ class MDatContainer(IterableDataset):
         self.loaded_submdats[submdat_name] = None  # Placeholder allowing creation
         new = MDat.create_submdat(self, submdat_name=submdat_name,
                                   compression_levels=compression_levels, map_sizes=map_sizes,
-                                  db_types=db_types, data_type=data_type, modality=modality,
-                                  hybrid_data=hybrid_data)
+                                  db_types=db_types, data_type=data_type, data_key=data_key,
+                                  modality=modality, hybrid_data=hybrid_data)
         self.loaded_submdats[submdat_name] = new
         return new
 
@@ -470,6 +470,7 @@ class MDatContainer(IterableDataset):
         )
         self._mirror_linked_dataset(local_id, ext, ext_name)
         self._update_default_view(local_id)
+        self._refresh_active_view()
         return self.db.get_submdat_row(local_id)
 
     def unlink_dataset(self, alias: str) -> None:
@@ -487,6 +488,7 @@ class MDatContainer(IterableDataset):
             raise ValueError(f"'{alias}' is an internal dataset. Use remove_submdat(..., delete_data=True) instead.")
         self.db.remove_submdat(row['ds_map_id'])
         self.loaded_submdats.pop(alias, None)
+        self._refresh_active_view()
         print(f"Unlinked dataset '{alias}'. Shuffle files/views that referenced it are now invalid: run repair() to rebuild them.")
 
     def remove_submdat(self, submdat_name: str, delete_data: bool = False) -> None:
@@ -514,6 +516,7 @@ class MDatContainer(IterableDataset):
                 shutil.rmtree(os.path.join(self.pretok_path, strategy, submdat_name), ignore_errors=True)
         self.db.remove_submdat(row['ds_map_id'])
         self.loaded_submdats.pop(submdat_name, None)
+        self._refresh_active_view()
         print(f"Removed dataset '{submdat_name}' from the container. Views/shuffle files referencing it are invalid: run repair().")
 
     # linked infrastructure
@@ -591,6 +594,7 @@ class MDatContainer(IterableDataset):
                                           raw_data_bytes=dbs.get('raw_data_bytes') or 0,
                                           is_data=dbs['is_data'], is_meta=dbs['is_meta'],
                                           is_extra=dbs['is_extra'])
+        c.execute("DELETE FROM pretok_strategy_coverage WHERE submdat_id=?", (local_id,))
         for strategy_name in ext.db.list_strategies():
             strategy_row = ext.db.get_strategy_row(strategy_name)
             stats = ext.db.get_strategy_submdats(strategy_name, ext_id)
@@ -600,6 +604,9 @@ class MDatContainer(IterableDataset):
             self.db.upsert_strategy_submdat(strategy_name, local_id, stats)
             for precomp in ext.db.get_strategy_precomp(strategy_name=strategy_name, submdat_id=ext_id):
                 self.db.set_strategy_submdat_precomp(strategy_name, local_id, precomp['multiplier'], precomp['precomputed_length'])
+            for coverage in ext.db.get_strategy_coverage(strategy_name, ext_id):
+                self.db.add_strategy_coverage(strategy_name, local_id,
+                                              coverage['start'], coverage['end'])
             for sdb in ext.db.get_strategy_dbs(strategy_name, ext_id):
                 mirrored_db_id = self.db.upsert_mirrored_database_ref(sdb)
                 self.db.upsert_mirrored_strategy_db(mirrored_db_id, strategy_name, local_id, sdb)
@@ -637,7 +644,8 @@ class MDatContainer(IterableDataset):
             for alias, problem in issues.items():
                 print(f"  - {alias}: {'; '.join(problem)}")
             print("Shuffle files, views and distributed precomputes that involve them may be invalid.")
-            print("Fix automatically with: container.repair()   (syncs mirrors and reshuffles views)")
+            print("Fix with: container.repair()  (syncs mirrors and reshuffles views)")
+            print("If documents were appended, also run `sync --strategy NAME` (or container.sync_strategy()).")
             print("=" * 70)
         return issues
 
@@ -690,6 +698,135 @@ class MDatContainer(IterableDataset):
         return reshuffled
 
     # ---------------------------------------------------- views and shuffling
+    def _live_document_number(self, submdat_id):
+        """Documents currently in a dataset, read from the dataset's own catalog
+        for linked datasets (the local mirror can be older than the folder)."""
+        row = self.db.get_submdat_row(int(submdat_id))
+        stored = row.get('source_rel_path')
+        if stored:
+            try:
+                ext = self._open_linked_container(self._resolve_linked_path(stored))
+                ext_row = ext.db.get_submdat_row(ext.list_submdat()[0])
+                return int(ext_row.get('document_number') or 0)
+            except MDatNotFound:
+                pass
+        return int(row.get('document_number') or 0)
+
+    def _view_expected_documents(self, view_name):
+        """Documents a view should contain right now. Preserved (whole) datasets
+        follow their live row count; partial selections are fixed windows and do
+        not grow when their dataset grows."""
+        rows = self.db.ask_view(view=view_name, keys=['preserved_submdats', 'partial_submdats'])
+        total = 0
+        for sbm_id in rows['preserved_submdats']:
+            total += self._live_document_number(sbm_id)
+        for sbm_id in rows['partial_submdats']:
+            info = self.db.get_view_submdat(view_name=view_name, submdat_id=sbm_id)
+            total += int((info or {}).get('document_number') or 0)
+        return total
+
+    def _shuffle_file_documents(self, view_name, struct_format):
+        path = os.path.join(self.shuffling_path, f'{view_name}.mdat')
+        if not os.path.exists(path):
+            return None
+        return os.path.getsize(path) // struct.calcsize(struct_format)
+
+    def view_is_shuffled_valid(self, view_name):
+        """A shuffle file is valid only while it has exactly one pointer per
+        document the view currently selects. Appending to a preserved dataset
+        (or to the default view) makes every file that includes it stale."""
+        meta = self.db.get_view_row(view_name)
+        if not meta or not meta.get('shuffle_struct_format'):
+            return False
+        struct_format = meta['shuffle_struct_format']
+        expected = self._view_expected_documents(view_name)
+        file_count = self._shuffle_file_documents(view_name, struct_format)
+        recorded = meta.get('shuffle_document_number')
+        if recorded is None:
+            recorded = file_count
+        return file_count == expected and recorded == expected
+
+    def _refresh_active_view(self):
+        """Re-read the active view's totals and shuffle validity after its
+        inventory changed (dataset linked, unlinked, removed or appended)."""
+        view = getattr(self, 'current_view', None)
+        if not view:
+            return
+        self.len = self._view_expected_documents(view)
+        self._active_view_shuffled = self.view_is_shuffled_valid(view)
+        self._populate_submdat()
+
+    def _on_dataset_changed(self, submdat_id):
+        """Called after documents were appended to a dataset: invalidate the
+        active view's shuffle state and the distributed precomputes of every
+        view that contains it."""
+        if getattr(self, 'current_view', None):
+            self._active_view_shuffled = self.view_is_shuffled_valid(self.current_view)
+            if getattr(self, 'current_strategy', None) is not None:
+                self._strategy_desynced = self.desynced_strategies()
+        self.db.connect().execute(
+            "DELETE FROM pretok_strategy_view_distributed_length WHERE view_name IN "
+            "(SELECT view_name FROM view_submdat WHERE submdat_id=?)", (submdat_id,))
+        self.db.connect().commit()
+        self._cached_length = None
+
+    def desynced_strategies(self):
+        """Pretokenization gaps across the datasets of the active view:
+        [(dataset, strategy, start, end), ...]. Empty means the view is synced.
+
+        Partial selections only reference the original doc ids their shuffle
+        file uses: appending above that point does not desync them, exactly as
+        appending to a dataset cannot invalidate a fixed-size window of it.
+        """
+        out = []
+        view = getattr(self, 'current_view', None)
+        if view is None:
+            submdat_ids = list(self.db.get_dsmap(key='id').keys())
+            limits = {}
+        else:
+            ids = self.db.ask_view(view=view, keys=['preserved_submdats', 'partial_submdats'])
+            submdat_ids = ids['preserved_submdats'] + ids['partial_submdats']
+            limits = {}
+            for sbm_id in ids['partial_submdats']:
+                info = self.db.get_view_submdat(view_name=view, submdat_id=sbm_id) or {}
+                limits[sbm_id] = int(info.get('max_document_number') or 0)
+        ds_map = self.db.get_dsmap(key='id')
+        for sbm_id in submdat_ids:
+            name = ds_map[sbm_id]
+            sbm = self._ensure_loaded(name)
+            limit = limits.get(sbm_id)
+            for strategy, start, end in sbm.desynced_strategies():
+                if limit is not None:
+                    end = min(end, limit)
+                    if end <= start:
+                        continue
+                out.append((name, strategy, start, end))
+        return out
+
+    def sync_strategy(self, strategy_name, dataset=None, parallel=True, num_processes=None,
+                      batch_size=256, compression=0):
+        """Repair a desynced strategy on one dataset or on every dataset of the
+        container that has it. Only missing ranges are pretokenized."""
+        if self.readonly:
+            raise MDatIsReadOnly
+        names = [dataset] if dataset else self.list_submdat()
+        results = []
+        for name in names:
+            sbm = self._ensure_loaded(name)
+            if not self.db.get_strategy_submdats(strategy_name, sbm.config_id):
+                continue
+            result = sbm.sync_strategy(strategy_name, parallel=parallel,
+                                       num_processes=num_processes, batch_size=batch_size,
+                                       compression_level=compression)
+            results.append((name, result))
+            if sbm.linked:
+                ext = getattr(sbm, 'external_container', None)
+                if ext is not None:
+                    self._mirror_linked_dataset(sbm.submdat_id, ext, sbm.external_name)
+        self._refresh_active_view()
+        self._strategy_desynced = self.desynced_strategies()
+        return results
+
     def shuffle(self, view_name=None):
         """
         Create (or recreate) the shuffled pointer file of a view.
@@ -738,6 +875,9 @@ class MDatContainer(IterableDataset):
 
         # 6. Random permutator over the whole selection
         permutator = RandomPermutator(totlen)
+        # Highest original doc id+1 referenced per dataset in the new file:
+        # a partial view above this point is unaffected by later appends.
+        max_used = {}
 
         # Byte-based termination reads raw documents; force a data-only return
         # configuration on the involved datasets for the whole shuffle.
@@ -789,6 +929,7 @@ class MDatContainer(IterableDataset):
                         loc_id = bisect_right(cu_dslens, permuted_idx) - 1
                         global_id = mapping[loc_id]
                         doc_id = permuted_idx - cu_dslens[loc_id]
+                        max_used[global_id] = max(max_used.get(global_id, 0), doc_id + 1)
                         if accumulators_equal_terminators():
                             break
                         if accumulator_equal_terminator(global_id):
@@ -825,12 +966,18 @@ class MDatContainer(IterableDataset):
                         loc_id = bisect_right(cu_dslens, permuted_idx) - 1
                         global_id = mapping[loc_id]
                         doc_id = permuted_idx - cu_dslens[loc_id]
+                        max_used[global_id] = max(max_used.get(global_id, 0), doc_id + 1)
                         f.write(struct.pack(struct_format, global_id, doc_id))
         finally:
             for sbm, dbs, strat, raw in saved_wanted:
                 sbm.set_default_wanted(from_dbs=dbs, from_strategy=strat, raw=raw)
 
-        self.db.update_view_row(view_name, {"shuffle_struct_format": struct_format})
+        for sbm_id in all_selected_ids:
+            self.db.update_view_submdat(view_name, sbm_id,
+                                        {'max_document_number': max_used.get(sbm_id, 0)})
+        written = self._shuffle_file_documents(view_name, struct_format) or 0
+        self.db.update_view_row(view_name, {"shuffle_struct_format": struct_format,
+                                            "shuffle_document_number": written})
         # The pointer file changed: drop any stale reader, and refresh the
         # active-view flag so iteration can start right after shuffling.
         reader = getattr(self, '_shuffle_reader', None)
@@ -839,6 +986,7 @@ class MDatContainer(IterableDataset):
             self._shuffle_reader = None
         if view_name == getattr(self, '_active_view', None):
             self._active_view_shuffled = True
+            self._refresh_active_view()
         return struct_format
 
     def _update_default_view(self, submdat_id):
@@ -993,6 +1141,12 @@ class MDatContainer(IterableDataset):
             raise MDatNotShuffled(
                 f"View '{active}' is not shuffled. Fix: ds.shuffle('{active}') "
                 f"(or load_dataset(..., shuffle=True), or in the mdat shell: `shuffle {active}`).")
+        if not self.view_is_shuffled_valid(active):
+            raise MDatNotShuffled(
+                f"View '{active}' has a stale shuffle file: documents were appended after it was "
+                f"built ({self._shuffle_file_documents(active, struct_format)} pointers, "
+                f"{self._view_expected_documents(active)} documents selected now). "
+                f"Fix: shuffle('{active}') or repair().")
         self._shuffle_reader = _ShuffleFileReader(
             os.path.join(self.shuffling_path, f'{active}.mdat'), struct_format)
         return self._shuffle_reader
@@ -1028,8 +1182,17 @@ class MDatContainer(IterableDataset):
         self._active_view = view_name
         self.current_view = view_name
         self.document_index = 0
-        self.len = self.db.get_view_totals(view_name=view_name)['document_number']
-        self._active_view_shuffled = view_meta.get('shuffle_struct_format') is not None
+        self._strategy_desynced = None
+        expected = self._view_expected_documents(view_name)
+        self.len = expected
+        self._active_view_shuffled = self.view_is_shuffled_valid(view_name)
+        if view_meta.get('shuffle_struct_format') and not self._active_view_shuffled:
+            print("=" * 70)
+            print(f"WARNING: view '{view_name}' has a STALE shuffle file "
+                  f"({self._shuffle_file_documents(view_name, view_meta['shuffle_struct_format'])} "
+                  f"pointers, {expected} documents selected now).")
+            print("Documents were appended: run `repair`/`shuffle` before training on this view.")
+            print("=" * 70)
         self._populate_submdat()
 
     # ------------------------------------------------ distributed precompute
@@ -1087,6 +1250,7 @@ class MDatContainer(IterableDataset):
         if getattr(self, "_prefetch_thread", None) is not None:
             return
 
+        self._assert_strategy_synced()
         if shuffled and not getattr(self, '_active_view_shuffled', None):
             raise MDatNotShuffled(
                 f"View '{getattr(self, 'current_view', None)}' is not shuffled: training/iteration requires "
@@ -1142,7 +1306,19 @@ class MDatContainer(IterableDataset):
         self._prefetch_thread = None
         self._prefetch_queue = None
 
+    def _assert_strategy_synced(self):
+        gaps = getattr(self, '_strategy_desynced', None)
+        if not gaps:
+            return
+        if getattr(self, 'current_iteration_modality', None) in (
+                'tokens', 'chunks', 'chunked_tokens', 'chunked_for_recurrence'):
+            raise MDatNotShuffled(
+                f"Strategy '{getattr(getattr(self, 'current_strategy', None), 'strategy_name', None)}' "
+                f"is DESYNCED with appended documents ({gaps}). Fix: "
+                "`sync --strategy NAME` (or container.sync_strategy()) before iterating.")
+
     def load_next_document(self, shuffled=True):
+        self._assert_strategy_synced()
         if shuffled and not getattr(self, '_active_view_shuffled', None):
             raise MDatNotShuffled(
                 f"View '{getattr(self, 'current_view', None)}' is not shuffled. "
@@ -1549,6 +1725,10 @@ class MDatContainer(IterableDataset):
                 print(f"Error accumulating stats for submdat {ds_map[sbm_id]} with strategy {strategy_name}: {e}")
         if missed:
             print(f"Datasets not pretokenized with strategy '{strategy_name}' (excluded from this strategy): {missed}")
+        self._strategy_desynced = self.desynced_strategies()
+        if self._strategy_desynced:
+            print(f"WARNING: strategy '{strategy_name}' is DESYNCED with appended documents: "
+                  f"{self._strategy_desynced}. Run `sync --strategy {strategy_name}` before training.")
         if covered == 0:
             print(f"No dataset of view '{self.current_view}' is pretokenized with '{strategy_name}'.")
             self.current_strategy = None
@@ -1612,16 +1792,29 @@ class MDatContainer(IterableDataset):
                     if w_len > max_len:
                         max_len = w_len
                 return max_len
-            except ValueError as e:
-                raise ValueError(
-                    f"{e}\nFix: on a writable container run "
-                    f"ds.precompute_chunks_distributed(num_workers) with a value divisible by "
-                    f"{num_devices} (shell command: `precompute-distributed {num_devices}`), then retry.") from None
+            except ValueError:
+                return self._estimated_worker_length(f"for {num_devices} workers")
         else:
             raise ValueError(
                 f"Distributed length requested but the iteration modality is "
                 f"'{self.current_iteration_modality}': distributed per-worker lengths only exist for "
                 "'chunked_tokens'/'chunked_for_recurrence'. Set a chunked modality or train non-distributed.")
+
+    def _estimated_worker_length(self, note: str = "") -> int:
+        """Windows per worker when nothing was precomputed for this exact setup. The total is already
+        known -- the per-dataset precomputes give it at the current chunk multiplier -- and documents are
+        dealt round robin, so `total / workers` is within a window of what a scan would return. The scan
+        itself (precompute_chunks_distributed) walks every document of the view, which is hours spent
+        inside a training job: far too dear to do by accident. Run it on purpose, on a writable
+        container, when the exact epoch boundary matters (`precompute-distributed <workers>`)."""
+        workers = max(int(getattr(self, "world_size", 1) or 1), 1)
+        total = int(self.total_divided_chunks or self.len or 0)
+        length = math.ceil(total / workers) if total else 0
+        print(f"WARNING: no precomputed distributed length for view '{self.current_view}', strategy "
+              f"'{getattr(self.current_strategy, 'strategy_name', None)}', multiplier "
+              f"{self.chunk_multiplier}{', ' + note if note else ''}: estimating {length} windows per "
+              f"worker from a total of {total}.")
+        return length
 
     def __len__(self):
         """
@@ -1653,9 +1846,13 @@ class MDatContainer(IterableDataset):
                 else:
                     return this_worker_length
             except ValueError:
-                print("I need to precompute lengths for an incompatible workers set up")
-                self.precompute_chunks_distributed(self.world_size)
-                return self.__len__()
+                # Nothing was precomputed for this exact (workers, multiplier) pair. Estimating from the
+                # total costs nothing, while `precompute_chunks_distributed` walks every document of the
+                # view: hours of paid training time spent to learn an epoch boundary that is already
+                # known to within one window. Run that command on purpose, offline, if the exact number
+                # is wanted.
+                self._cached_length = self._estimated_worker_length(f"for worker {self.rank_size}")
+                return self._cached_length
         else:
             return self.len
 
@@ -1702,6 +1899,7 @@ class MDatContainer(IterableDataset):
 
         self.db.add_view(new_view_name)
         doc_counts = {}  # submdat_id -> documents selected in the window
+        max_used = {}
         with open(source_shuffle_path, 'rb') as src, open(new_shuffle_path, 'wb') as dst:
             src.seek(start * struct_size)
             for _ in tqdm(range(end - start), desc=f"Building range view '{new_view_name}'"):
@@ -1711,6 +1909,7 @@ class MDatContainer(IterableDataset):
                 dst.write(raw)
                 submdat_id, doc_id = struct.unpack(struct_format, raw)
                 doc_counts[submdat_id] = doc_counts.get(submdat_id, 0) + 1
+                max_used[submdat_id] = max(max_used.get(submdat_id, 0), doc_id + 1)
         selected_total = sum(doc_counts.values())
         window = float(selected_total) / max(source_total, 1)
 
@@ -1720,6 +1919,8 @@ class MDatContainer(IterableDataset):
                 self.db.link_submdat_view(submdat_id=sbm_id, view_name=new_view_name,
                                           is_skipped=0, is_partial=1, is_preserved=0,
                                           document_number=doc_counts[sbm_id], bytes_criteria=0)
+                self.db.update_view_submdat(new_view_name, sbm_id,
+                                            {'max_document_number': max_used.get(sbm_id, 0)})
             else:
                 self.db.link_submdat_view(submdat_id=sbm_id, view_name=new_view_name,
                                           is_skipped=1, is_partial=0, is_preserved=0,
@@ -1737,7 +1938,9 @@ class MDatContainer(IterableDataset):
                                          precomp['multiplier'], estimate))
         self.db.set_strategy_view_precomp_many(precomp_rows)
 
-        self.db.update_view_row(new_view_name, {'shuffle_struct_format': struct_format})
+        self.db.update_view_row(new_view_name, {
+            'shuffle_struct_format': struct_format,
+            'shuffle_document_number': self._shuffle_file_documents(new_view_name, struct_format)})
         print(f"Range view '{new_view_name}': {selected_total} documents from '{source_view}'[{start}:{end}].")
         return self.db.get_view_row(new_view_name)
 

@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/utils/env_variables.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/utils/env_variables.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="env_variables.py.html"><code>matformer/utils/env_variables.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/utils/</code></a></p><h1><code>env_variables.py</code></h1><p class="muted">matformer/utils/env_variables.py · 56 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/utils/env_variables.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L5"><code>_bool</code></a><span class="line">L5</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># matformer/utils/env_variabless.py</span>
+<a id="L2" name="L2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="L3" name="L3"></a>
+<a id="L4" name="L4"></a>
+<a id="L5" name="L5"></a><span class="k">def</span><span class="w"> </span><span class="nf">_bool</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="L6" name="L6"></a>    <span class="n">val</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<a id="L7" name="L7"></a>    <span class="k">return</span> <span class="n">default</span> <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">val</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">,</span> <span class="s2">&quot;no&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="L8" name="L8"></a>
+<a id="L9" name="L9"></a>
+<a id="L10" name="L10"></a><span class="c1"># --- Training ---</span>
+<a id="L11" name="L11"></a><span class="c1"># TORCH_MATMUL_PRECISION: torch&#39;s float32 matmul precision (&quot;highest&quot;, &quot;high&quot;, &quot;medium&quot;); defaults to &quot;high&quot;</span>
+<a id="L12" name="L12"></a><span class="n">matmul_precision</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;TORCH_MATMUL_PRECISION&quot;</span><span class="p">,</span> <span class="s2">&quot;high&quot;</span><span class="p">)</span>
+<a id="L13" name="L13"></a>
+<a id="L14" name="L14"></a><span class="c1"># --- Logging ---</span>
+<a id="L15" name="L15"></a><span class="c1"># LOG_PROGRESS_BAR_STEPS: how often the tqdm progress bar refreshes, in optimizer steps</span>
+<a id="L16" name="L16"></a><span class="n">progress_bar_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;LOG_PROGRESS_BAR_STEPS&quot;</span><span class="p">,</span> <span class="mi">100</span><span class="p">))</span>
+<a id="L17" name="L17"></a><span class="c1"># LOG_WANDB: enable the wandb backend when the training config asks for it (default: true)</span>
+<a id="L18" name="L18"></a><span class="n">use_wandb</span> <span class="o">=</span> <span class="n">_bool</span><span class="p">(</span><span class="s2">&quot;LOG_WANDB&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<a id="L19" name="L19"></a><span class="c1"># LOG_TQDM: enable the tqdm progress bar (default: true)</span>
+<a id="L20" name="L20"></a><span class="n">use_tqdm</span> <span class="o">=</span> <span class="n">_bool</span><span class="p">(</span><span class="s2">&quot;LOG_TQDM&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<a id="L21" name="L21"></a>
+<a id="L22" name="L22"></a><span class="c1"># --- DDP ---</span>
+<a id="L23" name="L23"></a><span class="c1"># DDP_GRADIENT_AS_BUCKET: pass gradient_as_bucket_view to the DDP strategy (default: false)</span>
+<a id="L24" name="L24"></a><span class="n">ddp_gradient_as_bucket</span> <span class="o">=</span> <span class="n">_bool</span><span class="p">(</span><span class="s2">&quot;DDP_GRADIENT_AS_BUCKET&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<a id="L25" name="L25"></a><span class="c1"># DDP_FIND_UNUSED_PARAMETERS: pass find_unused_parameters to the DDP strategy (default: true)</span>
+<a id="L26" name="L26"></a><span class="n">ddp_find_unused_parameters</span> <span class="o">=</span> <span class="n">_bool</span><span class="p">(</span><span class="s2">&quot;DDP_FIND_UNUSED_PARAMETERS&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<a id="L27" name="L27"></a>
+<a id="L28" name="L28"></a><span class="c1"># --- Registry ---</span>
+<a id="L29" name="L29"></a><span class="c1"># MATFORMER_REGISTRY_VERBOSE: print the registry&#39;s selection notices (default: true)</span>
+<a id="L30" name="L30"></a><span class="n">registry_verbose</span> <span class="o">=</span>  <span class="n">_bool</span><span class="p">(</span><span class="s2">&quot;MATFORMER_REGISTRY_VERBOSE&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<a id="L31" name="L31"></a><span class="c1"># MATFORMER_&lt;CATEGORY&gt;_&lt;VARIANT&gt;: force one implementation of a registry variant, e.g. MATFORMER_ATTENTION_NORMAL=sdpa;</span>
+<a id="L32" name="L32"></a><span class="c1"># the category and variant are upper-cased and non-alphanumeric characters become underscores</span>
+<a id="L33" name="L33"></a><span class="c1"># MATFORMER_SERVER: start the optional matformer server when the package is imported (default: true; set 0 to disable)</span>
+<a id="L34" name="L34"></a><span class="c1"># MATFORMER_SERVER_ADDRESS: host:port the CLI looks for the server at (default: 127.0.0.1:8765)</span>
+<a id="L35" name="L35"></a><span class="c1"># MATFORMER_SERVER_PORT: port the optional server binds when the server is enabled</span>
+<a id="L36" name="L36"></a><span class="c1"># MATFORMER_API_KEY: key sent with server requests, when the server requires one</span>
+<a id="L37" name="L37"></a>
+<a id="L38" name="L38"></a><span class="c1"># --- Paths and assets ---</span>
+<a id="L39" name="L39"></a><span class="c1"># MATFORMER_ASSETS: absolute path of the shared folder holding configs, checkpoints, datasets, logs, venvs, experiments and extra_plugins;</span>
+<a id="L40" name="L40"></a><span class="c1"># it wins over the `assets:` entry of configuration.yaml in the repo root</span>
+<a id="L41" name="L41"></a><span class="c1"># MATFORMER_MDAT_ROOT: root used to resolve portable, relative MDAT paths</span>
+<a id="L42" name="L42"></a><span class="c1"># MATFORMER_ROOT: root of the matformer checkout, used by the publishing helpers</span>
+<a id="L43" name="L43"></a><span class="c1"># HF_HOME: standard HuggingFace cache; passed through to launched jobs</span>
+<a id="L44" name="L44"></a>
+<a id="L45" name="L45"></a><span class="c1"># --- Model components ---</span>
+<a id="L46" name="L46"></a><span class="c1"># ALLOW_WEIGHT_TYING: allow tying the embedding and LM-head weights (default: true; set false to keep them separate)</span>
+<a id="L47" name="L47"></a><span class="c1"># LEGACY_TOKENIZER: load the legacy tokenizer format instead of the current one</span>
+<a id="L48" name="L48"></a><span class="c1"># USE_ZLIB: compress the LMDB stores with zlib instead of the default backend (default: false)</span>
+<a id="L49" name="L49"></a>
+<a id="L50" name="L50"></a><span class="c1"># --- Control and jobs ---</span>
+<a id="L51" name="L51"></a><span class="c1"># MATFORMER_CONTROL: path of the control mailbox the trainer polls (see matformer/training/control.py)</span>
+<a id="L52" name="L52"></a><span class="c1"># MATFORMER_STATUS: path of the heartbeat JSON the trainer writes</span>
+<a id="L53" name="L53"></a><span class="c1"># MATFORMER_JOB: job name recorded in the heartbeat</span>
+<a id="L54" name="L54"></a><span class="c1"># SLURM_PARTITION: default partition read by the Slurm helper when it is set</span>
+<a id="L55" name="L55"></a><span class="c1"># SLURM_PROCID: rank read by the Slurm helper and recorded in the heartbeat</span>
+<a id="L56" name="L56"></a><span class="c1"># CUDA_VISIBLE_DEVICES: standard CUDA device selection; also set by the launcher for a specified GPU list</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

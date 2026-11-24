@@ -47,14 +47,6 @@ tokenizer:
   mask_token_id: 4
 
 
-saver:
-  name: save
-  type: jsonl
-  filename: "esperimenti_poliita_KSPARSE.jsonl"
-  summary_file: "esperimenti_poliita_summary_KSPARSE.jsonl"
-  mode: "a"
-  summary_mode: "a"
-
 data:
   - name: train
     type: "lazy"
@@ -103,5 +95,5 @@ task:
     num_classes: 2
     compute_confusion_matrix: true
     topk: false
-    ref_saver: save
+    save_batch: true
 

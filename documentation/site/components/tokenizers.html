@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Tokenizers · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section" open><summary>Core</summary><ul><li><a href="registry.html">The Matformer Registry</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="transformer.html">Transformer architecture</a></li><li><a href="sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="plugins.html">Plugins</a></li><li><a href="virtual-models.html">Virtual models and activation stores</a></li><li><a href="matformer-module.html">MatformerModule</a></li><li><a href="tensors.html">TensorsDC</a></li><li><a href="cache.html">The cache</a></li><li><a href="maskerator.html">The Maskerator</a></li><li><a class="current" href="tokenizers.html">Tokenizers</a></li><li><a href="source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Core <span class="sep">/</span> Tokenizers</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/matformer_tokenizers.py.html"><code>matformer/matformer_tokenizers.py</code></a> <a href="../file/matformer/dataclasses/model_dataclasses.py.html"><code>matformer/dataclasses/model_dataclasses.py</code></a></div>
+<h1 id="tokenizers">Tokenizers<a class="headerlink" href="#tokenizers" title="Permanent link"></a></h1>
+<p>Matformer does not depend on a particular tokenizer library. It wraps a backend in <code>MatformerTokenizer</code>, which is what the rest of the framework expects: a small object with <code>encode</code>, <code>decode</code>, <code>tokens</code>, the special-token ids and a <code>TokenizerConfig</code>.</p>
+<p>The default backend is a HuggingFace tokenizer, loaded from <code>pretrained_name</code>. The same class also accepts a ready-made tokenizer instance, which is how the byte-level tokenizers in the same file bypass the <code>transformers</code> dependency. A <code>gigatoken</code> backend is registered as a separate implementation with higher priority and <code>requires: [gigatoken]</code>. When the package is installed it becomes the default; force the HuggingFace backend with <code>MATFORMER_TOKENIZER_HUGGINGFACE=default</code> if you need the old one.</p>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="nt">tokenizer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
+<span class="w">  </span><span class="nt">pretrained_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sapienzanlp/Minerva-350M-base-v1.0</span>
+<span class="w">  </span><span class="nt">bos_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">eos_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">  </span><span class="nt">pad_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0</span>
+<span class="w">  </span><span class="nt">mask_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32768</span>
+</code></pre></div>
+
+<p>The four special-token ids are optional. When they are missing, <code>MatformerTokenizer</code> fills them from the loaded backend; for backends whose facade hides the special tokens, it reads <code>tokenizer_config.json</code> from the source. This means a checkpoint that declares only <code>pretrained_name</code> is still enough to encode and decode.</p>
+<p>The tokenizer config is available as <code>configs.tokenizer</code>, and <code>configs.tokenizer.instantiate()</code> returns the wrapper. A model built by the wrapper gets <code>model.tokenizer</code> and <code>model.tokenizer.config</code> attached, which is what tasks use.</p>
+<h2 id="encoding">Encoding<a class="headerlink" href="#encoding" title="Permanent link"></a></h2>
+<p><code>encode</code> accepts text or a list of texts and returns a dict, by default with <code>input_ids</code> and <code>attention_mask</code>. The <code>return_tensors</code> option controls the rest:</p>
+<ul>
+<li><code>True</code> or <code>"pt"</code>: a HuggingFace-style padded <code>torch</code> tensor;</li>
+<li><code>"padded_tensor"</code>: a <a href="tensors.html">PaddedTensor</a>, with <code>padding_mask</code> derived from the attention mask, so it stays correct when <code>pad_token_id == eos_token_id</code>;</li>
+<li><code>"unpadded_tensor"</code>: an <code>UnpaddedTensor</code>, ready for the packed path;</li>
+<li><code>False</code>: plain Python lists.</li>
+</ul>
+<p><code>max_seq_len</code> truncates. <code>add_bos</code> and <code>add_eos</code> control the special-token decoration. <code>tokens(ids)</code> returns the string pieces, which is what the task consoles use to show a token next to its prediction, and <code>chat(messages)</code> applies the backend's chat template when one exists.</p>
+<h2 id="adding-a-tokenizer">Adding a tokenizer<a class="headerlink" href="#adding-a-tokenizer" title="Permanent link"></a></h2>
+<p>A custom tokenizer is a class registered in the <code>tokenizer</code> category. Subclassing <code>MatformerTokenizer</code> and overriding <code>_load_backend</code> is enough if the backend behaves like a HuggingFace tokenizer. If it does not, implement <code>encode</code>, <code>decode</code> and <code>tokens</code> directly; the rest of the framework only calls those.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_tokenizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerTokenizer</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span> <span class="s2">&quot;huggingface&quot;</span><span class="p">,</span> <span class="s2">&quot;my_backend&quot;</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+                   <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;my_backend&quot;</span><span class="p">])</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyTokenizer</span><span class="p">(</span><span class="n">MatformerTokenizer</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_load_backend</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">source</span><span class="p">):</span>
+        <span class="kn">import</span><span class="w"> </span><span class="nn">my_backend</span>
+        <span class="k">return</span> <span class="n">my_backend</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">source</span><span class="p">))</span>
+</code></pre></div>
+
+<p>The registry key for the default is <code>tokenizer.huggingface.default</code>; a priority above zero wins when the required package is importable. See the <a href="../tutorials/custom-tokenizer.html">custom tokenizer tutorial</a> for the full walkthrough.</p>
+<h2 id="mdat-tokenizers">MDAT tokenizers<a class="headerlink" href="#mdat-tokenizers" title="Permanent link"></a></h2>
+<p>The MDAT pretokenization strategies use tokenizers from the data layer; see <a href="../data/mdat.html">MDAT</a>. The byte-level tokenizers in <code>matformer_tokenizers.py</code> are minimal helpers for tokenizer-free experiments.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

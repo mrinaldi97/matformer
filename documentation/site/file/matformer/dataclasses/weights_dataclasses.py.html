@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/dataclasses/weights_dataclasses.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/dataclasses/weights_dataclasses.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="weights_dataclasses.py.html"><code>matformer/dataclasses/weights_dataclasses.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/dataclasses/</code></a></p><h1><code>weights_dataclasses.py</code></h1><p class="muted">matformer/dataclasses/weights_dataclasses.py · 83 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/dataclasses/weights_dataclasses.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L14"><code>WeightConfig</code></a><span class="line">L14</span> <span class="bases">(<a href="matformer_config.py.html#L162"><code>MatformerMultiConfig</code></a>)</span><div class="mro">MRO: <code>WeightConfig</code> -> <a href="matformer_config.py.html#L162"><code>MatformerMultiConfig</code></a> -> <a href="matformer_config.py.html#L8"><code>MatformerConfig</code></a></div></li><li class="depth-0"><a href="#L26"><code>TorchWeightConfig</code></a><span class="line">L26</span> <span class="bases">(<a href="weights_dataclasses.py.html#L14"><code>WeightConfig</code></a>)</span><div class="mro">MRO: <code>TorchWeightConfig</code> -> <code>WeightConfig</code> -> <a href="matformer_config.py.html#L162"><code>MatformerMultiConfig</code></a> -> <a href="matformer_config.py.html#L8"><code>MatformerConfig</code></a></div></li><li class="depth-0"><a href="#L32"><code>SafetensorWeightConfig</code></a><span class="line">L32</span> <span class="bases">(<a href="weights_dataclasses.py.html#L14"><code>WeightConfig</code></a>)</span><div class="mro">MRO: <code>SafetensorWeightConfig</code> -> <code>WeightConfig</code> -> <a href="matformer_config.py.html#L162"><code>MatformerMultiConfig</code></a> -> <a href="matformer_config.py.html#L8"><code>MatformerConfig</code></a></div></li><li class="depth-0"><a href="#L38"><code>HFWeightConfig</code></a><span class="line">L38</span> <span class="bases">(<a href="weights_dataclasses.py.html#L14"><code>WeightConfig</code></a>)</span><div class="mro">MRO: <code>HFWeightConfig</code> -> <code>WeightConfig</code> -> <a href="matformer_config.py.html#L162"><code>MatformerMultiConfig</code></a> -> <a href="matformer_config.py.html#L8"><code>MatformerConfig</code></a></div></li><li class="depth-0"><a href="#L41"><code>WeightSource</code></a><span class="line">L41</span></li><li class="depth-1"><a href="#L48"><code>WeightSource.__init__</code></a><span class="line">L48</span></li><li class="depth-1"><a href="#L53"><code>WeightSource.load</code></a><span class="line">L53</span></li><li class="depth-0"><a href="#L58"><code>TorchWeights</code></a><span class="line">L58</span> <span class="bases">(<a href="weights_dataclasses.py.html#L41"><code>WeightSource</code></a>)</span><div class="mro">MRO: <code>TorchWeights</code> -> <code>WeightSource</code></div></li><li class="depth-1"><a href="#L59"><code>TorchWeights.load</code></a><span class="line">L59</span></li><li class="depth-0"><a href="#L66"><code>SafetensorWeights</code></a><span class="line">L66</span> <span class="bases">(<a href="weights_dataclasses.py.html#L41"><code>WeightSource</code></a>)</span><div class="mro">MRO: <code>SafetensorWeights</code> -> <code>WeightSource</code></div></li><li class="depth-1"><a href="#L67"><code>SafetensorWeights.load</code></a><span class="line">L67</span></li><li class="depth-0"><a href="#L72"><code>HFWeights</code></a><span class="line">L72</span> <span class="bases">(<a href="weights_dataclasses.py.html#L41"><code>WeightSource</code></a>)</span><div class="mro">MRO: <code>HFWeights</code> -> <code>WeightSource</code></div></li><li class="depth-1"><a href="#L75"><code>HFWeights.__init__</code></a><span class="line">L75</span></li><li class="depth-1"><a href="#L80"><code>HFWeights.load</code></a><span class="line">L80</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li><li><a href="matformer_config.py.html"><code>matformer.dataclasses.matformer_config</code></a> <span class="muted">MatformerMultiConfig</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="kn">from</span><span class="w"> </span><a href="../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L2" name="L2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="L3" name="L3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<a id="L4" name="L4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<a id="L5" name="L5"></a><span class="kn">from</span><span class="w"> </span><a href="matformer_config.py.html"><span class="nn">matformer.dataclasses.matformer_config</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerMultiConfig</span>
+<a id="L6" name="L6"></a>
+<a id="L7" name="L7"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L8" name="L8"></a><span class="sd">This file is not well-formed according to the Matformer&#39;s principles because</span>
+<a id="L9" name="L9"></a><span class="sd"> it doesn&#39;t contain just the dataclasses, but also the implementations </span>
+<a id="L10" name="L10"></a><span class="sd">for loading torch/safetensors/hf weights.</span>
+<a id="L11" name="L11"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L12" name="L12"></a>
+<a id="L13" name="L13"></a><span class="nd">@dataclass</span>
+<a id="L14" name="L14"></a><span class="k">class</span><span class="w"> </span><span class="nc">WeightConfig</span><span class="p">(</span><a href="matformer_config.py.html#L162"><span class="n">MatformerMultiConfig</span></a><span class="p">):</span>
+<a id="L15" name="L15"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Base for a single additional-weights source. Not registered itself —</span>
+<a id="L16" name="L16"></a><span class="sd">    only its typed variants (torch/safetensors/hf) are.&quot;&quot;&quot;</span>
+<a id="L17" name="L17"></a>    <span class="n">path</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L18" name="L18"></a>    <span class="n">weight_mapping</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<a id="L19" name="L19"></a>    <span class="n">definition</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>                         <span class="c1"># adapter definition override (weight_mapping/weight_transforms) handed to the checkpoint holder</span>
+<a id="L20" name="L20"></a>    <span class="n">wanted</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>            <span class="c1"># stable keys (or fnmatch patterns) to inherit; mutually exclusive with discard</span>
+<a id="L21" name="L21"></a>    <span class="n">discard</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>           <span class="c1"># stable keys (or fnmatch patterns) not to inherit; mutually exclusive with wanted</span>
+<a id="L22" name="L22"></a>
+<a id="L23" name="L23"></a>
+<a id="L24" name="L24"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L25" name="L25"></a><span class="nd">@dataclass</span>
+<a id="L26" name="L26"></a><span class="k">class</span><span class="w"> </span><span class="nc">TorchWeightConfig</span><span class="p">(</span><a href="#L14"><span class="n">WeightConfig</span></a><span class="p">):</span>
+<a id="L27" name="L27"></a>    <span class="k">pass</span>
+<a id="L28" name="L28"></a>
+<a id="L29" name="L29"></a>
+<a id="L30" name="L30"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="s2">&quot;safetensors&quot;</span><span class="p">)</span>
+<a id="L31" name="L31"></a><span class="nd">@dataclass</span>
+<a id="L32" name="L32"></a><span class="k">class</span><span class="w"> </span><span class="nc">SafetensorWeightConfig</span><span class="p">(</span><a href="#L14"><span class="n">WeightConfig</span></a><span class="p">):</span>
+<a id="L33" name="L33"></a>    <span class="k">pass</span>
+<a id="L34" name="L34"></a>
+<a id="L35" name="L35"></a>
+<a id="L36" name="L36"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="s2">&quot;hf&quot;</span><span class="p">)</span>
+<a id="L37" name="L37"></a><span class="nd">@dataclass</span>
+<a id="L38" name="L38"></a><span class="k">class</span><span class="w"> </span><span class="nc">HFWeightConfig</span><span class="p">(</span><a href="#L14"><span class="n">WeightConfig</span></a><span class="p">):</span>
+<a id="L39" name="L39"></a>    <span class="k">pass</span>
+<a id="L40" name="L40"></a>
+<a id="L41" name="L41"></a><span class="k">class</span><span class="w"> </span><span class="nc">WeightSource</span><span class="p">:</span>
+<a id="L42" name="L42"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Base for additional-weight loaders. Constructed via instantiate(weight_cfg),</span>
+<a id="L43" name="L43"></a><span class="sd">    so __init__ receives the WeightConfig itself as `config`.</span>
+<a id="L44" name="L44"></a>
+<a id="L45" name="L45"></a><span class="sd">    load() returns (state_dict, weight_map): weight_map is {source_key: stable_name}</span>
+<a id="L46" name="L46"></a><span class="sd">    or None, ready to hand straight to MatformerModelWrapper._load_stable_state_dict.</span>
+<a id="L47" name="L47"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L48" name="L48"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<a id="L49" name="L49"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+<a id="L50" name="L50"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">path</span>
+<a id="L51" name="L51"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">weight_mapping</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">weight_mapping</span> <span class="ow">or</span> <span class="kc">None</span>
+<a id="L52" name="L52"></a>
+<a id="L53" name="L53"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L54" name="L54"></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+<a id="L55" name="L55"></a>
+<a id="L56" name="L56"></a>
+<a id="L57" name="L57"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="s2">&quot;torch&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<a id="L58" name="L58"></a><span class="k">class</span><span class="w"> </span><span class="nc">TorchWeights</span><span class="p">(</span><a href="#L41"><span class="n">WeightSource</span></a><span class="p">):</span>
+<a id="L59" name="L59"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L60" name="L60"></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L61" name="L61"></a>        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">),</span> <span class="n">map_location</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L62" name="L62"></a>        <span class="k">return</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state_dict&quot;</span><span class="p">,</span> <span class="n">state_dict</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_mapping</span>
+<a id="L63" name="L63"></a>
+<a id="L64" name="L64"></a>
+<a id="L65" name="L65"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="s2">&quot;safetensors&quot;</span><span class="p">,</span><span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<a id="L66" name="L66"></a><span class="k">class</span><span class="w"> </span><span class="nc">SafetensorWeights</span><span class="p">(</span><a href="#L41"><span class="n">WeightSource</span></a><span class="p">):</span>
+<a id="L67" name="L67"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L68" name="L68"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">safetensors.torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_file</span>
+<a id="L69" name="L69"></a>        <span class="k">return</span> <span class="n">load_file</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_mapping</span>
+<a id="L70" name="L70"></a>
+<a id="L71" name="L71"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;weights&quot;</span><span class="p">,</span> <span class="s2">&quot;hf&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<a id="L72" name="L72"></a><span class="k">class</span><span class="w"> </span><span class="nc">HFWeights</span><span class="p">(</span><a href="#L41"><span class="n">WeightSource</span></a><span class="p">):</span>
+<a id="L73" name="L73"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;WeightSource for an HF repo used as an additional (non-primary) weight</span>
+<a id="L74" name="L74"></a><span class="sd">    source, e.g. loading only lm_head from a donor model.&quot;&quot;&quot;</span>
+<a id="L75" name="L75"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">weight_mapping</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">transform_rules</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L76" name="L76"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+<a id="L77" name="L77"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">weight_mapping</span> <span class="o">=</span> <span class="n">weight_mapping</span> <span class="ow">or</span> <span class="kc">None</span>
+<a id="L78" name="L78"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">transform_rules</span> <span class="o">=</span> <span class="n">transform_rules</span> <span class="ow">or</span> <span class="kc">None</span>
+<a id="L79" name="L79"></a>
+<a id="L80" name="L80"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L81" name="L81"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">matformer.huggingface.hf_model_loader</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_hf_repo</span><span class="p">,</span> <span class="n">_hf_state_dict_and_mapping</span>
+<a id="L82" name="L82"></a>        <span class="n">hf_config_path</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_hf_repo</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+<a id="L83" name="L83"></a>        <span class="k">return</span> <span class="n">_hf_state_dict_and_mapping</span><span class="p">(</span><span class="n">hf_config_path</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight_mapping</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_rules</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

@@ -18,6 +18,7 @@ Three plugins (mounted by run_functional_localizer.py):
 import json
 import re
 from dataclasses import dataclass, replace
+from typing import ClassVar
 
 import torch
 
@@ -48,6 +49,7 @@ def _labels_of(acts):
 class FuncLocalScanConfig(PluginConfig):
     ranking_file: str = "results/func_local_ranking.json"
     trunk_regex: str = r"blocks\.layer_\d+$"
+    _sweep_scoped: ClassVar[list] = ["ranking_file"]
 
 
 @registry.register("plugin", "func_local_scan", "default")

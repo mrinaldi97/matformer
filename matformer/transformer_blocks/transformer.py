@@ -146,10 +146,6 @@ class NakedTransformer(MatformerModule):
             TransformerBlock(config=config, layer_idx=i, cache=self.cache) for i in range(n)])
         for i, layer in enumerate(self.layers):
             self.register_socket(f"layer_{i}", layer)           
-
-        # Final norm (after the last block). Models whose reference architecture ships no
-        # final norm (e.g. HF BERT) set final_norm: false in the config: the socket is
-        # registered empty, which is identity in the stream — no special-casing downstream.
         if getattr(config, "final_norm", True):
             self.register_socket("final_norm",
                 registry.create("norm", config.default_layer["normalization"], **norm_kwargs),

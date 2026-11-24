@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>scripts/tokenizer/train_tokenizer.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> scripts/tokenizer/train_tokenizer.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="train_tokenizer.py.html"><code>scripts/tokenizer/train_tokenizer.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>scripts/tokenizer/</code></a></p><h1><code>train_tokenizer.py</code></h1><p class="muted">scripts/tokenizer/train_tokenizer.py · 231 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/scripts/tokenizer/train_tokenizer.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L15"><code>UnicodeRangeHelper</code></a><span class="line">L15</span></li><li class="depth-1"><a href="#L64"><code>UnicodeRangeHelper.build_unicode_pattern</code></a><span class="line">L64</span></li><li class="depth-1"><a href="#L87"><code>UnicodeRangeHelper.collect_range_characters</code></a><span class="line">L87</span></li><li class="depth-0"><a href="#L110"><code>train_hf_tokenizer</code></a><span class="line">L110</span></li><li class="depth-0"><a href="#L169"><code>train_sentencepiece</code></a><span class="line">L169</span></li><li class="depth-0"><a href="#L197"><code>train_tokenizer</code></a><span class="line">L197</span></li><li class="depth-0"><a href="#L218"><code>main</code></a><span class="line">L218</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../../matformer/data/mdat/mdat.py.html"><code>matformer.data.mdat.mdat</code></a> <span class="muted">MatformerDataset</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="L2" name="L2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<a id="L3" name="L3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="L4" name="L4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">List</span>
+<a id="L5" name="L5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L6" name="L6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pytorch_lightning</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_everything</span>
+<a id="L7" name="L7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tokenizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tokenizer</span><span class="p">,</span> <span class="n">models</span><span class="p">,</span> <span class="n">trainers</span><span class="p">,</span> <span class="n">pre_tokenizers</span><span class="p">,</span> <span class="n">normalizers</span><span class="p">,</span> <span class="n">decoders</span><span class="p">,</span> <span class="n">Regex</span>
+<a id="L8" name="L8"></a><span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreTrainedTokenizerFast</span>
+<a id="L9" name="L9"></a><span class="kn">from</span><span class="w"> </span><a href="../../matformer/data/mdat/mdat.py.html"><span class="nn">matformer.data.mdat.mdat</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerDataset</span>
+<a id="L10" name="L10"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sentencepiece</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">spm</span>
+<a id="L11" name="L11"></a><span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<a id="L12" name="L12"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+<a id="L13" name="L13"></a>
+<a id="L14" name="L14"></a>
+<a id="L15" name="L15"></a><span class="k">class</span><span class="w"> </span><span class="nc">UnicodeRangeHelper</span><span class="p">:</span>
+<a id="L16" name="L16"></a>    <span class="n">UNICODE_RANGES</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L17" name="L17"></a>        <span class="s1">&#39;basic_latin&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u0000-\u007F&#39;</span><span class="p">,</span>
+<a id="L18" name="L18"></a>        <span class="s1">&#39;latin&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u0000-\u024F&#39;</span><span class="p">,</span>  <span class="c1"># basic + supplement + extended</span>
+<a id="L19" name="L19"></a>        <span class="s1">&#39;ipa_extensions&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u0250-\u02AF&#39;</span><span class="p">,</span>
+<a id="L20" name="L20"></a>        <span class="s1">&#39;spacing_modifiers&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u02B0-\u02FF&#39;</span><span class="p">,</span>
+<a id="L21" name="L21"></a>        <span class="s1">&#39;combining_diacriticals&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u0300-\u036F&#39;</span><span class="p">,</span>
+<a id="L22" name="L22"></a>        <span class="s1">&#39;greek&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u0370-\u03FF&#39;</span><span class="p">,</span>
+<a id="L23" name="L23"></a>        <span class="s1">&#39;greek_extended&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u1F00-\u1FFF&#39;</span><span class="p">,</span>
+<a id="L24" name="L24"></a>        <span class="s1">&#39;cyrillic&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u0400-\u04FF&#39;</span><span class="p">,</span>
+<a id="L25" name="L25"></a>        <span class="s1">&#39;cyrillic_supplement&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u0500-\u052F&#39;</span><span class="p">,</span>
+<a id="L26" name="L26"></a>        <span class="s1">&#39;cyrillic_extended&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2DE0-\u2DFF\uA640-\uA69F&#39;</span><span class="p">,</span>
+<a id="L27" name="L27"></a>        <span class="s1">&#39;armenian&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u0530-\u058F&#39;</span><span class="p">,</span>
+<a id="L28" name="L28"></a>        <span class="s1">&#39;hebrew&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u0590-\u05FF&#39;</span><span class="p">,</span>
+<a id="L29" name="L29"></a>        <span class="s1">&#39;arabic&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u0600-\u06FF\u0750-\u077F\u08A0-\u08FF&#39;</span><span class="p">,</span>
+<a id="L30" name="L30"></a>        <span class="s1">&#39;general_punctuation&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2000-\u206F&#39;</span><span class="p">,</span>
+<a id="L31" name="L31"></a>        <span class="s1">&#39;currency_symbols&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u20A0-\u20CF&#39;</span><span class="p">,</span>
+<a id="L32" name="L32"></a>        <span class="s1">&#39;letterlike_symbols&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2100-\u214F&#39;</span><span class="p">,</span>
+<a id="L33" name="L33"></a>        <span class="s1">&#39;number_forms&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2150-\u218F&#39;</span><span class="p">,</span>
+<a id="L34" name="L34"></a>        <span class="s1">&#39;arrows&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2190-\u21FF&#39;</span><span class="p">,</span>
+<a id="L35" name="L35"></a>        <span class="s1">&#39;math_operators&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2200-\u22FF&#39;</span><span class="p">,</span>
+<a id="L36" name="L36"></a>        <span class="s1">&#39;misc_technical&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2300-\u23FF&#39;</span><span class="p">,</span>
+<a id="L37" name="L37"></a>        <span class="s1">&#39;box_drawing&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2500-\u257F&#39;</span><span class="p">,</span>
+<a id="L38" name="L38"></a>        <span class="s1">&#39;block_elements&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2580-\u259F&#39;</span><span class="p">,</span>
+<a id="L39" name="L39"></a>        <span class="s1">&#39;geometric_shapes&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u25A0-\u25FF&#39;</span><span class="p">,</span>
+<a id="L40" name="L40"></a>        <span class="s1">&#39;misc_symbols&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2600-\u26FF&#39;</span><span class="p">,</span>
+<a id="L41" name="L41"></a>        <span class="s1">&#39;dingbats&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2700-\u27BF&#39;</span><span class="p">,</span>
+<a id="L42" name="L42"></a>        <span class="s1">&#39;braille&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u2800-\u28FF&#39;</span><span class="p">,</span>
+<a id="L43" name="L43"></a>        <span class="s1">&#39;cjk_symbols&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u3000-\u303F&#39;</span><span class="p">,</span>
+<a id="L44" name="L44"></a>        <span class="s1">&#39;hiragana&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u3040-\u309F&#39;</span><span class="p">,</span>
+<a id="L45" name="L45"></a>        <span class="s1">&#39;katakana&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u30A0-\u30FF&#39;</span><span class="p">,</span>
+<a id="L46" name="L46"></a>        <span class="s1">&#39;cjk_unified&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\u4E00-\u9FFF&#39;</span><span class="p">,</span>
+<a id="L47" name="L47"></a>        <span class="s1">&#39;private_use&#39;</span><span class="p">:</span> <span class="sa">r</span><span class="s1">&#39;\uE000-\uF8FF&#39;</span><span class="p">,</span>
+<a id="L48" name="L48"></a>        <span class="s1">&#39;emoticons&#39;</span><span class="p">:</span> <span class="p">(</span>
+<a id="L49" name="L49"></a>            <span class="sa">r</span><span class="s1">&#39;\U0001F300-\U0001F5FF&#39;</span>
+<a id="L50" name="L50"></a>            <span class="sa">r</span><span class="s1">&#39;\U0001F600-\U0001F64F&#39;</span>
+<a id="L51" name="L51"></a>            <span class="sa">r</span><span class="s1">&#39;\U0001F680-\U0001F6FF&#39;</span>
+<a id="L52" name="L52"></a>            <span class="sa">r</span><span class="s1">&#39;\U0001F700-\U0001F77F&#39;</span>
+<a id="L53" name="L53"></a>            <span class="sa">r</span><span class="s1">&#39;\U0001F780-\U0001F7FF&#39;</span>
+<a id="L54" name="L54"></a>            <span class="sa">r</span><span class="s1">&#39;\U0001F800-\U0001F8FF&#39;</span>
+<a id="L55" name="L55"></a>            <span class="sa">r</span><span class="s1">&#39;\U0001F900-\U0001F9FF&#39;</span>
+<a id="L56" name="L56"></a>            <span class="sa">r</span><span class="s1">&#39;\U0001FA00-\U0001FA6F&#39;</span>
+<a id="L57" name="L57"></a>            <span class="sa">r</span><span class="s1">&#39;\U0001FA70-\U0001FAFF&#39;</span>
+<a id="L58" name="L58"></a>            <span class="sa">r</span><span class="s1">&#39;\u2600-\u26FF&#39;</span>
+<a id="L59" name="L59"></a>            <span class="sa">r</span><span class="s1">&#39;\u2700-\u27BF&#39;</span>
+<a id="L60" name="L60"></a>        <span class="p">)</span>
+<a id="L61" name="L61"></a>    <span class="p">}</span>
+<a id="L62" name="L62"></a>    
+<a id="L63" name="L63"></a>    <span class="nd">@classmethod</span>
+<a id="L64" name="L64"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_unicode_pattern</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">ranges</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">]],</span> <span class="n">include_whitespace</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> 
+<a id="L65" name="L65"></a>                             <span class="n">include_digits</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="n">include_punctuation</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="L66" name="L66"></a>        <span class="n">pattern_parts</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L67" name="L67"></a>        <span class="k">for</span> <span class="n">range_spec</span> <span class="ow">in</span> <span class="n">ranges</span><span class="p">:</span>
+<a id="L68" name="L68"></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">range_spec</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L69" name="L69"></a>                <span class="k">if</span> <span class="n">range_spec</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">UNICODE_RANGES</span><span class="p">:</span>
+<a id="L70" name="L70"></a>                    <span class="n">pattern_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">UNICODE_RANGES</span><span class="p">[</span><span class="n">range_spec</span><span class="p">])</span>
+<a id="L71" name="L71"></a>                <span class="k">else</span><span class="p">:</span>
+<a id="L72" name="L72"></a>                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown Unicode range: </span><span class="si">{</span><span class="n">range_spec</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L73" name="L73"></a>            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">range_spec</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">range_spec</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+<a id="L74" name="L74"></a>                <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="n">range_spec</span>
+<a id="L75" name="L75"></a>                <span class="n">pattern_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">u</span><span class="si">{</span><span class="n">start</span><span class="si">:</span><span class="s2">04X</span><span class="si">}</span><span class="s2">-</span><span class="se">\\</span><span class="s2">u</span><span class="si">{</span><span class="n">end</span><span class="si">:</span><span class="s2">04X</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L76" name="L76"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L77" name="L77"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid range specification: </span><span class="si">{</span><span class="n">range_spec</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L78" name="L78"></a>        <span class="k">if</span> <span class="n">include_whitespace</span><span class="p">:</span>
+<a id="L79" name="L79"></a>            <span class="n">pattern_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\s&#39;</span><span class="p">)</span>
+<a id="L80" name="L80"></a>        <span class="k">if</span> <span class="n">include_digits</span><span class="p">:</span>
+<a id="L81" name="L81"></a>            <span class="n">pattern_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\p</span><span class="si">{N}</span><span class="s1">&#39;</span><span class="p">)</span>
+<a id="L82" name="L82"></a>        <span class="k">if</span> <span class="n">include_punctuation</span><span class="p">:</span>
+<a id="L83" name="L83"></a>            <span class="n">pattern_parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\p</span><span class="si">{P}</span><span class="s1">&#39;</span><span class="p">)</span>
+<a id="L84" name="L84"></a>        <span class="k">return</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">pattern_parts</span><span class="p">)</span>
+<a id="L85" name="L85"></a>
+<a id="L86" name="L86"></a>    <span class="nd">@classmethod</span>
+<a id="L87" name="L87"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">collect_range_characters</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">ranges</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L88" name="L88"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L89" name="L89"></a><span class="sd">        Materialize the characters for the given ranges.</span>
+<a id="L90" name="L90"></a><span class="sd">        Returns a dict {range_name: [chars]}.</span>
+<a id="L91" name="L91"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L92" name="L92"></a>        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L93" name="L93"></a>        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">ranges</span><span class="p">:</span>
+<a id="L94" name="L94"></a>            <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">cls</span><span class="o">.</span><span class="n">UNICODE_RANGES</span><span class="p">:</span>
+<a id="L95" name="L95"></a>                <span class="k">continue</span>
+<a id="L96" name="L96"></a>            <span class="n">spans</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">UNICODE_RANGES</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+<a id="L97" name="L97"></a>            <span class="n">chars</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L98" name="L98"></a>            <span class="n">parts</span> <span class="o">=</span> <span class="n">spans</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">u&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="s2">&quot;</span><span class="se">\\</span><span class="s2">u&quot;</span> <span class="ow">in</span> <span class="n">spans</span> <span class="k">else</span> <span class="n">spans</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\\</span><span class="s2">U&quot;</span><span class="p">)</span>
+<a id="L99" name="L99"></a>            <span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<a id="L100" name="L100"></a>            <span class="k">for</span> <span class="n">match</span> <span class="ow">in</span> <span class="n">re</span><span class="o">.</span><span class="n">finditer</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;</span><span class="se">\\</span><span class="s1">u([0-9A-Fa-f]</span><span class="si">{4}</span><span class="s1">)-</span><span class="se">\\</span><span class="s1">u([0-9A-Fa-f]</span><span class="si">{4}</span><span class="s1">)|</span><span class="se">\\</span><span class="s1">U([0-9A-Fa-f]</span><span class="si">{8}</span><span class="s1">)-</span><span class="se">\\</span><span class="s1">U([0-9A-Fa-f]</span><span class="si">{8}</span><span class="s1">)&#39;</span><span class="p">,</span> <span class="n">spans</span><span class="p">):</span>
+<a id="L101" name="L101"></a>                <span class="k">if</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="ow">and</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+<a id="L102" name="L102"></a>                    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="mi">16</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+<a id="L103" name="L103"></a>                <span class="k">elif</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="ow">and</span> <span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">4</span><span class="p">):</span>
+<a id="L104" name="L104"></a>                    <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">),</span> <span class="mi">16</span><span class="p">),</span> <span class="nb">int</span><span class="p">(</span><span class="n">match</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">4</span><span class="p">),</span> <span class="mi">16</span><span class="p">)</span>
+<a id="L105" name="L105"></a>                <span class="k">else</span><span class="p">:</span>
+<a id="L106" name="L106"></a>                    <span class="k">continue</span>
+<a id="L107" name="L107"></a>                <span class="n">chars</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="nb">chr</span><span class="p">(</span><span class="n">cp</span><span class="p">)</span> <span class="k">for</span> <span class="n">cp</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+<a id="L108" name="L108"></a>            <span class="n">result</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">chars</span>
+<a id="L109" name="L109"></a>        <span class="k">return</span> <span class="n">result</span>
+<a id="L110" name="L110"></a><span class="k">def</span><span class="w"> </span><span class="nf">train_hf_tokenizer</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">MatformerDataset</span><span class="p">,</span> <span class="n">save_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">,</span> <span class="n">initialize_vocab</span><span class="p">:</span> <span class="nb">bool</span><span class="p">):</span>
+<a id="L111" name="L111"></a>    <span class="n">tokenizer_type</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;tokenizer_type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<a id="L112" name="L112"></a>    <span class="n">model</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">BPE</span><span class="p">()</span> <span class="k">if</span> <span class="n">tokenizer_type</span> <span class="o">==</span> <span class="s2">&quot;bpe&quot;</span> <span class="k">else</span> <span class="n">models</span><span class="o">.</span><span class="n">Unigram</span><span class="p">()</span>
+<a id="L113" name="L113"></a>
+<a id="L114" name="L114"></a>    <span class="n">tokenizer</span> <span class="o">=</span> <span class="n">Tokenizer</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+<a id="L115" name="L115"></a>    <span class="n">normalizer_list</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L116" name="L116"></a>
+<a id="L117" name="L117"></a>    <span class="n">unicode_cfg</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;unicode_filtering&#39;</span><span class="p">,</span> <span class="p">{})</span>
+<a id="L118" name="L118"></a>    <span class="k">if</span> <span class="n">unicode_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enabled&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+<a id="L119" name="L119"></a>        <span class="n">pattern</span> <span class="o">=</span> <span class="n">UnicodeRangeHelper</span><span class="o">.</span><span class="n">build_unicode_pattern</span><span class="p">(</span>
+<a id="L120" name="L120"></a>            <span class="n">unicode_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ranges&#39;</span><span class="p">,</span> <span class="p">[]),</span>
+<a id="L121" name="L121"></a>            <span class="n">unicode_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;include_whitespace&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+<a id="L122" name="L122"></a>            <span class="n">unicode_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;include_digits&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+<a id="L123" name="L123"></a>            <span class="n">unicode_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;include_punctuation&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+<a id="L124" name="L124"></a>        <span class="p">)</span>
+<a id="L125" name="L125"></a>        <span class="n">normalizer_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">normalizers</span><span class="o">.</span><span class="n">Replace</span><span class="p">(</span><span class="n">Regex</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;[^</span><span class="si">{</span><span class="n">pattern</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">),</span> <span class="s1">&#39;&#39;</span><span class="p">))</span>
+<a id="L126" name="L126"></a>    <span class="k">if</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;normalization&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;nfc&#39;</span><span class="p">,</span> <span class="kc">True</span><span class="p">):</span>
+<a id="L127" name="L127"></a>        <span class="n">normalizer_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">normalizers</span><span class="o">.</span><span class="n">NFC</span><span class="p">())</span>
+<a id="L128" name="L128"></a>
+<a id="L129" name="L129"></a>    <span class="n">tokenizer</span><span class="o">.</span><span class="n">normalizer</span> <span class="o">=</span> <span class="n">normalizers</span><span class="o">.</span><span class="n">Sequence</span><span class="p">(</span><span class="n">normalizer_list</span><span class="p">)</span>
+<a id="L130" name="L130"></a>
+<a id="L131" name="L131"></a>    <span class="n">specials</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;special_extra_tokens&quot;</span><span class="p">,</span> <span class="p">[])</span>
+<a id="L132" name="L132"></a>    <span class="k">if</span> <span class="n">specials</span><span class="p">:</span>
+<a id="L133" name="L133"></a>        <span class="n">escaped</span> <span class="o">=</span> <span class="p">[</span><span class="n">re</span><span class="o">.</span><span class="n">escape</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">specials</span><span class="p">]</span>
+<a id="L134" name="L134"></a>        <span class="n">pattern</span> <span class="o">=</span> <span class="s2">&quot;(&quot;</span> <span class="o">+</span> <span class="s2">&quot;|&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">escaped</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
+<a id="L135" name="L135"></a>        <span class="n">tokenizer</span><span class="o">.</span><span class="n">pre_tokenizer</span> <span class="o">=</span> <span class="n">pre_tokenizers</span><span class="o">.</span><span class="n">Sequence</span><span class="p">([</span>
+<a id="L136" name="L136"></a>            <span class="n">pre_tokenizers</span><span class="o">.</span><span class="n">Split</span><span class="p">(</span><span class="n">Regex</span><span class="p">(</span><span class="n">pattern</span><span class="p">),</span> <span class="n">behavior</span><span class="o">=</span><span class="s2">&quot;isolated&quot;</span><span class="p">),</span>
+<a id="L137" name="L137"></a>            <span class="n">pre_tokenizers</span><span class="o">.</span><span class="n">Metaspace</span><span class="p">(</span><span class="n">replacement</span><span class="o">=</span><span class="s2">&quot;▁&quot;</span><span class="p">,</span> <span class="n">prepend_scheme</span><span class="o">=</span><span class="s2">&quot;always&quot;</span><span class="p">)</span>
+<a id="L138" name="L138"></a>        <span class="p">])</span>
+<a id="L139" name="L139"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="L140" name="L140"></a>        <span class="n">tokenizer</span><span class="o">.</span><span class="n">pre_tokenizer</span> <span class="o">=</span> <span class="n">pre_tokenizers</span><span class="o">.</span><span class="n">Metaspace</span><span class="p">(</span><span class="n">replacement</span><span class="o">=</span><span class="s1">&#39;▁&#39;</span><span class="p">,</span> <span class="n">prepend_scheme</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">)</span>
+<a id="L141" name="L141"></a>
+<a id="L142" name="L142"></a>    <span class="n">tokenizer</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">decoders</span><span class="o">.</span><span class="n">Metaspace</span><span class="p">(</span><span class="n">replacement</span><span class="o">=</span><span class="s1">&#39;▁&#39;</span><span class="p">,</span> <span class="n">prepend_scheme</span><span class="o">=</span><span class="s1">&#39;always&#39;</span><span class="p">)</span>
+<a id="L143" name="L143"></a>
+<a id="L144" name="L144"></a>    <span class="n">initial_alphabet</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L145" name="L145"></a>    <span class="k">if</span> <span class="n">initialize_vocab</span><span class="p">:</span>
+<a id="L146" name="L146"></a>        <span class="n">range_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">unicode_cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;ranges&#39;</span><span class="p">,</span> <span class="p">[])</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="nb">str</span><span class="p">)]</span>
+<a id="L147" name="L147"></a>        <span class="n">forced_chars</span> <span class="o">=</span> <span class="n">UnicodeRangeHelper</span><span class="o">.</span><span class="n">collect_range_characters</span><span class="p">(</span><span class="n">range_names</span><span class="p">)</span>
+<a id="L148" name="L148"></a>        <span class="n">initial_alphabet</span> <span class="o">=</span> <span class="p">[</span><span class="n">c</span> <span class="k">for</span> <span class="n">chars</span> <span class="ow">in</span> <span class="n">forced_chars</span><span class="o">.</span><span class="n">values</span><span class="p">()</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chars</span><span class="p">]</span>
+<a id="L149" name="L149"></a>
+<a id="L150" name="L150"></a>    <span class="n">trainer_cls</span> <span class="o">=</span> <span class="n">trainers</span><span class="o">.</span><span class="n">BpeTrainer</span> <span class="k">if</span> <span class="n">tokenizer_type</span> <span class="o">==</span> <span class="s2">&quot;bpe&quot;</span> <span class="k">else</span> <span class="n">trainers</span><span class="o">.</span><span class="n">UnigramTrainer</span>
+<a id="L151" name="L151"></a>    <span class="n">trainer</span> <span class="o">=</span> <span class="n">trainer_cls</span><span class="p">(</span>
+<a id="L152" name="L152"></a>        <span class="n">vocab_size</span><span class="o">=</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;vocab_size&#39;</span><span class="p">],</span>
+<a id="L153" name="L153"></a>        <span class="n">show_progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="L154" name="L154"></a>        <span class="n">special_tokens</span><span class="o">=</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;special_tokens&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="n">specials</span><span class="p">,</span>
+<a id="L155" name="L155"></a>        <span class="n">unk_token</span><span class="o">=</span><span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;unk_token&#39;</span><span class="p">],</span>
+<a id="L156" name="L156"></a>        <span class="n">initial_alphabet</span><span class="o">=</span><span class="n">initial_alphabet</span>
+<a id="L157" name="L157"></a>    <span class="p">)</span>
+<a id="L158" name="L158"></a>
+<a id="L159" name="L159"></a>    <span class="n">tokenizer</span><span class="o">.</span><span class="n">train_from_iterator</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">length</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">))</span>
+<a id="L160" name="L160"></a>    <span class="n">tokenizer</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">save_path</span> <span class="o">/</span> <span class="s2">&quot;tokenizer.json&quot;</span><span class="p">))</span>
+<a id="L161" name="L161"></a>
+<a id="L162" name="L162"></a>    <span class="n">fast_tok</span> <span class="o">=</span> <span class="n">PreTrainedTokenizerFast</span><span class="p">(</span>
+<a id="L163" name="L163"></a>        <span class="n">tokenizer_file</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">save_path</span> <span class="o">/</span> <span class="s2">&quot;tokenizer.json&quot;</span><span class="p">),</span>
+<a id="L164" name="L164"></a>        <span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">cfg</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="s1">&#39;unk_token&#39;</span><span class="p">,</span> <span class="s1">&#39;pad_token&#39;</span><span class="p">,</span> <span class="s1">&#39;cls_token&#39;</span><span class="p">,</span> <span class="s1">&#39;sep_token&#39;</span><span class="p">,</span> <span class="s1">&#39;mask_token&#39;</span><span class="p">]</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">cfg</span><span class="p">}</span>
+<a id="L165" name="L165"></a>    <span class="p">)</span>
+<a id="L166" name="L166"></a>    <span class="n">fast_tok</span><span class="o">.</span><span class="n">save_pretrained</span><span class="p">(</span><span class="n">save_path</span><span class="p">)</span>
+<a id="L167" name="L167"></a>
+<a id="L168" name="L168"></a>
+<a id="L169" name="L169"></a><span class="k">def</span><span class="w"> </span><span class="nf">train_sentencepiece</span><span class="p">(</span><span class="n">cfg</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">MatformerDataset</span><span class="p">,</span> <span class="n">save_path</span><span class="p">:</span> <span class="n">Path</span><span class="p">):</span>
+<a id="L170" name="L170"></a>    <span class="n">tokenizer_type</span> <span class="o">=</span> <span class="n">cfg</span><span class="p">[</span><span class="s1">&#39;tokenizer_type&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<a id="L171" name="L171"></a>    <span class="n">model_type</span> <span class="o">=</span> <span class="s1">&#39;bpe&#39;</span> <span class="k">if</span> <span class="n">tokenizer_type</span> <span class="o">==</span> <span class="s1">&#39;bpe&#39;</span> <span class="k">else</span> <span class="s1">&#39;unigram&#39;</span>
+<a id="L172" name="L172"></a>
+<a id="L173" name="L173"></a>    <span class="n">spm</span><span class="o">.</span><span class="n">SentencePieceTrainer</span><span class="o">.</span><span class="n">Train</span><span class="p">(</span>
+<a id="L174" name="L174"></a>        <span class="n">sentence_iterator</span><span class="o">=</span><span class="p">(</span>
+<a id="L175" name="L175"></a>            <span class="n">doc</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">doc</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">doc</span><span class="p">)</span>
+<a id="L176" name="L176"></a>            <span class="k">for</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Training SentencePiece&quot;</span><span class="p">,</span> <span class="n">total</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">))</span>
+<a id="L177" name="L177"></a>        <span class="p">),</span>
+<a id="L178" name="L178"></a>        <span class="n">model_prefix</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">save_path</span> <span class="o">/</span> <span class="s2">&quot;spm&quot;</span><span class="p">),</span>
+<a id="L179" name="L179"></a>        <span class="n">vocab_size</span><span class="o">=</span><span class="n">cfg</span><span class="p">[</span><span class="s2">&quot;vocab_size&quot;</span><span class="p">],</span>
+<a id="L180" name="L180"></a>        <span class="n">model_type</span><span class="o">=</span><span class="n">model_type</span><span class="p">,</span>
+<a id="L181" name="L181"></a>        <span class="n">character_coverage</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;character_coverage&quot;</span><span class="p">,</span> <span class="mf">0.9995</span><span class="p">),</span>
+<a id="L182" name="L182"></a>        <span class="n">user_defined_symbols</span><span class="o">=</span><span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;special_extra_tokens&quot;</span><span class="p">,</span> <span class="p">[]),</span>
+<a id="L183" name="L183"></a>        <span class="n">unk_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<a id="L184" name="L184"></a>        <span class="n">pad_id</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="L185" name="L185"></a>        <span class="n">bos_id</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<a id="L186" name="L186"></a>        <span class="n">eos_id</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<a id="L187" name="L187"></a>        <span class="n">train_extremely_large_corpus</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="L188" name="L188"></a>        <span class="n">input_sentence_size</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<a id="L189" name="L189"></a>        <span class="n">shuffle_input_sentence</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="L190" name="L190"></a>        <span class="n">max_sentence_length</span><span class="o">=</span><span class="mi">1073741824</span><span class="p">,</span>
+<a id="L191" name="L191"></a>    <span class="p">)</span>
+<a id="L192" name="L192"></a>
+<a id="L193" name="L193"></a>    <span class="n">fast_tok</span> <span class="o">=</span> <span class="n">PreTrainedTokenizerFast</span><span class="p">(</span><span class="n">tokenizer_file</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">save_path</span> <span class="o">/</span> <span class="s2">&quot;spm.model&quot;</span><span class="p">))</span>
+<a id="L194" name="L194"></a>    <span class="n">fast_tok</span><span class="o">.</span><span class="n">save_pretrained</span><span class="p">(</span><span class="n">save_path</span><span class="p">)</span>
+<a id="L195" name="L195"></a>
+<a id="L196" name="L196"></a>
+<a id="L197" name="L197"></a><span class="k">def</span><span class="w"> </span><span class="nf">train_tokenizer</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">save_path</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">],</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">27</span><span class="p">,</span>
+<a id="L198" name="L198"></a>                    <span class="n">mdat</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Path</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">mdat_view</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">initialize_vocab</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
+<a id="L199" name="L199"></a>    <span class="n">seed_everything</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<a id="L200" name="L200"></a>    <span class="n">cfg</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+<a id="L201" name="L201"></a>    <span class="n">save_path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">save_path</span><span class="p">)</span>
+<a id="L202" name="L202"></a>    <span class="n">save_path</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L203" name="L203"></a>
+<a id="L204" name="L204"></a>    <span class="n">dataset</span> <span class="o">=</span> <span class="n">MatformerDataset</span><span class="o">.</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">mdat</span><span class="p">))</span>
+<a id="L205" name="L205"></a>    <span class="k">if</span> <span class="n">mdat_view</span><span class="p">:</span>
+<a id="L206" name="L206"></a>        <span class="n">dataset</span><span class="o">.</span><span class="n">set_view</span><span class="p">(</span><span class="n">mdat_view</span><span class="p">)</span>
+<a id="L207" name="L207"></a>    <span class="n">dataset</span><span class="o">.</span><span class="n">set_iteration_modality</span><span class="p">(</span><span class="n">modality</span><span class="o">=</span><span class="s1">&#39;document&#39;</span><span class="p">,</span> <span class="n">with_meta</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_raw</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L208" name="L208"></a>
+<a id="L209" name="L209"></a>    <span class="n">backend</span> <span class="o">=</span> <span class="n">cfg</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokenizer_backend&#39;</span><span class="p">,</span> <span class="s1">&#39;huggingface&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<a id="L210" name="L210"></a>    <span class="k">if</span> <span class="n">backend</span> <span class="o">==</span> <span class="s1">&#39;huggingface&#39;</span><span class="p">:</span>
+<a id="L211" name="L211"></a>        <span class="n">train_hf_tokenizer</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">save_path</span><span class="p">,</span> <span class="n">initialize_vocab</span><span class="p">)</span>
+<a id="L212" name="L212"></a>    <span class="k">elif</span> <span class="n">backend</span> <span class="o">==</span> <span class="s1">&#39;sentencepiece&#39;</span><span class="p">:</span>
+<a id="L213" name="L213"></a>        <span class="n">train_sentencepiece</span><span class="p">(</span><span class="n">cfg</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">save_path</span><span class="p">)</span>
+<a id="L214" name="L214"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="L215" name="L215"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown tokenizer backend: </span><span class="si">{</span><span class="n">backend</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L216" name="L216"></a>
+<a id="L217" name="L217"></a>
+<a id="L218" name="L218"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<a id="L219" name="L219"></a>    <span class="n">p</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s1">&#39;Train tokenizer (HF or SentencePiece)&#39;</span><span class="p">)</span>
+<a id="L220" name="L220"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;config&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+<a id="L221" name="L221"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--save-path&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;./tokenizer&#39;</span><span class="p">)</span>
+<a id="L222" name="L222"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--mdat&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">,</span> <span class="n">required</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L223" name="L223"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--mdat-view&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span>
+<a id="L224" name="L224"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--seed&#39;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="mi">27</span><span class="p">)</span>
+<a id="L225" name="L225"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--initialize-vocab&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s1">&#39;Force inclusion of Unicode ranges in vocab&#39;</span><span class="p">)</span>
+<a id="L226" name="L226"></a>    <span class="n">args</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+<a id="L227" name="L227"></a>    <span class="n">train_tokenizer</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">save_path</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">seed</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">mdat</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">mdat_view</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">initialize_vocab</span><span class="p">)</span>
+<a id="L228" name="L228"></a>
+<a id="L229" name="L229"></a>
+<a id="L230" name="L230"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="L231" name="L231"></a>    <span class="n">main</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

@@ -22,6 +22,7 @@ from dataclasses import asdict, replace
 import gc
 from contextlib import nullcontext
 import types
+#TODO2: Virtual model should be in a different file
 #Separare Virtualmodel da qui
 from matformer.dataclasses.matformer_config import MatformerConfig
 from typing import Optional
@@ -34,6 +35,21 @@ class VirtualModelConfig(MatformerConfig):
     input_address: str ="encoder.model_input"
     default_return: Optional[str] = None
     return_multiprobe: bool = True
+
+
+def model_variant(config):
+    """Which model implementation a config builds. `model_class` says it directly; a specialised
+    config (classification, multiprobe) is already its own implementation variant; a plain one with
+    no model_class is the language model. Never written back into the config: the variant recorded
+    there belongs to the dataclass, and a checkpoint that stores an implementation name in it cannot
+    be loaded back."""
+    declared = getattr(config, "model_class", None)
+    if declared:
+        return declared
+    variant = getattr(config, "_matformer_variant", None)
+    return "language_model" if variant in (None, "", "default") else variant
+
+
 class VirtualModel(MatformerModule):
     """A virtual model that has sockets for plugins but doesn't execute a real model:
     it replays activations from an activation store instead."""
@@ -49,7 +65,7 @@ class VirtualModel(MatformerModule):
         
     def default_plugins(self):
         """Same plugins the live model of this config would mount (probes etc.)."""
-        variant = self.model_config._matformer_variant
+        variant = model_variant(self.model_config)
         cls = registry.registry['model'].variants[variant].implementations['default'].get_implementation()
         if not hasattr(cls, 'default_plugins'):
             return []
@@ -142,9 +158,7 @@ class MatformerModelWrapper(MatformerModule, PluginManager):
     def _get_model(self, mode):
         if mode not in self._models:           
             if mode == 'live':
-                variant = self.config._matformer_variant
-                if not variant or variant == "default":
-                    variant = self.config._matformer_variant = "language_model"
+                variant = model_variant(self.config)
                 self._models[mode] = registry.create("model", variant, config=self.config,
                     device=self._init_device, cache=self.cache, wrapper=self)
             else:
@@ -326,6 +340,8 @@ class MatformerModelWrapper(MatformerModule, PluginManager):
         except Exception as e:
             return self._handle_exception(e)
     def _handle_exception(self,e):
+            if getattr(self, "strict_steps", False):
+                raise e       # the trainer's memory probe needs the failure, not a skipped step
             print("------------------  ALARM ------------------")
             if not any(s in str(e).lower() for s in ("out of memory", "cuda out of memory", "cublas")):
                 print("CAUGHT EXCEPTION:")
@@ -452,6 +468,11 @@ def load_model(path=None, checkpoint_holder=None, weights_definition=None, confi
         assert hasattr(configs, 'activation_store'), "virtual_only needs an 'activation_store' section."
         store = configs.instantiate('activation_store', model_config=None, cache=None)
 
+    if path is None and checkpoint_holder is None and configs is not None:
+        # A 'checkpoint' section says which model to load: the config answer to `--model`, and what
+        # lets a task run be driven entirely by YAML (see matformer/dataclasses/checkpoint_dataclasses)
+        path = configs.checkpoint_path()
+
     if path is not None:
         assert checkpoint_holder is None,"Either you load from path or from a checkpoint holder"
         checkpoint_holder=make_holder(path, map_location=map_location)
@@ -470,9 +491,9 @@ def load_model(path=None, checkpoint_holder=None, weights_definition=None, confi
         ckpt_configs=MatformerConfigs()   # bare root, populated from `configs` (if given) below
 
     if configs:
-        # Provided configs override what's included in the checkpoing
-        ckpt_configs.import_config(configs.asdict(include_defaults=False))
+        ckpt_configs.import_config(configs.asdict(include_defaults=False), sweeps_on=False)
         ckpt_configs.resolve_references()
+        ckpt_configs.sweeps, ckpt_configs.active_sweep = dict(configs.sweeps), configs.active_sweep
     configs=ckpt_configs
     
     assert configs is not None,"Either pass a valid configs or a path to a checkpoint containing a valid configuration."

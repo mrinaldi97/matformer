@@ -4,6 +4,11 @@ from typing import Optional, Literal, ClassVar, Dict, List
 from matformer.dataclasses.matformer_config import MatformerConfig, MatformerMultiConfig
 from matformer.matformer_registry import registry
 
+# Label of the token positions that must not contribute to a token-level loss: subword
+# continuations, special tokens and padding. Datasets write it, collate pads with it, and the
+# token-classification learning signal masks exactly those positions out.
+IGNORE_INDEX = -100
+
 @dataclass
 class DataConfig(MatformerMultiConfig):
     name: Optional[str] = field(default="train", kw_only=True)
@@ -29,7 +34,8 @@ class MDATDataModuleConfig(DataConfig):
 class LazyDataModuleConfig(DataConfig):
     _linked_fields: ClassVar[list] = ['tokenizer', 'training', 'model']
     # LazyDataModule-specific
-    file_format: Optional[str] = None          # "jsonl","csv","conll","conllu","hf"
+    file_format: Optional[str] = None          # "jsonl","csv","conll","conllu","hf","mdat"
+    mdat_dataset: Optional[str] = None         # dataset name when file_format == "mdat" points at a container
     precompute_len: bool = True
     text_column: Optional[str] = "text"
     input_ids_column: str = "input_ids"

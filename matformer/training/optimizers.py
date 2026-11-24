@@ -1,5 +1,7 @@
 #matformer/training/optimizers.py
 
+# TODO2: This should be rewritten to be in matformer's style (registry("optimizers", "muon") and so on)
+# Muonclip and Muonflash should be probaby deprecated/removed; they were tests with some old github repo, in two years maybe there have been advancements
 import torch
 import math
 from matformer.extra.muon import Muon
@@ -77,6 +79,7 @@ def configure_optimizers(model, train_config):
         adamw_params = []
         no_decay_params = []
         for name, param in model.named_parameters():
+			# TODO2: maybe which parameters are in AdamW and which in Muon is cool to be logged somewhere. Does "model" expose the "log" object?
             if not param.requires_grad:
                 continue
             if "conv" in name:
@@ -119,6 +122,7 @@ def configure_optimizers(model, train_config):
             lr=train_config.lr,
             weight_decay=train_config.weight_decay,
         )
+    # TODO2: Support at least the Pytorch built-in optimisers
     if not isinstance(optimizer, list):
         optimizer = [optimizer]
     return optimizer

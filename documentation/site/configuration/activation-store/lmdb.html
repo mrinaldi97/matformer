@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configuration · activation_store.lmdb · Matformer</title>
+<link rel="stylesheet" href="../../assets/style.css">
+<link rel="stylesheet" href="../../assets/pygments.css">
+</head>
+<body class="reference-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../index.html">Documentation</a><a class="" href="../../registry/index.html">Registry</a><a class="current" href="../index.html">Configuration</a><a class="" href="../../tools/commands.html">Commands</a><a class="" href="../../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section" open><summary>Registry categories</summary><ul><li><a class="" href="../../registry/model.html"><code>model</code></a></li><li><a class="" href="../../registry/layer.html"><code>layer</code></a></li><li><a class="" href="../../registry/sequence-mixer.html"><code>sequence_mixer</code></a></li><li><a class="" href="../../registry/attention.html"><code>attention</code></a></li><li><a class="" href="../../registry/mlp.html"><code>mlp</code></a></li><li><a class="" href="../../registry/norm.html"><code>norm</code></a></li><li><a class="" href="../../registry/norm-style.html"><code>norm_style</code></a></li><li><a class="" href="../../registry/embedding.html"><code>embedding</code></a></li><li><a class="" href="../../registry/linear.html"><code>linear</code></a></li><li><a class="" href="../../registry/dropout.html"><code>dropout</code></a></li><li><a class="" href="../../registry/positional-encoding.html"><code>positional_encoding</code></a></li><li><a class="" href="../../registry/loss.html"><code>loss</code></a></li><li><a class="" href="../../registry/loss-fn.html"><code>loss_fn</code></a></li><li><a class="" href="../../registry/learning-signal.html"><code>learning_signal</code></a></li><li><a class="" href="../../registry/learning-signal-selector.html"><code>learning_signal_selector</code></a></li><li><a class="" href="../../registry/stream.html"><code>stream</code></a></li><li><a class="" href="../../registry/plugin.html"><code>plugin</code></a></li><li><a class="" href="../../registry/tokenizer.html"><code>tokenizer</code></a></li><li><a class="" href="../../registry/task.html"><code>task</code></a></li><li><a class="" href="../../registry/data.html"><code>data</code></a></li><li><a class="" href="../../registry/saver.html"><code>saver</code></a></li><li><a class="" href="../../registry/logger.html"><code>logger</code></a></li><li><a class="" href="../../registry/checkpoint.html"><code>checkpoint</code></a></li><li><a class="" href="../../registry/checkpoint-holder.html"><code>checkpoint_holder</code></a></li><li><a class="" href="../../registry/weights.html"><code>weights</code></a></li><li><a class="" href="../../registry/training.html"><code>training</code></a></li><li><a class="" href="../../registry/validation.html"><code>validation</code></a></li><li><a class="" href="../../registry/masking.html"><code>masking</code></a></li><li><a class="" href="../../registry/virtual-model.html"><code>virtual_model</code></a></li><li><a class="current" href="../../registry/activation-store.html"><code>activation_store</code></a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../index.html">Docs</a> <span class="sep">/</span> <a href="../index.html">Configuration</a> <span class="sep">/</span> <a href="../activation-store.html">activation_store</a> <span class="sep">/</span> lmdb</nav>
+    
+<h1>Configuration: <code>activation_store.lmdb</code></h1><p>Dataclass <code>ActivationStoreLMDBConfig</code> · <a href="../../registry/activation-store/lmdb.html">registry entry</a> · <a href="../../registry/activation-store.html">category</a></p><h2>Fields</h2><table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Meaning</th></tr></thead><tbody><tr><td id="field-name"><code>name</code></td><td><code>str</code></td><td><code>None</code></td><td></td></tr><tr><td id="field-targets"><code>targets</code></td><td><code>Union[list, str, NoneType]</code></td><td><code>None</code></td><td></td></tr><tr><td id="field-filename"><code>filename</code></td><td><code>str</code></td><td><code>&#x27;activations.lmdb&#x27;</code></td><td></td></tr><tr><td id="field-databank"><code>databank</code></td><td><code>str</code></td><td><code>&#x27;default&#x27;</code></td><td>which set of tables to read/write</td></tr><tr><td id="field-flush-every"><code>flush_every</code></td><td><code>int</code></td><td><code>8</code></td><td>batches per write</td></tr><tr><td id="field-preload"><code>preload</code></td><td><code>bool</code></td><td><code>False</code></td><td>point reads are cheap: no need to hold the databank in RAM</td></tr><tr><td id="field-readonly"><code>readonly</code></td><td><code>bool</code></td><td><code>False</code></td><td>True for replay-only runs: no writer lock, so several processes can read the same file</td></tr><tr><td id="field-map-size"><code>map_size</code></td><td><code>int</code></td><td><code>4398046511104</code></td><td>max size in bytes (4 TB); sparse, so it costs nothing until used</td></tr></tbody></table><h2>In a YAML file</h2><pre><code class="language-yaml">activation_store:
+  type: lmdb</code></pre>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

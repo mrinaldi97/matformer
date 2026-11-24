@@ -1,0 +1,594 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/server/jobs.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/server/jobs.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="jobs.py.html"><code>matformer/server/jobs.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/server/</code></a></p><h1><code>jobs.py</code></h1><p class="muted">matformer/server/jobs.py · 282 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/server/jobs.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L30"><code>_ensure_worker</code></a><span class="line">L30</span></li><li class="depth-0"><a href="#L36"><code>_worker</code></a><span class="line">L36</span></li><li class="depth-0"><a href="#L48"><code>_child</code></a><span class="line">L48</span></li><li class="depth-0"><a href="#L61"><code>enqueue</code></a><span class="line">L61</span></li><li class="depth-0"><a href="#L80"><code>_run_job</code></a><span class="line">L80</span></li><li class="depth-0"><a href="#L103"><code>_kill</code></a><span class="line">L103</span></li><li class="depth-0"><a href="#L112"><code>train_options</code></a><span class="line">L112</span></li><li class="depth-0"><a href="#L128"><code>train_start</code></a><span class="line">L128</span></li><li class="depth-0"><a href="#L149"><code>slurm_requested</code></a><span class="line">L149</span></li><li class="depth-0"><a href="#L163"><code>cluster_rows</code></a><span class="line">L163</span></li><li class="depth-0"><a href="#L186"><code>train_sweep</code></a><span class="line">L186</span></li><li class="depth-0"><a href="#L200"><code>train_abort</code></a><span class="line">L200</span></li><li class="depth-0"><a href="#L221"><code>jobs_list</code></a><span class="line">L221</span></li><li class="depth-0"><a href="#L235"><code>jobs_watch</code></a><span class="line">L235</span></li><li class="depth-0"><a href="#L242"><code>jobs_log</code></a><span class="line">L242</span></li><li class="depth-0"><a href="#L258"><code>_public</code></a><span class="line">L258</span></li><li class="depth-0"><a href="#L260"><code>_set</code></a><span class="line">L260</span></li><li class="depth-0"><a href="#L265"><code>_monitor</code></a><span class="line">L265</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="__init__.py.html"><code>matformer.server</code></a> <span class="muted">REPO</span></li><li><a href="core.py.html"><code>matformer.server.core</code></a> <span class="muted">broadcast, rpc</span></li><li><a href="runs.py.html"><code>matformer.server.runs</code></a> <span class="muted">_series, run_dirs</span></li><li><a href="../training/__init__.py.html"><code>matformer.training</code></a> <span class="muted">launch</span></li><li><a href="../__init__.py.html"><code>matformer</code></a> <span class="muted">slurm</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># matformer/server/jobs.py</span>
+<a id="L2" name="L2"></a><span class="sd">&quot;&quot;&quot;Training jobs: the server owns a queue and runs one training at a time (one box, one GPU set).</span>
+<a id="L3" name="L3"></a><span class="sd">What it runs is the framework&#39;s own entry point — `matformer.training.launch.execute(spec)` — in a</span>
+<a id="L4" name="L4"></a><span class="sd">fresh process: a training owns a CUDA context, spawns its own DDP ranks and must be killable without</span>
+<a id="L5" name="L5"></a><span class="sd">touching the server, so the process boundary is real. But it is entered as a library function with a</span>
+<a id="L6" name="L6"></a><span class="sd">plain dict, never as a command line, and never by spawning a repository script.</span>
+<a id="L7" name="L7"></a>
+<a id="L8" name="L8"></a><span class="sd">Progress comes from the JsonlLogger the run is forced to write, so the queue needs nothing from the</span>
+<a id="L9" name="L9"></a><span class="sd">process but its exit code. Job events are broadcast to every GUI: {id, kind, name, project, status,</span>
+<a id="L10" name="L10"></a><span class="sd">progress, step}; `jobs.log` returns the terminal output on demand.&quot;&quot;&quot;</span>
+<a id="L11" name="L11"></a><span class="kn">import</span><span class="w"> </span><span class="nn">multiprocessing</span>
+<a id="L12" name="L12"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="L13" name="L13"></a><span class="kn">import</span><span class="w"> </span><span class="nn">signal</span>
+<a id="L14" name="L14"></a><span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<a id="L15" name="L15"></a><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<a id="L16" name="L16"></a><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<a id="L17" name="L17"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="L18" name="L18"></a>
+<a id="L19" name="L19"></a><span class="kn">from</span><span class="w"> </span><a href="__init__.py.html"><span class="nn">matformer.server</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">REPO</span>
+<a id="L20" name="L20"></a><span class="kn">from</span><span class="w"> </span><a href="core.py.html"><span class="nn">matformer.server.core</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">broadcast</span><span class="p">,</span> <span class="n">rpc</span>
+<a id="L21" name="L21"></a><span class="kn">from</span><span class="w"> </span><a href="runs.py.html"><span class="nn">matformer.server.runs</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">_series</span><span class="p">,</span> <span class="n">run_dirs</span>
+<a id="L22" name="L22"></a>
+<a id="L23" name="L23"></a><span class="n">JOBS</span> <span class="o">=</span> <span class="p">{}</span>                              <span class="c1"># id -&gt; job dict</span>
+<a id="L24" name="L24"></a><span class="n">QUEUE</span> <span class="o">=</span> <span class="p">[]</span>                             <span class="c1"># ids waiting for the GPU</span>
+<a id="L25" name="L25"></a><span class="n">WORKER</span><span class="p">,</span> <span class="n">CURRENT</span><span class="p">,</span> <span class="n">MUTEX</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">threading</span><span class="o">.</span><span class="n">Condition</span><span class="p">()</span>
+<a id="L26" name="L26"></a><span class="n">LOG_DIR</span> <span class="o">=</span> <span class="n">REPO</span> <span class="o">/</span> <span class="s2">&quot;.matformer_server&quot;</span> <span class="o">/</span> <span class="s2">&quot;jobs&quot;</span>
+<a id="L27" name="L27"></a><span class="n">CONTEXT</span> <span class="o">=</span> <span class="n">multiprocessing</span><span class="o">.</span><span class="n">get_context</span><span class="p">(</span><span class="s2">&quot;spawn&quot;</span><span class="p">)</span>
+<a id="L28" name="L28"></a>
+<a id="L29" name="L29"></a>
+<a id="L30" name="L30"></a><span class="k">def</span><span class="w"> </span><span class="nf">_ensure_worker</span><span class="p">():</span>
+<a id="L31" name="L31"></a>    <span class="k">global</span> <span class="n">WORKER</span>
+<a id="L32" name="L32"></a>    <span class="k">if</span> <span class="n">WORKER</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">WORKER</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+<a id="L33" name="L33"></a>        <span class="n">WORKER</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_worker</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;job-queue&quot;</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<a id="L34" name="L34"></a>
+<a id="L35" name="L35"></a>
+<a id="L36" name="L36"></a><span class="k">def</span><span class="w"> </span><span class="nf">_worker</span><span class="p">():</span>
+<a id="L37" name="L37"></a>    <span class="k">global</span> <span class="n">CURRENT</span>
+<a id="L38" name="L38"></a>    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<a id="L39" name="L39"></a>        <span class="k">with</span> <span class="n">MUTEX</span><span class="p">:</span>
+<a id="L40" name="L40"></a>            <span class="k">while</span> <span class="ow">not</span> <span class="n">QUEUE</span><span class="p">:</span>
+<a id="L41" name="L41"></a>                <span class="n">MUTEX</span><span class="o">.</span><span class="n">wait</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+<a id="L42" name="L42"></a>            <span class="n">CURRENT</span> <span class="o">=</span> <span class="n">job_id</span> <span class="o">=</span> <span class="n">QUEUE</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a id="L43" name="L43"></a>        <span class="n">_run_job</span><span class="p">(</span><span class="n">JOBS</span><span class="p">[</span><span class="n">job_id</span><span class="p">])</span>
+<a id="L44" name="L44"></a>        <span class="k">with</span> <span class="n">MUTEX</span><span class="p">:</span>
+<a id="L45" name="L45"></a>            <span class="n">CURRENT</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L46" name="L46"></a>
+<a id="L47" name="L47"></a>
+<a id="L48" name="L48"></a><span class="k">def</span><span class="w"> </span><span class="nf">_child</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">log_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L49" name="L49"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The job&#39;s process: its own session (so a whole DDP rank tree dies with it), its output in the</span>
+<a id="L50" name="L50"></a><span class="sd">    job log, the framework in charge from here on. It never hosts a server of its own. `spec[&#39;_entry&#39;]`</span>
+<a id="L51" name="L51"></a><span class="sd">    is the module:function that knows how to do the work.&quot;&quot;&quot;</span>
+<a id="L52" name="L52"></a>    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;MATFORMER_SERVER&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;0&quot;</span>
+<a id="L53" name="L53"></a>    <span class="n">os</span><span class="o">.</span><span class="n">setsid</span><span class="p">()</span>
+<a id="L54" name="L54"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_path</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">buffering</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="k">as</span> <span class="n">log</span><span class="p">:</span>
+<a id="L55" name="L55"></a>        <span class="n">os</span><span class="o">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="mi">1</span><span class="p">)</span>
+<a id="L56" name="L56"></a>        <span class="n">os</span><span class="o">.</span><span class="n">dup2</span><span class="p">(</span><span class="n">log</span><span class="o">.</span><span class="n">fileno</span><span class="p">(),</span> <span class="mi">2</span><span class="p">)</span>
+<a id="L57" name="L57"></a>        <span class="n">module</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">function</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;_entry&quot;</span><span class="p">,</span> <span class="s2">&quot;matformer.training.launch:execute&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">&quot;:&quot;</span><span class="p">)</span>
+<a id="L58" name="L58"></a>        <span class="nb">getattr</span><span class="p">(</span><span class="nb">__import__</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">fromlist</span><span class="o">=</span><span class="p">[</span><span class="n">function</span><span class="p">]),</span> <span class="n">function</span><span class="p">)(</span><span class="n">spec</span><span class="p">)</span>
+<a id="L59" name="L59"></a>
+<a id="L60" name="L60"></a>
+<a id="L61" name="L61"></a><span class="k">def</span><span class="w"> </span><span class="nf">enqueue</span><span class="p">(</span><span class="n">kind</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">project</span><span class="p">,</span> <span class="n">spec</span><span class="p">,</span> <span class="n">entry</span><span class="o">=</span><span class="s2">&quot;matformer.training.launch:execute&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="L62" name="L62"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Put one piece of framework work on the queue — a training, an MDAT ingestion — and return its</span>
+<a id="L63" name="L63"></a><span class="sd">    id. A spec is a plain dict, handed unchanged to `entry` in a fresh process; status, logs, abort</span>
+<a id="L64" name="L64"></a><span class="sd">    and the broadcast of `job` events are the queue&#39;s business, whatever the work is.&quot;&quot;&quot;</span>
+<a id="L65" name="L65"></a>    <span class="n">_ensure_worker</span><span class="p">()</span>
+<a id="L66" name="L66"></a>    <span class="n">job_id</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">-</span><span class="si">{</span><span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="si">:</span><span class="s2">%H%M%S</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="L67" name="L67"></a>    <span class="n">job</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">job_id</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">kind</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;project&quot;</span><span class="p">:</span> <span class="n">project</span><span class="p">,</span>
+<a id="L68" name="L68"></a>           <span class="s2">&quot;spec&quot;</span><span class="p">:</span> <span class="nb">dict</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">_entry</span><span class="o">=</span><span class="n">entry</span><span class="p">),</span>
+<a id="L69" name="L69"></a>           <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="s2">&quot;queued&quot;</span><span class="p">,</span> <span class="s2">&quot;progress&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L70" name="L70"></a>           <span class="s2">&quot;started&quot;</span><span class="p">:</span> <span class="n">datetime</span><span class="o">.</span><span class="n">now</span><span class="p">()</span><span class="o">.</span><span class="n">isoformat</span><span class="p">(</span><span class="n">timespec</span><span class="o">=</span><span class="s2">&quot;seconds&quot;</span><span class="p">)}</span>
+<a id="L71" name="L71"></a>    <span class="n">JOBS</span><span class="p">[</span><span class="n">job_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">job</span>
+<a id="L72" name="L72"></a>    <span class="k">with</span> <span class="n">MUTEX</span><span class="p">:</span>
+<a id="L73" name="L73"></a>        <span class="n">QUEUE</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+<a id="L74" name="L74"></a>        <span class="n">MUTEX</span><span class="o">.</span><span class="n">notify</span><span class="p">()</span>
+<a id="L75" name="L75"></a>    <span class="n">broadcast</span><span class="p">(</span><span class="s2">&quot;job&quot;</span><span class="p">,</span> <span class="n">_public</span><span class="p">(</span><span class="n">job</span><span class="p">))</span>
+<a id="L76" name="L76"></a>    <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_monitor</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">job</span><span class="p">,),</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<a id="L77" name="L77"></a>    <span class="k">return</span> <span class="n">job_id</span>
+<a id="L78" name="L78"></a>
+<a id="L79" name="L79"></a>
+<a id="L80" name="L80"></a><span class="k">def</span><span class="w"> </span><span class="nf">_run_job</span><span class="p">(</span><span class="n">job</span><span class="p">):</span>
+<a id="L81" name="L81"></a>    <span class="n">LOG_DIR</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L82" name="L82"></a>    <span class="n">job</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">LOG_DIR</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.log&quot;</span><span class="p">)</span>
+<a id="L83" name="L83"></a>    <span class="n">_set</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">&quot;starting&quot;</span><span class="p">)</span>
+<a id="L84" name="L84"></a>    <span class="n">proc</span> <span class="o">=</span> <span class="n">CONTEXT</span><span class="o">.</span><span class="n">Process</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_child</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;spec&quot;</span><span class="p">]),</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;log&quot;</span><span class="p">]),</span>
+<a id="L85" name="L85"></a>                           <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;job-</span><span class="si">{</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L86" name="L86"></a>    <span class="n">proc</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<a id="L87" name="L87"></a>    <span class="n">job</span><span class="p">[</span><span class="s2">&quot;proc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">proc</span>
+<a id="L88" name="L88"></a>    <span class="n">_set</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">&quot;running&quot;</span><span class="p">)</span>
+<a id="L89" name="L89"></a>    <span class="k">if</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;cancelling&quot;</span><span class="p">:</span>         <span class="c1"># aborted before the OS even started it</span>
+<a id="L90" name="L90"></a>        <span class="n">_kill</span><span class="p">(</span><span class="n">proc</span><span class="p">)</span>
+<a id="L91" name="L91"></a>    <span class="n">proc</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<a id="L92" name="L92"></a>    <span class="n">ret</span> <span class="o">=</span> <span class="n">proc</span><span class="o">.</span><span class="n">exitcode</span>
+<a id="L93" name="L93"></a>    <span class="n">job</span><span class="p">[</span><span class="s2">&quot;proc&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L94" name="L94"></a>    <span class="k">if</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cancelling&quot;</span><span class="p">,</span> <span class="s2">&quot;cancelled&quot;</span><span class="p">):</span>
+<a id="L95" name="L95"></a>        <span class="k">if</span> <span class="n">ret</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="L96" name="L96"></a>            <span class="n">_set</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">&quot;done&quot;</span><span class="p">,</span> <span class="n">exit</span><span class="o">=</span><span class="n">ret</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="L97" name="L97"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L98" name="L98"></a>            <span class="n">_set</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="n">exit</span><span class="o">=</span><span class="n">ret</span><span class="p">)</span>     <span class="c1"># keep the last real progress: where it died</span>
+<a id="L99" name="L99"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="L100" name="L100"></a>        <span class="n">_set</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">&quot;cancelled&quot;</span><span class="p">,</span> <span class="n">exit</span><span class="o">=</span><span class="n">ret</span><span class="p">)</span>
+<a id="L101" name="L101"></a>
+<a id="L102" name="L102"></a>
+<a id="L103" name="L103"></a><span class="k">def</span><span class="w"> </span><span class="nf">_kill</span><span class="p">(</span><span class="n">proc</span><span class="p">):</span>
+<a id="L104" name="L104"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;SIGTERM to the whole session: a DDP run leaves ranks behind if only the parent is asked.&quot;&quot;&quot;</span>
+<a id="L105" name="L105"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="L106" name="L106"></a>        <span class="n">os</span><span class="o">.</span><span class="n">killpg</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">getpgid</span><span class="p">(</span><span class="n">proc</span><span class="o">.</span><span class="n">pid</span><span class="p">),</span> <span class="n">signal</span><span class="o">.</span><span class="n">SIGTERM</span><span class="p">)</span>
+<a id="L107" name="L107"></a>    <span class="k">except</span> <span class="p">(</span><span class="ne">ProcessLookupError</span><span class="p">,</span> <span class="ne">PermissionError</span><span class="p">):</span>
+<a id="L108" name="L108"></a>        <span class="k">pass</span>
+<a id="L109" name="L109"></a>
+<a id="L110" name="L110"></a>
+<a id="L111" name="L111"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;train.options&quot;</span><span class="p">)</span>
+<a id="L112" name="L112"></a><span class="k">def</span><span class="w"> </span><span class="nf">train_options</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L113" name="L113"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The switches a training accepts, read from the launcher: the GUI builds its queue dialog</span>
+<a id="L114" name="L114"></a><span class="sd">    from here, so what the terminal can do and what the dialog offers never drift apart. On a</span>
+<a id="L115" name="L115"></a><span class="sd">    submission host the dialog also gets where to run it, generated by the SLURM interpreter.&quot;&quot;&quot;</span>
+<a id="L116" name="L116"></a>    <span class="kn">from</span><span class="w"> </span><a href="../training/__init__.py.html"><a href="../training/__init__.py.html"><span class="nn">matformer.training</span></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">launch</span>
+<a id="L117" name="L117"></a>    <span class="n">fields</span> <span class="o">=</span> <span class="n">launch</span><span class="o">.</span><span class="n">spec_fields</span><span class="p">()</span>
+<a id="L118" name="L118"></a>    <span class="kn">from</span><span class="w"> </span><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><span class="nn">matformer</span></a></a></a></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">slurm</span>
+<a id="L119" name="L119"></a>    <span class="k">if</span> <span class="n">slurm</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
+<a id="L120" name="L120"></a>        <span class="n">fields</span> <span class="o">=</span> <span class="p">[{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;backend&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Runs on&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;choice&quot;</span><span class="p">,</span>
+<a id="L121" name="L121"></a>                   <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="p">[</span><span class="s2">&quot;this box&quot;</span><span class="p">,</span> <span class="s2">&quot;cluster&quot;</span><span class="p">],</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;this box&quot;</span><span class="p">,</span>
+<a id="L122" name="L122"></a>                   <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;cluster hands the job to SLURM&quot;</span><span class="p">}]</span> <span class="o">+</span> <span class="n">fields</span> \
+<a id="L123" name="L123"></a>            <span class="o">+</span> <span class="n">slurm</span><span class="o">.</span><span class="n">SlurmCommands</span><span class="p">()</span><span class="o">.</span><span class="n">allocation_fields</span><span class="p">()</span>
+<a id="L124" name="L124"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="n">fields</span><span class="p">}</span>
+<a id="L125" name="L125"></a>
+<a id="L126" name="L126"></a>
+<a id="L127" name="L127"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;train.start&quot;</span><span class="p">)</span>
+<a id="L128" name="L128"></a><span class="k">def</span><span class="w"> </span><span class="nf">train_start</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L129" name="L129"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Queue a training. The params *are* the launch spec — {config: [YAML], overrides: [...],</span>
+<a id="L130" name="L130"></a><span class="sd">    options: {device_count, num_nodes, checkpoint, compile, …}, sweep, gpus, name, project} —</span>
+<a id="L131" name="L131"></a><span class="sd">    the same dict the command line builds, so both paths say the same thing; a sweep declared in</span>
+<a id="L132" name="L132"></a><span class="sd">    the YAMLs runs as one job, one run per point. With backend=cluster that spec is submitted to</span>
+<a id="L133" name="L133"></a><span class="sd">    SLURM instead of run here. Returns {run: id}.&quot;&quot;&quot;</span>
+<a id="L134" name="L134"></a>    <span class="n">configs</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;config&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+<a id="L135" name="L135"></a>    <span class="n">configs</span> <span class="o">=</span> <span class="p">[</span><span class="n">configs</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">configs</span><span class="p">)</span>
+<a id="L136" name="L136"></a>    <span class="n">name</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">configs</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">.</span><span class="n">stem</span> <span class="k">if</span> <span class="n">configs</span> <span class="k">else</span> <span class="s2">&quot;training&quot;</span><span class="p">)</span>
+<a id="L137" name="L137"></a>    <span class="n">project</span> <span class="o">=</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;project&quot;</span><span class="p">,</span> <span class="s2">&quot;server&quot;</span><span class="p">)</span>
+<a id="L138" name="L138"></a>    <span class="n">spec</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">p</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;project&quot;</span><span class="p">)}</span>
+<a id="L139" name="L139"></a>    <span class="n">spec</span><span class="p">[</span><span class="s2">&quot;config&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">configs</span>
+<a id="L140" name="L140"></a>    <span class="n">spec</span><span class="p">[</span><span class="s2">&quot;overrides&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overrides&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span> <span class="o">+</span> <span class="p">[</span>
+<a id="L141" name="L141"></a>        <span class="sa">f</span><span class="s2">&quot;training.run_name=</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;training.project_name=</span><span class="si">{</span><span class="n">project</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+<a id="L142" name="L142"></a>    <span class="k">if</span> <span class="n">slurm_requested</span><span class="p">(</span><span class="n">p</span><span class="p">):</span>
+<a id="L143" name="L143"></a>        <span class="kn">from</span><span class="w"> </span><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><span class="nn">matformer</span></a></a></a></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">slurm</span>
+<a id="L144" name="L144"></a>        <span class="k">return</span> <span class="n">slurm</span><span class="o">.</span><span class="n">submit_training</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="n">name</span><span class="p">)</span>
+<a id="L145" name="L145"></a>    <span class="n">spec</span><span class="p">[</span><span class="s2">&quot;overrides&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;training.logger=jsonl&quot;</span><span class="p">)</span>   <span class="c1"># the plots depend on the jsonl backend</span>
+<a id="L146" name="L146"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;run&quot;</span><span class="p">:</span> <span class="n">enqueue</span><span class="p">(</span><span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">project</span><span class="p">,</span> <span class="n">spec</span><span class="p">)}</span>
+<a id="L147" name="L147"></a>
+<a id="L148" name="L148"></a>
+<a id="L149" name="L149"></a><span class="k">def</span><span class="w"> </span><span class="nf">slurm_requested</span><span class="p">(</span><span class="n">params</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="L150" name="L150"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The job belongs to SLURM when the request says so, or when a partition was named and this</span>
+<a id="L151" name="L151"></a><span class="sd">    host can talk to a controller. Forms may nest their answers under `options`.&quot;&quot;&quot;</span>
+<a id="L152" name="L152"></a>    <span class="kn">from</span><span class="w"> </span><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><span class="nn">matformer</span></a></a></a></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">slurm</span>
+<a id="L153" name="L153"></a>    <span class="n">flat</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">params</span> <span class="ow">or</span> <span class="p">{})</span>
+<a id="L154" name="L154"></a>    <span class="n">flat</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">flat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;options&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span>
+<a id="L155" name="L155"></a>    <span class="n">backend</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">flat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;backend&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+<a id="L156" name="L156"></a>    <span class="k">if</span> <span class="n">backend</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;slurm&quot;</span><span class="p">):</span>
+<a id="L157" name="L157"></a>        <span class="k">return</span> <span class="kc">True</span>
+<a id="L158" name="L158"></a>    <span class="k">if</span> <span class="n">backend</span><span class="p">:</span>
+<a id="L159" name="L159"></a>        <span class="k">return</span> <span class="kc">False</span>
+<a id="L160" name="L160"></a>    <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">flat</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;partition&quot;</span><span class="p">))</span> <span class="ow">and</span> <span class="n">slurm</span><span class="o">.</span><span class="n">available</span><span class="p">()</span>
+<a id="L161" name="L161"></a>
+<a id="L162" name="L162"></a>
+<a id="L163" name="L163"></a><span class="k">def</span><span class="w"> </span><span class="nf">cluster_rows</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<a id="L164" name="L164"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The cluster&#39;s jobs, in the shape the job dock already understands: one table for local and</span>
+<a id="L165" name="L165"></a><span class="sd">    remote trainings, whichever machine is actually running them.&quot;&quot;&quot;</span>
+<a id="L166" name="L166"></a>    <span class="kn">from</span><span class="w"> </span><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><span class="nn">matformer</span></a></a></a></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">slurm</span>
+<a id="L167" name="L167"></a>    <span class="n">states</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;RUNNING&quot;</span><span class="p">:</span> <span class="s2">&quot;running&quot;</span><span class="p">,</span> <span class="s2">&quot;PENDING&quot;</span><span class="p">:</span> <span class="s2">&quot;queued&quot;</span><span class="p">,</span> <span class="s2">&quot;CONFIGURING&quot;</span><span class="p">:</span> <span class="s2">&quot;queued&quot;</span><span class="p">,</span>
+<a id="L168" name="L168"></a>              <span class="s2">&quot;COMPLETED&quot;</span><span class="p">:</span> <span class="s2">&quot;done&quot;</span><span class="p">,</span> <span class="s2">&quot;DONE&quot;</span><span class="p">:</span> <span class="s2">&quot;done&quot;</span><span class="p">,</span> <span class="s2">&quot;CANCELLED&quot;</span><span class="p">:</span> <span class="s2">&quot;cancelled&quot;</span><span class="p">,</span>
+<a id="L169" name="L169"></a>              <span class="s2">&quot;FAILED&quot;</span><span class="p">:</span> <span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="s2">&quot;TIMEOUT&quot;</span><span class="p">:</span> <span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="s2">&quot;NODE_FAIL&quot;</span><span class="p">:</span> <span class="s2">&quot;failed&quot;</span><span class="p">,</span>
+<a id="L170" name="L170"></a>              <span class="s2">&quot;PREEMPTED&quot;</span><span class="p">:</span> <span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="s2">&quot;GONE&quot;</span><span class="p">:</span> <span class="s2">&quot;gone&quot;</span><span class="p">,</span> <span class="s2">&quot;BOOT_FAIL&quot;</span><span class="p">:</span> <span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="s2">&quot;DEADLINE&quot;</span><span class="p">:</span> <span class="s2">&quot;failed&quot;</span><span class="p">}</span>
+<a id="L171" name="L171"></a>    <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L172" name="L172"></a>    <span class="k">for</span> <span class="n">one</span> <span class="ow">in</span> <span class="n">slurm</span><span class="o">.</span><span class="n">status</span><span class="p">():</span>
+<a id="L173" name="L173"></a>        <span class="n">total</span><span class="p">,</span> <span class="n">step</span> <span class="o">=</span> <span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;total&quot;</span><span class="p">),</span> <span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step&quot;</span><span class="p">)</span>
+<a id="L174" name="L174"></a>        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">one</span><span class="p">[</span><span class="s2">&quot;matformer_id&quot;</span><span class="p">],</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">one</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span>
+<a id="L175" name="L175"></a>                     <span class="s2">&quot;project&quot;</span><span class="p">:</span> <span class="n">one</span><span class="p">[</span><span class="s2">&quot;partition&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="s2">&quot;cluster&quot;</span><span class="p">,</span> <span class="s2">&quot;cluster&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<a id="L176" name="L176"></a>                     <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">states</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span> <span class="s2">&quot;queued&quot;</span><span class="p">),</span>
+<a id="L177" name="L177"></a>                     <span class="s2">&quot;state&quot;</span><span class="p">:</span> <span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;state&quot;</span><span class="p">),</span> <span class="s2">&quot;slurm_id&quot;</span><span class="p">:</span> <span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;slurm_id&quot;</span><span class="p">),</span>
+<a id="L178" name="L178"></a>                     <span class="s2">&quot;step&quot;</span><span class="p">:</span> <span class="n">step</span><span class="p">,</span> <span class="s2">&quot;progress&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">step</span> <span class="o">/</span> <span class="n">total</span><span class="p">)</span> <span class="k">if</span> <span class="p">(</span><span class="n">step</span> <span class="ow">and</span> <span class="n">total</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span><span class="p">,</span>
+<a id="L179" name="L179"></a>                     <span class="s2">&quot;seconds_left&quot;</span><span class="p">:</span> <span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;seconds_left&quot;</span><span class="p">),</span> <span class="s2">&quot;log&quot;</span><span class="p">:</span> <span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">),</span>
+<a id="L180" name="L180"></a>                     <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;nodes&quot;</span><span class="p">),</span> <span class="s2">&quot;gpus&quot;</span><span class="p">:</span> <span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gpus&quot;</span><span class="p">),</span>
+<a id="L181" name="L181"></a>                     <span class="s2">&quot;venv&quot;</span><span class="p">:</span> <span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;venv&quot;</span><span class="p">),</span> <span class="s2">&quot;saved_step&quot;</span><span class="p">:</span> <span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;saved_step&quot;</span><span class="p">)})</span>
+<a id="L182" name="L182"></a>    <span class="k">return</span> <span class="n">rows</span>
+<a id="L183" name="L183"></a>
+<a id="L184" name="L184"></a>
+<a id="L185" name="L185"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;train.sweep&quot;</span><span class="p">)</span>
+<a id="L186" name="L186"></a><span class="k">def</span><span class="w"> </span><span class="nf">train_sweep</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L187" name="L187"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;What a set of configs declares, without running any of it: the points of the sweep, one per</span>
+<a id="L188" name="L188"></a><span class="sd">    line. The same `build_configs` a real launch goes through, so the preview and the expansion can</span>
+<a id="L189" name="L189"></a><span class="sd">    not drift apart, and no model is built to answer it.&quot;&quot;&quot;</span>
+<a id="L190" name="L190"></a>    <span class="kn">from</span><span class="w"> </span><a href="../training/__init__.py.html"><a href="../training/__init__.py.html"><span class="nn">matformer.training</span></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">launch</span>
+<a id="L191" name="L191"></a>    <span class="n">configs</span> <span class="o">=</span> <span class="n">launch</span><span class="o">.</span><span class="n">build_configs</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;config&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[],</span> <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overrides&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[],</span>
+<a id="L192" name="L192"></a>                                   <span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;options&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span>
+<a id="L193" name="L193"></a>    <span class="n">points</span> <span class="o">=</span> <span class="n">configs</span><span class="o">.</span><span class="n">sweep_points</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sweep&quot;</span><span class="p">))</span>
+<a id="L194" name="L194"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;runs&quot;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">),</span>
+<a id="L195" name="L195"></a>            <span class="s2">&quot;dimensions&quot;</span><span class="p">:</span> <span class="nb">sorted</span><span class="p">({</span><span class="n">path</span> <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">points</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">point</span><span class="o">.</span><span class="n">values</span><span class="p">}),</span>
+<a id="L196" name="L196"></a>            <span class="s2">&quot;points&quot;</span><span class="p">:</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="n">point</span><span class="o">.</span><span class="n">asdict</span><span class="p">(),</span> <span class="n">describe</span><span class="o">=</span><span class="n">point</span><span class="o">.</span><span class="n">describe</span><span class="p">())</span> <span class="k">for</span> <span class="n">point</span> <span class="ow">in</span> <span class="n">points</span><span class="p">]}</span>
+<a id="L197" name="L197"></a>
+<a id="L198" name="L198"></a>
+<a id="L199" name="L199"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;train.abort&quot;</span><span class="p">)</span>
+<a id="L200" name="L200"></a><span class="k">def</span><span class="w"> </span><span class="nf">train_abort</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L201" name="L201"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Kill a training cleanly: SIGTERM to its session; queued jobs just get dropped. A cluster job</span>
+<a id="L202" name="L202"></a><span class="sd">    is stopped where it runs, and asked to checkpoint on the way out.&quot;&quot;&quot;</span>
+<a id="L203" name="L203"></a>    <span class="k">if</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">JOBS</span><span class="p">:</span>
+<a id="L204" name="L204"></a>        <span class="kn">from</span><span class="w"> </span><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><span class="nn">matformer</span></a></a></a></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">slurm</span>
+<a id="L205" name="L205"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="L206" name="L206"></a>            <span class="k">return</span> <span class="n">slurm</span><span class="o">.</span><span class="n">cancel</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
+<a id="L207" name="L207"></a>        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+<a id="L208" name="L208"></a>            <span class="k">pass</span>
+<a id="L209" name="L209"></a>    <span class="n">job</span> <span class="o">=</span> <span class="n">JOBS</span><span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]]</span>
+<a id="L210" name="L210"></a>    <span class="k">if</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;queued&quot;</span><span class="p">:</span>
+<a id="L211" name="L211"></a>        <span class="k">with</span> <span class="n">MUTEX</span><span class="p">:</span>
+<a id="L212" name="L212"></a>            <span class="n">QUEUE</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
+<a id="L213" name="L213"></a>        <span class="n">_set</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">&quot;cancelled&quot;</span><span class="p">)</span>
+<a id="L214" name="L214"></a>    <span class="k">elif</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;proc&quot;</span><span class="p">):</span>
+<a id="L215" name="L215"></a>        <span class="n">_set</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">status</span><span class="o">=</span><span class="s2">&quot;cancelling&quot;</span><span class="p">)</span>
+<a id="L216" name="L216"></a>        <span class="n">_kill</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;proc&quot;</span><span class="p">])</span>
+<a id="L217" name="L217"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;msg&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;aborting </span><span class="si">{</span><span class="n">job</span><span class="p">[</span><span class="s1">&#39;id&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">}</span>
+<a id="L218" name="L218"></a>
+<a id="L219" name="L219"></a>
+<a id="L220" name="L220"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;jobs.list&quot;</span><span class="p">)</span>
+<a id="L221" name="L221"></a><span class="k">def</span><span class="w"> </span><span class="nf">jobs_list</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L222" name="L222"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Every job this server knows (running, queued, finished), plus the trainings SLURM is running</span>
+<a id="L223" name="L223"></a><span class="sd">    for it on other machines.&quot;&quot;&quot;</span>
+<a id="L224" name="L224"></a>    <span class="n">rows</span> <span class="o">=</span> <span class="p">[</span><span class="n">_public</span><span class="p">(</span><span class="n">j</span><span class="p">)</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">JOBS</span><span class="o">.</span><span class="n">values</span><span class="p">()]</span>
+<a id="L225" name="L225"></a>    <span class="kn">from</span><span class="w"> </span><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><span class="nn">matformer</span></a></a></a></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">slurm</span>
+<a id="L226" name="L226"></a>    <span class="k">if</span> <span class="n">slurm</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
+<a id="L227" name="L227"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="L228" name="L228"></a>            <span class="n">rows</span> <span class="o">+=</span> <span class="n">cluster_rows</span><span class="p">()</span>
+<a id="L229" name="L229"></a>        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+<a id="L230" name="L230"></a>            <span class="k">pass</span>                      <span class="c1"># a controller that does not answer cannot hide the local jobs</span>
+<a id="L231" name="L231"></a>    <span class="k">return</span> <span class="n">rows</span>
+<a id="L232" name="L232"></a>
+<a id="L233" name="L233"></a>
+<a id="L234" name="L234"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;jobs.watch&quot;</span><span class="p">)</span>
+<a id="L235" name="L235"></a><span class="k">def</span><span class="w"> </span><span class="nf">jobs_watch</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L236" name="L236"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Subscribe: replay the current jobs, then push every change (broadcast covers all conns).&quot;&quot;&quot;</span>
+<a id="L237" name="L237"></a>    <span class="k">for</span> <span class="n">job</span> <span class="ow">in</span> <span class="n">JOBS</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+<a id="L238" name="L238"></a>        <span class="n">conn</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="s2">&quot;job&quot;</span><span class="p">,</span> <span class="n">_public</span><span class="p">(</span><span class="n">job</span><span class="p">))</span>
+<a id="L239" name="L239"></a>
+<a id="L240" name="L240"></a>
+<a id="L241" name="L241"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;jobs.log&quot;</span><span class="p">)</span>
+<a id="L242" name="L242"></a><span class="k">def</span><span class="w"> </span><span class="nf">jobs_log</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L243" name="L243"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Terminal output of a job (tail), for the Training page console. A cluster job&#39;s log is the</span>
+<a id="L244" name="L244"></a><span class="sd">    wrapper&#39;s own file on the shared filesystem.&quot;&quot;&quot;</span>
+<a id="L245" name="L245"></a>    <span class="n">log</span> <span class="o">=</span> <span class="n">JOBS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+<a id="L246" name="L246"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">log</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">log</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+<a id="L247" name="L247"></a>        <span class="kn">from</span><span class="w"> </span><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><a href="../__init__.py.html"><span class="nn">matformer</span></a></a></a></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">slurm</span>
+<a id="L248" name="L248"></a>        <span class="k">if</span> <span class="n">slurm</span><span class="o">.</span><span class="n">available</span><span class="p">():</span>
+<a id="L249" name="L249"></a>            <span class="k">try</span><span class="p">:</span>
+<a id="L250" name="L250"></a>                <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">slurm</span><span class="o">.</span><span class="n">tail</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="n">lines</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lines&quot;</span><span class="p">,</span> <span class="mi">400</span><span class="p">)))}</span>
+<a id="L251" name="L251"></a>            <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+<a id="L252" name="L252"></a>                <span class="k">pass</span>
+<a id="L253" name="L253"></a>        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">}</span>
+<a id="L254" name="L254"></a>    <span class="n">data</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">log</span><span class="p">)</span><span class="o">.</span><span class="n">read_bytes</span><span class="p">()[</span><span class="o">-</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bytes&quot;</span><span class="p">,</span> <span class="mi">64_000</span><span class="p">)):]</span>
+<a id="L255" name="L255"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">data</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">,</span> <span class="n">errors</span><span class="o">=</span><span class="s2">&quot;replace&quot;</span><span class="p">)}</span>
+<a id="L256" name="L256"></a>
+<a id="L257" name="L257"></a>
+<a id="L258" name="L258"></a><span class="k">def</span><span class="w"> </span><span class="nf">_public</span><span class="p">(</span><span class="n">job</span><span class="p">):</span>
+<a id="L259" name="L259"></a>    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">job</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;proc&quot;</span><span class="p">,</span> <span class="s2">&quot;spec&quot;</span><span class="p">)}</span>
+<a id="L260" name="L260"></a><span class="k">def</span><span class="w"> </span><span class="nf">_set</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="o">**</span><span class="n">fields</span><span class="p">):</span>
+<a id="L261" name="L261"></a>    <span class="n">job</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">fields</span><span class="p">,</span> <span class="n">updated</span><span class="o">=</span><span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">())</span>
+<a id="L262" name="L262"></a>    <span class="n">broadcast</span><span class="p">(</span><span class="s2">&quot;job&quot;</span><span class="p">,</span> <span class="n">_public</span><span class="p">(</span><span class="n">job</span><span class="p">))</span>
+<a id="L263" name="L263"></a>
+<a id="L264" name="L264"></a>
+<a id="L265" name="L265"></a><span class="k">def</span><span class="w"> </span><span class="nf">_monitor</span><span class="p">(</span><span class="n">job</span><span class="p">):</span>
+<a id="L266" name="L266"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;While the job runs, read its jsonl log: step, progress, and forward metric events so a</span>
+<a id="L267" name="L267"></a><span class="sd">    GUI watching &#39;runs&#39; sees the live curve without knowing about jobs at all.&quot;&quot;&quot;</span>
+<a id="L268" name="L268"></a>    <span class="n">seen</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L269" name="L269"></a>    <span class="k">while</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;starting&quot;</span><span class="p">,</span> <span class="s2">&quot;running&quot;</span><span class="p">,</span> <span class="s2">&quot;cancelling&quot;</span><span class="p">):</span>
+<a id="L270" name="L270"></a>        <span class="n">folder</span> <span class="o">=</span> <span class="n">run_dirs</span><span class="p">()</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
+<a id="L271" name="L271"></a>        <span class="k">if</span> <span class="n">folder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L272" name="L272"></a>            <span class="n">series</span> <span class="o">=</span> <span class="n">_series</span><span class="p">(</span><span class="n">folder</span> <span class="o">/</span> <span class="s2">&quot;run.jsonl&quot;</span><span class="p">)</span>
+<a id="L273" name="L273"></a>            <span class="n">steps</span> <span class="o">=</span> <span class="n">series</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">max</span><span class="p">(</span><span class="n">series</span><span class="o">.</span><span class="n">values</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">pts</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">pts</span><span class="p">),</span> <span class="n">default</span><span class="o">=</span><span class="p">[])</span>
+<a id="L274" name="L274"></a>            <span class="n">step</span> <span class="o">=</span> <span class="n">steps</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">steps</span> <span class="k">else</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;step&quot;</span><span class="p">)</span>
+<a id="L275" name="L275"></a>            <span class="n">_set</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">step</span><span class="p">)</span>
+<a id="L276" name="L276"></a>            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">points</span> <span class="ow">in</span> <span class="n">series</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L277" name="L277"></a>                <span class="n">fresh</span> <span class="o">=</span> <span class="n">points</span><span class="p">[</span><span class="n">seen</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="mi">0</span><span class="p">):]</span>
+<a id="L278" name="L278"></a>                <span class="k">if</span> <span class="n">fresh</span><span class="p">:</span>
+<a id="L279" name="L279"></a>                    <span class="n">broadcast</span><span class="p">(</span><span class="s2">&quot;metric&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;run&quot;</span><span class="p">:</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="s2">&quot;key&quot;</span><span class="p">:</span> <span class="n">key</span><span class="p">,</span> <span class="s2">&quot;points&quot;</span><span class="p">:</span> <span class="n">fresh</span><span class="p">})</span>
+<a id="L280" name="L280"></a>                <span class="n">seen</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">job</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">],</span> <span class="p">{})[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+<a id="L281" name="L281"></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<a id="L282" name="L282"></a>    <span class="n">_set</span><span class="p">(</span><span class="n">job</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="mi">1</span> <span class="k">if</span> <span class="n">job</span><span class="p">[</span><span class="s2">&quot;status&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;done&quot;</span> <span class="k">else</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;progress&quot;</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The cache · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section" open><summary>Core</summary><ul><li><a href="registry.html">The Matformer Registry</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="transformer.html">Transformer architecture</a></li><li><a href="sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="plugins.html">Plugins</a></li><li><a href="virtual-models.html">Virtual models and activation stores</a></li><li><a href="matformer-module.html">MatformerModule</a></li><li><a href="tensors.html">TensorsDC</a></li><li><a class="current" href="cache.html">The cache</a></li><li><a href="maskerator.html">The Maskerator</a></li><li><a href="tokenizers.html">Tokenizers</a></li><li><a href="source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Core <span class="sep">/</span> The cache</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/utils/matformer_cache.py.html"><code>matformer/utils/matformer_cache.py</code></a> <a href="../file/matformer/utils/kv_cache.py.html"><code>matformer/utils/kv_cache.py</code></a></div>
+<h1 id="the-cache">The cache<a class="headerlink" href="#the-cache" title="Permanent link"></a></h1>
+<p><code>CachedStuff</code> is the object every model and plugin receives as <code>cache</code>. It stores precomputed masks, ALiBi biases and rotary tables, so they are not rebuilt at every layer and every step.</p>
+<p>It is better to create one at the highest possible level of the model. The wrapper creates one in <code>MatformerModelWrapper.__init__</code>, the trainer passes it through, and <code>ensure_cache(cache)</code> builds one if a caller forgot. When a model is constructed without a cache you get a warning, not an error.</p>
+<h2 id="what-it-holds">What it holds<a class="headerlink" href="#what-it-holds" title="Permanent link"></a></h2>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Contents</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>slope_cache</code></td>
+<td>ALiBi slopes, keyed by head count, device and dtype</td>
+</tr>
+<tr>
+<td><code>bias_cache</code></td>
+<td>ALiBi bias matrices, keyed by length, head count, device and dtype</td>
+</tr>
+<tr>
+<td><code>mask_cache</code></td>
+<td>FlexAttention block masks, keyed by shape and mask options</td>
+</tr>
+<tr>
+<td><code>rotary_emb_cache</code></td>
+<td><code>cos</code>/<code>sin</code> tables for RoPE, including YaRN and Llama-3 scaling</td>
+</tr>
+<tr>
+<td><code>cu_seqlens_cache</code></td>
+<td><code>cu_seqlens</code> as a Python list, with at most one device sync per tensor</td>
+</tr>
+<tr>
+<td><code>storage</code></td>
+<td>free-form dictionary shared by plugins and learning signals</td>
+</tr>
+<tr>
+<td><code>layer_states</code></td>
+<td>per-layer sequential state, for recurrent mixers</td>
+</tr>
+<tr>
+<td><code>kv_layers</code></td>
+<td>what each attention layer says a cached step needs</td>
+</tr>
+</tbody>
+</table>
+<p>The methods are the stable interface: <code>get_alibi_bias</code>, <code>get_alibi_slopes</code>, <code>get_flex_blockmask</code>, <code>get_rotary_cos_sin</code>, <code>get_cu_seqlens_cpu</code>, <code>clear_cache</code>, <code>get_cache_size</code>. They are called by the registry implementations; you normally do not call them directly.</p>
+<h2 id="the-storage-dictionary">The storage dictionary<a class="headerlink" href="#the-storage-dictionary" title="Permanent link"></a></h2>
+<p><code>cache.storage</code> is a shared dictionary for plugins and learning signals. A probe writes under <code>probe_outputs</code>; the training step reads <code>aux_losses</code> (for example a MoE router loss). There is no schema.</p>
+<p>Two keys are special to the framework:</p>
+<ul>
+<li><code>aux_losses</code>: a list of tensors. The wrapper sums them into the total training loss and logs them separately as <code>train/aux_loss</code>.</li>
+<li><code>probe_outputs</code>: a dictionary from socket address (with <code>@n</code> for the n-th visit in a looped model) to the probe's logits. <code>MultiProbeClassifier</code> and <code>VirtualModel</code> return it.</li>
+</ul>
+<h2 id="the-kv-cache">The KV cache<a class="headerlink" href="#the-kv-cache" title="Permanent link"></a></h2>
+<p>The paged KV cache used by generation is also owned by <code>CachedStuff</code>. A mixer registers what it needs with <code>register_kv_layer(layer_idx, num_kv_heads, head_dim, *metadata)</code> when it is built. <code>kv_cache(tokens, ...)</code> then creates one cache for the whole model, or raises if a layer has no cache-aware kernel.</p>
+<p>The cache does not resize itself. A conversation that outgrows it must be cleared with <code>clear</code> in the task console or with <code>reset_kv_cache()</code>. Growing the cache during a live conversation would invalidate the stored state and increase memory at every turn.</p>
+<h2 id="clearing">Clearing<a class="headerlink" href="#clearing" title="Permanent link"></a></h2>
+<p><code>clear_cache()</code> drops the shape-keyed caches (slopes, biases, masks, rotary). The trainer's memory probe calls it between attempts, because a new batch size would otherwise leave another mask matrix in memory. <code>clear_cache('masks')</code> clears one family.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

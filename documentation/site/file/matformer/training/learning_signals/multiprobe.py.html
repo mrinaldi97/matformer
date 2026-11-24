@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/training/learning_signals/multiprobe.py · Matformer</title>
+<link rel="stylesheet" href="../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../index.html">Documentation</a><a class="" href="../../../../registry/index.html">Registry</a><a class="" href="../../../../configuration/index.html">Configuration</a><a class="" href="../../../../tools/commands.html">Commands</a><a class="current" href="../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../index.html">Matformer</a></li><li><a href="../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../components/cache.html">The cache</a></li><li><a href="../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../training/logger.html">Logging</a></li><li><a href="../../../../training/control.html">Control</a></li><li><a href="../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../data/index.html">Data</a></li><li><a href="../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../data/data-module.html">Data module</a></li><li><a href="../../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../tools/server.html">Server</a></li><li><a href="../../../../tools/gui.html">GUI</a></li><li><a href="../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../about/repository.html">Repository</a></li><li><a href="../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../index.html">Repository</a> <span class="sep">/</span> matformer/training/learning_signals/multiprobe.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="multiprobe.py.html"><code>matformer/training/learning_signals/multiprobe.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/training/learning_signals/</code></a></p><h1><code>multiprobe.py</code></h1><p class="muted">matformer/training/learning_signals/multiprobe.py · 33 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/training/learning_signals/multiprobe.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L5"><code>MultiProbeLearningSignal</code></a><span class="line">L5</span> <span class="bases">(<a href="learning_signals.py.html#L5"><code>LearningSignal</code></a>)</span><div class="mro">MRO: <code>MultiProbeLearningSignal</code> -> <a href="learning_signals.py.html#L5"><code>LearningSignal</code></a></div></li><li class="depth-1"><a href="#L6"><code>MultiProbeLearningSignal.prepare_inputs</code></a><span class="line">L6</span></li><li class="depth-1"><a href="#L9"><code>MultiProbeLearningSignal.model_kwargs</code></a><span class="line">L9</span></li><li class="depth-1"><a href="#L12"><code>MultiProbeLearningSignal.select_targets</code></a><span class="line">L12</span></li><li class="depth-1"><a href="#L16"><code>MultiProbeLearningSignal.loss_function</code></a><span class="line">L16</span></li><li class="depth-1"><a href="#L24"><code>MultiProbeLearningSignal.post_loss</code></a><span class="line">L24</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li><li><a href="../__init__.py.html"><code>matformer.training</code></a> <span class="muted">LearningSignal</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="kn">from</span><span class="w"> </span><a href="../../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L2" name="L2"></a><span class="kn">from</span><span class="w"> </span><a href="../__init__.py.html"><span class="nn">matformer.training</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">LearningSignal</span>
+<a id="L3" name="L3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<a id="L4" name="L4"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;learning_signal&quot;</span><span class="p">,</span> <span class="s2">&quot;multiprobe_ls&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<a id="L5" name="L5"></a><span class="k">class</span><span class="w"> </span><span class="nc">MultiProbeLearningSignal</span><span class="p">(</span><a href="learning_signals.py.html#L5"><span class="n">LearningSignal</span></a><span class="p">):</span>
+<a id="L6" name="L6"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_inputs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+<a id="L7" name="L7"></a>        <span class="k">return</span> <span class="n">batch</span><span class="p">,</span> <span class="p">{}</span>
+<a id="L8" name="L8"></a>
+<a id="L9" name="L9"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">model_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">metadata</span><span class="p">):</span>
+<a id="L10" name="L10"></a>        <span class="k">return</span> <span class="p">{}</span>
+<a id="L11" name="L11"></a>
+<a id="L12" name="L12"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">select_targets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictions</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">metadata</span><span class="p">):</span>
+<a id="L13" name="L13"></a>        <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span><span class="nb">dict</span><span class="p">)</span>
+<a id="L14" name="L14"></a>        <span class="k">return</span> <span class="n">predictions</span><span class="p">,</span> <span class="n">batch</span><span class="o">.</span><span class="n">attributes</span><span class="p">[</span><span class="s1">&#39;labels&#39;</span><span class="p">]</span>
+<a id="L15" name="L15"></a>
+<a id="L16" name="L16"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">loss_function</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">predictions</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
+<a id="L17" name="L17"></a>        <span class="n">get_t</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">targets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">targets</span><span class="p">)</span>   
+<a id="L18" name="L18"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="o">=</span><span class="p">{}</span>
+<a id="L19" name="L19"></a>        <span class="k">for</span> <span class="n">n</span><span class="p">,</span> <span class="n">logits</span> <span class="ow">in</span> <span class="n">predictions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L20" name="L20"></a>              <span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="p">[</span><span class="n">n</span><span class="p">]</span><span class="o">=</span><span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">get_t</span><span class="p">(</span><span class="n">n</span><span class="p">))</span>
+<a id="L21" name="L21"></a>        <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<a id="L22" name="L22"></a>        <span class="c1">#return sum(F.cross_entropy(logits, get_t(n)) for n, logits in predictions.items())</span>
+<a id="L23" name="L23"></a>
+<a id="L24" name="L24"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">post_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">predictions</span><span class="p">,</span> <span class="n">targets</span><span class="p">):</span>
+<a id="L25" name="L25"></a>        <span class="n">get_t</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">targets</span><span class="p">[</span><span class="n">n</span><span class="p">])</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">n</span><span class="p">:</span> <span class="n">targets</span><span class="p">)</span>
+<a id="L26" name="L26"></a>        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">logits</span> <span class="ow">in</span> <span class="n">predictions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L27" name="L27"></a>            <span class="n">t</span> <span class="o">=</span> <span class="n">get_t</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<a id="L28" name="L28"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;train/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_loss&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">losses</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="n">prog_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L29" name="L29"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="p">(</span>
+<a id="L30" name="L30"></a>                <span class="sa">f</span><span class="s1">&#39;train/</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">_accuracy&#39;</span><span class="p">,</span>
+<a id="L31" name="L31"></a>                <span class="p">(</span><span class="n">logits</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">==</span> <span class="n">t</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+<a id="L32" name="L32"></a>                <span class="n">prog_bar</span><span class="o">=</span><span class="kc">False</span>
+<a id="L33" name="L33"></a>            <span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

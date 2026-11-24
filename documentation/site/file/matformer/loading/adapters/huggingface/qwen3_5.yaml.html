@@ -1,0 +1,360 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/loading/adapters/huggingface/qwen3_5.yaml · Matformer</title>
+<link rel="stylesheet" href="../../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../../index.html">Documentation</a><a class="" href="../../../../../registry/index.html">Registry</a><a class="" href="../../../../../configuration/index.html">Configuration</a><a class="" href="../../../../../tools/commands.html">Commands</a><a class="current" href="../../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../../index.html">Matformer</a></li><li><a href="../../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../../components/cache.html">The cache</a></li><li><a href="../../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../../training/logger.html">Logging</a></li><li><a href="../../../../../training/control.html">Control</a></li><li><a href="../../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../../data/index.html">Data</a></li><li><a href="../../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../../data/data-module.html">Data module</a></li><li><a href="../../../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../../tools/server.html">Server</a></li><li><a href="../../../../../tools/gui.html">GUI</a></li><li><a href="../../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../../about/repository.html">Repository</a></li><li><a href="../../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../../index.html">Repository</a> <span class="sep">/</span> matformer/loading/adapters/huggingface/qwen3_5.yaml</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="qwen3_5.yaml.html"><code>matformer/loading/adapters/huggingface/qwen3_5.yaml</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/loading/adapters/huggingface/</code></a></p><h1><code>qwen3_5.yaml</code></h1><p class="muted">matformer/loading/adapters/huggingface/qwen3_5.yaml · 165 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/loading/adapters/huggingface/qwen3_5.yaml">view on GitHub</a></p></div><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># Qwen3.5 (text-only, dense-decoder path) architecture =&gt; Matformer config mapping</span>
+<a id="L2" name="L2"></a><span class="c1"># NOTE: vision tower (model.visual.*) and MTP layers (mtp.*) intentionally omitted from</span>
+<a id="L3" name="L3"></a><span class="c1"># weight_mapping — will land in `unexpected` harmlessly.</span>
+<a id="L4" name="L4"></a><span class="c1"># NOTE: mrope_section/mrope_interleaved ignored — degenerates to plain RoPE for text-only</span>
+<a id="L5" name="L5"></a><span class="c1"># input. Worth a numerical spot-check before production use.</span>
+<a id="L6" name="L6"></a><span class="c1"># NOTE: q_proj.weight (full_attention layers) is a fused Q+attention-gate projection —</span>
+<a id="L7" name="L7"></a><span class="c1"># handled via weight_transforms, not weight_mapping.</span>
+<a id="L8" name="L8"></a><span class="c1"># NOTE: linear_attn in_proj_qkv / conv1d are HF-fused tensors; fla&#39;s GatedDeltaNet wants</span>
+<a id="L9" name="L9"></a><span class="c1"># them split into separate q/k/v projections and per-branch conv weights — handled via</span>
+<a id="L10" name="L10"></a><span class="c1"># weight_transforms (verified against fla 0.5.x: q_proj/k_proj/v_proj, q_conv1d/k_conv1d/</span>
+<a id="L11" name="L11"></a><span class="c1"># v_conv1d, a_proj/b_proj, g_proj, o_norm, o_proj all match one to one).</span>
+<a id="L12" name="L12"></a><span class="c1"># NOTE: full_attention_interval=4 puts full-attention layers at idx%4==3 (last of each</span>
+<a id="L13" name="L13"></a><span class="c1"># group of 4) — expressed via every_4_offset_3, generalizing across checkpoint sizes.</span>
+<a id="L14" name="L14"></a><span class="c1"># NOTE: all attention head counts/dims are pulled from text_config below rather than</span>
+<a id="L15" name="L15"></a><span class="c1"># hardcoded, since they differ across Qwen3.5 checkpoint sizes (e.g. 2B: 8 heads/2 kv</span>
+<a id="L16" name="L16"></a><span class="c1"># heads/16 linear v-heads; 27B: 24 heads/4 kv heads/48 linear v-heads).</span>
+<a id="L17" name="L17"></a>
+<a id="L18" name="L18"></a><span class="nt">defaults</span><span class="p">:</span>
+<a id="L19" name="L19"></a><span class="w">  </span><span class="nt">model</span><span class="p">:</span>
+<a id="L20" name="L20"></a><span class="w">    </span><span class="nt">model_class</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Autoregressive_Model</span>
+<a id="L21" name="L21"></a><span class="w">    </span><span class="nt">is_causal</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L22" name="L22"></a><span class="w">    </span><span class="nt">bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L23" name="L23"></a><span class="w">    </span><span class="nt">training_objective</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">clm</span>
+<a id="L24" name="L24"></a><span class="w">    </span><span class="nt">lm_head_bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L25" name="L25"></a><span class="w">    </span><span class="nt">default_layer</span><span class="p">:</span>
+<a id="L26" name="L26"></a><span class="w">      </span><span class="nt">normalization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rmsnorm_zc</span>
+<a id="L27" name="L27"></a><span class="w">      </span><span class="nt">normalization_position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pre</span>
+<a id="L28" name="L28"></a><span class="w">      </span><span class="nt">ffn_activation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">swiglu</span>
+<a id="L29" name="L29"></a><span class="w">      </span><span class="nt">mlp_bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L30" name="L30"></a><span class="w">      </span><span class="nt">sequence_mixer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gated_deltanet</span>
+<a id="L31" name="L31"></a><span class="w">      </span><span class="nt">sequence_mixer_config</span><span class="p">:</span>
+<a id="L32" name="L32"></a><span class="w">        </span><span class="nt">conv_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">4</span>
+<a id="L33" name="L33"></a><span class="w">        </span><span class="nt">use_gate</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L34" name="L34"></a><span class="w">        </span><span class="nt">use_short_conv</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L35" name="L35"></a><span class="w">        </span><span class="nt">conv_bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L36" name="L36"></a><span class="w">    </span><span class="nt">custom_layers</span><span class="p">:</span>
+<a id="L37" name="L37"></a><span class="w">      </span><span class="nt">every_4_offset_3</span><span class="p">:</span>
+<a id="L38" name="L38"></a><span class="w">        </span><span class="nt">sequence_mixer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">attention</span>
+<a id="L39" name="L39"></a><span class="w">        </span><span class="nt">sequence_mixer_config</span><span class="p">:</span>
+<a id="L40" name="L40"></a><span class="w">          </span><span class="nt">positional_encoding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rope</span>
+<a id="L41" name="L41"></a><span class="w">          </span><span class="nt">qkv_bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L42" name="L42"></a><span class="w">          </span><span class="nt">attn_output_bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L43" name="L43"></a><span class="w">          </span><span class="nt">q_norm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L44" name="L44"></a><span class="w">          </span><span class="nt">k_norm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L45" name="L45"></a><span class="w">          </span><span class="c1"># Qwen3_5RMSNorm scales by (1 + weight) for every norm in the model, q/k norms</span>
+<a id="L46" name="L46"></a><span class="w">          </span><span class="c1"># included, so the QK-norms must be zero-centered like the layer norms above.</span>
+<a id="L47" name="L47"></a><span class="w">          </span><span class="nt">qk_norm_zero_centered</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L48" name="L48"></a><span class="w">          </span><span class="nt">qk_norm_per_head</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L49" name="L49"></a><span class="w">          </span><span class="nt">gated_attention</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L50" name="L50"></a>
+<a id="L51" name="L51"></a><span class="nt">model_mapping</span><span class="p">:</span>
+<a id="L52" name="L52"></a><span class="w">  </span><span class="nt">hidden_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.hidden_size</span>
+<a id="L53" name="L53"></a><span class="w">  </span><span class="nt">num_hidden_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.num_hidden_layers</span>
+<a id="L54" name="L54"></a><span class="w">  </span><span class="nt">vocab_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.vocab_size</span>
+<a id="L55" name="L55"></a><span class="w">  </span><span class="nt">rms_norm_eps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.rms_norm_eps</span>
+<a id="L56" name="L56"></a><span class="w">  </span><span class="nt">max_position_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.max_position_embeddings</span>
+<a id="L57" name="L57"></a><span class="w">  </span><span class="nt">tie_word_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.tie_word_embeddings</span>
+<a id="L58" name="L58"></a>
+<a id="L59" name="L59"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.head_dim</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.linear_key_head_dim</span>
+<a id="L60" name="L60"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.num_heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.linear_num_key_heads</span>
+<a id="L61" name="L61"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.num_v_heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.linear_num_value_heads</span>
+<a id="L62" name="L62"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.conv_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.linear_conv_kernel_dim</span>
+<a id="L63" name="L63"></a><span class="w">  </span><span class="c1"># fla&#39;s own norm_eps default (1e-5) differs from Qwen3.5&#39;s rms_norm_eps (1e-6)</span>
+<a id="L64" name="L64"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.norm_eps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.rms_norm_eps</span>
+<a id="L65" name="L65"></a>
+<a id="L66" name="L66"></a><span class="w">  </span><span class="c1"># head_dim must be given explicitly: Qwen3.5 decouples it from hidden_size</span>
+<a id="L67" name="L67"></a><span class="w">  </span><span class="c1"># (0.8B: hidden 1024, 8 heads, head_dim 256), and without it the linear-attention</span>
+<a id="L68" name="L68"></a><span class="w">  </span><span class="c1"># head_dim would leak in from default_layer and shrink every Q/K/V/O projection.</span>
+<a id="L69" name="L69"></a><span class="w">  </span><span class="nt">custom_layers.every_4_offset_3.sequence_mixer_config.head_dim</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.head_dim</span>
+<a id="L70" name="L70"></a><span class="w">  </span><span class="nt">custom_layers.every_4_offset_3.sequence_mixer_config.num_attention_heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.num_attention_heads</span>
+<a id="L71" name="L71"></a><span class="w">  </span><span class="nt">custom_layers.every_4_offset_3.sequence_mixer_config.num_key_value_heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.num_key_value_heads</span>
+<a id="L72" name="L72"></a><span class="w">  </span><span class="nt">custom_layers.every_4_offset_3.sequence_mixer_config.rope_theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.rope_parameters.rope_theta</span>
+<a id="L73" name="L73"></a><span class="w">  </span><span class="nt">custom_layers.every_4_offset_3.sequence_mixer_config.partial_rotary_factor</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.rope_parameters.partial_rotary_factor</span>
+<a id="L74" name="L74"></a>
+<a id="L75" name="L75"></a><span class="nt">tokenizer_mapping</span><span class="p">:</span>
+<a id="L76" name="L76"></a><span class="w">  </span><span class="nt">vocab_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.vocab_size</span>
+<a id="L77" name="L77"></a><span class="w">  </span><span class="nt">bos_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.bos_token_id</span>
+<a id="L78" name="L78"></a><span class="w">  </span><span class="nt">eos_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.eos_token_id</span>
+<a id="L79" name="L79"></a><span class="w">  </span><span class="nt">pad_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.pad_token_id</span>
+<a id="L80" name="L80"></a>
+<a id="L81" name="L81"></a><span class="nt">derived</span><span class="p">:</span>
+<a id="L82" name="L82"></a><span class="w">  </span><span class="nt">model.ffn_factor</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;text_config[&#39;intermediate_size&#39;]</span><span class="nv"> </span><span class="s">/</span><span class="nv"> </span><span class="s">text_config[&#39;hidden_size&#39;]&quot;</span>
+<a id="L83" name="L83"></a><span class="w">  </span><span class="c1"># fla derives head_v_dim = head_dim * expand_v (head_dim being the KEY head dim), so</span>
+<a id="L84" name="L84"></a><span class="w">  </span><span class="c1"># expand_v is a pure per-head ratio: head counts must stay out of it, otherwise any</span>
+<a id="L85" name="L85"></a><span class="w">  </span><span class="c1"># size with more value heads than key heads (Qwen3-Next-style 16 k / 32 v) inflates</span>
+<a id="L86" name="L86"></a><span class="w">  </span><span class="c1"># v_proj and out_proj.</span>
+<a id="L87" name="L87"></a><span class="w">  </span><span class="nt">model.default_layer.sequence_mixer_config.expand_v</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<a id="L88" name="L88"></a><span class="w">    </span><span class="no">text_config[&#39;linear_value_head_dim&#39;] / text_config[&#39;linear_key_head_dim&#39;]</span>
+<a id="L89" name="L89"></a>
+<a id="L90" name="L90"></a><span class="nt">weight_mapping</span><span class="p">:</span>
+<a id="L91" name="L91"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">lm_head.weight</span><span class="p">:</span><span class="w">                                     </span><span class="l l-Scalar l-Scalar-Plain">lm_head.weight</span>
+<a id="L92" name="L92"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.embed_tokens.weight</span><span class="p">:</span><span class="w">                         </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.embed_tokens.weight</span>
+<a id="L93" name="L93"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.norm.weight</span><span class="p">:</span><span class="w">                          </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.norm.weight</span>
+<a id="L94" name="L94"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn_norm.weight</span><span class="p">:</span><span class="w">            </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.input_layernorm.weight</span>
+<a id="L95" name="L95"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.mlp_norm.weight</span><span class="p">:</span><span class="w">             </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.post_attention_layernorm.weight</span>
+<a id="L96" name="L96"></a>
+<a id="L97" name="L97"></a><span class="w">  </span><span class="c1"># --- full_attention layers (idx % 4 == 3) ---</span>
+<a id="L98" name="L98"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.k_proj.weight</span><span class="p">:</span><span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.self_attn.k_proj.weight</span>
+<a id="L99" name="L99"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.v_proj.weight</span><span class="p">:</span><span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.self_attn.v_proj.weight</span>
+<a id="L100" name="L100"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.o_proj.weight</span><span class="p">:</span><span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.self_attn.o_proj.weight</span>
+<a id="L101" name="L101"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.q_norm.weight</span><span class="p">:</span><span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.self_attn.q_norm.weight</span>
+<a id="L102" name="L102"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.k_norm.weight</span><span class="p">:</span><span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.self_attn.k_norm.weight</span>
+<a id="L103" name="L103"></a><span class="w">  </span><span class="c1"># q_proj.weight NOT mapped here — see weight_transforms (fused Q+gate)</span>
+<a id="L104" name="L104"></a>
+<a id="L105" name="L105"></a><span class="w">  </span><span class="c1"># --- linear_attention (gated_deltanet) layers ---</span>
+<a id="L106" name="L106"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.a_proj.weight</span><span class="p">:</span><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.linear_attn.in_proj_a.weight</span>
+<a id="L107" name="L107"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.b_proj.weight</span><span class="p">:</span><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.linear_attn.in_proj_b.weight</span>
+<a id="L108" name="L108"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.g_proj.weight</span><span class="p">:</span><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.linear_attn.in_proj_z.weight</span>
+<a id="L109" name="L109"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.o_proj.weight</span><span class="p">:</span><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.linear_attn.out_proj.weight</span>
+<a id="L110" name="L110"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.o_norm.weight</span><span class="p">:</span><span class="w">    </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.linear_attn.norm.weight</span>
+<a id="L111" name="L111"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.A_log</span><span class="p">:</span><span class="w">            </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.linear_attn.A_log</span>
+<a id="L112" name="L112"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.dt_bias</span><span class="p">:</span><span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.linear_attn.dt_bias</span>
+<a id="L113" name="L113"></a><span class="w">  </span><span class="c1"># in_proj_qkv.weight and conv1d.weight NOT mapped here — see weight_transforms</span>
+<a id="L114" name="L114"></a>
+<a id="L115" name="L115"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.mlp.gate_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.mlp.gate_proj.weight</span>
+<a id="L116" name="L116"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.mlp.up_proj.weight</span><span class="p">:</span><span class="w">           </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.mlp.up_proj.weight</span>
+<a id="L117" name="L117"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.mlp.down_proj.weight</span><span class="p">:</span><span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">model.language_model.layers.N.mlp.down_proj.weight</span>
+<a id="L118" name="L118"></a>
+<a id="L119" name="L119"></a><span class="nt">weight_transforms</span><span class="p">:</span>
+<a id="L120" name="L120"></a><span class="w">  </span><span class="c1"># Fused Q + attention-output-gate projection (full_attention layers only).</span>
+<a id="L121" name="L121"></a><span class="w">  </span><span class="c1"># HF forward: query_states, gate = q_proj(hidden_states).view(*, num_heads, 2*head_dim).chunk(2, dim=-1)</span>
+<a id="L122" name="L122"></a><span class="w">  </span><span class="c1"># The chunk is on the LAST dim of the per-head view, so the rows are head-interleaved</span>
+<a id="L123" name="L123"></a><span class="w">  </span><span class="c1"># (q of head h, then gate of head h, then head h+1...): a plain first-half/second-half</span>
+<a id="L124" name="L124"></a><span class="w">  </span><span class="c1"># split would mix the wrong rows up. (q + g) are the two size-1 members of that pair axis.</span>
+<a id="L125" name="L125"></a><span class="w">  </span><span class="c1"># Rules run through einx: `op` defaults to rearrange, `axes` resolve axis sizes from</span>
+<a id="L126" name="L126"></a><span class="w">  </span><span class="c1"># the HF config via dotted paths (or int literals / products with &#39;*&#39;).</span>
+<a id="L127" name="L127"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">sources</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">model.language_model.layers.N.self_attn.q_proj.weight</span><span class="p p-Indicator">]</span>
+<a id="L128" name="L128"></a><span class="w">    </span><span class="nt">outputs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">encoder.blocks.layers.N.attn.q_proj.weight</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">encoder.blocks.layers.N.attn.gate_proj.weight</span><span class="p p-Indicator">]</span>
+<a id="L129" name="L129"></a><span class="w">    </span><span class="nt">pattern</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;(h</span><span class="nv"> </span><span class="s">(q</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">g)</span><span class="nv"> </span><span class="s">d)</span><span class="nv"> </span><span class="s">c</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">(h</span><span class="nv"> </span><span class="s">q</span><span class="nv"> </span><span class="s">d)</span><span class="nv"> </span><span class="s">c,</span><span class="nv"> </span><span class="s">(h</span><span class="nv"> </span><span class="s">g</span><span class="nv"> </span><span class="s">d)</span><span class="nv"> </span><span class="s">c&quot;</span>
+<a id="L130" name="L130"></a><span class="w">    </span><span class="nt">axes</span><span class="p">:</span>
+<a id="L131" name="L131"></a><span class="w">      </span><span class="nt">h</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.num_attention_heads</span>
+<a id="L132" name="L132"></a><span class="w">      </span><span class="nt">q</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="L133" name="L133"></a><span class="w">      </span><span class="nt">g</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<a id="L134" name="L134"></a><span class="w">      </span><span class="nt">d</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.head_dim</span>
+<a id="L135" name="L135"></a>
+<a id="L136" name="L136"></a><span class="w">  </span><span class="c1"># HF&#39;s in_proj_qkv is one fused Linear producing [q | k | v] concatenated on dim 0;</span>
+<a id="L137" name="L137"></a><span class="w">  </span><span class="c1"># fla&#39;s GatedDeltaNet wants these as three separate projections.</span>
+<a id="L138" name="L138"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">sources</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">model.language_model.layers.N.linear_attn.in_proj_qkv.weight</span><span class="p p-Indicator">]</span>
+<a id="L139" name="L139"></a><span class="w">    </span><span class="nt">outputs</span><span class="p">:</span>
+<a id="L140" name="L140"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">encoder.blocks.layers.N.attn.q_proj.weight</span>
+<a id="L141" name="L141"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">encoder.blocks.layers.N.attn.k_proj.weight</span>
+<a id="L142" name="L142"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">encoder.blocks.layers.N.attn.v_proj.weight</span>
+<a id="L143" name="L143"></a><span class="w">    </span><span class="nt">pattern</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;(q</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">k</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">v)</span><span class="nv"> </span><span class="s">c</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">q</span><span class="nv"> </span><span class="s">c,</span><span class="nv"> </span><span class="s">k</span><span class="nv"> </span><span class="s">c,</span><span class="nv"> </span><span class="s">v</span><span class="nv"> </span><span class="s">c&quot;</span>
+<a id="L144" name="L144"></a><span class="w">    </span><span class="nt">axes</span><span class="p">:</span>
+<a id="L145" name="L145"></a><span class="w">      </span><span class="nt">q</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.linear_key_head_dim * text_config.linear_num_key_heads</span>
+<a id="L146" name="L146"></a><span class="w">      </span><span class="nt">k</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.linear_key_head_dim * text_config.linear_num_key_heads</span>
+<a id="L147" name="L147"></a><span class="w">      </span><span class="nt">v</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.linear_value_head_dim * text_config.linear_num_value_heads</span>
+<a id="L148" name="L148"></a>
+<a id="L149" name="L149"></a><span class="w">  </span><span class="c1"># HF&#39;s conv1d is one fused depthwise Conv1d over [q | k | v] channels (groups=conv_dim);</span>
+<a id="L150" name="L150"></a><span class="w">  </span><span class="c1"># fla wants three separate per-branch conv weights, split along the same channel ranges.</span>
+<a id="L151" name="L151"></a><span class="w">  </span><span class="c1"># The &quot;...&quot; absorbs the trailing (features=1, kernel_size) dims untouched.</span>
+<a id="L152" name="L152"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">sources</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">model.language_model.layers.N.linear_attn.conv1d.weight</span><span class="p p-Indicator">]</span>
+<a id="L153" name="L153"></a><span class="w">    </span><span class="nt">outputs</span><span class="p">:</span>
+<a id="L154" name="L154"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">encoder.blocks.layers.N.attn.q_conv1d.weight</span>
+<a id="L155" name="L155"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">encoder.blocks.layers.N.attn.k_conv1d.weight</span>
+<a id="L156" name="L156"></a><span class="w">      </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">encoder.blocks.layers.N.attn.v_conv1d.weight</span>
+<a id="L157" name="L157"></a><span class="w">    </span><span class="nt">pattern</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;(q</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">k</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">v)</span><span class="nv"> </span><span class="s">...</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">q</span><span class="nv"> </span><span class="s">...,</span><span class="nv"> </span><span class="s">k</span><span class="nv"> </span><span class="s">...,</span><span class="nv"> </span><span class="s">v</span><span class="nv"> </span><span class="s">...&quot;</span>
+<a id="L158" name="L158"></a><span class="w">    </span><span class="nt">axes</span><span class="p">:</span>
+<a id="L159" name="L159"></a><span class="w">      </span><span class="nt">q</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.linear_key_head_dim * text_config.linear_num_key_heads</span>
+<a id="L160" name="L160"></a><span class="w">      </span><span class="nt">k</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.linear_key_head_dim * text_config.linear_num_key_heads</span>
+<a id="L161" name="L161"></a><span class="w">      </span><span class="nt">v</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text_config.linear_value_head_dim * text_config.linear_num_value_heads</span>
+<a id="L162" name="L162"></a><span class="c1"># Automated suite (tests/test_hf_adapters.py): smallest Qwen3.5 (hybrid full-attention /</span>
+<a id="L163" name="L163"></a><span class="c1"># linear-attention).</span>
+<a id="L164" name="L164"></a><span class="nt">tests</span><span class="p">:</span>
+<a id="L165" name="L165"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Qwen/Qwen3.5-0.8B</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

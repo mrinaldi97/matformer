@@ -34,10 +34,12 @@ class SandboxTrain(MatformerTask):
     def begin_task(self):
         super().begin_task()
         t = self.trainer
-        # 1. Snapshot of the base model, inside the checkpoint directory (see notes)
-        save_dir = getattr(t.ckpt_manager, 'save_dir', '.')
+        # 1. Snapshot of the base model, inside the checkpoint directory (see notes). Named after
+        # the run it snapshots, so two runs of one sweep never snapshot over each other's base.
+        save_dir = str(t.ckpt_manager.save_path)
         os.makedirs(save_dir, exist_ok=True)
-        self.snapshot_path = os.path.join(save_dir, f".sandbox_base_step{t.step}.ckpt")
+        self.snapshot_path = os.path.join(
+            save_dir, f".sandbox_base_{t.configs.training.checkpoint_name}_step{t.step}.ckpt")
         t.save_checkpoint(step=t.step, epoch=t.epoch, save_path=self.snapshot_path)
 
         # 2. Offload the outer model and optimizer state to CPU

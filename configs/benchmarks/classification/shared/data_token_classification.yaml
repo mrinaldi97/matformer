@@ -3,9 +3,11 @@ data:
     type: "lazy"
     file_format: "jsonl"
     precompute_len: true
-    tokens_column: "tokens"
-    tags_column: "tags"
-    tokenize: false
+    text_column: "tokens"
+    label_column: "tags"
+    tokenize: true
+    add_bos: true
+    add_eos: false
     task: "token-level"
     batch_size: 24
     num_workers: 1
@@ -16,9 +18,11 @@ data:
     type: "lazy"
     file_format: "jsonl"
     precompute_len: true
-    tokens_column: "tokens"
-    tags_column: "tags"
-    tokenize: false
+    text_column: "tokens"
+    label_column: "tags"
+    tokenize: true
+    add_bos: true
+    add_eos: false
     task: "token-level"
     batch_size: 24
     num_workers: 1

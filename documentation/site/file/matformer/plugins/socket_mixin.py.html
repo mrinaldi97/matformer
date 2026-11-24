@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/plugins/socket_mixin.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/plugins/socket_mixin.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="socket_mixin.py.html"><code>matformer/plugins/socket_mixin.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/plugins/</code></a></p><h1><code>socket_mixin.py</code></h1><p class="muted">matformer/plugins/socket_mixin.py · 86 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/plugins/socket_mixin.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L4"><code>Socket</code></a><span class="line">L4</span></li><li class="depth-1"><a href="#L5"><code>Socket.__init__</code></a><span class="line">L5</span></li><li class="depth-1"><a href="#L11"><code>Socket.index</code></a><span class="line">L11</span></li><li class="depth-1"><a href="#L16"><code>Socket.add</code></a><span class="line">L16</span></li><li class="depth-1"><a href="#L19"><code>Socket.add_first</code></a><span class="line">L19</span></li><li class="depth-1"><a href="#L20"><code>Socket.add_end</code></a><span class="line">L20</span></li><li class="depth-1"><a href="#L22"><code>Socket.get</code></a><span class="line">L22</span></li><li class="depth-1"><a href="#L23"><code>Socket.remove</code></a><span class="line">L23</span></li><li class="depth-1"><a href="#L24"><code>Socket.replace</code></a><span class="line">L24</span></li><li class="depth-1"><a href="#L26"><code>Socket.swap</code></a><span class="line">L26</span></li><li class="depth-1"><a href="#L30"><code>Socket.reorder</code></a><span class="line">L30</span></li><li class="depth-1"><a href="#L33"><code>Socket.inspect</code></a><span class="line">L33</span></li><li class="depth-1"><a href="#L40"><code>Socket.__call__</code></a><span class="line">L40</span></li><li class="depth-0"><a href="#L50"><code>SocketMixin</code></a><span class="line">L50</span></li><li class="depth-1"><a href="#L51"><code>SocketMixin.init_sockets</code></a><span class="line">L51</span></li><li class="depth-1"><a href="#L56"><code>SocketMixin.add_socket</code></a><span class="line">L56</span></li><li class="depth-1"><a href="#L59"><code>SocketMixin.register_socket</code></a><span class="line">L59</span></li><li class="depth-1"><a href="#L67"><code>SocketMixin.inspect_sockets</code></a><span class="line">L67</span></li><li class="depth-1"><a href="#L70"><code>SocketMixin.add_nested_socket</code></a><span class="line">L70</span></li><li class="depth-0"><a href="#L82"><code>SocketNode</code></a><span class="line">L82</span> <span class="bases">(<code>Module</code>, <a href="socket_mixin.py.html#L50"><code>SocketMixin</code></a>)</span><div class="mro">MRO: <code>SocketNode</code> -> <code>SocketMixin</code></div></li><li class="depth-1"><a href="#L84"><code>SocketNode.__init__</code></a><span class="line">L84</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span>
+<span class="normal">81</span>
+<span class="normal">82</span>
+<span class="normal">83</span>
+<span class="normal">84</span>
+<span class="normal">85</span>
+<span class="normal">86</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<a id="L2" name="L2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">contextlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">contextmanager</span>
+<a id="L3" name="L3"></a><span class="kn">from</span><span class="w"> </span><a href="../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>          
+<a id="L4" name="L4"></a><span class="k">class</span><span class="w"> </span><span class="nc">Socket</span><span class="p">:</span>
+<a id="L5" name="L5"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">owner</span><span class="p">):</span>
+<a id="L6" name="L6"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">name</span>
+<a id="L7" name="L7"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">owner</span> <span class="o">=</span> <span class="n">owner</span>        
+<a id="L8" name="L8"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">address</span> <span class="o">=</span> <span class="n">name</span>                        
+<a id="L9" name="L9"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">visits</span> <span class="o">=</span> <span class="p">[],</span> <span class="mi">0</span>
+<a id="L10" name="L10"></a>
+<a id="L11" name="L11"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="p">):</span>                          
+<a id="L12" name="L12"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ref</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+<a id="L13" name="L13"></a>            <span class="k">return</span> <span class="n">ref</span>
+<a id="L14" name="L14"></a>        <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">)</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">c</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="n">ref</span><span class="p">)</span>
+<a id="L15" name="L15"></a>
+<a id="L16" name="L16"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">add</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">index</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L17" name="L17"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">)</span> <span class="k">if</span> <span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">index</span><span class="p">,</span> <span class="n">component</span><span class="p">)</span>
+<a id="L18" name="L18"></a>
+<a id="L19" name="L19"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_first</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">component</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<a id="L20" name="L20"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_end</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">):</span>   <span class="bp">self</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">component</span><span class="p">)</span>
+<a id="L21" name="L21"></a>
+<a id="L22" name="L22"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ref</span><span class="p">)]</span>
+<a id="L23" name="L23"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">remove</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ref</span><span class="p">))</span>
+<a id="L24" name="L24"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">ref</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">ref</span><span class="p">)]</span> <span class="o">=</span> <span class="n">component</span>
+<a id="L25" name="L25"></a>
+<a id="L26" name="L26"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">swap</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<a id="L27" name="L27"></a>        <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">a</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
+<a id="L28" name="L28"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">j</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<a id="L29" name="L29"></a>
+<a id="L30" name="L30"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reorder</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+<a id="L31" name="L31"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">components</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">]</span>
+<a id="L32" name="L32"></a>
+<a id="L33" name="L33"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">inspect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L34" name="L34"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+<a id="L35" name="L35"></a>            <span class="k">return</span> <span class="s2">&quot;(identity)&quot;</span>
+<a id="L36" name="L36"></a>        <span class="k">return</span> <span class="s2">&quot; -&gt; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">] </span><span class="si">{</span><span class="nb">getattr</span><span class="p">(</span><span class="n">c</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;name&#39;</span><span class="p">,</span><span class="w"> </span><span class="nb">type</span><span class="p">(</span><span class="n">c</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="L37" name="L37"></a>                           <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">c</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">))</span>
+<a id="L38" name="L38"></a>    <span class="fm">__repr__</span> <span class="o">=</span> <span class="n">inspect</span>
+<a id="L39" name="L39"></a>
+<a id="L40" name="L40"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">):</span>
+<a id="L41" name="L41"></a>        <span class="k">for</span> <span class="n">component</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">components</span><span class="p">:</span>
+<a id="L42" name="L42"></a>            <span class="n">out</span> <span class="o">=</span> <span class="n">component</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kw</span><span class="p">)</span>
+<a id="L43" name="L43"></a>            <span class="k">if</span> <span class="n">out</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>                    
+<a id="L44" name="L44"></a>                <span class="n">x</span> <span class="o">=</span> <span class="n">out</span>
+<a id="L45" name="L45"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">visits</span> <span class="o">+=</span> <span class="mi">1</span>                           
+<a id="L46" name="L46"></a>        <span class="k">return</span> <span class="n">x</span>
+<a id="L47" name="L47"></a>
+<a id="L48" name="L48"></a>
+<a id="L49" name="L49"></a>
+<a id="L50" name="L50"></a><span class="k">class</span><span class="w"> </span><span class="nc">SocketMixin</span><span class="p">:</span>
+<a id="L51" name="L51"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_sockets</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stream_type</span><span class="o">=</span><span class="s2">&quot;residual_stream&quot;</span><span class="p">):</span>
+<a id="L52" name="L52"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">sockets</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L53" name="L53"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;stream&quot;</span><span class="p">,</span> <span class="n">stream_type</span><span class="p">)</span>
+<a id="L54" name="L54"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sockets</span><span class="p">)</span>
+<a id="L55" name="L55"></a>
+<a id="L56" name="L56"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_socket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<a id="L57" name="L57"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">sockets</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">Socket</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">owner</span><span class="o">=</span><span class="bp">self</span><span class="p">)</span>
+<a id="L58" name="L58"></a>
+<a id="L59" name="L59"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">register_socket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">component</span><span class="p">,</span> <span class="n">attr</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L60" name="L60"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Structural component. attr is the attribute name on self, i.e. the checkpoint key.&quot;&quot;&quot;</span>
+<a id="L61" name="L61"></a>        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sockets</span><span class="p">:</span>
+<a id="L62" name="L62"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">add_socket</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<a id="L63" name="L63"></a>        <span class="k">if</span> <span class="n">attr</span><span class="p">:</span>
+<a id="L64" name="L64"></a>            <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">attr</span><span class="p">,</span> <span class="n">component</span><span class="p">)</span>
+<a id="L65" name="L65"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">sockets</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">component</span><span class="p">)</span>
+<a id="L66" name="L66"></a>
+<a id="L67" name="L67"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">inspect_sockets</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L68" name="L68"></a>        <span class="k">return</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">:</span><span class="s2">15s</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">socket</span><span class="o">.</span><span class="n">inspect</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">socket</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">sockets</span><span class="o">.</span><span class="n">items</span><span class="p">())</span>
+<a id="L69" name="L69"></a>
+<a id="L70" name="L70"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_nested_socket</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+<a id="L71" name="L71"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a socket at a dotted address (&#39;encoder.layers.0.model_input&#39;),</span>
+<a id="L72" name="L72"></a><span class="sd">        building empty intermediate modules as needed. Returns the Socket.&quot;&quot;&quot;</span>
+<a id="L73" name="L73"></a>        <span class="o">*</span><span class="n">path</span><span class="p">,</span> <span class="n">name</span> <span class="o">=</span> <span class="n">address</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)</span>
+<a id="L74" name="L74"></a>        <span class="n">owner</span> <span class="o">=</span> <span class="bp">self</span>
+<a id="L75" name="L75"></a>        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">path</span><span class="p">:</span>
+<a id="L76" name="L76"></a>            <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">owner</span><span class="o">.</span><span class="n">_modules</span><span class="p">:</span>
+<a id="L77" name="L77"></a>                <span class="n">owner</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">SocketNode</span><span class="p">())</span>
+<a id="L78" name="L78"></a>            <span class="n">owner</span> <span class="o">=</span> <span class="n">owner</span><span class="o">.</span><span class="n">_modules</span><span class="p">[</span><span class="n">p</span><span class="p">]</span>
+<a id="L79" name="L79"></a>        <span class="n">owner</span><span class="o">.</span><span class="n">add_socket</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<a id="L80" name="L80"></a>        <span class="k">return</span> <span class="n">owner</span><span class="o">.</span><span class="n">sockets</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+<a id="L81" name="L81"></a>        
+<a id="L82" name="L82"></a><span class="k">class</span><span class="w"> </span><span class="nc">SocketNode</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <a href="#L50"><span class="n">SocketMixin</span></a><span class="p">):</span>
+<a id="L83" name="L83"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Empty module that only holds sockets, so named_modules() yields dotted addresses.&quot;&quot;&quot;</span>
+<a id="L84" name="L84"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L85" name="L85"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L86" name="L86"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">sockets</span> <span class="o">=</span> <span class="p">{}</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,160 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MDAT · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section" open><summary>Data</summary><ul><li><a href="index.html">Data</a></li><li><a class="current" href="mdat.html">MDAT</a></li><li><a href="data-module.html">Data module</a></li><li><a href="lazy-dataset.html">Lazy dataset</a></li><li><a href="savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Data <span class="sep">/</span> MDAT</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/data/mdat/container.py.html"><code>matformer/data/mdat/container.py</code></a> <a href="../file/matformer/data/mdat/mdat.py.html"><code>matformer/data/mdat/mdat.py</code></a> <a href="../file/matformer/data/mdat/strategy.py.html"><code>matformer/data/mdat/strategy.py</code></a> <a href="../file/matformer/data/mdat/preprocessing.py.html"><code>matformer/data/mdat/preprocessing.py</code></a> <a href="../file/matformer/data/mdat/tui.py.html"><code>matformer/data/mdat/tui.py</code></a></div>
+<h1 id="mdat">MDAT<a class="headerlink" href="#mdat" title="Permanent link"></a></h1>
+<p>Matformer comes together with its own dataset format, designed by keeping in mind the need for easily getting a big dataset formed of many independent sub-dataset, as well as the importance in experimental settings to test different tokenization strategies and having different views of the dataset, such as a smaller dataset derived from the main one for ablation studies.</p>
+<p>MDAT is a complex and extensible dataset manager that handles all of this for you. To understand how it works, it is important to familiarize with its components.</p>
+<h2 id="container-and-datasets">Container and datasets<a class="headerlink" href="#container-and-datasets" title="Permanent link"></a></h2>
+<p>MDAT is the name of the main container. It presents itself as a folder with a specific structure:</p>
+<div class="highlight"><pre><span></span><code>mdat_container.db
+datasets/
+views/
+shuffling/
+pretok/
+functions/
+</code></pre></div>
+
+<p>Older datasets use <code>mdat.db</code>; both names are accepted.</p>
+<p>Each mdat is composed of one to many submdats that live in the <code>datasets</code> folder. It is possible to add up to 255 submdats to an mdat or 65535 with the extended mode. The <code>dsmap_bits</code> field of the catalog sets the limit: <code>8</code> bits for 255 datasets and <code>16</code> bits for 65535.</p>
+<p>A submdat can be created from many dataset formats such as JSON or HuggingFace. The dataset is automatically split into two files: <code>data.db</code>, containing the actual raw data, and <code>meta.db</code>, containing the optional metadata for each dataset row. A dataset with heavy metadata does not slow down data loading. Compression is optional.</p>
+<p>A submdat can also be a standalone dataset. A standalone dataset is a directory created with <code>MDat.create_standalone(path)</code> or with the shell command <code>new PATH</code>; it is its own minimal container with one dataset. Any container can link it with <code>link_dataset(path, alias=...)</code> or with <code>link PATH --alias NAME</code>. The data and the dataset catalog stay in the standalone folder; the host container stores the alias and the view bookkeeping.</p>
+<h2 id="pretokenization">Pretokenization<a class="headerlink" href="#pretokenization" title="Permanent link"></a></h2>
+<p>Once all your submdats are in the mdat, it's time to define a <strong>pretokenization strategy</strong>. You can look at the default pretokenization strategy in the <code>config/sample_strategy.json</code> file. If you don't like it, you can write your own custom pretokenization function and store it in the <code>functions</code> folder.</p>
+<p>Pretokenization strategies are extremely flexible; let's have a look to the default one:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;strategy_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;Minerva1024&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tokenizer_type&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;huggingface&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;tokenizer_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;sapienzanlp/Minerva-350M-base-v1.0&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;vocab_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">32768</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;bos_token_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;eos_token_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">2</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;mask_token_id&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;splitter_class&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;split_and_tokenize_by_nltk_sentences_aligned&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;splitter_init&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span><span class="nt">&quot;language&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;italian&quot;</span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;splitter_arguments&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">null</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;modality&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;chunk_size&quot;</span><span class="p">:</span><span class="w"> </span><span class="mi">1024</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;wants_from_db&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;wants_raw&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;returns&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;tokens&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;chunks&quot;</span><span class="p">],</span>
+<span class="w">  </span><span class="nt">&quot;required_databases&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;tokens&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;chunks&quot;</span><span class="p">]</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>As you can see, the core function called by any pretokenization strategy is the <strong>splitter</strong>, that can be easily customized. The splitter will receive data from the submdat (ex <code>"data"</code>, <code>"meta"</code> but this can be extended for more complex cases), declare which databases it needs and what it will return to the caller.</p>
+<p>The splitter is called with the <code>document</code> dictionary as argument, containing the <code>wants_from_db</code> data. MDAT expects the keys listed in <code>returns</code> to be present in the dictionary returned by the splitter.</p>
+<p>If the strategy returns chunks (the most common scenario for transformer training), MDAT takes care of re-joining these chunks according to the model's sequence length. The model's sequence length must be a multiple of <code>chunk_size</code>. A change of context length does not require retokenizing the dataset.</p>
+<p>The built-in splitters are in <code>matformer/data/mdat/splitters</code>. A custom splitter is a class in the <code>functions/</code> folder of the container; <code>splitter_class</code> names it.</p>
+<p>Soon, MDAT will be expanded to handle multimodal data, such as audio, image or other kind of data.</p>
+<p>After you've set a strategy, it's time to pretokenize the dataset. This calls the splitter for each dataset element and caches its result in the <code>pretok</code> folder. The <code>pretok</code> folder has one subfolder per strategy and dataset. <code>sync_strategy</code> pretokenizes only the rows appended after the first pretokenization; <code>desync</code> lists the missing ranges.</p>
+<p>The shell and the TUI in <code>matformer/data/mdat/tui.py</code> expose the same commands; the <a href="../tools/commands.html">command reference</a> lists them. The shell registers and activates strategies:</p>
+<div class="highlight"><pre><span></span><code>strat-add<span class="w"> </span>minerva512<span class="w"> </span>/configs/minerva_512.json
+pretok<span class="w"> </span>oscar_it<span class="w"> </span>--strategy<span class="w"> </span>minerva512
+set-strategy<span class="w"> </span>minerva512<span class="w"> </span>--seq-len<span class="w"> </span><span class="m">4096</span>
+</code></pre></div>
+
+<p><code>pretok-all</code> runs a strategy over every dataset. <code>--procs</code> sets the worker count and <code>--resume</code> continues an interrupted run.</p>
+<h2 id="views-and-shuffling">Views and shuffling<a class="headerlink" href="#views-and-shuffling" title="Permanent link"></a></h2>
+<p>The final steps are to <strong>shuffle</strong> the view and prepare for multi-gpu training (if necessary).</p>
+<p>The shuffling doesn't shuffle the actual file. It just creates a very compact file with the permuted indexes of the datasets. This means that it is possible to shuffle the dataset very fastly, without moving any actual data.</p>
+<p>This makes possible to create many coexisting <strong>views</strong> of the dataset that can be shuffled and, eventually, pretokenized independently from each other.</p>
+<p>A view is a dictionary:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;view_name&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;small&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;selection&quot;</span><span class="p">:</span><span class="w"> </span><span class="p">{</span>
+<span class="w">    </span><span class="nt">&quot;wikipedia&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2G&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;finepdf&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1G&quot;</span><span class="p">,</span>
+<span class="w">    </span><span class="nt">&quot;laws&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;500M&quot;</span>
+<span class="w">  </span><span class="p">},</span>
+<span class="w">  </span><span class="nt">&quot;shuffle&quot;</span><span class="p">:</span><span class="w"> </span><span class="kc">true</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>The <code>selection</code> field must include every dataset of the container. Each value can be:</p>
+<ul>
+<li>an integer: the number of documents;</li>
+<li>a float between 0 and 1: a proportion of the documents;</li>
+<li>a string ending in <code>K</code>, <code>M</code>, <code>G</code> or <code>T</code>: a size in bytes of the raw <code>data</code> field;</li>
+<li><code>preserved</code>: every document;</li>
+<li><code>skipped</code>: no document.</li>
+</ul>
+<p>A partial selection forces shuffling. The pointer file is written under <code>shuffling/&lt;view&gt;.mdat</code>; its width follows the catalog's <code>dsmap_bits</code> and the largest dataset. <code>use VIEW</code> activates a view, <code>shuffle [VIEW]</code> creates or recreates its pointer file, and <code>view-add</code>, <code>view-del</code>, <code>head</code> and <code>range</code> create and remove views.</p>
+<p>You can for example create a tiny view:</p>
+<div class="highlight"><pre><span></span><code><span class="p">{</span>
+<span class="w">  </span><span class="nt">&quot;wikipedia&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;2G&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;finepdf&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;1G&quot;</span><span class="p">,</span>
+<span class="w">  </span><span class="nt">&quot;laws&quot;</span><span class="p">:</span><span class="w"> </span><span class="s2">&quot;500M&quot;</span>
+<span class="p">}</span>
+</code></pre></div>
+
+<p>for a fast ablation study; or you can decide to shuffle and pretokenize the complete <code>default</code> view (containing all the samples).</p>
+<p>For distributed training, <code>precompute-dist NUM_WORKERS</code> writes the per-worker lengths once, and <code>dist-len NUM_DEVICES</code> returns the length for a given device count. <code>precompute-dist</code> uses a highly composite worker count to keep the partitions balanced.</p>
+<h2 id="iteration">Iteration<a class="headerlink" href="#iteration" title="Permanent link"></a></h2>
+<p>The container can yield documents, tokens, chunks, chunked tokens or recurrent batches:</p>
+<table>
+<thead>
+<tr>
+<th>Modality</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>document</code></td>
+<td>raw document, optionally with metadata</td>
+</tr>
+<tr>
+<td><code>tokens</code></td>
+<td>pretokenized token stream</td>
+</tr>
+<tr>
+<td><code>chunks</code></td>
+<td>chunk list</td>
+</tr>
+<tr>
+<td><code>chunked_tokens</code></td>
+<td>chunks joined to the model sequence length</td>
+</tr>
+<tr>
+<td><code>chunked_for_recurrence</code></td>
+<td>chunked tokens split into recurrent batches</td>
+</tr>
+<tr>
+<td><code>strategy_default</code></td>
+<td>the strategy's default output</td>
+</tr>
+</tbody>
+</table>
+<p><code>MDATDataModule</code> uses <code>chunked_tokens</code> by default. Its data section contains <code>mdat_strategy</code>, <code>mdat_view</code>, <code>iteration_modality</code>, the batch size and the partition fields.</p>
+<p><code>export VIEW OUTFILE --limit N</code> writes a view to JSONL, one document per line. <code>state-save</code> and <code>state-load</code> store and restore the iteration position.</p>
+<h2 id="mdat-saetta">MDAT-saetta<a class="headerlink" href="#mdat-saetta" title="Permanent link"></a></h2>
+<p>However, this comes with a drawback: even though the fast LMDB is used as datasets' backend, random access is usually much slower than sequential access. Mdat is great for experimentations, but it could become a bottleneck on some systems. In this case, the solution is <strong>"Mdat-saetta"</strong>!</p>
+<p>A pretokenized, sharded and shuffled view can indeed be exported to a compact "saetta" file, ready to be read sequentially. <em>(Feature easy to implement but still WIP)</em></p>
+<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link"></a></h2>
+<p>The MDAT shell is started with <code>python -m matformer.data.mdat.tui PATH</code>. The generated command list is in <a href="../tools/commands.html">Commands</a>.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

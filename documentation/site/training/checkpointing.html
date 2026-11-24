@@ -1,0 +1,67 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Checkpointing · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section" open><summary>Training</summary><ul><li><a href="wrapper.html">MatformerWrapper</a></li><li><a href="trainer.html">MatformerTrainer</a></li><li><a href="learning-signals.html">Learning signals</a></li><li><a href="logger.html">Logging</a></li><li><a href="control.html">Control</a></li><li><a class="current" href="checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Training <span class="sep">/</span> Checkpointing</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/training/ckpt_manager.py.html"><code>matformer/training/ckpt_manager.py</code></a> <a href="../file/matformer/dataclasses/checkpoint_dataclasses.py.html"><code>matformer/dataclasses/checkpoint_dataclasses.py</code></a> <a href="../file/matformer/loading/matformer_holder.py.html"><code>matformer/loading/matformer_holder.py</code></a></div>
+<h1 id="checkpointing">Checkpointing<a class="headerlink" href="#checkpointing" title="Permanent link"></a></h1>
+<p>A Matformer checkpoint is a <code>.ckpt</code> file with the stable state dict, the optimizer and scheduler states, the datamodule state, the step, the epoch and the configuration. A run can resume from it, and a new run can start from its weights with the states reset.</p>
+<h2 id="naming">Naming<a class="headerlink" href="#naming" title="Permanent link"></a></h2>
+<p><code>CheckpointDirectoryManager</code> writes:</p>
+<div class="highlight"><pre><span></span><code>{save_dir}/{checkpoint_name}_v{version}_s{step}.ckpt
+</code></pre></div>
+
+<p>A resumed run keeps its version and adds steps. <code>start_from_scratch</code>, <code>start_from_step</code> and an explicit checkpoint start a new version. <code>matformer_resume.csv</code> records each saved checkpoint. Plugin checkpoints are written to <code>{name}_v{version}_s{step}_plugins/</code>.</p>
+<h2 id="start-mode">Start mode<a class="headerlink" href="#start-mode" title="Permanent link"></a></h2>
+<p><code>decide_checkpoint(checkpoint, start_from_scratch, start_from_step)</code> returns <code>(load_path, step, reason)</code>:</p>
+<ul>
+<li><code>checkpoint</code>: an explicit <code>.ckpt</code>. The run continues its state in a new version. To fine-tune, set <code>what_to_reset</code> to <code>optimizer,lr_scheduler,datamodule,steps</code>.</li>
+<li><code>start_from_scratch</code>: a new version with nothing loaded.</li>
+<li><code>start_from_step</code>: the closest checkpoint at or after that step in the current version, then a new version.</li>
+<li>otherwise: the latest checkpoint of the current version, or scratch if none exists.</li>
+</ul>
+<h2 id="checkpoint-section">Checkpoint section<a class="headerlink" href="#checkpoint-section" title="Permanent link"></a></h2>
+<p>A config can name the model to load:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">checkpoint</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">finale</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;$CHECKPOINT_ASSETS/FINALE_32768.ckpt&quot;</span>
+</code></pre></div>
+
+<p>A checkpoint entry can represent a series:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">checkpoint</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">probes</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;$CHECKPOINT_ASSETS/sequence_classification/ironita&quot;</span>
+<span class="w">    </span><span class="nt">every_n_steps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">500</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">donors</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;$CHECKPOINT_ASSETS/a.ckpt</span><span class="nv"> </span><span class="s">|</span><span class="nv"> </span><span class="s">$CHECKPOINT_ASSETS/b.ckpt&quot;</span>
+</code></pre></div>
+
+<p>A folder is read as a checkpoint series, a path with top-level pipes is a sweep dimension, and the two combine. <code>CheckpointDirectoryManager.select</code> implements the selection: <code>model_name</code> selects one run, <code>every_n_steps</code> selects steps that are a multiple of it, <code>versions</code> selects versions, and <code>last</code> keeps the N newest. A location without Matformer checkpoints is returned unchanged, so a HuggingFace repo or a loose folder still works.</p>
+<h2 id="saving">Saving<a class="headerlink" href="#saving" title="Permanent link"></a></h2>
+<p><code>MatformerTrainer.save(step, epoch, what)</code> writes periodic and final checkpoints. <code>what</code> is <code>model</code>, <code>plugins</code> or <code>both</code>. <code>save_what</code> controls periodic saves, and <code>run()</code> controls the final save. The checkpoint is written to a <code>.tmp</code> file and renamed on rank 0 after a barrier.</p>
+<h2 id="resuming">Resuming<a class="headerlink" href="#resuming" title="Permanent link"></a></h2>
+<p><code>_setup_checkpoint</code> creates a <code>MatformerCheckpointHolder</code> for a Matformer checkpoint or the appropriate holder for a base model. <code>_restore_states</code> restores the optimizer, the scheduler, the datamodule, the step and the epoch. <code>what_to_reset</code> lists the parts that are not restored.</p>
+<p>The holder is described in <a href="../loading/checkpoint-holder.html">CheckpointHolder</a>.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,932 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/transformer_blocks/models/other_models.py · Matformer</title>
+<link rel="stylesheet" href="../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../index.html">Documentation</a><a class="" href="../../../../registry/index.html">Registry</a><a class="" href="../../../../configuration/index.html">Configuration</a><a class="" href="../../../../tools/commands.html">Commands</a><a class="current" href="../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../index.html">Matformer</a></li><li><a href="../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../components/cache.html">The cache</a></li><li><a href="../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../training/logger.html">Logging</a></li><li><a href="../../../../training/control.html">Control</a></li><li><a href="../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../data/index.html">Data</a></li><li><a href="../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../data/data-module.html">Data module</a></li><li><a href="../../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../tools/server.html">Server</a></li><li><a href="../../../../tools/gui.html">GUI</a></li><li><a href="../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../about/repository.html">Repository</a></li><li><a href="../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../index.html">Repository</a> <span class="sep">/</span> matformer/transformer_blocks/models/other_models.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="other_models.py.html"><code>matformer/transformer_blocks/models/other_models.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/transformer_blocks/models/</code></a></p><h1><code>other_models.py</code></h1><p class="muted">matformer/transformer_blocks/models/other_models.py · 451 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/transformer_blocks/models/other_models.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L27"><code>EntropyModel</code></a><span class="line">L27</span> <span class="bases">(<a href="language_models.py.html#L165"><code>Autoregressive_Model</code></a>)</span><div class="mro">MRO: <code>EntropyModel</code> -> <a href="language_models.py.html#L165"><code>Autoregressive_Model</code></a> -> <a href="../heads.py.html#L168"><code>TransformerWithLMHead</code></a> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a> -> <a href="../mixin/text_generation.py.html#L72"><code>GenerationMixin</code></a></div></li><li class="depth-1"><a href="#L28"><code>EntropyModel.compute_entropy</code></a><span class="line">L28</span></li><li class="depth-1"><a href="#L48"><code>EntropyModel.monotonicity_breakpoints</code></a><span class="line">L48</span></li><li class="depth-1"><a href="#L120"><code>EntropyModel.old_monotonicity_breakpoints</code></a><span class="line">L120</span></li><li class="depth-1"><a href="#L173"><code>EntropyModel.old_cut_text</code></a><span class="line">L173</span></li><li class="depth-1"><a href="#L181"><code>EntropyModel.cut_text</code></a><span class="line">L181</span></li><li class="depth-0"><a href="#L244"><code>TransformerWithCharAutoencoder</code></a><span class="line">L244</span> <span class="bases">(<a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a>)</span><div class="mro">MRO: <code>TransformerWithCharAutoencoder</code> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li><li class="depth-1"><a href="#L245"><code>TransformerWithCharAutoencoder.__init__</code></a><span class="line">L245</span></li><li class="depth-1"><a href="#L259"><code>TransformerWithCharAutoencoder.forward</code></a><span class="line">L259</span></li><li class="depth-1"><a href="#L328"><code>TransformerWithCharAutoencoder.set_training_phase</code></a><span class="line">L328</span></li><li class="depth-1"><a href="#L346"><code>TransformerWithCharAutoencoder.training_step</code></a><span class="line">L346</span></li><li class="depth-1"><a href="#L359"><code>TransformerWithCharAutoencoder._autoencoder_loss</code></a><span class="line">L359</span></li><li class="depth-1"><a href="#L390"><code>TransformerWithCharAutoencoder._patch_loss</code></a><span class="line">L390</span></li><li class="depth-1"><a href="#L423"><code>TransformerWithCharAutoencoder._fine_tuning_loss</code></a><span class="line">L423</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../../matformer_module.py.html"><code>matformer.matformer_module</code></a> <span class="muted">MatformerModule</span></li><li><a href="../../dataclasses/tensors_dataclasses.py.html"><code>matformer.dataclasses.tensors_dataclasses</code></a> <span class="muted">TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor</span></li><li><a href="../../dataclasses/model_dataclasses.py.html"><code>matformer.dataclasses.model_dataclasses</code></a> <span class="muted">ModelConfig</span></li><li><a href="../../utils/matformer_cache.py.html"><code>matformer.utils.matformer_cache</code></a> <span class="muted">ensure_cache, CachedStuff</span></li><li><a href="../../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li><li><a href="../../utils/masked_models.py.html"><code>matformer.utils.masked_models</code></a> <span class="muted">Maskerator</span></li><li><a href="../../matformer_tokenizers.py.html"><code>matformer.matformer_tokenizers</code></a> <span class="muted">ByteLevelTokenizer, MatformerTokenizer</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L2" name="L2"></a><span class="sd">File: matformer/transformer_blocks/models/other_models.py</span>
+<a id="L3" name="L3"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L4" name="L4"></a><span class="c1">#Torch</span>
+<a id="L5" name="L5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L6" name="L6"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<a id="L7" name="L7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<a id="L8" name="L8"></a><span class="c1">#Matformer</span>
+<a id="L9" name="L9"></a><span class="kn">from</span><span class="w"> </span><a href="../../matformer_module.py.html"><span class="nn">matformer.matformer_module</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerModule</span>
+<a id="L10" name="L10"></a><span class="kn">from</span><span class="w"> </span><a href="../../dataclasses/tensors_dataclasses.py.html"><span class="nn">matformer.dataclasses.tensors_dataclasses</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">TensorDC</span><span class="p">,</span> <span class="n">NormalTensor</span><span class="p">,</span> <span class="n">PaddedTensor</span><span class="p">,</span> <span class="n">UnpaddedTensor</span>
+<a id="L11" name="L11"></a><span class="kn">from</span><span class="w"> </span><a href="../../dataclasses/model_dataclasses.py.html"><span class="nn">matformer.dataclasses.model_dataclasses</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">ModelConfig</span>
+<a id="L12" name="L12"></a><span class="kn">from</span><span class="w"> </span><a href="../../utils/matformer_cache.py.html"><span class="nn">matformer.utils.matformer_cache</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">ensure_cache</span><span class="p">,</span> <span class="n">CachedStuff</span>
+<a id="L13" name="L13"></a><span class="kn">from</span><span class="w"> </span><a href="../../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L14" name="L14"></a><span class="kn">from</span><span class="w"> </span><a href="../../utils/masked_models.py.html"><span class="nn">matformer.utils.masked_models</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">Maskerator</span>
+<a id="L15" name="L15"></a><span class="kn">from</span><span class="w"> </span><a href="../../matformer_tokenizers.py.html"><span class="nn">matformer.matformer_tokenizers</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">ByteLevelTokenizer</span><span class="p">,</span><span class="n">MatformerTokenizer</span>
+<a id="L16" name="L16"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.language_models</span><span class="w"> </span><span class="kn">import</span> <span class="n">Autoregressive_Model</span>
+<a id="L17" name="L17"></a><span class="kn">from</span><span class="w"> </span><span class="nn">..transformer</span><span class="w"> </span><span class="kn">import</span> <span class="n">NakedTransformer</span>
+<a id="L18" name="L18"></a><span class="c1">#Other</span>
+<a id="L19" name="L19"></a><span class="kn">from</span><span class="w"> </span><span class="nn">functools</span><span class="w"> </span><span class="kn">import</span> <span class="n">partial</span><span class="p">,</span> <span class="n">reduce</span>
+<a id="L20" name="L20"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tqdm</span><span class="w"> </span><span class="kn">import</span> <span class="n">tqdm</span>
+<a id="L21" name="L21"></a><span class="kn">from</span><span class="w"> </span><span class="nn">datetime</span><span class="w"> </span><span class="kn">import</span> <span class="n">datetime</span>
+<a id="L22" name="L22"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">replace</span>
+<a id="L23" name="L23"></a><span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<a id="L24" name="L24"></a><span class="kn">from</span><span class="w"> </span><span class="nn">warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn</span>
+<a id="L25" name="L25"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Any</span>
+<a id="L26" name="L26"></a>
+<a id="L27" name="L27"></a><span class="k">class</span><span class="w"> </span><span class="nc">EntropyModel</span><span class="p">(</span><a href="language_models.py.html#L165"><span class="n">Autoregressive_Model</span></a><span class="p">):</span>
+<a id="L28" name="L28"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">compute_entropy</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompts</span><span class="p">):</span>
+<a id="L29" name="L29"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L30" name="L30"></a><span class="sd">        Return a tensor of size sequence length containing the entropy for each received text</span>
+<a id="L31" name="L31"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L32" name="L32"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+<a id="L33" name="L33"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prompts</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L34" name="L34"></a>            <span class="n">prompts</span> <span class="o">=</span> <span class="p">[</span><span class="n">prompts</span><span class="p">]</span>
+<a id="L35" name="L35"></a>
+<a id="L36" name="L36"></a>        <span class="n">prompt_ids</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">batch_encode</span><span class="p">(</span><span class="n">prompts</span><span class="p">)</span>  <span class="c1"># [B, seq_len]</span>
+<a id="L37" name="L37"></a>        <span class="n">prompt_ids</span> <span class="o">=</span> <span class="n">prompt_ids</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L38" name="L38"></a>
+<a id="L39" name="L39"></a>        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+<a id="L40" name="L40"></a>            <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">prompt_ids</span><span class="p">)</span>  <span class="c1"># [B, seq_len, vocab_size]</span>
+<a id="L41" name="L41"></a>
+<a id="L42" name="L42"></a>        <span class="n">epsilon</span> <span class="o">=</span> <span class="mf">1e-10</span>
+<a id="L43" name="L43"></a>        <span class="n">probs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">functional</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">logits</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L44" name="L44"></a>        <span class="n">logprobs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">probs</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">)</span>
+<a id="L45" name="L45"></a>        <span class="n">entropy</span> <span class="o">=</span> <span class="o">-</span><span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">probs</span> <span class="o">*</span> <span class="n">logprobs</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B, seq_len]</span>
+<a id="L46" name="L46"></a>
+<a id="L47" name="L47"></a>        <span class="k">return</span> <span class="n">entropy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> 
+<a id="L48" name="L48"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">monotonicity_breakpoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">entropy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smoothing</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L49" name="L49"></a>        <span class="c1"># Da cambiare: il taglio delle patch provenienti dal text encoder potrebbe effettuarsi qui, sfruttando i nested tensor</span>
+<a id="L50" name="L50"></a>        <span class="c1"># Al momento l&#39;implementazione che prevede il ciclo sui batch nel text encoder funziona ma è esageratamente inefficiente a livello di tempi di calcolo</span>
+<a id="L51" name="L51"></a>        <span class="k">if</span> <span class="n">smoothing</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L52" name="L52"></a>            <span class="n">smoothing</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L53" name="L53"></a>            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: You are running the entropy model without a smoothing set.&quot;</span><span class="p">)</span>
+<a id="L54" name="L54"></a>        <span class="k">if</span> <span class="n">prompt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L55" name="L55"></a>            <span class="n">entropy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_entropy</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>  <span class="c1"># Expected shape: [B, seq_len]</span>
+<a id="L56" name="L56"></a>        <span class="k">elif</span> <span class="n">entropy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L57" name="L57"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either provide `prompt` or `entropy`.&quot;</span><span class="p">)</span>
+<a id="L58" name="L58"></a>        <span class="k">if</span> <span class="n">entropy</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<a id="L59" name="L59"></a>            <span class="n">entropy</span> <span class="o">=</span> <span class="n">entropy</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Make it batched [1, seq_len]</span>
+<a id="L60" name="L60"></a>        <span class="n">B</span><span class="p">,</span> <span class="n">seq_len</span> <span class="o">=</span> <span class="n">entropy</span><span class="o">.</span><span class="n">shape</span>
+<a id="L61" name="L61"></a>        <span class="n">cutting_masks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">entropy</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<a id="L62" name="L62"></a>        <span class="n">group_masks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">entropy</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<a id="L63" name="L63"></a>        <span class="n">cutting_points_all</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L64" name="L64"></a>        
+<a id="L65" name="L65"></a>        <span class="c1"># VECTORIZED VERSION - replaces the batch loop</span>
+<a id="L66" name="L66"></a>        <span class="c1"># Move entropy to CPU once for all operations</span>
+<a id="L67" name="L67"></a>        <span class="n">ent_cpu</span> <span class="o">=</span> <span class="n">entropy</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+<a id="L68" name="L68"></a>        
+<a id="L69" name="L69"></a>        <span class="c1"># Create padding for comparison: add infinity at the beginning of each sequence</span>
+<a id="L70" name="L70"></a>        <span class="c1"># This ensures the first element is never considered a breaking point</span>
+<a id="L71" name="L71"></a>        <span class="n">inf_pad</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">B</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<a id="L72" name="L72"></a>        <span class="n">padded_entropy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">inf_pad</span><span class="p">,</span> <span class="n">ent_cpu</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># Shape: [B, seq_len+1]</span>
+<a id="L73" name="L73"></a>        
+<a id="L74" name="L74"></a>        <span class="c1"># Vectorized monotonicity violation detection</span>
+<a id="L75" name="L75"></a>        <span class="c1"># Compare each position with the previous one across all batches simultaneously</span>
+<a id="L76" name="L76"></a>        <span class="c1"># breaking_points[b, i] = True if entropy[b, i] &gt; entropy[b, i-1] + smoothing</span>
+<a id="L77" name="L77"></a>        <span class="n">breaking_points</span> <span class="o">=</span> <span class="n">ent_cpu</span> <span class="o">&gt;</span> <span class="n">padded_entropy</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">smoothing</span>  <span class="c1"># Shape: [B, seq_len]</span>
+<a id="L78" name="L78"></a>        
+<a id="L79" name="L79"></a>        <span class="c1"># Convert breaking points to cutting masks (same logic as before, but vectorized)</span>
+<a id="L80" name="L80"></a>        <span class="n">cutting_masks_vectorized</span> <span class="o">=</span> <span class="n">breaking_points</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+<a id="L81" name="L81"></a>        
+<a id="L82" name="L82"></a>        <span class="c1"># Generate group masks using cumulative sum (vectorized version of the previous logic)</span>
+<a id="L83" name="L83"></a>        <span class="n">group_masks_vectorized</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">breaking_points</span><span class="o">.</span><span class="n">long</span><span class="p">(),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="L84" name="L84"></a>        
+<a id="L85" name="L85"></a>        <span class="c1"># Extract cutting points for each batch item</span>
+<a id="L86" name="L86"></a>        <span class="c1"># This part still requires some iteration, but only over breaking points, not all positions</span>
+<a id="L87" name="L87"></a>        <span class="n">cutting_points_all_vectorized</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L88" name="L88"></a>        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+<a id="L89" name="L89"></a>            <span class="c1"># Find positions where breaking points occur</span>
+<a id="L90" name="L90"></a>            <span class="n">break_positions</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">breaking_points</span><span class="p">[</span><span class="n">b</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L91" name="L91"></a>            <span class="n">cutting_points</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L92" name="L92"></a>            
+<a id="L93" name="L93"></a>            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">break_positions</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<a id="L94" name="L94"></a>                <span class="n">start_point</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L95" name="L95"></a>                <span class="k">for</span> <span class="n">pos</span> <span class="ow">in</span> <span class="n">break_positions</span><span class="p">:</span>
+<a id="L96" name="L96"></a>                    <span class="n">cutting_points</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start_point</span><span class="p">,</span> <span class="n">pos</span><span class="o">.</span><span class="n">item</span><span class="p">()))</span>  <span class="c1"># Note: removed +1 here</span>
+<a id="L97" name="L97"></a>                    <span class="n">start_point</span> <span class="o">=</span> <span class="n">pos</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<a id="L98" name="L98"></a>                
+<a id="L99" name="L99"></a>                <span class="c1"># Add the final segment from the last breaking point to the end</span>
+<a id="L100" name="L100"></a>                <span class="k">if</span> <span class="n">start_point</span> <span class="o">&lt;</span> <span class="n">seq_len</span><span class="p">:</span>
+<a id="L101" name="L101"></a>                    <span class="n">cutting_points</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start_point</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">))</span>
+<a id="L102" name="L102"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L103" name="L103"></a>                <span class="c1"># If no breaking points, the entire sequence is one chunk</span>
+<a id="L104" name="L104"></a>                <span class="n">cutting_points</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">))</span>
+<a id="L105" name="L105"></a>            
+<a id="L106" name="L106"></a>            <span class="n">cutting_points_all_vectorized</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cutting_points</span><span class="p">)</span>
+<a id="L107" name="L107"></a>        <span class="c1"># Update the output tensors with vectorized results</span>
+<a id="L108" name="L108"></a>        <span class="n">cutting_masks</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">cutting_masks_vectorized</span>
+<a id="L109" name="L109"></a>        <span class="n">group_masks</span><span class="p">[:]</span> <span class="o">=</span> <span class="n">group_masks_vectorized</span>
+<a id="L110" name="L110"></a>        <span class="n">cutting_points_all</span> <span class="o">=</span> <span class="n">cutting_points_all_vectorized</span>
+<a id="L111" name="L111"></a>        
+<a id="L112" name="L112"></a>        <span class="c1">#print(&quot;------------- ENTROPY DEBUG ------------------&quot;)</span>
+<a id="L113" name="L113"></a>        <span class="c1">#print(&quot;----CUTTING MASK:&quot;)</span>
+<a id="L114" name="L114"></a>        <span class="c1">#print(cutting_masks)</span>
+<a id="L115" name="L115"></a>        <span class="c1">#print(&quot;----- GROUP MASKs&quot;)</span>
+<a id="L116" name="L116"></a>        <span class="c1">#print(group_masks)</span>
+<a id="L117" name="L117"></a>        <span class="c1">#print(&quot;CUTTING POINTS&quot;)</span>
+<a id="L118" name="L118"></a>        <span class="c1">#print(cutting_points_all)</span>
+<a id="L119" name="L119"></a>        <span class="k">return</span> <span class="n">cutting_points_all</span><span class="p">,</span> <span class="n">cutting_masks</span><span class="p">,</span> <span class="n">group_masks</span>
+<a id="L120" name="L120"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">old_monotonicity_breakpoints</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">prompt</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">entropy</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smoothing</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L121" name="L121"></a>        <span class="c1"># Da cambiare: il taglio delle patch provenienti dal text encoder potrebbe effettuarsi qui, sfruttando i nested tensor</span>
+<a id="L122" name="L122"></a>        <span class="c1"># Al momento l&#39;implementazione che prevede il ciclo sui batch nel text encoder funziona ma è esageratamente inefficiente a livello di tempi di calcolo</span>
+<a id="L123" name="L123"></a>        <span class="k">if</span> <span class="n">smoothing</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L124" name="L124"></a>            <span class="n">smoothing</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L125" name="L125"></a>            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;WARNING: You are running the entropy model without a smoothing set.&quot;</span><span class="p">)</span>
+<a id="L126" name="L126"></a>
+<a id="L127" name="L127"></a>        <span class="k">if</span> <span class="n">prompt</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L128" name="L128"></a>            <span class="c1">#start=datetime.now()</span>
+<a id="L129" name="L129"></a>            <span class="n">entropy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">compute_entropy</span><span class="p">(</span><span class="n">prompt</span><span class="p">)</span>  <span class="c1"># Expected shape: [B, seq_len]</span>
+<a id="L130" name="L130"></a>            <span class="c1">#end=datetime.now()</span>
+<a id="L131" name="L131"></a>            <span class="c1">#print(f&quot;Esecuzione del modello {end-start}&quot;)</span>
+<a id="L132" name="L132"></a>        <span class="k">elif</span> <span class="n">entropy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L133" name="L133"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Either provide `prompt` or `entropy`.&quot;</span><span class="p">)</span>
+<a id="L134" name="L134"></a>        <span class="c1">#start=datetime.now()</span>
+<a id="L135" name="L135"></a>
+<a id="L136" name="L136"></a>        <span class="k">if</span> <span class="n">entropy</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<a id="L137" name="L137"></a>            <span class="n">entropy</span> <span class="o">=</span> <span class="n">entropy</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># Make it batched [1, seq_len]</span>
+<a id="L138" name="L138"></a>
+<a id="L139" name="L139"></a>        <span class="n">B</span><span class="p">,</span> <span class="n">seq_len</span> <span class="o">=</span> <span class="n">entropy</span><span class="o">.</span><span class="n">shape</span>
+<a id="L140" name="L140"></a>        <span class="n">cutting_masks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">entropy</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<a id="L141" name="L141"></a>        <span class="n">group_masks</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">entropy</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<a id="L142" name="L142"></a>        <span class="n">cutting_points_all</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L143" name="L143"></a>        <span class="c1">#end=datetime.now()</span>
+<a id="L144" name="L144"></a>        <span class="c1">#print(f&quot;Creazione delle robette {end-start}&quot;)  </span>
+<a id="L145" name="L145"></a>        <span class="c1">#start=datetime.now()    </span>
+<a id="L146" name="L146"></a>        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+<a id="L147" name="L147"></a>            <span class="n">ent</span> <span class="o">=</span> <span class="n">entropy</span><span class="p">[</span><span class="n">b</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+<a id="L148" name="L148"></a>            <span class="n">cutting_points</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L149" name="L149"></a>            <span class="n">cutting_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">seq_len</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">)</span>
+<a id="L150" name="L150"></a>            <span class="n">prev_entr</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;inf&#39;</span><span class="p">)</span>
+<a id="L151" name="L151"></a>            <span class="n">start_point</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L152" name="L152"></a>            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">seq_len</span><span class="p">):</span>
+<a id="L153" name="L153"></a>                <span class="k">if</span> <span class="n">ent</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">prev_entr</span> <span class="o">+</span> <span class="n">smoothing</span><span class="p">:</span>
+<a id="L154" name="L154"></a>                    <span class="n">cutting_points</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start_point</span><span class="p">,</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">))</span>
+<a id="L155" name="L155"></a>                    <span class="n">cutting_mask</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="L156" name="L156"></a>                    <span class="n">start_point</span> <span class="o">=</span> <span class="n">i</span><span class="o">+</span><span class="mi">1</span>
+<a id="L157" name="L157"></a>                <span class="n">prev_entr</span> <span class="o">=</span> <span class="n">ent</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+<a id="L158" name="L158"></a>            <span class="n">group_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">cutting_mask</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<a id="L159" name="L159"></a>            <span class="n">cutting_masks</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">cutting_mask</span>
+<a id="L160" name="L160"></a>            <span class="n">group_masks</span><span class="p">[</span><span class="n">b</span><span class="p">]</span> <span class="o">=</span> <span class="n">group_mask</span>
+<a id="L161" name="L161"></a>            <span class="n">cutting_points_all</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cutting_points</span><span class="p">)</span>
+<a id="L162" name="L162"></a>        <span class="c1">#print(&quot;------------- ENTROPY DEBUG ------------------&quot;)</span>
+<a id="L163" name="L163"></a>        <span class="c1">#print(&quot;----CUTTING MASK:&quot;)</span>
+<a id="L164" name="L164"></a>        <span class="c1">#print(cutting_masks)</span>
+<a id="L165" name="L165"></a>        <span class="c1">#print(&quot;----- GROUP MASKs&quot;)</span>
+<a id="L166" name="L166"></a>        <span class="c1">#print(group_masks)</span>
+<a id="L167" name="L167"></a>        <span class="c1">#print(&quot;CUTTING POINTS&quot;)</span>
+<a id="L168" name="L168"></a>        <span class="c1">#print(cutting_points_all)</span>
+<a id="L169" name="L169"></a>        <span class="c1">#end=datetime.now()</span>
+<a id="L170" name="L170"></a>        <span class="c1">#print(f&quot;Ciclo sui batch: {end-start}&quot;)</span>
+<a id="L171" name="L171"></a>        <span class="k">return</span> <span class="n">cutting_points_all</span><span class="p">,</span> <span class="n">cutting_masks</span><span class="p">,</span> <span class="n">group_masks</span>
+<a id="L172" name="L172"></a>
+<a id="L173" name="L173"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">old_cut_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span><span class="n">text</span><span class="p">,</span><span class="n">cutting_points</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">smoothing</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L174" name="L174"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L175" name="L175"></a><span class="sd">        Cut a text according to cutting points</span>
+<a id="L176" name="L176"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L177" name="L177"></a>        <span class="k">if</span> <span class="n">cutting_points</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L178" name="L178"></a>            <span class="n">cutting_points</span><span class="p">,</span><span class="n">_</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">monotonicity_breakpoints</span><span class="p">(</span><span class="n">prompt</span><span class="o">=</span><span class="n">text</span><span class="p">,</span><span class="n">smoothing</span><span class="o">=</span><span class="n">smoothing</span><span class="p">)</span>
+<a id="L179" name="L179"></a>        <span class="n">text_chunks</span><span class="o">=</span><span class="p">[</span><span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span><span class="n">j</span> <span class="ow">in</span> <span class="n">cutting_points</span><span class="p">]</span>
+<a id="L180" name="L180"></a>        <span class="k">return</span> <span class="n">text_chunks</span>
+<a id="L181" name="L181"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">cut_text</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">text</span><span class="p">,</span> <span class="n">cutting_points</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">smoothing</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">hard_limit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L182" name="L182"></a><span class="w">            </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L183" name="L183"></a><span class="sd">            Cut a text or batch of texts according to cutting points.</span>
+<a id="L184" name="L184"></a><span class="sd">            </span>
+<a id="L185" name="L185"></a><span class="sd">            Args:</span>
+<a id="L186" name="L186"></a><span class="sd">                text: str or list of str - single text or batch of texts</span>
+<a id="L187" name="L187"></a><span class="sd">                cutting_points: list of tuples or list of list of tuples - cutting points for each text</span>
+<a id="L188" name="L188"></a><span class="sd">                smoothing: float - smoothing parameter if cutting_points is None</span>
+<a id="L189" name="L189"></a><span class="sd">                hard_limit: int - maximum character length for chunks, splits if exceeded</span>
+<a id="L190" name="L190"></a><span class="sd">                </span>
+<a id="L191" name="L191"></a><span class="sd">            Returns:</span>
+<a id="L192" name="L192"></a><span class="sd">                list of str chunks (if single text) or list of list of str chunks (if batch)</span>
+<a id="L193" name="L193"></a><span class="sd">            &quot;&quot;&quot;</span>
+<a id="L194" name="L194"></a>            <span class="c1"># Handle single text input (backwards compatibility)</span>
+<a id="L195" name="L195"></a>            <span class="n">hard_limit_violations</span><span class="o">=</span><span class="mi">0</span>
+<a id="L196" name="L196"></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L197" name="L197"></a>                <span class="k">if</span> <span class="n">cutting_points</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L198" name="L198"></a>                    <span class="n">cutting_points</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">monotonicity_breakpoints</span><span class="p">(</span><span class="n">prompt</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">smoothing</span><span class="o">=</span><span class="n">smoothing</span><span class="p">)</span>
+<a id="L199" name="L199"></a>                <span class="c1"># Avoid error if cutting points is empty (ex. for a single word)</span>
+<a id="L200" name="L200"></a>                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cutting_points</span><span class="p">)</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+<a id="L201" name="L201"></a>                    <span class="n">cutting_points</span><span class="o">=</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)]</span> 
+<a id="L202" name="L202"></a>                <span class="c1"># cutting_points is a list of lists, take the first (and only) one</span>
+<a id="L203" name="L203"></a>                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">cutting_points</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+<a id="L204" name="L204"></a>                    <span class="n">cutting_points</span> <span class="o">=</span> <span class="n">cutting_points</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L205" name="L205"></a>                    
+<a id="L206" name="L206"></a>                <span class="n">text_chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">text</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">cutting_points</span><span class="p">]</span>
+<a id="L207" name="L207"></a>                <span class="c1"># Apply hard limit splitting</span>
+<a id="L208" name="L208"></a>                <span class="k">if</span> <span class="n">hard_limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L209" name="L209"></a>                    <span class="n">final_chunks</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L210" name="L210"></a>                    <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">text_chunks</span><span class="p">:</span>
+<a id="L211" name="L211"></a>                        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">hard_limit</span><span class="p">:</span>
+<a id="L212" name="L212"></a>                            <span class="n">final_chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+<a id="L213" name="L213"></a>                        <span class="k">else</span><span class="p">:</span>
+<a id="L214" name="L214"></a>                            <span class="n">final_chunks</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">chunk</span><span class="p">[</span><span class="n">k</span><span class="p">:</span><span class="n">k</span><span class="o">+</span><span class="n">hard_limit</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">),</span> <span class="n">hard_limit</span><span class="p">)])</span>
+<a id="L215" name="L215"></a>                            <span class="n">hard_limit_violations</span><span class="o">+=</span><span class="mi">1</span>
+<a id="L216" name="L216"></a>                    <span class="n">text_chunks</span> <span class="o">=</span> <span class="n">final_chunks</span>
+<a id="L217" name="L217"></a>                <span class="k">return</span> <span class="n">text_chunks</span>
+<a id="L218" name="L218"></a>            
+<a id="L219" name="L219"></a>            <span class="c1"># Handle batch input</span>
+<a id="L220" name="L220"></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+<a id="L221" name="L221"></a>                <span class="k">if</span> <span class="n">cutting_points</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L222" name="L222"></a>                    <span class="n">cutting_points</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">monotonicity_breakpoints</span><span class="p">(</span><span class="n">prompt</span><span class="o">=</span><span class="n">text</span><span class="p">,</span> <span class="n">smoothing</span><span class="o">=</span><span class="n">smoothing</span><span class="p">)</span>
+<a id="L223" name="L223"></a>                
+<a id="L224" name="L224"></a>                <span class="c1"># Vectorized batch processing - process all texts simultaneously</span>
+<a id="L225" name="L225"></a>                <span class="n">all_chunks</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L226" name="L226"></a>                <span class="k">for</span> <span class="n">text_item</span><span class="p">,</span> <span class="n">cutting_item</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">cutting_points</span><span class="p">):</span>
+<a id="L227" name="L227"></a>                    <span class="n">text_chunks</span> <span class="o">=</span> <span class="p">[</span><span class="n">text_item</span><span class="p">[</span><span class="n">i</span><span class="p">:</span><span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">cutting_item</span><span class="p">]</span>
+<a id="L228" name="L228"></a>                    <span class="c1"># Apply hard limit splitting</span>
+<a id="L229" name="L229"></a>                    <span class="k">if</span> <span class="n">hard_limit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L230" name="L230"></a>                        <span class="n">final_chunks</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L231" name="L231"></a>                        <span class="k">for</span> <span class="n">chunk</span> <span class="ow">in</span> <span class="n">text_chunks</span><span class="p">:</span>
+<a id="L232" name="L232"></a>                            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">hard_limit</span><span class="p">:</span>
+<a id="L233" name="L233"></a>                                <span class="n">final_chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+<a id="L234" name="L234"></a>                            <span class="k">else</span><span class="p">:</span>
+<a id="L235" name="L235"></a>                                <span class="n">final_chunks</span><span class="o">.</span><span class="n">extend</span><span class="p">([</span><span class="n">chunk</span><span class="p">[</span><span class="n">k</span><span class="p">:</span><span class="n">k</span><span class="o">+</span><span class="n">hard_limit</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">chunk</span><span class="p">),</span> <span class="n">hard_limit</span><span class="p">)])</span>
+<a id="L236" name="L236"></a>                                <span class="n">hard_limit_violations</span><span class="o">+=</span><span class="mi">1</span>
+<a id="L237" name="L237"></a>                        <span class="n">text_chunks</span> <span class="o">=</span> <span class="n">final_chunks</span>
+<a id="L238" name="L238"></a>                    <span class="n">all_chunks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">text_chunks</span><span class="p">)</span>
+<a id="L239" name="L239"></a>                
+<a id="L240" name="L240"></a>                <span class="k">return</span> <span class="n">all_chunks</span><span class="p">,</span><span class="n">hard_limit_violations</span>
+<a id="L241" name="L241"></a>            
+<a id="L242" name="L242"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L243" name="L243"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;text must be either a string or a list of strings&quot;</span><span class="p">)</span>
+<a id="L244" name="L244"></a><span class="k">class</span><span class="w"> </span><span class="nc">TransformerWithCharAutoencoder</span><span class="p">(</span><a href="../../matformer_module.py.html#L292"><span class="n">MatformerModule</span></a><span class="p">):</span>
+<a id="L245" name="L245"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">tokenizer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L246" name="L246"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L247" name="L247"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">char_autoencoder.autoencoders</span><span class="w"> </span><span class="kn">import</span> <span class="n">TransCharAutoencoder_Encoder</span><span class="p">,</span> <span class="n">TransCharAutoencoder_Decoder</span>
+<a id="L248" name="L248"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">log</span><span class="o">=</span><span class="n">log</span>
+<a id="L249" name="L249"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span> <span class="o">=</span> <span class="n">TransCharAutoencoder_Encoder</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">encoder</span><span class="p">)</span>
+<a id="L250" name="L250"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span> <span class="o">=</span> <span class="n">TransCharAutoencoder_Decoder</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">decoder</span><span class="p">)</span>
+<a id="L251" name="L251"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span> <span class="o">=</span> <span class="n">NakedTransformer</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<a id="L252" name="L252"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">projection_in</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">in_features</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">)</span>
+<a id="L253" name="L253"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">projection_out</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">in_features</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">)</span>
+<a id="L254" name="L254"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+<a id="L255" name="L255"></a>        
+<a id="L256" name="L256"></a>        <span class="c1"># Training phase state</span>
+<a id="L257" name="L257"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">training_phase</span> <span class="o">=</span> <span class="s1">&#39;autoencoder-training&#39;</span>
+<a id="L258" name="L258"></a>
+<a id="L259" name="L259"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">skip_transformer</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">skip_decoder</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<a id="L260" name="L260"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Phase 1: Train autoencoder only (bypass transformer)</span>
+<a id="L261" name="L261"></a><span class="sd">        Input could be [B,S] or [B,P,S]</span>
+<a id="L262" name="L262"></a><span class="sd">        If [B,S], we expect a PaddedTensor or a NormalTensor (for inference), &quot;padding&quot; refers to &quot;internal&quot; padding (per each sequence)</span>
+<a id="L263" name="L263"></a><span class="sd">        If [B,P,S], we expect a PaddedTensor or an Unpadded Tensor (or NormalTensor for inference), where &quot;padding&quot; refers to &quot;external&quot; padding (per each batch). Thus, to reconstruct the internal padding, we need the internal padding mask</span>
+<a id="L264" name="L264"></a><span class="sd">        </span>
+<a id="L265" name="L265"></a><span class="sd">        If input is of shape B,P,S, flatten the patch with the batch =&gt; B,P,S =&gt; B*P,S but skip computation on &quot;external&quot; padding</span>
+<a id="L266" name="L266"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L267" name="L267"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L268" name="L268"></a><span class="sd">        I expect as input a dictionary composed of</span>
+<a id="L269" name="L269"></a><span class="sd">        {</span>
+<a id="L270" name="L270"></a><span class="sd">        &quot;tensor&quot;: see comment above</span>
+<a id="L271" name="L271"></a><span class="sd">        &quot;padding_masks_external&quot;: True if the entire patch is to be padded, False otherwise [B,P,S]</span>
+<a id="L272" name="L272"></a><span class="sd">        &quot;padding_masks_internal&quot;: Contains information about padding of each sequence inside patches (ready to be flattened) [B,P,S]</span>
+<a id="L273" name="L273"></a><span class="sd">        }</span>
+<a id="L274" name="L274"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L275" name="L275"></a>        <span class="n">tensor</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;tensor&quot;</span><span class="p">]</span>  <span class="c1"># [B,P,S]</span>
+<a id="L276" name="L276"></a>        <span class="n">padding_masks_external</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;padding_masks_external&quot;</span><span class="p">]</span>  <span class="c1"># [B,P,S]</span>
+<a id="L277" name="L277"></a>        <span class="n">padding_masks_internal</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;padding_masks_internal&quot;</span><span class="p">]</span>  <span class="c1"># [B,P,S]</span>
+<a id="L278" name="L278"></a>        
+<a id="L279" name="L279"></a>        <span class="c1"># Step 1: Encoder - Filter valid patches</span>
+<a id="L280" name="L280"></a>        <span class="n">valid_patch_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">padding_masks_external</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B,P]</span>
+<a id="L281" name="L281"></a>        <span class="n">valid_tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="p">[</span><span class="n">valid_patch_mask</span><span class="p">]</span>  <span class="c1"># [B*P_valid, S]</span>
+<a id="L282" name="L282"></a>        <span class="n">valid_internal_masks</span> <span class="o">=</span> <span class="n">padding_masks_internal</span><span class="p">[</span><span class="n">valid_patch_mask</span><span class="p">]</span>  <span class="c1"># [B*P_valid, S]</span>
+<a id="L283" name="L283"></a>        
+<a id="L284" name="L284"></a>        <span class="n">padded_tensor</span> <span class="o">=</span> <span class="n">PaddedTensor</span><span class="p">(</span>
+<a id="L285" name="L285"></a>            <span class="n">tensor</span><span class="o">=</span><span class="n">valid_tensor</span><span class="p">,</span>
+<a id="L286" name="L286"></a>            <span class="n">padding_mask</span><span class="o">=</span><span class="n">valid_internal_masks</span>
+<a id="L287" name="L287"></a>        <span class="p">)</span>
+<a id="L288" name="L288"></a>        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="p">(</span><span class="n">padded_tensor</span><span class="p">)</span>  <span class="c1"># [B*P_valid, S] -&gt; [B*P_valid, D]</span>
+<a id="L289" name="L289"></a>        
+<a id="L290" name="L290"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">skip_transformer</span><span class="p">:</span>
+<a id="L291" name="L291"></a>            <span class="c1"># Step 2: Reshape for transformer</span>
+<a id="L292" name="L292"></a>            <span class="n">B</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">valid_patch_mask</span><span class="o">.</span><span class="n">shape</span>
+<a id="L293" name="L293"></a>            <span class="n">D</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L294" name="L294"></a>            <span class="n">z_full</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">z</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">z</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<a id="L295" name="L295"></a>            <span class="n">z_full</span><span class="p">[</span><span class="n">valid_patch_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">tensor</span>  <span class="c1"># [B, P]</span>
+<a id="L296" name="L296"></a>            
+<a id="L297" name="L297"></a>            <span class="n">external_padding_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">valid_patch_mask</span>  <span class="c1"># [B, P]</span>
+<a id="L298" name="L298"></a>            <span class="n">z_padded</span> <span class="o">=</span> <span class="n">PaddedTensor</span><span class="p">(</span><span class="n">tensor</span><span class="o">=</span><span class="n">z_full</span><span class="p">,</span> <span class="n">padding_mask</span><span class="o">=</span><span class="n">external_padding_mask</span><span class="p">)</span>
+<a id="L299" name="L299"></a>            
+<a id="L300" name="L300"></a>            <span class="c1"># Step 3: Transformer</span>
+<a id="L301" name="L301"></a>            <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">projection_in</span><span class="p">(</span><span class="n">z_padded</span><span class="p">)</span>
+<a id="L302" name="L302"></a>            <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>  <span class="c1"># [B, P, D]</span>
+<a id="L303" name="L303"></a>            <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">projection_out</span><span class="p">(</span><span class="n">z</span><span class="p">)</span>
+<a id="L304" name="L304"></a>            
+<a id="L305" name="L305"></a>            <span class="c1"># Step 4: Back to decoder format</span>
+<a id="L306" name="L306"></a>            <span class="n">z_valid</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">tensor</span><span class="p">[</span><span class="n">valid_patch_mask</span><span class="p">]</span>  <span class="c1"># [B*P_valid, D]</span>
+<a id="L307" name="L307"></a>            <span class="n">z_valid_wrapped</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">z_valid</span><span class="p">)</span>
+<a id="L308" name="L308"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L309" name="L309"></a>            <span class="c1"># Skip transformer - encoder directly connected to decoder</span>
+<a id="L310" name="L310"></a>            <span class="n">z_valid_wrapped</span> <span class="o">=</span> <span class="n">z</span>
+<a id="L311" name="L311"></a>        
+<a id="L312" name="L312"></a>        <span class="c1"># Early return for encoder-only phase</span>
+<a id="L313" name="L313"></a>        <span class="k">if</span> <span class="n">skip_decoder</span><span class="p">:</span>
+<a id="L314" name="L314"></a>            <span class="k">return</span> <span class="n">z_valid_wrapped</span>  <span class="c1"># [B*P_valid, D]</span>
+<a id="L315" name="L315"></a>        
+<a id="L316" name="L316"></a>        <span class="c1"># Step 5: Decoder</span>
+<a id="L317" name="L317"></a>        <span class="n">logits</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="p">(</span><span class="n">z_valid_wrapped</span><span class="p">)</span>  <span class="c1"># [B*P_valid, D] -&gt; [B*P_valid, S, vocab_size]</span>
+<a id="L318" name="L318"></a>        
+<a id="L319" name="L319"></a>        <span class="c1"># Step 6: Restore final output</span>
+<a id="L320" name="L320"></a>        <span class="n">B</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">valid_patch_mask</span><span class="o">.</span><span class="n">shape</span>
+<a id="L321" name="L321"></a>        <span class="n">S</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L322" name="L322"></a>        <span class="n">vocab_size</span> <span class="o">=</span> <span class="n">logits</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L323" name="L323"></a>        <span class="n">output_logits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">vocab_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">tensor</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">logits</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<a id="L324" name="L324"></a>        <span class="n">output_logits</span><span class="p">[</span><span class="n">valid_patch_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">logits</span><span class="o">.</span><span class="n">tensor</span>
+<a id="L325" name="L325"></a>        
+<a id="L326" name="L326"></a>        <span class="k">return</span> <span class="n">output_logits</span>
+<a id="L327" name="L327"></a>
+<a id="L328" name="L328"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_training_phase</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">phase</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L329" name="L329"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Set training phase and configure module gradients&quot;&quot;&quot;</span>
+<a id="L330" name="L330"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">training_phase</span> <span class="o">=</span> <span class="n">phase</span>
+<a id="L331" name="L331"></a>        
+<a id="L332" name="L332"></a>        <span class="n">phase_configs</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L333" name="L333"></a>            <span class="s1">&#39;autoencoder-training&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;transformer&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;decoder&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+<a id="L334" name="L334"></a>            <span class="s1">&#39;patch-training&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;transformer&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;decoder&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+<a id="L335" name="L335"></a>            <span class="s1">&#39;autoencoder-final-annealing&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;encoder&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;transformer&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;decoder&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+<a id="L336" name="L336"></a>        <span class="p">}</span>
+<a id="L337" name="L337"></a>        
+<a id="L338" name="L338"></a>        <span class="k">if</span> <span class="n">phase</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">phase_configs</span><span class="p">:</span>
+<a id="L339" name="L339"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown phase: </span><span class="si">{</span><span class="n">phase</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L340" name="L340"></a>        
+<a id="L341" name="L341"></a>        <span class="n">config</span> <span class="o">=</span> <span class="n">phase_configs</span><span class="p">[</span><span class="n">phase</span><span class="p">]</span>
+<a id="L342" name="L342"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">encoder</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;encoder&#39;</span><span class="p">])</span>
+<a id="L343" name="L343"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">transformer</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;transformer&#39;</span><span class="p">])</span>
+<a id="L344" name="L344"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">decoder</span><span class="o">.</span><span class="n">requires_grad_</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;decoder&#39;</span><span class="p">])</span>
+<a id="L345" name="L345"></a>
+<a id="L346" name="L346"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">training_step</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">phase</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L347" name="L347"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Simplified training step dispatcher&quot;&quot;&quot;</span>
+<a id="L348" name="L348"></a>        <span class="n">phase</span> <span class="o">=</span> <span class="n">phase</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">training_phase</span>
+<a id="L349" name="L349"></a>        
+<a id="L350" name="L350"></a>        <span class="k">if</span> <span class="n">phase</span> <span class="o">==</span> <span class="s1">&#39;autoencoder-training&#39;</span><span class="p">:</span>
+<a id="L351" name="L351"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_autoencoder_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">,</span> <span class="n">log</span><span class="o">=</span><span class="n">log</span><span class="p">)</span>
+<a id="L352" name="L352"></a>        <span class="k">elif</span> <span class="n">phase</span> <span class="o">==</span> <span class="s1">&#39;patch-training&#39;</span><span class="p">:</span>
+<a id="L353" name="L353"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_patch_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<a id="L354" name="L354"></a>        <span class="k">elif</span> <span class="n">phase</span> <span class="o">==</span> <span class="s1">&#39;autoencoder-final-annealing&#39;</span><span class="p">:</span>
+<a id="L355" name="L355"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fine_tuning_loss</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<a id="L356" name="L356"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L357" name="L357"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown training phase: </span><span class="si">{</span><span class="n">phase</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L358" name="L358"></a>
+<a id="L359" name="L359"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_autoencoder_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">log</span><span class="p">):</span>
+<a id="L360" name="L360"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Phase 1: Autoencoder reconstruction loss&quot;&quot;&quot;</span>
+<a id="L361" name="L361"></a>        <span class="n">x</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;input_ids&#39;</span><span class="p">]</span> 
+<a id="L362" name="L362"></a>        
+<a id="L363" name="L363"></a>        <span class="c1"># Forward with autoencoder only (skip transformer)</span>
+<a id="L364" name="L364"></a>        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">skip_transformer</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># [B, P, S, vocab_size]</span>
+<a id="L365" name="L365"></a>        
+<a id="L366" name="L366"></a>        <span class="c1"># Get target tensor</span>
+<a id="L367" name="L367"></a>        <span class="n">targets</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;tensor&quot;</span><span class="p">]</span>  <span class="c1"># [B, P, S]</span>
+<a id="L368" name="L368"></a>        <span class="n">valid_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;padding_masks_external&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B, P]</span>
+<a id="L369" name="L369"></a>        
+<a id="L370" name="L370"></a>        <span class="c1"># Compute loss only on valid patches</span>
+<a id="L371" name="L371"></a>        <span class="n">loss</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L372" name="L372"></a>        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L373" name="L373"></a>        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">targets</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
+<a id="L374" name="L374"></a>            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">targets</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)):</span>
+<a id="L375" name="L375"></a>                <span class="k">if</span> <span class="n">valid_mask</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">p</span><span class="p">]:</span>
+<a id="L376" name="L376"></a>                    <span class="n">patch_logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span>  <span class="c1"># [S, vocab_size]</span>
+<a id="L377" name="L377"></a>                    <span class="n">patch_targets</span> <span class="o">=</span> <span class="n">targets</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span>  <span class="c1"># [S]</span>
+<a id="L378" name="L378"></a>                    
+<a id="L379" name="L379"></a>                    <span class="c1"># Mask internal padding</span>
+<a id="L380" name="L380"></a>                    <span class="n">internal_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;padding_masks_internal&quot;</span><span class="p">][</span><span class="n">b</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span>
+<a id="L381" name="L381"></a>                    <span class="k">if</span> <span class="n">internal_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+<a id="L382" name="L382"></a>                        <span class="n">valid_logits</span> <span class="o">=</span> <span class="n">patch_logits</span><span class="p">[</span><span class="n">internal_mask</span><span class="p">]</span>
+<a id="L383" name="L383"></a>                        <span class="n">valid_targets</span> <span class="o">=</span> <span class="n">patch_targets</span><span class="p">[</span><span class="n">internal_mask</span><span class="p">]</span>
+<a id="L384" name="L384"></a>                        <span class="n">loss</span> <span class="o">+=</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">valid_logits</span><span class="p">,</span> <span class="n">valid_targets</span><span class="p">)</span>
+<a id="L385" name="L385"></a>                        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="L386" name="L386"></a>        <span class="n">loss</span><span class="o">=</span><span class="n">loss</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<a id="L387" name="L387"></a>        <span class="n">log</span><span class="p">(</span><span class="s1">&#39;train/autoencoder_loss&#39;</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">prog_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L388" name="L388"></a>        <span class="k">return</span> <span class="n">loss</span>
+<a id="L389" name="L389"></a>
+<a id="L390" name="L390"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_patch_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+<a id="L391" name="L391"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Phase 2: Patch-level autoregressive prediction&quot;&quot;&quot;</span>
+<a id="L392" name="L392"></a>        <span class="n">x</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;input_ids&#39;</span><span class="p">]</span>
+<a id="L393" name="L393"></a>        
+<a id="L394" name="L394"></a>        <span class="c1"># Get patch embeddings (skip decoder)</span>
+<a id="L395" name="L395"></a>        <span class="n">z</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">skip_decoder</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># [B*P_valid, D]</span>
+<a id="L396" name="L396"></a>        
+<a id="L397" name="L397"></a>        <span class="c1"># Reshape to get batch structure back</span>
+<a id="L398" name="L398"></a>        <span class="n">valid_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;padding_masks_external&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># [B, P]</span>
+<a id="L399" name="L399"></a>        <span class="n">B</span><span class="p">,</span> <span class="n">P</span> <span class="o">=</span> <span class="n">valid_mask</span><span class="o">.</span><span class="n">shape</span>
+<a id="L400" name="L400"></a>        <span class="n">D</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L401" name="L401"></a>        
+<a id="L402" name="L402"></a>        <span class="n">z_full</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">P</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">z</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">z</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<a id="L403" name="L403"></a>        <span class="n">z_full</span><span class="p">[</span><span class="n">valid_mask</span><span class="p">]</span> <span class="o">=</span> <span class="n">z</span><span class="o">.</span><span class="n">tensor</span>
+<a id="L404" name="L404"></a>        
+<a id="L405" name="L405"></a>        <span class="c1"># Autoregressive loss: predict next patch from previous patches</span>
+<a id="L406" name="L406"></a>        <span class="k">if</span> <span class="n">P</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
+<a id="L407" name="L407"></a>            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">z</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L408" name="L408"></a>        
+<a id="L409" name="L409"></a>        <span class="c1"># Input: patches 0 to P-2, Target: patches 1 to P-1</span>
+<a id="L410" name="L410"></a>        <span class="n">input_patches</span> <span class="o">=</span> <span class="n">z_full</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>  <span class="c1"># [B, P-1, D]</span>
+<a id="L411" name="L411"></a>        <span class="n">target_patches</span> <span class="o">=</span> <span class="n">z_full</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>  <span class="c1"># [B, P-1, D]</span>
+<a id="L412" name="L412"></a>        
+<a id="L413" name="L413"></a>        <span class="c1"># Only compute loss where both input and target are valid</span>
+<a id="L414" name="L414"></a>        <span class="n">input_valid</span> <span class="o">=</span> <span class="n">valid_mask</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<a id="L415" name="L415"></a>        <span class="n">target_valid</span> <span class="o">=</span> <span class="n">valid_mask</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span>
+<a id="L416" name="L416"></a>        <span class="n">both_valid</span> <span class="o">=</span> <span class="n">input_valid</span> <span class="o">&amp;</span> <span class="n">target_valid</span>
+<a id="L417" name="L417"></a>        
+<a id="L418" name="L418"></a>        <span class="k">if</span> <span class="n">both_valid</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+<a id="L419" name="L419"></a>            <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">mse_loss</span><span class="p">(</span><span class="n">input_patches</span><span class="p">[</span><span class="n">both_valid</span><span class="p">],</span> <span class="n">target_patches</span><span class="p">[</span><span class="n">both_valid</span><span class="p">])</span>
+<a id="L420" name="L420"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L421" name="L421"></a>            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">z</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">requires_grad</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L422" name="L422"></a>
+<a id="L423" name="L423"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_fine_tuning_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+<a id="L424" name="L424"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Phase 3&quot;&quot;&quot;</span>
+<a id="L425" name="L425"></a>        <span class="n">x</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;input_ids&#39;</span><span class="p">]</span>
+<a id="L426" name="L426"></a>        
+<a id="L427" name="L427"></a>        <span class="c1"># Full forward pass</span>
+<a id="L428" name="L428"></a>        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>  <span class="c1"># [B, P, S, vocab_size]</span>
+<a id="L429" name="L429"></a>        <span class="n">targets</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;tensor&quot;</span><span class="p">]</span>  <span class="c1"># [B, P, S]</span>
+<a id="L430" name="L430"></a>        
+<a id="L431" name="L431"></a>        <span class="c1"># Compute loss on all valid positions</span>
+<a id="L432" name="L432"></a>        <span class="n">loss</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L433" name="L433"></a>        <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L434" name="L434"></a>        
+<a id="L435" name="L435"></a>        <span class="n">valid_patch_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;padding_masks_external&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L436" name="L436"></a>        
+<a id="L437" name="L437"></a>        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">targets</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">0</span><span class="p">)):</span>
+<a id="L438" name="L438"></a>            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">targets</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="mi">1</span><span class="p">)):</span>
+<a id="L439" name="L439"></a>                <span class="k">if</span> <span class="n">valid_patch_mask</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">p</span><span class="p">]:</span>
+<a id="L440" name="L440"></a>                    <span class="n">patch_logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span>  <span class="c1"># [S, vocab_size]</span>
+<a id="L441" name="L441"></a>                    <span class="n">patch_targets</span> <span class="o">=</span> <span class="n">targets</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span>  <span class="c1"># [S]</span>
+<a id="L442" name="L442"></a>                    
+<a id="L443" name="L443"></a>                    <span class="c1"># Use internal padding mask</span>
+<a id="L444" name="L444"></a>                    <span class="n">internal_mask</span> <span class="o">=</span> <span class="o">~</span><span class="n">x</span><span class="p">[</span><span class="s2">&quot;padding_masks_internal&quot;</span><span class="p">][</span><span class="n">b</span><span class="p">,</span> <span class="n">p</span><span class="p">]</span>
+<a id="L445" name="L445"></a>                    <span class="k">if</span> <span class="n">internal_mask</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+<a id="L446" name="L446"></a>                        <span class="n">valid_logits</span> <span class="o">=</span> <span class="n">patch_logits</span><span class="p">[</span><span class="n">internal_mask</span><span class="p">]</span>
+<a id="L447" name="L447"></a>                        <span class="n">valid_targets</span> <span class="o">=</span> <span class="n">patch_targets</span><span class="p">[</span><span class="n">internal_mask</span><span class="p">]</span>
+<a id="L448" name="L448"></a>                        <span class="n">loss</span> <span class="o">+=</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">valid_logits</span><span class="p">,</span> <span class="n">valid_targets</span><span class="p">)</span>
+<a id="L449" name="L449"></a>                        <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="L450" name="L450"></a>        
+<a id="L451" name="L451"></a>        <span class="k">return</span> <span class="n">loss</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

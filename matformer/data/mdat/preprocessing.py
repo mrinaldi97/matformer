@@ -11,7 +11,7 @@ import os
 import orjson
 from tqdm import tqdm
 
-from .lmdb import LMDBDataset
+from .lmdb_store import LMDBDataset
 
 
 class _NullProgressBar:
@@ -42,14 +42,16 @@ class _NullProgressBar:
         pass
 
 
-def HuggingFaceIterator(dataset_path, logger, dataset_args, dataset_config='', dataset_split='train', progress_bar=True):
+def HuggingFaceIterator(dataset_path, logger, dataset_args, dataset_config='', dataset_split='train', progress_bar=True, skip=0):
     from datasets import load_dataset
     ds = load_dataset(dataset_path, dataset_config)[dataset_split]
+    if skip:
+        ds = ds.select(range(min(skip, len(ds)), len(ds)))
     for item in tqdm(ds, disable=not progress_bar):
         yield item
 
 
-def JSONIterator(json_path, logger, dataset_args={}, progress_bar=True, batch_size_bytes=16 * 1024 * 1024):
+def JSONIterator(json_path, logger, dataset_args={}, progress_bar=True, batch_size_bytes=16 * 1024 * 1024, skip=0):
     file_size = os.path.getsize(json_path)
 
     ProgressBar = tqdm if progress_bar else _NullProgressBar
@@ -57,6 +59,7 @@ def JSONIterator(json_path, logger, dataset_args={}, progress_bar=True, batch_si
     with open(json_path, 'rb', buffering=batch_size_bytes) as f:
         with ProgressBar(total=file_size, unit='B', unit_scale=True, desc="Processing JSONL file...") as pbar:
             i = 0
+            yielded = 0
             while True:
                 batch_of_lines = f.readlines(batch_size_bytes)
                 if not batch_of_lines:
@@ -75,16 +78,19 @@ def JSONIterator(json_path, logger, dataset_args={}, progress_bar=True, batch_si
 
                     if data is not None:
                         pbar.update(len(row_bytes))
-                        yield data
+                        # `skip` counts successfully parsed documents, not lines.
+                        if yielded >= skip:
+                            yield data
+                        yielded += 1
 
                     i += 1
 
 
-def AtlasIterator(path, logger, dataset_args={}, progress_bar=True):
+def AtlasIterator(path, logger, dataset_args={}, progress_bar=True, skip=0):
     from torch_atlas_ds import AtlasDataset
     db = AtlasDataset(path)
     ProgressBar = tqdm if progress_bar else _NullProgressBar
-    for i in ProgressBar(range(len(db))):
+    for i in ProgressBar(range(skip, len(db))):
         try:
             yield db[i]
         except Exception as e:
@@ -92,10 +98,10 @@ def AtlasIterator(path, logger, dataset_args={}, progress_bar=True):
             yield None
 
 
-def LMDBIterator(lmdb_path, logger, dataset_args={}, progress_bar=True):
+def LMDBIterator(lmdb_path, logger, dataset_args={}, progress_bar=True, skip=0):
     db = LMDBDataset.open(lmdb_path)
     ProgressBar = tqdm if progress_bar else _NullProgressBar
-    for i in ProgressBar(range(len(db))):
+    for i in ProgressBar(range(skip, len(db))):
         try:
             yield db[i]
         except Exception as e:

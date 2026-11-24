@@ -1,6 +1,9 @@
 """
 File: matformer/transformer_blocks/attention.py
 """
+
+#TODO2: Move all the interpretability related stuff (forward, view over weights...) to a different file, registered as a different implementation of "attention" respecting the registry's constraint "is_interpretable": True, while this becomes is_interpretable:False
+#TODO2: Add, wherever is relevant, the new Socket/Stream system, to allow for the insertion of plugins and inspection (particularly useful for the interpretability branch, but useful even if more limited, also in the normal branch)
 #Torch
 import torch
 import torch.nn as nn
@@ -150,7 +153,8 @@ class MultiHeadAttention(MatformerModule):
                 positional_encoding=self.config.positional_encoding,
                 attn_logit_softcap=self.config.attn_logit_softcap,
                 cache=cache,
-                device=device
+                device=device,
+                layer_idx=self.layer_idx,
             )
             kernel_constraints = {'softcap': self.config.attn_logit_softcap is not None} # Kernels unable to softcap (flash) are not candidates
             if is_hybrid: #Initialize two kernels
@@ -160,11 +164,15 @@ class MultiHeadAttention(MatformerModule):
                                                             constraints=kernel_constraints, **kernel_kwargs)
                 self.causal_kernel_meta=self.attn_kernel_causal._matformer_metadata
                 self.noncausal_kernel_meta=self.attn_kernel_noncausal._matformer_metadata
+                cache.register_kv_layer(self.layer_idx, self.config.num_key_value_heads,
+                                        self.head_dim, *(self.causal_kernel_meta, self.noncausal_kernel_meta))
             else: #Normal branch
                 self.attn_kernel = registry.create('attention', 'normal', is_causal=is_causal,
                                                    constraints=kernel_constraints, **kernel_kwargs)
                 # Get kernel metadata
                 self.kernel_meta = self.attn_kernel._matformer_metadata
+                cache.register_kv_layer(self.layer_idx, self.config.num_key_value_heads,
+                                        self.head_dim, self.kernel_meta)
 
         if not self.force_separed_qkv and (not self.config.is_cross_attention or self.qkv_samedim) and self.n_groups == 1: # Packed qkv projection for efficiency
             self.packed_proj=registry.create('linear','linear',in_features=self.config.q_dim, out_features=3*self.q_inner_dim,bias=self.config.qkv_bias)
@@ -535,7 +543,10 @@ class MultiHeadAttention(MatformerModule):
                 q = self._transpose_for_kernel(q, self.rotary_embedding_meta['tensor_order_input'])
                 k = self._transpose_for_kernel(k, self.rotary_embedding_meta['tensor_order_input'])
 
-            # 1. Get sin and cos from cache
+            # 1. Get sin and cos from cache. A cached decode step feeds one token per sequence at
+            # its own absolute position, which the batch carries: the table is built long enough to
+            # contain it and the rotation is told where inside it this call starts.
+            offset = int((getattr(query_input, 'attributes', None) or {}).get('seqlen_offsets', 0))
             rope_kwargs = dict(
                 theta=self.config.rope_theta,
                 partial_rotary_factor=self.config.partial_rotary_factor,
@@ -549,7 +560,7 @@ class MultiHeadAttention(MatformerModule):
                 attention_factor=self.config.rope_scaling_attention_factor,
             )
             cos, sin = self.cache.get_rotary_cos_sin(
-                max_seq_len, self.head_dim, query_input.device, query_input.dtype, **rope_kwargs
+                max_seq_len + offset, self.head_dim, query_input.device, query_input.dtype, **rope_kwargs
             )
             # 2. Rotate query and keys
             # cu_seqlens refers to the packed layout; if the sequence was repadded
@@ -563,7 +574,8 @@ class MultiHeadAttention(MatformerModule):
                     k=k.tensor if k is not None else None,
                     cos=cos, sin=sin,
                     cu_seqlens=rope_cu_seqlens,
-                    max_seq_len=None if repadded else max_seq_len
+                    max_seq_len=None if repadded else max_seq_len,
+                    seqlen_offsets=offset,
                 )
             else:
                 # Cross-attention: keys sit on their own grid (own length, own segment

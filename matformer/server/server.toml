@@ -1,0 +1,20 @@
+# Matformer server configuration. Relative paths resolve against the repo root.
+host = "127.0.0.1"          # production: reach it only through an SSH tunnel
+port = 8765
+name = "local"              # shown in the GUI status bar / used in event labels
+
+# Filesystem areas the GUI may explore. Add as many as you like; "/" grants the whole box.
+# Debug setting (current): explore everything. Tighten it back to the repo for production.
+# MATFORMER_ASSETS, when configured, is always added first (that is where pickers open).
+# Paths here may use the assets tokens: roots = [".", "$ASSETS/dataset"].
+roots = ["/"]
+
+# Where to scan for run databases (*.db). The assets logs/, checkpoints/ and experiments/
+# folders are scanned too, when configured. A .db file may be named directly.
+run_roots = ["../checkpoints", "checkpoints"]
+
+fav_file = "~/.matformer/favourites.json"
+
+# Optional shared secret: when set, every connection must present it (first protocol line).
+# Unauthenticated connections get "auth required". Empty = no auth (fine behind an SSH tunnel).
+api_key = ""

@@ -20,7 +20,3 @@ task:
   save_metadata:  false
   ref_data: mgsm
 
-saver:
-  type: jsonl
-  filename: mgsm_results.jsonl
-  summary: mgsm_summary.json

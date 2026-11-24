@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Maskerator · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section" open><summary>Core</summary><ul><li><a href="registry.html">The Matformer Registry</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="transformer.html">Transformer architecture</a></li><li><a href="sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="plugins.html">Plugins</a></li><li><a href="virtual-models.html">Virtual models and activation stores</a></li><li><a href="matformer-module.html">MatformerModule</a></li><li><a href="tensors.html">TensorsDC</a></li><li><a href="cache.html">The cache</a></li><li><a class="current" href="maskerator.html">The Maskerator</a></li><li><a href="tokenizers.html">Tokenizers</a></li><li><a href="source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Core <span class="sep">/</span> The Maskerator</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/utils/masked_models.py.html"><code>matformer/utils/masked_models.py</code></a> <a href="../file/matformer/dataclasses/model_dataclasses.py.html"><code>matformer/dataclasses/model_dataclasses.py</code></a></div>
+<h1 id="the-maskerator">The Maskerator<a class="headerlink" href="#the-maskerator" title="Permanent link"></a></h1>
+<p><code>Maskerator</code> creates a masked sequence and records the positions the model should predict. It is used by the <a href="../training/learning-signals.html">masked learning signal</a> and by the <a href="../tasks/built-in-tasks.html#masking">masking task</a>, and it accepts plain tensors and <a href="tensors.html">TensorDC</a> wrappers.</p>
+<h2 id="substitutions">Substitutions<a class="headerlink" href="#substitutions" title="Permanent link"></a></h2>
+<p>For every selected position the maskerator uses one of three substitutions:</p>
+<ul>
+<li><strong>cloze</strong>: replace the token with the mask token (<code>cloze_prob</code>);</li>
+<li><strong>random</strong>: replace it with a random vocabulary id (<code>random_prob</code>);</li>
+<li><strong>same</strong>: keep the token but still ask the model to predict it (<code>same_prob</code>).</li>
+</ul>
+<p>The three probabilities must sum to one. If <code>random_prob</code> and <code>same_prob</code> are both <code>None</code>, the maskerator is in pure-cloze mode and does not need <code>vocab_size</code>. As soon as one of them is set, <code>vocab_size</code> is required, because the random branch has to draw from somewhere.</p>
+<h2 id="the-masking-rate">The masking rate<a class="headerlink" href="#the-masking-rate" title="Permanent link"></a></h2>
+<p><code>substitution_rate</code> accepts three shapes:</p>
+<ul>
+<li>a float: a fixed fraction of the tokens is selected;</li>
+<li>a pair <code>(lower, upper)</code>: a fraction is sampled uniformly in that range for every batch;</li>
+<li><code>None</code>: the caller decides the rate and passes it to the call, which is how a curriculum or a memory probe can control it step by step.</li>
+</ul>
+<p><code>variable_masking_rate</code> decides whether the sampled rate is one per batch or one per document. <code>random_seed</code> seeds both the Python RNG and the per-device <code>torch.Generator</code>, so a run is reproducible without touching the global RNG.</p>
+<h2 id="the-cloze-mask">The cloze mask<a class="headerlink" href="#the-cloze-mask" title="Permanent link"></a></h2>
+<p>The output is <code>(masked_sequence, rate)</code> when the input is a <code>TensorDC</code>. The selection mask is stored in <code>following_attributes["cloze_mask"]</code>; it has the same leading dimensions as the tokens, so it is padded, unpadded and reversed with them. The learning signal then intersects it with the padding mask and uses the result to select the positions that contribute to the loss.</p>
+<p>A <code>PaddedTensor</code> and a <code>NormalTensor</code> go through the plain-tensor path and are rebuilt with <code>replace</code>, while an <code>UnpaddedTensor</code> is masked directly on the packed layout: there is no padding to respect, and <code>cu_seqlens</code> already says where each document ends.</p>
+<h2 id="scope">Scope<a class="headerlink" href="#scope" title="Permanent link"></a></h2>
+<p>The maskerator receives <code>pad_token_id</code> from the caller and does not inspect the model or the loss. The same object is used by a BERT-style model, by a token-classification cloze test and by the trainer's memory probe.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

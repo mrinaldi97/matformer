@@ -1,0 +1,696 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/tasks/evaluation.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/tasks/evaluation.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="evaluation.py.html"><code>matformer/tasks/evaluation.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/tasks/</code></a></p><h1><code>evaluation.py</code></h1><p class="muted">matformer/tasks/evaluation.py · 333 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/tasks/evaluation.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L12"><code>EvaluationTaskConfig</code></a><span class="line">L12</span> <span class="bases">(<a href="task.py.html#L14"><code>TaskConfig</code></a>)</span><div class="mro">MRO: <code>EvaluationTaskConfig</code> -> <a href="task.py.html#L14"><code>TaskConfig</code></a> -> <a href="../dataclasses/matformer_config.py.html#L162"><code>MatformerMultiConfig</code></a> -> <a href="../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a></div></li><li class="depth-0"><a href="#L32"><code>EvaluationTask</code></a><span class="line">L32</span> <span class="bases">(<a href="task.py.html#L93"><code>MatformerTask</code></a>)</span><div class="mro">MRO: <code>EvaluationTask</code> -> <a href="task.py.html#L93"><code>MatformerTask</code></a></div></li><li class="depth-1"><a href="#L33"><code>EvaluationTask.begin_task</code></a><span class="line">L33</span></li><li class="depth-1"><a href="#L39"><code>EvaluationTask.reset</code></a><span class="line">L39</span></li><li class="depth-1"><a href="#L43"><code>EvaluationTask._state_for</code></a><span class="line">L43</span></li><li class="depth-1"><a href="#L62"><code>EvaluationTask.id2label</code></a><span class="line">L62</span></li><li class="depth-1"><a href="#L68"><code>EvaluationTask.input_tokens</code></a><span class="line">L68</span></li><li class="depth-1"><a href="#L85"><code>EvaluationTask._word_starts</code></a><span class="line">L85</span></li><li class="depth-1"><a href="#L94"><code>EvaluationTask.class_name</code></a><span class="line">L94</span></li><li class="depth-1"><a href="#L103"><code>EvaluationTask.process_batch</code></a><span class="line">L103</span></li><li class="depth-1"><a href="#L137"><code>EvaluationTask._process_single</code></a><span class="line">L137</span></li><li class="depth-1"><a href="#L218"><code>EvaluationTask.token_level</code></a><span class="line">L218</span></li><li class="depth-1"><a href="#L224"><code>EvaluationTask.word_level</code></a><span class="line">L224</span></li><li class="depth-1"><a href="#L230"><code>EvaluationTask.present</code></a><span class="line">L230</span></li><li class="depth-1"><a href="#L241"><code>EvaluationTask._present_row</code></a><span class="line">L241</span></li><li class="depth-1"><a href="#L260"><code>EvaluationTask._present_table</code></a><span class="line">L260</span></li><li class="depth-1"><a href="#L273"><code>EvaluationTask.compute</code></a><span class="line">L273</span></li><li class="depth-1"><a href="#L287"><code>EvaluationTask._compute_metrics</code></a><span class="line">L287</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li><li><a href="../dataclasses/tensors_dataclasses.py.html"><code>matformer.dataclasses.tensors_dataclasses</code></a> <span class="muted">TensorDC</span></li><li><a href="task.py.html"><code>matformer.tasks.task</code></a> <span class="muted">TaskConfig, MatformerTask, per_position, surface, top_k</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># matformer/tasks/evaluation.py</span>
+<a id="L2" name="L2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<a id="L3" name="L3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<a id="L4" name="L4"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L5" name="L5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<a id="L6" name="L6"></a><span class="kn">from</span><span class="w"> </span><a href="../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L7" name="L7"></a><span class="kn">from</span><span class="w"> </span><a href="../dataclasses/tensors_dataclasses.py.html"><span class="nn">matformer.dataclasses.tensors_dataclasses</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">TensorDC</span>
+<a id="L8" name="L8"></a><span class="kn">from</span><span class="w"> </span><a href="task.py.html"><span class="nn">matformer.tasks.task</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">TaskConfig</span><span class="p">,</span> <span class="n">MatformerTask</span><span class="p">,</span> <span class="n">per_position</span><span class="p">,</span> <span class="n">surface</span><span class="p">,</span> <span class="n">top_k</span>
+<a id="L9" name="L9"></a><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<a id="L10" name="L10"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;evaluation&quot;</span><span class="p">)</span>
+<a id="L11" name="L11"></a><span class="nd">@dataclass</span>
+<a id="L12" name="L12"></a><span class="k">class</span><span class="w"> </span><span class="nc">EvaluationTaskConfig</span><span class="p">(</span><a href="task.py.html#L14"><span class="n">TaskConfig</span></a><span class="p">):</span>
+<a id="L13" name="L13"></a>    <span class="n">learning_signal</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;autoregressive&quot;</span>
+<a id="L14" name="L14"></a>    <span class="c1"># Summary-related configs</span>
+<a id="L15" name="L15"></a>    <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span>                     <span class="c1"># required if compute_confusion_matrix or compute_perplexity_by_token</span>
+<a id="L16" name="L16"></a>    <span class="n">compute_confusion_matrix</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>      <span class="c1"># O(num_classes^2) memory</span>
+<a id="L17" name="L17"></a>    <span class="n">compute_perplexity_by_token</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>   <span class="c1"># O(num_classes) memory, grouped by target id</span>
+<a id="L18" name="L18"></a>    <span class="n">topk</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">bool</span><span class="p">,</span><span class="nb">tuple</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">5</span><span class="p">,)</span>   
+<a id="L19" name="L19"></a>    <span class="c1"># Single batch related configs </span>
+<a id="L20" name="L20"></a>    <span class="n">save_logits</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span> 
+<a id="L21" name="L21"></a>    <span class="n">save_logprobs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L22" name="L22"></a>    <span class="n">save_argmax</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L23" name="L23"></a>    <span class="n">limit_to_classes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>     <span class="c1"># Usage [27, 42, 9] to restrict saved outputs</span>
+<a id="L24" name="L24"></a>    <span class="n">logit_diff_classes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>   <span class="c1"># Usage [idx1, idx2] to track specific logit margins</span>
+<a id="L25" name="L25"></a>    <span class="n">use_tokenizer</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L26" name="L26"></a>    <span class="n">topk_present</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>                       <span class="c1"># candidates kept per prediction (interactive):</span>
+<a id="L27" name="L27"></a>                                                <span class="c1"># 0 = none, -1 = the whole class set</span>
+<a id="L28" name="L28"></a>    <span class="n">save_probs</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>                    <span class="c1"># keep the full distribution: task.probs answers</span>
+<a id="L29" name="L29"></a>                                                <span class="c1"># any position, not only the kept candidates</span>
+<a id="L30" name="L30"></a>
+<a id="L31" name="L31"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;evaluation&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<a id="L32" name="L32"></a><span class="k">class</span><span class="w"> </span><span class="nc">EvaluationTask</span><span class="p">(</span><a href="task.py.html#L93"><span class="n">MatformerTask</span></a><span class="p">):</span>
+<a id="L33" name="L33"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">begin_task</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L34" name="L34"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">begin_task</span><span class="p">()</span>
+<a id="L35" name="L35"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_signal</span><span class="p">:</span>
+<a id="L36" name="L36"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">learning_signal</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;learning_signal&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_signal</span><span class="p">,</span> <span class="n">wrapper</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">)</span>
+<a id="L37" name="L37"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reset</span><span class="p">()</span>
+<a id="L38" name="L38"></a>
+<a id="L39" name="L39"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reset</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L40" name="L40"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_state</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L41" name="L41"></a>
+<a id="L42" name="L42"></a>
+<a id="L43" name="L43"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_state_for</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<a id="L44" name="L44"></a>        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="p">:</span>
+<a id="L45" name="L45"></a>            <span class="n">s</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L46" name="L46"></a>                <span class="s2">&quot;nll_sum&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>             
+<a id="L47" name="L47"></a>                <span class="s2">&quot;token_count&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>         
+<a id="L48" name="L48"></a>                <span class="s2">&quot;correct_count&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>      
+<a id="L49" name="L49"></a>                <span class="s2">&quot;confidence_sum&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>      
+<a id="L50" name="L50"></a>                <span class="s2">&quot;entropy_sum&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>         
+<a id="L51" name="L51"></a>                <span class="s2">&quot;pred_count&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>          
+<a id="L52" name="L52"></a>                <span class="s2">&quot;brier_sum&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>           
+<a id="L53" name="L53"></a>                <span class="s2">&quot;token_nll_sum&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>      
+<a id="L54" name="L54"></a>                <span class="s2">&quot;token_count_by_id&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  
+<a id="L55" name="L55"></a>                <span class="s2">&quot;confusion&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>          
+<a id="L56" name="L56"></a>                <span class="s2">&quot;topk_correct&quot;</span><span class="p">:</span> <span class="p">{},</span>         <span class="c1"># filled per top-k actually computed (see process_batch)</span>
+<a id="L57" name="L57"></a>            <span class="p">}</span>
+<a id="L58" name="L58"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">s</span>
+<a id="L59" name="L59"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+<a id="L60" name="L60"></a>
+<a id="L61" name="L61"></a>    <span class="nd">@property</span>
+<a id="L62" name="L62"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">id2label</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L63" name="L63"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Class id -&gt; class name, from the model config or from the dataset it was trained on.</span>
+<a id="L64" name="L64"></a><span class="sd">        None when the head has no named classes (a language model, usually).&quot;&quot;&quot;</span>
+<a id="L65" name="L65"></a>        <span class="n">l2id</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;label2id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">data</span><span class="p">,</span> <span class="s2">&quot;label2id&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L66" name="L66"></a>        <span class="k">return</span> <span class="p">{</span><span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">):</span> <span class="n">k</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">l2id</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span> <span class="k">if</span> <span class="n">l2id</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L67" name="L67"></a>
+<a id="L68" name="L68"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">input_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+<a id="L69" name="L69"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;What to show on the left of a per-token prediction, and which row of the predictions</span>
+<a id="L70" name="L70"></a><span class="sd">        each shown item corresponds to. A token-classification head labels the first subword of</span>
+<a id="L71" name="L71"></a><span class="sd">        every word and nothing of the rest, so when the input was split into words the words</span>
+<a id="L72" name="L72"></a><span class="sd">        themselves are what deserves a row.&quot;&quot;&quot;</span>
+<a id="L73" name="L73"></a>        <span class="n">tokenizer</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;tokenizer&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L74" name="L74"></a>        <span class="k">if</span> <span class="n">tokenizer</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L75" name="L75"></a>            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<a id="L76" name="L76"></a>        <span class="n">words</span><span class="p">,</span> <span class="n">word_ids</span> <span class="o">=</span> <span class="n">batch</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;words&#39;</span><span class="p">),</span> <span class="n">batch</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;word_ids&#39;</span><span class="p">)</span>
+<a id="L77" name="L77"></a>        <span class="k">if</span> <span class="n">words</span> <span class="ow">and</span> <span class="n">word_ids</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">words</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">word_ids</span><span class="p">):</span>
+<a id="L78" name="L78"></a>            <span class="n">rows</span> <span class="o">=</span> <span class="p">[[(</span><span class="n">word</span><span class="p">,</span> <span class="n">start</span><span class="p">)</span> <span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">start</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">vocabulary</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_word_starts</span><span class="p">(</span><span class="n">ids</span><span class="p">))]</span>
+<a id="L79" name="L79"></a>                    <span class="k">for</span> <span class="n">vocabulary</span><span class="p">,</span> <span class="n">ids</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">words</span><span class="p">,</span> <span class="n">word_ids</span><span class="p">)]</span>
+<a id="L80" name="L80"></a>            <span class="k">return</span> <span class="p">[[</span><span class="n">word</span> <span class="k">for</span> <span class="n">word</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">row</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">],</span> <span class="p">[[</span><span class="n">start</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">start</span> <span class="ow">in</span> <span class="n">row</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
+<a id="L81" name="L81"></a>        <span class="n">pieces</span> <span class="o">=</span> <span class="p">[</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">tokens</span><span class="p">(</span><span class="n">row</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">pad</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()]</span>
+<a id="L82" name="L82"></a>        <span class="k">return</span> <span class="n">pieces</span><span class="p">,</span> <span class="p">[[</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pieces</span><span class="p">[</span><span class="n">row</span><span class="p">]))]</span> <span class="ow">and</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pieces</span><span class="p">[</span><span class="n">row</span><span class="p">])))</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">pieces</span><span class="p">))]</span>
+<a id="L83" name="L83"></a>
+<a id="L84" name="L84"></a>    <span class="nd">@staticmethod</span>
+<a id="L85" name="L85"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_word_starts</span><span class="p">(</span><span class="n">word_ids</span><span class="p">):</span>
+<a id="L86" name="L86"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Position of the first subword of every word: where the label of that word lives.&quot;&quot;&quot;</span>
+<a id="L87" name="L87"></a>        <span class="n">previous</span><span class="p">,</span> <span class="n">starts</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="p">[]</span>
+<a id="L88" name="L88"></a>        <span class="k">for</span> <span class="n">position</span><span class="p">,</span> <span class="n">word</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">word_ids</span><span class="p">):</span>
+<a id="L89" name="L89"></a>            <span class="k">if</span> <span class="n">word</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">word</span> <span class="o">!=</span> <span class="n">previous</span><span class="p">:</span>
+<a id="L90" name="L90"></a>                <span class="n">starts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">position</span><span class="p">)</span>
+<a id="L91" name="L91"></a>            <span class="n">previous</span> <span class="o">=</span> <span class="n">word</span>
+<a id="L92" name="L92"></a>        <span class="k">return</span> <span class="n">starts</span>
+<a id="L93" name="L93"></a>
+<a id="L94" name="L94"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">class_name</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<a id="L95" name="L95"></a>        <span class="n">labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id2label</span>
+<a id="L96" name="L96"></a>        <span class="k">if</span> <span class="n">labels</span><span class="p">:</span>
+<a id="L97" name="L97"></a>            <span class="k">return</span> <span class="n">labels</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">index</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">))</span>
+<a id="L98" name="L98"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">use_tokenizer</span><span class="p">:</span>
+<a id="L99" name="L99"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">([</span><span class="n">index</span><span class="p">])</span>
+<a id="L100" name="L100"></a>        <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+<a id="L101" name="L101"></a>
+<a id="L102" name="L102"></a>    <span class="nd">@torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">()</span>
+<a id="L103" name="L103"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">process_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">interactive</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L104" name="L104"></a>        <span class="c1"># interactive defaults to how the task is being driven: called one batch at a time, the</span>
+<a id="L105" name="L105"></a>        <span class="c1"># caller wants the per-item outputs, even when saving them was not configured.</span>
+<a id="L106" name="L106"></a>        <span class="k">if</span> <span class="n">interactive</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L107" name="L107"></a>            <span class="n">interactive</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interactive</span>
+<a id="L108" name="L108"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_signal</span><span class="p">:</span>
+<a id="L109" name="L109"></a>            <span class="n">input_sequence</span><span class="p">,</span> <span class="n">metadata</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_signal</span><span class="o">.</span><span class="n">prepare_inputs</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<a id="L110" name="L110"></a>            <span class="n">predictions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">input_sequence</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">learning_signal</span><span class="o">.</span><span class="n">model_kwargs</span><span class="p">(</span><span class="n">metadata</span><span class="p">))</span>
+<a id="L111" name="L111"></a>            <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">learning_signal</span><span class="o">.</span><span class="n">select_targets</span><span class="p">(</span><span class="n">predictions</span><span class="p">,</span> <span class="n">batch</span><span class="p">,</span> <span class="n">metadata</span><span class="p">)</span>
+<a id="L112" name="L112"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L113" name="L113"></a>            <span class="n">preds</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<a id="L114" name="L114"></a>            <span class="n">targets</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L115" name="L115"></a>
+<a id="L116" name="L116"></a>
+<a id="L117" name="L117"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="L118" name="L118"></a>            <span class="c1"># multiprobe: {address: logits}. targets from multiprobe_ls is a</span>
+<a id="L119" name="L119"></a>            <span class="c1"># tensor (batch.attributes[&#39;labels&#39;]), but a dict is handled too.</span>
+<a id="L120" name="L120"></a>            <span class="n">tokens</span><span class="p">,</span> <span class="n">positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_tokens</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="k">if</span> <span class="n">interactive</span> <span class="k">else</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L121" name="L121"></a>            <span class="n">data_out</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L122" name="L122"></a>            <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">preds_i</span> <span class="ow">in</span> <span class="n">preds</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L123" name="L123"></a>                <span class="n">targets_i</span> <span class="o">=</span> <span class="n">targets</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="n">targets</span>
+<a id="L124" name="L124"></a>                <span class="n">data_out</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_single</span><span class="p">(</span><span class="n">preds_i</span><span class="p">,</span> <span class="n">targets_i</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">interactive</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">positions</span><span class="p">)</span>
+<a id="L125" name="L125"></a>            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">data_out</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+<a id="L126" name="L126"></a>                <span class="k">return</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data_out</span>
+<a id="L127" name="L127"></a>            <span class="k">return</span> <span class="n">batch</span><span class="p">,</span> <span class="kc">None</span>
+<a id="L128" name="L128"></a>
+<a id="L129" name="L129"></a>        <span class="c1"># single-head path </span>
+<a id="L130" name="L130"></a>        <span class="n">tokens</span><span class="p">,</span> <span class="n">positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">input_tokens</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="k">if</span> <span class="n">interactive</span> <span class="k">else</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L131" name="L131"></a>        <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_process_single</span><span class="p">(</span><span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">interactive</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">positions</span><span class="p">)</span>
+<a id="L132" name="L132"></a>        <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L133" name="L133"></a>            <span class="k">return</span> <span class="n">batch</span><span class="p">,</span> <span class="n">data</span>
+<a id="L134" name="L134"></a>        <span class="k">return</span> <span class="n">batch</span><span class="p">,</span> <span class="kc">None</span>
+<a id="L135" name="L135"></a>
+<a id="L136" name="L136"></a>
+<a id="L137" name="L137"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_process_single</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">preds</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">interactive</span><span class="p">,</span> <span class="n">tokens</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">positions</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L138" name="L138"></a>        <span class="n">s</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_state_for</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<a id="L139" name="L139"></a>
+<a id="L140" name="L140"></a>
+<a id="L141" name="L141"></a>        <span class="k">if</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L142" name="L142"></a>            <span class="n">targets</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">preds</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L143" name="L143"></a>
+<a id="L144" name="L144"></a>        <span class="n">log_probs</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">log_softmax</span><span class="p">(</span><span class="n">preds</span><span class="o">.</span><span class="n">float</span><span class="p">(),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>   <span class="c1"># fp32: bf16 log_softmax saturates at exactly</span>
+<a id="L145" name="L145"></a>        <span class="n">probs</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span>                            <span class="c1"># log p = 0, hiding resolution from nll/codelength</span>
+<a id="L146" name="L146"></a>        <span class="n">predicted_ids</span> <span class="o">=</span> <span class="n">preds</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L147" name="L147"></a>
+<a id="L148" name="L148"></a>        <span class="n">s</span><span class="p">[</span><span class="s2">&quot;confidence_sum&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">probs</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>          
+<a id="L149" name="L149"></a>        <span class="n">s</span><span class="p">[</span><span class="s2">&quot;entropy_sum&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="o">-</span><span class="p">(</span><span class="n">probs</span> <span class="o">*</span> <span class="n">log_probs</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>  
+<a id="L150" name="L150"></a>        <span class="n">s</span><span class="p">[</span><span class="s2">&quot;pred_count&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>                       
+<a id="L151" name="L151"></a>
+<a id="L152" name="L152"></a>        <span class="k">if</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L153" name="L153"></a>            <span class="n">nll</span> <span class="o">=</span> <span class="o">-</span><span class="n">log_probs</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">targets</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> 
+<a id="L154" name="L154"></a>            <span class="n">s</span><span class="p">[</span><span class="s2">&quot;nll_sum&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">nll</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>                               
+<a id="L155" name="L155"></a>            <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">targets</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span>                            
+<a id="L156" name="L156"></a>            <span class="n">s</span><span class="p">[</span><span class="s2">&quot;correct_count&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">predicted_ids</span> <span class="o">==</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>  
+<a id="L157" name="L157"></a>            <span class="n">s</span><span class="p">[</span><span class="s2">&quot;brier_sum&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">probs</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">targets</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">probs</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>  
+<a id="L158" name="L158"></a>
+<a id="L159" name="L159"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">topk</span><span class="p">:</span>
+<a id="L160" name="L160"></a>                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">topk</span><span class="p">:</span>
+<a id="L161" name="L161"></a>                    <span class="k">if</span> <span class="n">k</span> <span class="o">&gt;</span> <span class="n">preds</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>      <span class="c1"># top-k wider than the number of classes is meaningless</span>
+<a id="L162" name="L162"></a>                        <span class="k">continue</span>
+<a id="L163" name="L163"></a>                    <span class="n">s</span><span class="p">[</span><span class="s2">&quot;topk_correct&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+<a id="L164" name="L164"></a>                    <span class="n">s</span><span class="p">[</span><span class="s2">&quot;topk_correct&quot;</span><span class="p">][</span><span class="n">k</span><span class="p">]</span> <span class="o">+=</span> <span class="p">(</span><span class="n">preds</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">indices</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>  
+<a id="L165" name="L165"></a>
+<a id="L166" name="L166"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">compute_perplexity_by_token</span><span class="p">:</span>
+<a id="L167" name="L167"></a>            <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">num_classes</span>
+<a id="L168" name="L168"></a>            <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_nll_sum&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>                                 
+<a id="L169" name="L169"></a>                <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_nll_sum&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">targets</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<a id="L170" name="L170"></a>                <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count_by_id&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">targets</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<a id="L171" name="L171"></a>
+<a id="L172" name="L172"></a>            <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_nll_sum&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">scatter_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">nll</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>                            
+<a id="L173" name="L173"></a>            <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count_by_id&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">scatter_add_</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">nll</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">))</span>     
+<a id="L174" name="L174"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">compute_confusion_matrix</span><span class="p">:</span>
+<a id="L175" name="L175"></a>            <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">num_classes</span>
+<a id="L176" name="L176"></a>            <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;confusion&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>                                
+<a id="L177" name="L177"></a>                <span class="n">s</span><span class="p">[</span><span class="s2">&quot;confusion&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">targets</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L178" name="L178"></a>            <span class="n">s</span><span class="p">[</span><span class="s2">&quot;confusion&quot;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">torch</span><span class="o">.</span><span class="n">bincount</span><span class="p">(</span><span class="n">targets</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="n">predicted_ids</span><span class="p">,</span> <span class="n">minlength</span><span class="o">=</span><span class="n">n</span> <span class="o">*</span> <span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>  
+<a id="L179" name="L179"></a>        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;save_batch&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">or</span> <span class="n">interactive</span><span class="p">:</span>
+<a id="L180" name="L180"></a>            <span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;targets&quot;</span><span class="p">:</span> <span class="n">targets</span><span class="p">,</span> <span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">predicted_ids</span> <span class="o">==</span> <span class="n">targets</span><span class="p">)</span><span class="o">.</span><span class="n">float</span><span class="p">()}</span> <span class="k">if</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">{}</span>
+<a id="L181" name="L181"></a>            <span class="n">cls_idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">limit_to_classes</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">preds</span><span class="o">.</span><span class="n">device</span><span class="p">)</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">limit_to_classes</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L182" name="L182"></a>
+<a id="L183" name="L183"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">save_argmax</span><span class="p">:</span>
+<a id="L184" name="L184"></a>                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;argmax&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">predicted_ids</span>
+<a id="L185" name="L185"></a>                <span class="k">if</span> <span class="n">cls_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L186" name="L186"></a>                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;selection_argmax&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">cls_idx</span><span class="p">[</span><span class="n">preds</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cls_idx</span><span class="p">)</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)]</span>
+<a id="L187" name="L187"></a>
+<a id="L188" name="L188"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">save_logits</span><span class="p">:</span>
+<a id="L189" name="L189"></a>                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;logits&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">preds</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cls_idx</span><span class="p">)</span> <span class="k">if</span> <span class="n">cls_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">preds</span>
+<a id="L190" name="L190"></a>
+<a id="L191" name="L191"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">save_logprobs</span><span class="p">:</span>
+<a id="L192" name="L192"></a>                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;logprobs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_probs</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cls_idx</span><span class="p">)</span> <span class="k">if</span> <span class="n">cls_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">log_probs</span>
+<a id="L193" name="L193"></a>
+<a id="L194" name="L194"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">save_probs</span><span class="p">:</span>
+<a id="L195" name="L195"></a>                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;probs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">index_select</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">cls_idx</span><span class="p">)</span> <span class="k">if</span> <span class="n">cls_idx</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">probs</span>
+<a id="L196" name="L196"></a>
+<a id="L197" name="L197"></a>            <span class="k">if</span> <span class="n">interactive</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">topk_present</span><span class="p">:</span>
+<a id="L198" name="L198"></a>                <span class="n">k</span> <span class="o">=</span> <span class="n">top_k</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">topk_present</span><span class="p">,</span> <span class="n">probs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+<a id="L199" name="L199"></a>                <span class="n">values</span><span class="p">,</span> <span class="n">indices</span> <span class="o">=</span> <span class="n">probs</span><span class="o">.</span><span class="n">topk</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L200" name="L200"></a>                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;topk_ids&quot;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;topk_probs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">indices</span><span class="p">,</span> <span class="n">values</span>
+<a id="L201" name="L201"></a>                <span class="k">if</span> <span class="n">tokens</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L202" name="L202"></a>                    <span class="n">data</span><span class="p">[</span><span class="s2">&quot;tokens&quot;</span><span class="p">],</span> <span class="n">data</span><span class="p">[</span><span class="s2">&quot;positions&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">positions</span>
+<a id="L203" name="L203"></a>
+<a id="L204" name="L204"></a>            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;logit_diff_classes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">logit_diff_classes</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+<a id="L205" name="L205"></a>                <span class="n">data</span><span class="p">[</span><span class="s2">&quot;logit_diff&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">preds</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">logit_diff_classes</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span> <span class="o">-</span> <span class="n">preds</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">logit_diff_classes</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span>
+<a id="L206" name="L206"></a>
+<a id="L207" name="L207"></a>            <span class="n">i2l</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">id2label</span>
+<a id="L208" name="L208"></a>            <span class="k">if</span> <span class="n">i2l</span> <span class="ow">or</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;use_tokenizer&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+<a id="L209" name="L209"></a>                <span class="n">fmt</span> <span class="o">=</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">i2l</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)))</span> <span class="k">if</span> <span class="n">i2l</span> <span class="k">else</span> <span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">tokenizer</span><span class="o">.</span><span class="n">decode</span><span class="p">([</span><span class="n">x</span><span class="p">]))</span>
+<a id="L210" name="L210"></a>                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;targets&quot;</span><span class="p">,</span> <span class="s2">&quot;argmax&quot;</span><span class="p">,</span> <span class="s2">&quot;selection_argmax&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">data</span><span class="p">]:</span>
+<a id="L211" name="L211"></a>                    <span class="n">lst</span> <span class="o">=</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<a id="L212" name="L212"></a>                    <span class="n">data</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">_labels&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">[[</span><span class="n">fmt</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">row</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">]</span> <span class="k">if</span> <span class="n">data</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">ndim</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="p">[</span><span class="n">fmt</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">]</span>
+<a id="L213" name="L213"></a>
+<a id="L214" name="L214"></a>            <span class="k">return</span> <span class="n">data</span>
+<a id="L215" name="L215"></a>        <span class="k">return</span> <span class="kc">None</span>
+<a id="L216" name="L216"></a>
+<a id="L217" name="L217"></a>    <span class="nd">@property</span>
+<a id="L218" name="L218"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">token_level</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="L219" name="L219"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;True when the head predicts one class per token rather than one per sequence.&quot;&quot;&quot;</span>
+<a id="L220" name="L220"></a>        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s1">&#39;scope&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="s1">&#39;token&#39;</span> \
+<a id="L221" name="L221"></a>            <span class="ow">or</span> <span class="s1">&#39;token&#39;</span> <span class="ow">in</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_signal</span><span class="p">)</span>
+<a id="L222" name="L222"></a>
+<a id="L223" name="L223"></a>    <span class="nd">@property</span>
+<a id="L224" name="L224"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">word_level</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="L225" name="L225"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;True when the input should be split into words before tokenizing, the way the</span>
+<a id="L226" name="L226"></a><span class="sd">        dataset it was trained on was: labelling one token at a time only makes sense if the</span>
+<a id="L227" name="L227"></a><span class="sd">        word boundaries the model saw at training time are reproduced.&quot;&quot;&quot;</span>
+<a id="L228" name="L228"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_level</span>
+<a id="L229" name="L229"></a>
+<a id="L230" name="L230"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">present</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">rows</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]:</span>
+<a id="L231" name="L231"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Read the predictions: a token/class table for sequence labelling, the ranked classes</span>
+<a id="L232" name="L232"></a><span class="sd">        for a whole-sequence decision. &#39;full&#39; leaves the raw result to the console.&quot;&quot;&quot;</span>
+<a id="L233" name="L233"></a>        <span class="n">show</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">presentation</span>
+<a id="L234" name="L234"></a>        <span class="k">if</span> <span class="n">show</span> <span class="o">==</span> <span class="s1">&#39;full&#39;</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">rows</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="L235" name="L235"></a>            <span class="k">return</span> <span class="kc">None</span>
+<a id="L236" name="L236"></a>        <span class="k">if</span> <span class="s1">&#39;topk_ids&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">and</span> <span class="s1">&#39;argmax&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+<a id="L237" name="L237"></a>            <span class="k">return</span> <span class="kc">None</span>
+<a id="L238" name="L238"></a>        <span class="n">blocks</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_present_row</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">show</span><span class="p">)</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
+<a id="L239" name="L239"></a>        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">block</span> <span class="k">for</span> <span class="n">block</span> <span class="ow">in</span> <span class="n">blocks</span> <span class="k">if</span> <span class="n">block</span><span class="p">)</span>
+<a id="L240" name="L240"></a>
+<a id="L241" name="L241"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_present_row</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">show</span><span class="p">):</span>
+<a id="L242" name="L242"></a>        <span class="k">if</span> <span class="s1">&#39;topk_ids&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">row</span><span class="p">:</span>               <span class="c1"># detail knob off: the decision, without the odds</span>
+<a id="L243" name="L243"></a>            <span class="n">argmax</span> <span class="o">=</span> <span class="n">per_position</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;argmax&#39;</span><span class="p">])</span>
+<a id="L244" name="L244"></a>            <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">class_name</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">one</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="k">for</span> <span class="n">one</span> <span class="ow">in</span> <span class="n">argmax</span><span class="o">.</span><span class="n">tolist</span><span class="p">()]</span> <span class="k">if</span> <span class="n">argmax</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span> \
+<a id="L245" name="L245"></a>                <span class="k">else</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">class_name</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">argmax</span><span class="p">))]</span>
+<a id="L246" name="L246"></a>            <span class="n">tokens</span> <span class="o">=</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokens&#39;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">labels</span><span class="p">))]</span>
+<a id="L247" name="L247"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_present_table</span><span class="p">([</span><span class="n">surface</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">],</span> <span class="p">[[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">],</span>
+<a id="L248" name="L248"></a>                                       <span class="p">[[</span><span class="mf">1.0</span><span class="p">]</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">labels</span><span class="p">],</span> <span class="n">show</span><span class="p">)</span>
+<a id="L249" name="L249"></a>        <span class="n">ids</span><span class="p">,</span> <span class="n">probs</span> <span class="o">=</span> <span class="n">per_position</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;topk_ids&#39;</span><span class="p">]),</span> <span class="n">per_position</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;topk_probs&#39;</span><span class="p">])</span>
+<a id="L250" name="L250"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_level</span> <span class="ow">and</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokens&#39;</span><span class="p">):</span>
+<a id="L251" name="L251"></a>            <span class="n">keeps</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;positions&#39;</span><span class="p">]</span>
+<a id="L252" name="L252"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_present_table</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;tokens&#39;</span><span class="p">],</span> <span class="n">ids</span><span class="p">[</span><span class="n">keeps</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">if</span> <span class="n">keeps</span> <span class="k">else</span> <span class="n">ids</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+<a id="L253" name="L253"></a>                                       <span class="n">probs</span><span class="p">[</span><span class="n">keeps</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span> <span class="k">if</span> <span class="n">keeps</span> <span class="k">else</span> <span class="n">probs</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">show</span><span class="p">)</span>
+<a id="L254" name="L254"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">token_level</span><span class="p">:</span>
+<a id="L255" name="L255"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_present_table</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])],</span> <span class="n">ids</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span>
+<a id="L256" name="L256"></a>                                       <span class="n">probs</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">show</span><span class="p">)</span>
+<a id="L257" name="L257"></a>        <span class="k">return</span> <span class="s1">&#39;  &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">class_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">p</span><span class="si">:</span><span class="s2">.1%</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="n">show</span> <span class="o">==</span> <span class="s1">&#39;probs&#39;</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">class_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+<a id="L258" name="L258"></a>                         <span class="k">for</span> <span class="bp">cls</span><span class="p">,</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ids</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">(),</span> <span class="n">probs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">tolist</span><span class="p">()))</span>
+<a id="L259" name="L259"></a>
+<a id="L260" name="L260"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_present_table</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokens</span><span class="p">,</span> <span class="n">ids</span><span class="p">,</span> <span class="n">probs</span><span class="p">,</span> <span class="n">show</span><span class="p">):</span>
+<a id="L261" name="L261"></a>        <span class="n">names</span> <span class="o">=</span> <span class="p">[[</span><span class="bp">self</span><span class="o">.</span><span class="n">class_name</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span> <span class="k">for</span> <span class="bp">cls</span> <span class="ow">in</span> <span class="n">row</span><span class="p">]</span> <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">]</span>
+<a id="L262" name="L262"></a>        <span class="n">tokens</span> <span class="o">=</span> <span class="p">[</span><span class="n">surface</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]</span>
+<a id="L263" name="L263"></a>        <span class="n">width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">token</span><span class="p">)</span> <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="mi">5</span><span class="p">])</span>
+<a id="L264" name="L264"></a>        <span class="k">if</span> <span class="n">show</span> <span class="o">==</span> <span class="s1">&#39;argmax&#39;</span><span class="p">:</span>
+<a id="L265" name="L265"></a>            <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">token</span><span class="si">:</span><span class="s2">&lt;</span><span class="si">{</span><span class="n">width</span><span class="si">}}</span><span class="s2">  </span><span class="si">{</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">token</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">names</span><span class="p">))</span>
+<a id="L266" name="L266"></a>        <span class="n">label_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">name</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
+<a id="L267" name="L267"></a>        <span class="n">lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="s1">&#39;token&#39;</span><span class="si">:</span><span class="s2">&lt;</span><span class="si">{</span><span class="n">width</span><span class="si">}}</span><span class="s2">  </span><span class="si">{</span><span class="s1">&#39;label&#39;</span><span class="si">:</span><span class="s2">&lt;</span><span class="si">{</span><span class="n">label_width</span><span class="si">}}</span><span class="s2">  </span><span class="si">{</span><span class="s1">&#39;p&#39;</span><span class="si">:</span><span class="s2">&gt;7</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span>
+<a id="L268" name="L268"></a>        <span class="k">for</span> <span class="n">token</span><span class="p">,</span> <span class="n">candidates</span><span class="p">,</span> <span class="n">ps</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">probs</span><span class="p">):</span>
+<a id="L269" name="L269"></a>            <span class="n">runner_up</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;   (</span><span class="si">{</span><span class="n">candidates</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">ps</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s2">.0%</span><span class="si">}</span><span class="s2">)&quot;</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">candidates</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="ow">and</span> <span class="n">ps</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mf">0.05</span> <span class="k">else</span> <span class="s1">&#39;&#39;</span>
+<a id="L270" name="L270"></a>            <span class="n">lines</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">token</span><span class="si">:</span><span class="s2">&lt;</span><span class="si">{</span><span class="n">width</span><span class="si">}}</span><span class="s2">  </span><span class="si">{</span><span class="n">candidates</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">&lt;</span><span class="si">{</span><span class="n">label_width</span><span class="si">}}</span><span class="s2">  </span><span class="si">{</span><span class="n">ps</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s2">6.1%</span><span class="si">}{</span><span class="n">runner_up</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L271" name="L271"></a>        <span class="k">return</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lines</span><span class="p">)</span>
+<a id="L272" name="L272"></a>
+<a id="L273" name="L273"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">compute</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L274" name="L274"></a>        <span class="n">names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="L275" name="L275"></a>        <span class="n">multi</span> <span class="o">=</span> <span class="nb">any</span><span class="p">(</span><span class="n">n</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">)</span>
+<a id="L276" name="L276"></a>        <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L277" name="L277"></a>        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+<a id="L278" name="L278"></a>            <span class="n">metrics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_compute_metrics</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_state</span><span class="p">[</span><span class="n">name</span><span class="p">])</span>
+<a id="L279" name="L279"></a>            <span class="k">if</span> <span class="n">multi</span><span class="p">:</span>
+<a id="L280" name="L280"></a>                <span class="n">prefix</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">/&quot;</span> <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+<a id="L281" name="L281"></a>                <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">metrics</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+<a id="L282" name="L282"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L283" name="L283"></a>                <span class="n">result</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">metrics</span><span class="p">)</span>
+<a id="L284" name="L284"></a>        <span class="k">return</span> <span class="n">result</span>
+<a id="L285" name="L285"></a>
+<a id="L286" name="L286"></a>
+<a id="L287" name="L287"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_compute_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L288" name="L288"></a>        <span class="n">denom_preds</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;pred_count&quot;</span><span class="p">],</span> <span class="mf">1.0</span><span class="p">)</span>                            
+<a id="L289" name="L289"></a>
+<a id="L290" name="L290"></a>        <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L291" name="L291"></a>            <span class="s2">&quot;mean_confidence&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;confidence_sum&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">denom_preds</span><span class="p">,</span>          
+<a id="L292" name="L292"></a>            <span class="s2">&quot;mean_entropy&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;entropy_sum&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">denom_preds</span><span class="p">,</span>                
+<a id="L293" name="L293"></a>        <span class="p">}</span>
+<a id="L294" name="L294"></a>
+<a id="L295" name="L295"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">learning_signal</span> <span class="ow">and</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>           
+<a id="L296" name="L296"></a>            <span class="n">mean_nll</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;nll_sum&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count&quot;</span><span class="p">]</span>                     
+<a id="L297" name="L297"></a>            <span class="n">metrics</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+<a id="L298" name="L298"></a>                <span class="s2">&quot;nll&quot;</span><span class="p">:</span> <span class="n">mean_nll</span><span class="p">,</span>
+<a id="L299" name="L299"></a>                <span class="s2">&quot;perplexity&quot;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">mean_nll</span><span class="p">)</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+<a id="L300" name="L300"></a>                <span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;correct_count&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count&quot;</span><span class="p">],</span>         
+<a id="L301" name="L301"></a>                <span class="s2">&quot;brier_score&quot;</span> <span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;brier_sum&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count&quot;</span><span class="p">],</span>
+<a id="L302" name="L302"></a>                <span class="s2">&quot;codelength_bits&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;nll_sum&quot;</span><span class="p">]</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span><span class="p">),</span>   
+<a id="L303" name="L303"></a>                <span class="s2">&quot;num_tokens&quot;</span><span class="p">:</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count&quot;</span><span class="p">]</span>            
+<a id="L304" name="L304"></a>            <span class="p">})</span>
+<a id="L305" name="L305"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">num_classes</span><span class="p">:</span>
+<a id="L306" name="L306"></a>                <span class="n">uniform_bits</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">num_classes</span><span class="p">)</span>
+<a id="L307" name="L307"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;uniform_codelength_bits&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">uniform_bits</span>
+<a id="L308" name="L308"></a>                <span class="c1"># A fully correct, fully confident block costs exactly 0 bits (bf16 log_softmax</span>
+<a id="L309" name="L309"></a>                <span class="c1"># saturates at log p = 0): compression is unbounded, and inf is not JSON-safe.</span>
+<a id="L310" name="L310"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;compression&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">uniform_bits</span> <span class="o">/</span> <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;codelength_bits&quot;</span><span class="p">]</span> <span class="k">if</span> <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;codelength_bits&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L311" name="L311"></a>            <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;topk_correct&quot;</span><span class="p">):</span>
+<a id="L312" name="L312"></a>                <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;topk_correct&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>                     
+<a id="L313" name="L313"></a>                    <span class="n">metrics</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;acc@</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span> <span class="o">/</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count&quot;</span><span class="p">]</span>             
+<a id="L314" name="L314"></a>
+<a id="L315" name="L315"></a>            <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_nll_sum&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>                             
+<a id="L316" name="L316"></a>                <span class="n">has_data</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count_by_id&quot;</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span>                     
+<a id="L317" name="L317"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;perplexity_by_token&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_nll_sum&quot;</span><span class="p">][</span><span class="n">has_data</span><span class="p">]</span> <span class="o">/</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;token_count_by_id&quot;</span><span class="p">][</span><span class="n">has_data</span><span class="p">])</span><span class="o">.</span><span class="n">exp</span><span class="p">()</span>  
+<a id="L318" name="L318"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;token_ids_for_perplexity_by_token&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">has_data</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">as_tuple</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L319" name="L319"></a>
+<a id="L320" name="L320"></a>            <span class="k">if</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;confusion&quot;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>                                
+<a id="L321" name="L321"></a>                <span class="n">true_pos</span> <span class="o">=</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;confusion&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">diag</span><span class="p">()</span>                           
+<a id="L322" name="L322"></a>                <span class="n">precision</span> <span class="o">=</span> <span class="n">true_pos</span> <span class="o">/</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;confusion&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">clamp_min</span><span class="p">(</span><span class="mf">1e-9</span><span class="p">)</span>   
+<a id="L323" name="L323"></a>                <span class="n">recall</span> <span class="o">=</span> <span class="n">true_pos</span> <span class="o">/</span> <span class="n">s</span><span class="p">[</span><span class="s2">&quot;confusion&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">clamp_min</span><span class="p">(</span><span class="mf">1e-9</span><span class="p">)</span>     
+<a id="L324" name="L324"></a>                <span class="n">f1</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">precision</span> <span class="o">*</span> <span class="n">recall</span> <span class="o">/</span> <span class="p">(</span><span class="n">precision</span> <span class="o">+</span> <span class="n">recall</span><span class="p">)</span><span class="o">.</span><span class="n">clamp_min</span><span class="p">(</span><span class="mf">1e-9</span><span class="p">)</span>
+<a id="L325" name="L325"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;macro_f1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f1</span><span class="o">.</span><span class="n">nanmean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<a id="L326" name="L326"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;micro_f1&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;accuracy&quot;</span><span class="p">]</span>
+<a id="L327" name="L327"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;macro_precision&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">precision</span><span class="o">.</span><span class="n">nanmean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<a id="L328" name="L328"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;macro_recall&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recall</span><span class="o">.</span><span class="n">nanmean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<a id="L329" name="L329"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;precision_per_class&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">precision</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<a id="L330" name="L330"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;recall_per_class&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">recall</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<a id="L331" name="L331"></a>                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;f1_per_class&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">f1</span><span class="o">.</span><span class="n">nan_to_num</span><span class="p">()</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<a id="L332" name="L332"></a>
+<a id="L333" name="L333"></a>        <span class="k">return</span> <span class="n">metrics</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

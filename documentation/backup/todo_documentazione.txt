@@ -1,0 +1,126 @@
+
+# Cose da documentare
+
+- Introduzione a Matformer 
+- Il registro
+	- Come esplorare il registro
+	- Come aggiungere moduli
+	
+- Il sistema di configurazione [FATTO]
+- Come sono implementate le reti neurali
+	- Socket, Plugin e Stream
+	
+- I task
+
+- Gli strumenti per l'interpretabilità
+
+- Gestione dei dati
+	- La classe generica del datamodule + come scrivere un datamodule
+	- Il lazy dataset
+	- L'MDAT
+		- tutti i dettagli sull'mdat (lungo)
+- Dataclasses (generare automaticamente file di documentazioni basate sui tipi delle dataclass e sulla documentazione inline [Specials:dataclasses])
+- I tokenizzatori
+	- Come aggiungere un tokenizzatore/pre-processer personalizzato
+
+- L'addestramento
+	- Come funziona il trainer [FATTO]
+	- I "learning signal", "learning signal selector" [FATTO]
+	- Il checkpoint manager
+	- 
+	- I logger
+
+- La cartella "loading"	
+	- Caricamento e conversione di modelli esterni (es. Huggingface)
+
+- Integrazione con Huggingface
+- Il Maskerator
+- La MatformerCache
+
+TODO
+ - table.py, metrics.py, schema.py devono stare in una sottocartella di utils o in un file singolo e armonizzate/accorciate
+ - slurm.py, slurm.toml, sweeps.py non devono stare in matformer/ ma in una sottocartella
+# 
+Matformer contains a complex configuration system that is able to control in an integrated manner all the framework's components. 
+Classes that requires a configuration must have their dataclass. This dataclass is automatically discovered by the [[registry]] with the decorator @register_dataclass. 
+The MatformerConfigs class is then able to load YAML/JSON config file(s) into a tree of typed MatformerConfig dataclasses.
+For example, let's assume the YAML contains
+    data:
+      - name: train
+        type: HFDataset
+      - name: test
+        type: HFDataset
+this means that the MatformerConfigs will look in the registtry for a dataclass for the category "data" and of variant "HFDataset", which is addressed by the special "type" key. If the "type" key is missing, MatformerConfigs will use category's default (default=True in the registry).
+Another special, optional, key is "name" as it is specialized for giving a unique alias to a specific object in the Configs system: this is necessary when the objects present in the configuration compose with each other, for example when a specific evaluation task refers to a specific dataset on which the task is evaluated.
+When a MatformerConfigs is created or updated, it is possible to provide several files (ex. a list of YAMLs). In this case, the order may be important: if a section is declared more than once, its existing fields are patched from left to right, the latest imported file wins. Files may also include other files by declaring a special section "includes". Includes are the first element resolved, so they are lowest priority. Highest priority are "overrides", which can be set at any moment and give the user a final decision over the MatformerConfigs object.
+An important distinction is that some categories only allow for a single configuration object; for example, it is possible to have only a single "model" section and so if more than one "model" section is present, their content get merged as explained above. Some categories, however, may allow for more than one configured object, as it is the case for the "data" and "task" sections. They are distinguished because their dataclass inherit from "MatformerMultiConfig" instead of "MatformerConfig". When it is initialized, MatformerConfigs automatically checks if there are inconsistencies (clearly, all the variants of a category must either be all grouped or all listed). 
+It is particularly for "MultiConfigs" dataclasses that the "name" field exists, in order to avoid ambiguities. In this way, it is possible to have named object in the configuration tree, and those objects can refer to each other. This behaviour is governed by the dataclass itself.thanks to three ClassVar:
+    _ref_fields: ClassVar[dict] = {"ref_section": "section_name"} 
+		_ref_fields in this case is saying to MatformerConfigs that the configuration's key "ref_section" must contain the reference to an object registered in the section "section_name". For example,     _ref_fields: ClassVar[dict] = {"ref_data": "data"} means that the configuration of this object should contain a field called "ref_data" containing the name of a (named) object insterted in the "data" section.
+		If this is the data section:
+		    data:
+			  - name: train
+				type: HFDataset
+			  - name: test
+				type: HFDataset
+		this means that this config should contain a "ref_data" key with either "train" or "test" as a value. 
+		The referenced object is automatically looked for by the MatformerConfigs systems. If it missing, no errors are raised if the key doesn't appear in the _mandatory_references: ClassVar[list] = [] classvar; in the counter case, an exception is raised. After the object is looked for, it is automatically linked: this means that calling my_section.ref_data will resolve to data.train.
+		my_section:
+			my_value: 1
+			foo_value: bar
+			ref_data: train
+		Because this "linking" capability can be useful in some cases, the "linked_fields" classvar acts a syntactic sugar to directly have a specific section linked inside the configuration object. 
+A MatformerConfig object can also be used to rapidly instantiate the configured object. For example, if we have loaded a tokenizer's configuration:
+	tokenizer:
+		type: huggingface
+		pretrained_name: mrinaldi/Gettone
+we can get an instance of the actual tokenizer with configs.tokenizer.instantiate() [matformer_configs.py #instantiate]
+
+
+# Componenti neurali
+This folder contains the actual implementation of the Neural Networks components of Matformer.
+
+[!WarningBox]Help: What are the annotation at the top of each class? Read more here: [[MatformerModule#class-annotations]]
+[!WarningBox]Help: Where are torch.nn components? What is that cache.registry.create(...) used to instantiate modules? Read more here [[MatformerRegistry]]
+* attention.py => Contains an implementation of a MultiHeadAttention, but it doesn't include the actual kernel. Using the [[registry]] it is indeed possible to load the attention kernel you prefer (or the best performing for your system). This selection is done automatically. The attention.py file also include a "Mechanistic-intepretability-friendly" attention implementation, that exposes the virtual weights of each single head in order to do studies and experiments dividing the QK circuit from the OV circuit. More info here: [[interpretability]]. For further info, refer to the [[class documentation]]
+
+* transformer.py => Contains the classes [[NakedTransformer]] and [[TransformerBlock]]. NakedTransformer just stacks together as many TransformerBlocks as required by the [[config]]. TranformerBlock is a single complete transformer block supporting both pre-normalization and post-normalization styles.
+
+* heads.py => Contains head and tail of the model. [[TransformerWithEmbeddingHead]] adds a linear embedding head to the [[NakedTransformer]] module, for example in order to embed tokens into latent. It also supports learnable positional embedding, to support legacy models. [[TransformerWithLMHead]] initialize a [[TransformerWithEmbeddingHead]] but adds an LMHead at the end of the [[NakedTransformer]]. Tying the weights of the embedding head and of the LM head is supported.
+
+* mixin/
+    Folder containing final classes that enable models' functions, such as token generation, masked language models inference and so on.
+    * mixin/text_generation.py => Adds to the [[TransformerWithLMHead]] module a method to autoregressively generate tokens;
+
+* models/
+    Folder containing the final wrapper for base model (ex. TransformerWithLMHead) and useful "mixin" classes, such as GenerationMixin.
+    For example, [[LanguageModel]] class is the more general, enabling a generic GPT-like and/or BERT-like model to be trained and used.
+
+
+
+!Section MatformerModule/class-annotations
+
+If you look at the predefined neural-net implementations in Matformer, for example [[TransformerBlock]], you will immediately notice that at the top of the class some non-standard annotations are present.
+For example:
+
+```
+    attn_norm: "param_name:attn_norm"
+    mlp_norm: "param_name:mlp_norm"
+    self_attn: "param_name:attn"
+    mlp: "param_name:mlp"
+
+    available_hooks = [
+        'pre_attn', 'post_norm_pre_attn', 'post_attn',
+        'pre_mlp',  'post_norm_pre_mlp',  'post_mlp',
+        'post_attn_norm', 'post_mlp_norm',
+        'residual_stream_output'
+    ]
+
+Those annotations are automatically interpreted by the base [[MatformerModule]] class. For this reason, it is useful for consistency that if you write new modules for Matfomer, either permanent or temporary, such as [[Hooks]], you inherit MatformerModule. 
+MatformerModule inherits from two important base classes:
+* [[ParameterRenamer]]
+ParameterRenamer determines the actual names of the weights as they will be included in the checkpoint. PyTorch, by default, saves parameter inside the checkpoint by expanding their entire path inside the model. This would lead to very aestethically unpleasant and potentially confusing weights' keys in a complex architecture like matformer such as, for example, "model.model.encoder.layer.4.mlp.inner.weight". To avoid this, Matformer leaves at disposal an handy system for renaming parameters' name and make them "stable", that is, potentially independent from the actual modules' names used inside the library.
+It seems hard, but is actually very easy to use:
+1) Any 
+2) "transparent" means
+

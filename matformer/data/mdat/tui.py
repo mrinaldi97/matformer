@@ -34,13 +34,14 @@ import glob as glob_module
 import json
 import os
 import shlex
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Literal, Optional
 
 import cmd2
 
-from .container import MDatContainer
-from .mdat import MDat
-from .mdat_common import MDatNotFound, SubmDatNotFound
+from matformer.data.mdat.container import MDatContainer
+from  matformer.data.mdat.mdat import MDat
+from  matformer.data.mdat.mdat_common import MDatNotFound, SubmDatNotFound
+from matformer.utils.table import Table
 
 
 class _ShlexArgumentParser(argparse.ArgumentParser):
@@ -83,7 +84,10 @@ class MDatCommands:
 
     def open(self, path: str, readonly: bool = False, view: str = None,
              shuffle: bool = False, distributed: bool = False, create: bool = False) -> str:
-        """Open a container OR a standalone dataset folder (its own mini-container)."""
+        """Open a container OR a standalone dataset folder (its own mini-container).
+        A previously open container is closed first: reopening the same path (RO->RW) works."""
+        if self.ds is not None:
+            self.close()
         path = os.path.abspath(os.path.expanduser(path))
         if not os.path.exists(path) and create:
             self.ds = MDatContainer.create_new(path)
@@ -116,8 +120,14 @@ class MDatCommands:
                 f"(use `link {path}` from any container)")
 
     def close(self) -> str:
+        if self.ds is not None:
+            try:
+                self.ds.close()
+            except Exception:
+                pass
         self.ds = None
         self.path = None
+        self.readonly = False
         return "Closed"
 
     def status(self) -> str:
@@ -146,17 +156,33 @@ class MDatCommands:
             return names[0]
         raise ValueError(f"Datasets available: {names} — specify one")
 
-    def ls_datasets(self) -> str:
+    def ls_datasets(self):
+        """Tabular listing: str() for the TUI, asdict() for the GUI/server."""
         ds = self._require()
-        lines = []
+        rows = []
         for row in ds.db.list_submdats():
             kind = f"LINK -> {row['source_rel_path']}" if row.get('source_rel_path') else 'internal'
             strategies = [s for s in ds.list_strategies()
                           if ds.db.get_strategy_submdats(s, row['ds_map_id'])]
             info = ds.db.get_submdat_info(row['ds_map_id']) or {}
-            lines.append(f"  {row['name']:<28} {row.get('document_number') or 0:>8} docs  "
-                         f"{_fmt_bytes(info.get('raw_data_bytes')):>10}  [{kind}]  strategies: {strategies or '-'}")
-        return "\n".join(lines) or "(no datasets)"
+            rows.append({"name": row['name'], "docs": ds._live_document_number(row['ds_map_id']),
+                         "size": _fmt_bytes(info.get('raw_data_bytes')), "kind": kind,
+                         "strategies": ", ".join(strategies) or '-'})
+        return Table(["name", "docs", "size", "kind", "strategies"], rows)
+
+    def stats(self) -> Table:
+        """One row per (dataset, strategy) with token/chunk counts: the full token picture of
+        the container, not just the active dataset's totals."""
+        ds = self._require()
+        rows = []
+        for row in ds.db.list_submdats():
+            for s in ds.list_strategies():
+                st = ds.db.get_strategy_submdats(s, row['ds_map_id'])
+                if st:
+                    rows.append({"dataset": row['name'], "strategy": s,
+                                 "tokens": st.get('total_tokens'), "chunks": st.get('total_chunks'),
+                                 "finalized": "yes" if st.get('finalized_at') else "no"})
+        return Table(["dataset", "strategy", "tokens", "chunks", "finalized"], rows)
 
     def info_dataset(self, name: str = None) -> str:
         ds = self._require()
@@ -192,16 +218,45 @@ class MDatCommands:
         return f"Added internal dataset '{name}' (legacy layout; prefer: new + link)"
 
     # --------------------------------------------------------------- ingest
-    def ingest(self, dataset: Optional[str], type: str, source: str, data_key: str = 'text') -> str:
+    def ingest(self, dataset: Optional[str], type: Literal["jsonl", "lmdb", "hf", "atlas"],
+               source: str, data_key: str = 'text', resume: bool = False) -> str:
         ds = self._require()
         if self.readonly:
             raise PermissionError("Container opened readonly: reopen without --ro to ingest")
         dataset = self._default_dataset(dataset)
         sbm = ds._ensure_loaded(dataset)
         res = sbm.convert_to_submdat(type, os.path.abspath(os.path.expanduser(source)),
-                                     data_key=data_key, progress_bar=True)
-        ds.set_view(ds.current_view)  # refresh totals from the catalog
-        return f"ingest: {res}"
+                                     data_key=data_key, progress_bar=True, resume=resume)
+        self.open(self.path, readonly=self.readonly)   # convert swaps handles: reopen so the
+        return f"ingest: {res}"                        # session keeps a coherent container
+
+    def append(self, dataset: Optional[str], type: Literal["jsonl", "lmdb", "hf", "atlas"],
+               source: str, data_key: str = None, resume: bool = False) -> str:
+        """Append new documents after the last row of an existing dataset. Stats and
+        generation are updated; pretokenizations become desynced until `sync`."""
+        ds = self._require()
+        if self.readonly:
+            raise PermissionError("Container opened readonly: reopen without --ro to append")
+        dataset = self._default_dataset(dataset)
+        sbm = ds._ensure_loaded(dataset)
+        res = sbm.append_to_submdat(type, os.path.abspath(os.path.expanduser(source)),
+                                    data_key=data_key, progress_bar=True, resume=resume)
+        self.open(self.path, readonly=self.readonly)
+        return (f"append: {res}\n"
+                f"NOTE: shuffle files that include '{dataset}' are stale and pretokenizations "
+                f"are desynced; run `sync` and `shuffle`/`repair` before training.")
+
+    def history(self, dataset: Optional[str] = None):
+        """Ingestion/append log: date, operation, source, rows, status."""
+        ds = self._require()
+        name = self._default_dataset(dataset)
+        sbm = ds._ensure_loaded(name)
+        rows = []
+        for row in sbm.ingestion_history():
+            rows.append({"date": row.get('created_at'), "operation": row.get('operation'),
+                         "source": row.get('source'), "rows": row.get('rows_inserted'),
+                         "start": row.get('start_key'), "status": row.get('status')})
+        return Table(["date", "operation", "source", "rows", "start", "status"], rows)
 
     def batch_import(self, folder: str, data_key: str = 'text', pattern: str = '*.jsonl',
                      recursive: bool = False, compression: int = 0) -> str:
@@ -223,8 +278,8 @@ class MDatCommands:
         return f"Batch import: {ok}/{len(files)} files done"
 
     # ------------------------------------------------------------ strategies
-    def strategies(self) -> str:
-        return "\n".join(f"  {s}" for s in self._require().list_strategies()) or "(none)"
+    def strategies(self):
+        return Table(["strategy"], [[s] for s in self._require().list_strategies()])
 
     def strat_add(self, name: str, json_path: str) -> str:
         with open(os.path.abspath(os.path.expanduser(json_path))) as f:
@@ -245,7 +300,8 @@ class MDatCommands:
                 f"iterations (divided chunks): {ds.total_divided_chunks}")
 
     def pretok(self, dataset: Optional[str] = None, strategy: str = None, parallel: bool = True,
-               processes: int = None, batch: int = 256, compression: int = 0) -> str:
+               processes: int = None, batch: int = 256, compression: int = 0,
+               resume: bool = False) -> str:
         ds = self._require()
         if self.readonly:
             raise PermissionError("Container opened readonly: reopen without --ro to pretokenize")
@@ -254,32 +310,43 @@ class MDatCommands:
         dataset = self._default_dataset(dataset)
         sbm = ds._ensure_loaded(dataset)
         sbm.pretokenize_submdat(strategy, parallel=parallel, num_processes=processes,
-                                batch_size=batch, compression_level=compression, progress_bar=True)
-        return f"Pretokenized '{dataset}' with '{strategy}'"
+                                batch_size=batch, compression_level=compression,
+                                progress_bar=True, resume=resume)
+        return f"Pretokenized '{dataset}' with '{strategy}'" + (" (resumed)" if resume else "")
 
     def pretok_all(self, strategy: str, parallel: bool = True, processes: int = None,
-                   batch: int = 256, compression: int = 0) -> str:
+                   batch: int = 256, compression: int = 0, resume: bool = False) -> str:
         ds = self._require()
         done = []
         for name in ds.list_submdat():
             sbm = ds._ensure_loaded(name)
             sbm.pretokenize_submdat(strategy, parallel=parallel, num_processes=processes,
-                                    batch_size=batch, compression_level=compression, progress_bar=True)
+                                    batch_size=batch, compression_level=compression,
+                                    progress_bar=True, resume=resume)
             done.append(name)
         return f"Pretokenized {len(done)} datasets with '{strategy}': {done}"
 
     # ----------------------------------------------------------------- views
-    def views(self) -> str:
+    def views(self):
         ds = self._require()
-        lines = []
+        rows = []
         for v in ds.list_views():
             row = ds.db.get_view_row(v)
             totals = ds.db.get_view_totals(view_name=v)
-            lines.append(f"  {v:<24} {totals['document_number']:>8} docs  "
-                         f"{_fmt_bytes(totals['bytes_criteria']):>10}  "
-                         f"{'shuffled' if row.get('shuffle_struct_format') else 'NOT shuffled'}"
-                         + ('  (active)' if v == getattr(ds, 'current_view', None) else ''))
-        return "\n".join(lines) or "(no views)"
+            # Preserved datasets may have grown in a linked folder: show the
+            # live selection, not the mirror taken at link time.
+            totals['document_number'] = ds._view_expected_documents(v)
+            if not row.get('shuffle_struct_format'):
+                state = "NOT shuffled"
+            elif ds.view_is_shuffled_valid(v):
+                state = "shuffled"
+            else:
+                state = "STALE (documents appended)"
+            rows.append({"view": v, "docs": totals['document_number'],
+                         "size": _fmt_bytes(totals['bytes_criteria']),
+                         "shuffle": state,
+                         "active": "*" if v == getattr(ds, 'current_view', None) else ""})
+        return Table(["view", "docs", "size", "shuffle", "active"], rows)
 
     def view_template(self, output: str = 'view.json') -> str:
         ds = self._require()
@@ -359,6 +426,37 @@ class MDatCommands:
     def repair(self) -> str:
         return f"Repair: {self._require().repair()}"
 
+    def desync(self, dataset: Optional[str] = None):
+        """List pretokenization gaps (dataset, strategy, missing range). Empty = synced.
+        A gap appears when documents are appended after a strategy was applied."""
+        ds = self._require()
+        if dataset:
+            name = self._default_dataset(dataset)
+            gaps = [(name, strategy, start, end)
+                    for strategy, start, end in ds._ensure_loaded(name).desynced_strategies()]
+        else:
+            gaps = ds.desynced_strategies()
+        rows = [{"dataset": name, "strategy": strategy, "missing": f"{start}-{end}"}
+                for name, strategy, start, end in gaps]
+        return Table(["dataset", "strategy", "missing"], rows)
+
+    def sync(self, dataset: Optional[str] = None, strategy: str = None,
+             parallel: bool = True, processes: int = None, batch: int = 256,
+             compression: int = 0) -> str:
+        """Pretokenize only the rows appended since a strategy last ran (all
+        datasets when --dataset is omitted). This is the repair for `desync`."""
+        ds = self._require()
+        if self.readonly:
+            raise PermissionError("Container opened readonly: reopen without --ro to sync")
+        if strategy is None:
+            raise ValueError("--strategy is required")
+        results = ds.sync_strategy(strategy, dataset=dataset, parallel=parallel,
+                                   num_processes=processes, batch_size=batch,
+                                   compression=compression)
+        if not results:
+            return f"No dataset has strategy '{strategy}'"
+        return "\n".join(f"{name}: {res}" for name, res in results)
+
     def check(self) -> str:
         issues = self._require().check_linked_datasets(verbose=False)
         return "All linked datasets in sync" if not issues else json.dumps(issues, indent=2)
@@ -369,8 +467,22 @@ class MDatCommands:
         ds.set_iteration_modality(name, with_meta=meta, return_raw=raw)
         return f"Modality: {name} (len: {len(ds)})"
 
-    def peek(self, dataset: str = None, key: int = None, n: int = 3, chunks: bool = False) -> str:
-        """Print documents: a specific one (`--key`) or n random ones."""
+    def doc(self, dataset: str = None, key: int = 0) -> str:
+        """Full content of one document (capped at 64 KB of text) + its metadata."""
+        ds = self._require()
+        name = self._default_dataset(dataset)
+        sbm = ds._ensure_loaded(name)
+        d = sbm[int(key)]
+        data = d.get('data')
+        if isinstance(data, bytes):
+            data = data.decode('utf-8', errors='replace')
+        meta = {k: str(v)[:160] for k, v in d.items() if k != 'data'}
+        return f"--- {name} #{key} ---\n{(data or '')[:65536]}\n\nmeta: {meta}"
+
+    def peek(self, dataset: str = None, key: int = None, n: int = 3, chunks: bool = False,
+             offset: int = None):
+        """Show documents: one (`--key`), a page in order (`--offset`), or n random ones (neither).
+        Table: str() in the TUI, rows in the GUI."""
         ds = self._require()
         name = self._default_dataset(dataset)
         sbm = ds._ensure_loaded(name)
@@ -380,27 +492,31 @@ class MDatCommands:
                 raise ValueError("run `set-strategy NAME` first (peek --chunks needs it)")
             sbm._attach_strategy(strategy_name)
             sbm.set_default_wanted(from_dbs=['meta'], from_strategy=['chunked_tokens'])
-        lines = []
+        rows = []
         if key is not None:
-            keys = [key]
+            keys = [int(key)]
+        elif offset is not None:              # 0 is a page, not "no page": compared against None
+            keys = list(range(int(offset), min(int(offset) + n, len(sbm))))
         else:
             import random
-            keys = random.sample(range(len(sbm)), min(n, len(sbm)))
+            keys = sorted(random.sample(range(len(sbm)), min(n, len(sbm))))
         for k in keys:
             doc = sbm[k]
             data = doc.get('data')
             if isinstance(data, bytes):
-                data = data[:200].decode('utf-8', errors='replace') + '…'
+                data = data[:400].decode('utf-8', errors='replace')
             elif isinstance(data, str):
-                data = data[:200] + '…'
-            entry = f"  [{name} #{k}]"
+                data = data[:400]
             if chunks:
                 ct = doc.get('chunked_tokens', [])
-                entry += f" {len(ct)} chunks; first chunk ({len(ct[0]) if ct else 0} tok): {ct[0][:12] if ct else '…'}"
-            elif data is not None:
-                entry += f" {data}"
-            lines.append(entry)
-        return "\n".join(lines)
+                first = list(ct[0]) if ct else []
+                rows.append({"key": k, "chunks": len(ct),
+                             "document": f"{len(ct)} chunks · first {len(first)} tok · "
+                                         f"{' '.join(str(t) for t in first[:10])}"
+                                         f"{' …' if len(first) > 10 else ''}"})
+            else:
+                rows.append({"key": k, "document": (data or '').replace("\n", " ⏎ ")})
+        return Table(["key", "document"] if not chunks else ["key", "chunks", "document"], rows)
 
     def tokens(self) -> str:
         ds = self._require()
@@ -488,7 +604,7 @@ class MDatShell(cmd2.Cmd):
     prompt = '(mdat) '
 
     def __init__(self, path: Optional[str] = None, readonly: bool = False):
-        super().__init__()
+        super().__init__(allow_cli_args=False)
         self.cmds = MDatCommands()
         if path:
             self.poutput(self._run(self.cmds.open, path, readonly=readonly))
@@ -556,9 +672,19 @@ class MDatShell(cmd2.Cmd):
 
     # ----------------------------------------------------------------- ingest
     def do_ingest(self, line):
-        """Ingest data: ingest DATASET TYPE SOURCE [--key text]   (TYPE: jsonl|lmdb|hf|atlas)"""
-        a = _parser('dataset', 'type', 'source', key=('key',)).parse_args(line)
-        self.poutput(self._run(self.cmds.ingest, a.dataset, a.type, a.source, a.key or 'text'))
+        """Ingest data: ingest DATASET TYPE SOURCE [--key text] [--resume]   (TYPE: jsonl|lmdb|hf|atlas)"""
+        a = _parser('dataset', 'type', 'source', key=('key',), resume=('resume', 'store_true')).parse_args(line)
+        self.poutput(self._run(self.cmds.ingest, a.dataset, a.type, a.source, a.key or 'text', a.resume))
+
+    def do_append(self, line):
+        """Append documents to an existing dataset: append DATASET TYPE SOURCE [--key text] [--resume]"""
+        a = _parser('dataset', 'type', 'source', key=('key',), resume=('resume', 'store_true')).parse_args(line)
+        self.poutput(self._run(self.cmds.append, a.dataset, a.type, a.source, a.key, a.resume))
+
+    def do_history(self, line):
+        """Show the ingestion/append log: history [DATASET]"""
+        a = _parser('dataset?').parse_args(line)
+        self.poutput(self._run(self.cmds.history, a.dataset))
 
     def do_batch_import(self, line):
         """One dataset per file: batch-import FOLDER [--key text] [--pattern '*.jsonl'] [--recursive]"""
@@ -587,20 +713,22 @@ class MDatShell(cmd2.Cmd):
         self.poutput(self._run(self.cmds.set_strategy, a.name, a.seq_len))
 
     def do_pretok(self, line):
-        """Pretokenize one dataset: pretok DATASET --strategy NAME [--procs N] [--batch N] [--compression N] [--no-parallel]"""
+        """Pretokenize one dataset: pretok DATASET --strategy NAME [--procs N] [--batch N] [--compression N] [--no-parallel] [--resume]"""
         a = _parser('dataset', strategy=('strategy',), procs=('processes', 'int'), batch=('batch', 'int'),
-                    compression=('compression', 'int'), no_parallel=('parallel', 'store_true')).parse_args(line)
+                    compression=('compression', 'int'), no_parallel=('parallel', 'store_true'),
+                    resume=('resume', 'store_true')).parse_args(line)
         self.poutput(self._run(self.cmds.pretok, a.dataset, a.strategy, not a.parallel,
-                               a.processes, a.batch or 256, a.compression or 0))
+                               a.processes, a.batch or 256, a.compression or 0, a.resume))
 
     def do_pretok_all(self, line):
-        """Pretokenize every dataset: pretok-all --strategy NAME [--procs N] [--batch N] [--compression N]"""
+        """Pretokenize every dataset: pretok-all --strategy NAME [--procs N] [--batch N] [--compression N] [--resume]"""
         a = _parser(strategy=('strategy',), procs=('processes', 'int'), batch=('batch', 'int'),
-                    compression=('compression', 'int')).parse_args(line)
+                    compression=('compression', 'int'), resume=('resume', 'store_true')).parse_args(line)
         if not a.strategy:
             self.poutput("ERROR: --strategy is required")
             return
-        self.poutput(self._run(self.cmds.pretok_all, a.strategy, True, a.processes, a.batch or 256, a.compression or 0))
+        self.poutput(self._run(self.cmds.pretok_all, a.strategy, True, a.processes,
+                               a.batch or 256, a.compression or 0, a.resume))
 
     # ------------------------------------------------------------------ views
     def do_views(self, line):
@@ -644,6 +772,22 @@ class MDatShell(cmd2.Cmd):
         """Re-sync linked datasets, drop distributed rows, reshuffle all affected views."""
         self.poutput(self._run(self.cmds.repair))
 
+    def do_desync(self, line):
+        """Show pretokenization gaps caused by appends: desync [DATASET]"""
+        a = _parser('dataset?').parse_args(line)
+        self.poutput(self._run(self.cmds.desync, a.dataset))
+
+    def do_sync(self, line):
+        """Pretokenize only appended rows: sync --strategy NAME [--dataset D] [--procs N] [--batch N] [--no-parallel]"""
+        a = _parser(dataset=('dataset',), strategy=('strategy',), procs=('processes', 'int'),
+                    batch=('batch', 'int'), compression=('compression', 'int'),
+                    no_parallel=('parallel', 'store_true')).parse_args(line)
+        if not a.strategy:
+            self.poutput("ERROR: --strategy is required")
+            return
+        self.poutput(self._run(self.cmds.sync, a.dataset, a.strategy, not a.parallel,
+                               a.processes, a.batch or 256, a.compression or 0))
+
     def do_check(self, line):
         """Check linked datasets against their container mirrors."""
         self.poutput(self._run(self.cmds.check))
@@ -655,9 +799,10 @@ class MDatShell(cmd2.Cmd):
         self.poutput(self._run(self.cmds.modality, a.name, a.meta, a.raw))
 
     def do_peek(self, line):
-        """Inspect documents: peek [DATASET] [--key N] [--n 3] [--chunks]"""
-        a = _parser('dataset?', key=('key', 'int'), n=('n', 'int'), chunks=('chunks', 'store_true')).parse_args(line)
-        self.poutput(self._run(self.cmds.peek, a.dataset, a.key, a.n or 3, a.chunks))
+        """Inspect documents: peek [DATASET] [--key N] [--n 3] [--offset N] [--chunks]"""
+        a = _parser('dataset?', key=('key', 'int'), n=('n', 'int'), offset=('offset', 'int'),
+                    chunks=('chunks', 'store_true')).parse_args(line)
+        self.poutput(self._run(self.cmds.peek, a.dataset, a.key, a.n or 3, a.chunks, a.offset))
 
     def do_iterate(self, line):
         """Consume N items through the training iteration path: iterate [N]"""
@@ -692,6 +837,22 @@ class MDatShell(cmd2.Cmd):
         """Restore an iteration state: state-load FILE"""
         a = _parser('input_file').parse_args(line)
         self.poutput(self._run(self.cmds.state_load, a.input_file))
+
+
+def execute(spec: dict) -> None:
+    """Non-interactive entry point for the long operations: open a container and apply a list of
+    facade calls, printing what each returns. This is what the server's queue spawns for an
+    ingestion, a pretokenization or a distributed precompute, so those become jobs — with a log, a
+    status and an abort — without any of them being re-implemented for the GUI.
+
+    spec: {'container': path, 'readonly': bool, 'commands': [{'cmd': 'pretok', 'args': {...}}, …]}"""
+    cmds = MDatCommands()
+    cmds.open(spec['container'], readonly=bool(spec.get('readonly')))
+    for call in spec.get('commands') or []:
+        print(f"mdat> {call['cmd']} {call.get('args') or {}}", flush=True)
+        result = getattr(cmds, call['cmd'])(**(call.get('args') or {}))
+        if result is not None:
+            print(result, flush=True)
 
 
 def main(argv=None):

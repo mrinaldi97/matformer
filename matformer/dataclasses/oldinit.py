@@ -10,7 +10,6 @@ from .model_dataclasses          import LayerConfig, TokenizerConfig, MaskingCon
 from .data_dataclasses           import DataConfig
 from .training_dataclasses       import TrainingConfig
 from .tasks_dataclasses          import TaskConfig, GenerationTaskConfig
-from .saver_dataclasses          import SaverConfig, JSONLSaverConfig, NullSaverConfig
 # Auto-import: any module added to this directory self-registers automatically
 for _mod in pkgutil.iter_modules([str(Path(__file__).parent)]):
     if not _mod.name.startswith("_"):

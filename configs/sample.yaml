@@ -70,11 +70,6 @@ training:
   seed: 27
   precision: "bf16-mixed"
 
-saver:
-  type: JSONLSaver
-  filename: "predictions.jsonl"
-  mode: "a"
-
 task:
   type: GenerationTask
   max_new_tokens: 100

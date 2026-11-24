@@ -7,7 +7,10 @@ from matformer.matformer_registry import registry
 @dataclass
 class TrainingConfig(MatformerConfig):
     ref_data: str = field(default="train", kw_only=True) # Default train the 'train' dataset
-    _ref_fields: ClassVar[dict] = {"ref_data": "data"}    
+    _ref_fields: ClassVar[dict] = {"ref_data": "data"}
+    # Everything a run writes hangs off these two names: the log folder and the wandb run off
+    # run_name, the .ckpt files and their plugin folders off checkpoint_name.
+    _sweep_scoped: ClassVar[list] = ["run_name", "checkpoint_name"]
     # Learning objective
     learning_signal_selector: str = "single"
     learning_signals: List[str] = field(default_factory=lambda: ["masked"])
@@ -48,7 +51,8 @@ class TrainingConfig(MatformerConfig):
     max_epochs: int = 1
     checkpoint_name: str = "checkpoint"
     save_dir: str = "./checkpoints"
-    logger: Union[List[str], str] = "wandb"
+    logger: Union[List[str], str] = "sqlite"
+    log_db: Optional[str] = None   # database location; default: $LOG_ASSETS/matformer.db
     project_name: str = "default_project"
     run_name: str = "default_run"
 
@@ -57,6 +61,7 @@ class TrainingConfig(MatformerConfig):
     varlen_strategy: str = "unpadding"
     batch_size: Optional[int] = None
     token_per_batch: Optional[int] = None # Automatically populated: max_seq_len * batch_size * accumulate_grad_batches
+    log_speed_every_n_steps: int = 50 # Throughput is reported every n optimizer steps: 0 switches it off
     total_steps: Optional[int] = 0 # Will be automatically populated
     total_batches: Optional[int] = 0 # Will be automatically populated
     precision: Literal['16-mixed', 'bf16-mixed', '32','16','bf16','32-true','bf16-true','16-true','64-true','transformer-engine'] = "bf16-mixed"

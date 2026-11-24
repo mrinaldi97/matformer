@@ -38,6 +38,7 @@ class ActivationCache(Plugin):
 
 import atexit, json
 from dataclasses import dataclass, asdict
+from typing import ClassVar
 
 import torch
 
@@ -52,6 +53,10 @@ class ActivationStoreBaseConfig(PluginConfig):
     flush_every: int = 8          # batches per write
     preload: bool = True          # read the needed addresses into RAM once, then serve from memory
     readonly: bool = False        # True for replay-only runs: no writer lock, so several processes can read the same file
+    # One store file per sweep point: what a point caches depends on the point itself (which
+    # addresses, which data), and two writers into one store would tangle it beyond recovery.
+    # A `readonly` store is an input instead, so it keeps the name it was given.
+    _sweep_scoped: ClassVar[list] = ["filename"]
 
 
 def _samples(tdc):

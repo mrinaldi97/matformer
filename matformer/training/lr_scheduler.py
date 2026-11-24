@@ -1,4 +1,5 @@
 #matformer/training/lr_scheduler.py
+# TODO2, It works, but has to be revised both in style and in features
 import torch
 import math
 def configure_lr_schedulers(train_config, optimizers):

@@ -1,6 +1,7 @@
 # matformer/tasks/matformer_task.py
 from __future__ import annotations
 from abc import ABC, abstractmethod
+import torch
 import torch.distributed as dist
 from tqdm import tqdm
 from dataclasses import dataclass, field
@@ -12,20 +13,70 @@ from matformer.matformer_registry import registry
 @dataclass
 class TaskConfig(MatformerMultiConfig):
     ref_data: str = field(default="test", kw_only=True)
-    ref_saver: str = field(default="default", kw_only=True)
-    _ref_fields: ClassVar[dict] = {"ref_data": "data", "ref_saver": "saver"}
+    _ref_fields: ClassVar[dict] = {"ref_data": "data"}
     _linked_fields: ClassVar[list] = ['tokenizer']
     _mandatory_references: ClassVar[list] = []
     batch_preprocessors: list = field(default_factory=list)
     batch_postprocessors: list = field(default_factory=list)
-    # Saving
-    save_batch: bool = True
+    # Saving: summaries go to the run database; per-item records are opt-in because they can be big.
+    save_batch: bool = False
     save_summary: bool = True
-    save_model_config: bool = True  # Store the model configuration in the summary
     save_input_ids: bool = False
     save_attributes: bool = False
     save_following_attributes: bool = False
     flatten_dict: bool = False
+    # How an interactive run is shown: 'probs' (label + confidence, the default), 'argmax'
+    # (only the chosen label) or 'full' (everything the task computed). Tasks without a
+    # presentation of their own fall back to the generic rendering.
+    presentation: str = "probs"
+
+PRESENTATIONS = ("probs", "argmax", "full")
+
+def split_result(result, batch_size: int) -> list:
+    """Transpose a batch-level result into per-item results: tensors and lists whose leading
+    dimension is the batch are split row-wise, anything else is repeated on every row."""
+    if isinstance(result, dict):
+        columns = {key: split_result(value, batch_size) for key, value in result.items()}
+        return [{key: column[i] for key, column in columns.items()} for i in range(batch_size)]
+    if torch.is_tensor(result):
+        return list(result) if result.shape and result.shape[0] == batch_size else [result] * batch_size
+    if isinstance(result, (list, tuple)) and len(result) == batch_size:
+        return list(result)
+    return [result] * batch_size
+
+
+def per_position(tensor):
+    """A batch-level result reshaped as (positions, classes): however many leading dimensions
+    the batch had, one row per thing that was predicted and one column per class. A single
+    prediction stays a single row."""
+    while tensor.dim() > 2:
+        tensor = tensor[0]
+    return tensor.unsqueeze(0) if tensor.dim() == 1 else tensor
+
+
+def surface(token) -> str:
+    """A subword's display form: GPT-2-style 'Ġ' is a space drawn as a letter, '▁' says the same
+    thing readably. Only ever applied to what a human reads, never to what is decoded."""
+    text = str(token)
+    return text.replace("\u0120", "\u2581").replace("Ġ", "▁")
+
+
+def top_k(k, n_classes: int) -> int:
+    """How many candidates to keep for a prediction: `k`, or all of them when k is negative, or
+    none when it is zero. The GUI's "token detail" knob is one number with three meanings."""
+    return 0 if not k else n_classes if k < 0 else min(k, n_classes)
+
+
+def clean_result(result, delete_keys=None, wanted_keys=None):
+    """Filter a result dict down to wanted_keys, or without delete_keys. Non-dicts pass through."""
+    if not isinstance(result, dict):
+        return result
+    if wanted_keys is not None:
+        return {k: v for k, v in result.items() if k in wanted_keys}
+    if delete_keys is not None:
+        return {k: v for k, v in result.items() if k not in delete_keys}
+    return result
+
 
 class BatchProcessor(ABC):
     """It is a very abstract class easily utilisable to perform any pre/post process operation, for example for complicate evaluations.
@@ -43,8 +94,7 @@ class MatformerTask(ABC):
         task_config: TaskConfig (or subclass) instance.
         model: loaded Matformer model.
         data_config: optional, omit for single-batch/interactive use.
-        batch_saver: optional saver invoked whenever process_batch() returns non-None.
-        summary_saver: optional saver invoked once, when compute() returns non-None.
+        logger: optional MatformerLogger; receives metrics, summaries and (opt-in) records.
         num_devices: num_devices for dataloader.
     """
 
@@ -55,44 +105,47 @@ class MatformerTask(ABC):
         self.single_item_id = 0 # Used to count each single saved row
         self.logger = logger
         self.trainer = trainer
+        self.record_sink = None     # callable(records): file annotation, set by TaskSession
+        self.summary_sink = None    # callable(summary): file annotation, set by TaskSession
+        self.execution = None       # logger token linking this task run to its training run
         self._began = False
+        self.interactive = False    # True when driven one batch at a time (see __call__)
+        self.save_results = True    # False to return results without saving them (see __call__)
+        self.stream_callback = None  # Set per call by __call__, read by streamable tasks
+        self.metrics = {}             # Numbers of the last run (tokens, seconds), for the console
+        self.status = ""              # One line of run-time state the console shows after a run
+        self.system_prompt = None     # Chat plumbing, not applied yet (see GenerationTask)
+        self.chat_template = None
         self._rank = dist.get_rank() if dist.is_available() and dist.is_initialized() else 0
 
         # Instantiate dataloader
         self.dataloader = None
         if config.data is not None:
-            datamodule = config.data.instantiate(num_devices=num_devices)
+            datamodule = config.data.instantiate(num_devices=num_devices,
+                                                 tokenizer=getattr(model, 'tokenizer', None))
             datamodule.setup()
             self.dataloader = datamodule.train_dataloader()
-            if self.model:
-                print("Su model ci sono")
-                if self.model.runtime_mode=='virtual':
-                    print("Su virtual pure")
-                    self.model.activation_store.switch_databank(config.data.name, rewind=True)
+            if self.model and self.model.runtime_mode == 'virtual':
+                self.model.activation_store.switch_databank(config.data.name, rewind=True)
                     
-        # Instantiate saver
-        self.saver=None
-        if config.saver is not None:
-            self.saver=config.saver.instantiate()
-
-            if config.save_model_config:
-                self.model_config=model.configs.asdict()  # The model's config is included in the summary
-        else:
-            if config.save_summary or config.save_batch:
-                print("WARNING: The task asks to save output, but no saver were configured, thus nothing is going to be saved. ")
-            config.save_summary = config.save_batch = False
         if self.trainer is not None: # Used if evaluation is performed during model's training
             self.is_training = True
-            # epoch/step are refreshed at summary time (they change during training),
-            # so here we only store the static metadata.
             self.training_metadata = {
                 "project_name": trainer.configs.training.project_name,
                 "run_name": trainer.configs.training.run_name
             }
         else:
             self.is_training = False
+        # Which point of a sweep this run is, when it belongs to one: written into every summary,
+        # so a folder of results says what produced each of them without reading the filenames.
+        self.sweep = getattr(getattr(model, 'configs', None), 'active_sweep', None)
 
-
+    def ensure_began(self) -> None:
+        """Run begin_task() on first use, so a task can be driven one batch at a time (interactive
+        mode, file annotation) without ever calling run()."""
+        if not self._began:
+            self.begin_task()
+            self._began = True
 
     def begin_task(self) -> None:
         """Executed before processing the batch"""
@@ -106,11 +159,29 @@ class MatformerTask(ABC):
 
     def end_task(self) -> None:
         """Executed after having processed the batch"""
-        #if self.saver is not None:
-        #    self.saver.end()
 
     def reset(self) -> None:
         """Clear accumulated state."""
+
+    def present(self, rows) -> Optional[str]:
+        """Human-readable rendering of the rows of one interactive run. Returning None leaves
+        the console to its generic dump: tasks that know their own output override this."""
+        return None
+
+    def clear(self) -> None:
+        """Drop any run-local buffer (generated context and the like)."""
+        self.reset()
+
+    def set_system_prompt(self, text) -> str:
+        """Store the prompt a future chat template will wrap the conversation with."""
+        self.system_prompt = text or None
+        return f"system prompt {'cleared' if not text else 'set'} (no chat template applied yet)"
+
+    def set_chat_template(self, text) -> str:
+        """Store the chat template name; applying it to the conversation is not implemented yet."""
+        self.chat_template = (text or '').strip() or None
+        return (f"chat template '{self.chat_template}' selected (applying it is not implemented yet)"
+                if self.chat_template else "chat template cleared")
 
     def process_batch(self, batch):
         """
@@ -121,16 +192,10 @@ class MatformerTask(ABC):
         raise NotImplementedError(f"{type(self).__name__} does not implement process_batch().")
 
     def wrap_process_batch(self,batch):
-        """ Calls process batch, running pre and/or post-processor(s) if configured.
-        
-                    result = self.process_batch(batch)
-            if result is not None and self.batch_saver and self.config.save_batch:
-                self.save_batch(batch, result) """
+        """Calls process batch, running pre and/or post-processor(s) if configured, then saves the
+        result. Returns (batch, result)."""
+        self.ensure_began()
         #1. Call any preprocessor(s) in sequence on the batch
-        if not hasattr(self,"was_initialized"):
-            print("Il task non è mai stato iniziato")
-            import sys
-            sys.exit(1)        
         for pre in self.config.batch_preprocessors:
            batch, _ = pre(batch)
         batch, result = self.process_batch(batch)
@@ -142,86 +207,108 @@ class MatformerTask(ABC):
     def compute(self) -> Optional[dict]:
         return None
 
+    def _position(self):
+        """Step and epoch of the run driving the task, when there is one."""
+        trainer = getattr(self, 'trainer', None)
+        return (getattr(trainer, 'step', None), getattr(trainer, 'epoch', None)) \
+            if trainer is not None else (None, None)
+
+    def records(self, batch, result) -> list:
+        """One record per item of the batch: result transposed row-wise (see split_result),
+        optionally flattened, plus input tokens and batch attributes when configured."""
+        size = len(batch)
+        rows = split_result(result, size)
+        inputs = batch.pad().detach() if self.config.save_input_ids else None
+        attributes = split_result(batch.attributes, size) if self.config.save_attributes else None
+        if self.config.save_following_attributes:
+            raise NotImplementedError("save_following_attributes is not implemented yet")
+        records = []
+        for i, row in enumerate(rows):
+            self.single_item_id += 1
+            data = {"id": self.single_item_id}
+            data.update(row if self.config.flatten_dict and isinstance(row, dict) else {"result": row})
+            if inputs is not None:
+                data['input_ids'] = inputs[i]
+            if attributes is not None:
+                data['attributes'] = attributes[i]
+            records.append(data)
+        return records
+
     def save_batch(self, batch, result) -> None:
-        """
-        - If "config.save_input_ids", the original batch's "input_ids" is extracted and saved (need to pad and detach)
-        - If "config.save_attributes", all elements stored as attributes in the original batch, will be saved"
-        - If "config.save_following_attributes", all #Not implemented
-        """
-        if self.config.save_batch and result is not None:
-            records = []
-            if self.config.save_input_ids:
-                detached_inputs=batch.pad().detach()
-            if self.config.save_attributes:
-                detached_attributes=batch.detach_attributes()
-            for i, text in enumerate(result):
-                self.single_item_id += 1
-                if self.config.flatten_dict:
-                    data={"id":self.single_item_id}
-                    data.update(result) ##Sistemare: eventuali conflitti chiave
-                else:
-                    data={
-                        "id":self.single_item_id,
-                        "result": result
-                    }
-                if self.config.save_input_ids:
-                    data['input_ids']=detached_inputs[i]
-                if self.config.save_attributes:
-                    data['attributes']=detached_attributes[i]
-                if self.config.save_following_attributes:
-                    raise NotImplementedError
-                    data['following_attributes']=None
-
-                records.append(data)
-            self.saver.save_batch(records, rank=self._rank)
+        """Send the per-item records to the logger and/or the annotation sink. Opt-in through
+        config.save_batch; file annotation sets the sink without touching the config."""
+        if not self.save_results or result is None:
+            return
+        if not self.config.save_batch and self.record_sink is None:
+            return
+        records = self.records(batch, result)
+        step, epoch = self._position()
+        if self.config.save_batch and self.logger is not None:
+            self.logger.log_records(self.config.name, records, step=step, epoch=epoch,
+                                    task_run=self.execution)
+        if self.record_sink is not None:
+            self.record_sink(records)
 
 
-    def __call__(self, batch=None, stream_callback=None, delete_keys=None, wanted_keys=None):
-        """ Interactive mode """
-        if not hasattr(self,"was_initialized"):
-            print("Il task non è mai stato iniziato")
-            import sys
-            sys.exit(1)
+    def __call__(self, batch=None, save=False, stream_callback=None, delete_keys=None, wanted_keys=None):
+        """ Interactive mode: process a single batch and return its result.
+        batch=None runs the whole dataset instead (see run()). save=False keeps the result out of
+        the sinks, so probing a model interactively never pollutes the task's output files."""
         if batch is None:
             return self.run()
-        batch, result = self.wrap_process_batch(batch)
-        # In interactive mode, it is possible to restrict the returned "result" dictionary only to desired keys
-        return clean_result(result,delete_keys,wanted_keys)
+        self.interactive = True
+        self.save_results = save
+        self.stream_callback = stream_callback
+        _, result = self.wrap_process_batch(batch)
+        return clean_result(result, delete_keys, wanted_keys)
 
-    @classmethod
-    def clean_result(self, result, delete_keys, wanted_keys):
-        """ Cleans a result by removing unwanted information """
-        assert (delete_keys is not None) or (wanted_keys is not None),"Either use delete_keys or wanted_keys"
-        for k in result.keys():
-            if delete_keys is not None:
-                if k in delete_keys:
-                    result.pop(k)
-            if wanted_keys is not None:
-                if k not in delete_keys:
-                    result.pop(k)
-        return result
+    def _start_execution(self):
+        """Open the logger's task-execution record: its step/epoch say when it ran, `phase` says
+        whether it is an evaluation inside a training or a standalone run."""
+        step, epoch = self._position()
+        phase = "training" if self.is_training else "standalone"
+        self.execution = self.logger.start_task(self.config.name, step=step, epoch=epoch,
+                                                phase=phase) \
+            if self.logger is not None and hasattr(self.logger, 'start_task') else None
+
+    def _end_execution(self):
+        if self.execution is not None:
+            self.logger.finish_task(self.execution)
+            self.execution = None
 
     def run(self) -> Optional[dict]:
         """Run process_batch() for each batch, then compute() once at the end."""
         assert self.dataloader is not None, "run() needs a data_config at construction time. If you want to run the task interactively, call it without .run()" 
+        self.stream_callback = None
+        self.interactive = False
+        self.save_results = True
         self.begin_task()
-        total_batches = getattr(self.dataloader, 'length', None)        
-        for i, batch in tqdm(enumerate(self.dataloader), total=total_batches):
-            self.wrap_process_batch(batch)
-        self.compute_summary()
-        self.end_task()
+        self._began = True
+        self._start_execution()
+        try:
+            total_batches = getattr(self.dataloader, 'length', None)
+            for i, batch in tqdm(enumerate(self.dataloader), total=total_batches):
+                self.wrap_process_batch(batch)
+            summary = self.compute_summary()
+            self.end_task()
+            return summary
+        finally:
+            self._end_execution()
 
-    def compute_summary(self):   
+    def compute_summary(self):
         summary = self.compute() or {}
-        if self.logger is not None: #Logger is called before saver to avoid logging all metadata
-            for k, v in summary.items():
-                self.logger.log(f"{self.config.name}/{k}", v)
-        if self.config.save_summary:
-            if self.is_training:
-                summary.update(self.training_metadata)
-                summary["epoch"] = self.trainer.epoch
-                summary["step"] = self.trainer.step
-            if self.config.save_model_config:
-                summary.update(self.model_config)
-            self.saver.save_summary(summary, rank=self._rank)
+        if self.sweep is not None:
+            summary["sweep"] = self.sweep.name
+        step, epoch = self._position()
+        if self.is_training:
+            summary.update(self.training_metadata)
+            summary["epoch"], summary["step"] = epoch, step
+        if self.logger is not None:
+            for key, value in summary.items():
+                self.logger.log(f"{self.config.name}/{key}", value)
+            if self.config.save_summary:
+                self.logger.log_summary(self.config.name, summary, step=step, epoch=epoch,
+                                        task_run=self.execution)
+        if self.config.save_summary and self.summary_sink is not None:
+            self.summary_sink(summary)
         return summary

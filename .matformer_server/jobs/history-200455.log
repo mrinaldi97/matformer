@@ -1,0 +1,9 @@
+======================================================================
+WARNING: view 'default' has a STALE shuffle file (10 pointers, 15 documents selected now).
+Documents were appended: run `repair`/`shuffle` before training on this view.
+======================================================================
+mdat> history {}
+DATE                        OPERATION  SOURCE                  ROWS  START  STATUS  
+------------------------------------------------------------------------------------
+2026-11-18T19:03:54.875306  append     /tmp/mdat_test/b.jsonl     5     10  complete
+2026-11-18T19:03:54.837431  ingest     /tmp/mdat_test/a.jsonl    10      0  complete

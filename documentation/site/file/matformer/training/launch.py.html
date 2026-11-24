@@ -1,0 +1,672 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/training/launch.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/training/launch.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="launch.py.html"><code>matformer/training/launch.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/training/</code></a></p><h1><code>launch.py</code></h1><p class="muted">matformer/training/launch.py · 321 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/training/launch.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L55"><code>spec_fields</code></a><span class="line">L55</span></li><li class="depth-0"><a href="#L65"><code>probe_parameters</code></a><span class="line">L65</span></li><li class="depth-0"><a href="#L85"><code>probe_fields</code></a><span class="line">L85</span></li><li class="depth-0"><a href="#L99"><code>probe_settings</code></a><span class="line">L99</span></li><li class="depth-0"><a href="#L117"><code>parser</code></a><span class="line">L117</span></li><li class="depth-0"><a href="#L152"><code>build_configs</code></a><span class="line">L152</span></li><li class="depth-0"><a href="#L166"><code>options_from_args</code></a><span class="line">L166</span></li><li class="depth-0"><a href="#L173"><code>execute</code></a><span class="line">L173</span></li><li class="depth-0"><a href="#L224"><code>spec_from_args</code></a><span class="line">L224</span></li><li class="depth-0"><a href="#L234"><code>_validate</code></a><span class="line">L234</span></li><li class="depth-0"><a href="#L241"><code>_await</code></a><span class="line">L241</span></li><li class="depth-0"><a href="#L273"><code>_submit</code></a><span class="line">L273</span></li><li class="depth-0"><a href="#L305"><code>main</code></a><span class="line">L305</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../matformer_configs.py.html"><code>matformer.matformer_configs</code></a> <span class="muted">MatformerConfigs</span></li><li><a href="utils.py.html"><code>matformer.training.utils</code></a> <span class="muted">detect_device</span></li><li><a href="../utils/__init__.py.html"><code>matformer.utils</code></a> <span class="muted">env_variables</span></li><li><a href="../__init__.py.html"><code>matformer</code></a> <span class="muted">sweeps</span></li><li><a href="../dataclasses/training_dataclasses.py.html"><code>matformer.dataclasses.training_dataclasses</code></a> <span class="muted">TrainingConfig</span></li><li><a href="../utils/schema.py.html"><code>matformer.utils.schema</code></a> <span class="muted">fields_schema</span></li><li><a href="matformer_trainer.py.html"><code>matformer.training.matformer_trainer</code></a> <span class="muted">MatformerTrainer</span></li><li><a href="../remote/net.py.html"><code>matformer.remote.net</code></a> <span class="muted">Server</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="sd">&quot;&quot;&quot;Launching a training: one home for what `train_model.py` used to embed — build the configs,</span>
+<a id="L2" name="L2"></a><span class="sd">apply the training switches, run the trainer, expand the sweep a config declares.</span>
+<a id="L3" name="L3"></a>
+<a id="L4" name="L4"></a><span class="sd">There is exactly one way a training starts, `execute(spec)`, where the spec is a plain dict. The</span>
+<a id="L5" name="L5"></a><span class="sd">command line builds that dict from the arguments; the server&#39;s queue builds it from a job and runs</span>
+<a id="L6" name="L6"></a><span class="sd">it in a fresh process (a training owns a CUDA context, spawns DDP ranks and must be killable</span>
+<a id="L7" name="L7"></a><span class="sd">without touching anything else, so a process boundary is the right one — but the *target* is this</span>
+<a id="L8" name="L8"></a><span class="sd">library function, never a script and never a command line).</span>
+<a id="L9" name="L9"></a>
+<a id="L10" name="L10"></a><span class="sd">    python -m matformer.training.launch --cfg exp.yaml --override training.lr=3e-4</span>
+<a id="L11" name="L11"></a><span class="sd">    python -m matformer.training.launch --cfg exp.yaml --sweeps       # what the sweep would run</span>
+<a id="L12" name="L12"></a><span class="sd">    python -m matformer.training.launch --cfg exp.yaml --sweep 1,4    # only those two runs</span>
+<a id="L13" name="L13"></a><span class="sd">    python -m matformer.training.launch --queue 10.0.0.4:8765 --cfg exp.yaml   # to a server</span>
+<a id="L14" name="L14"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L15" name="L15"></a><span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<a id="L16" name="L16"></a><span class="kn">import</span><span class="w"> </span><span class="nn">gc</span>
+<a id="L17" name="L17"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="L18" name="L18"></a><span class="kn">import</span><span class="w"> </span><span class="nn">queue</span>
+<a id="L19" name="L19"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<a id="L20" name="L20"></a><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<a id="L21" name="L21"></a>
+<a id="L22" name="L22"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L23" name="L23"></a>
+<a id="L24" name="L24"></a><span class="kn">from</span><span class="w"> </span><a href="../matformer_configs.py.html"><span class="nn">matformer.matformer_configs</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerConfigs</span>
+<a id="L25" name="L25"></a><span class="kn">from</span><span class="w"> </span><a href="utils.py.html"><span class="nn">matformer.training.utils</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">detect_device</span>
+<a id="L26" name="L26"></a><span class="kn">from</span><span class="w"> </span><a href="../utils/__init__.py.html"><span class="nn">matformer.utils</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">env_variables</span>
+<a id="L27" name="L27"></a><span class="kn">from</span><span class="w"> </span><a href="../__init__.py.html"><span class="nn">matformer</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">sweeps</span>
+<a id="L28" name="L28"></a>
+<a id="L29" name="L29"></a><span class="c1"># CLI dest -&gt; TrainingConfig field, wherever the two differ: the command line speaks gpu/nodes,</span>
+<a id="L30" name="L30"></a><span class="c1"># the config dataclass speaks device_count/num_nodes.</span>
+<a id="L31" name="L31"></a><span class="n">CLI_TO_TRAINING_FIELD</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L32" name="L32"></a>    <span class="s2">&quot;gpu&quot;</span><span class="p">:</span> <span class="s2">&quot;device_count&quot;</span><span class="p">,</span> <span class="s2">&quot;nodes&quot;</span><span class="p">:</span> <span class="s2">&quot;num_nodes&quot;</span><span class="p">,</span> <span class="s2">&quot;reset&quot;</span><span class="p">:</span> <span class="s2">&quot;what_to_reset&quot;</span><span class="p">,</span>
+<a id="L33" name="L33"></a>    <span class="s2">&quot;ckpt_version&quot;</span><span class="p">:</span> <span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="s2">&quot;checkpoint&quot;</span><span class="p">:</span> <span class="s2">&quot;checkpoint&quot;</span><span class="p">,</span>
+<a id="L34" name="L34"></a>    <span class="s2">&quot;start_from_scratch&quot;</span><span class="p">:</span> <span class="s2">&quot;start_from_scratch&quot;</span><span class="p">,</span> <span class="s2">&quot;max_steps&quot;</span><span class="p">:</span> <span class="s2">&quot;max_steps&quot;</span><span class="p">,</span> <span class="s2">&quot;compile&quot;</span><span class="p">:</span> <span class="s2">&quot;compile&quot;</span><span class="p">,</span>
+<a id="L35" name="L35"></a><span class="p">}</span>
+<a id="L36" name="L36"></a>
+<a id="L37" name="L37"></a><span class="n">RESET_CHOICES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;lr_scheduler&quot;</span><span class="p">,</span> <span class="s2">&quot;optimizer&quot;</span><span class="p">,</span> <span class="s2">&quot;datamodule&quot;</span><span class="p">,</span> <span class="s2">&quot;steps&quot;</span><span class="p">)</span>
+<a id="L38" name="L38"></a><span class="n">DEVICES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span> <span class="s2">&quot;cpu&quot;</span><span class="p">,</span> <span class="s2">&quot;mps&quot;</span><span class="p">,</span> <span class="s2">&quot;tpu&quot;</span><span class="p">)</span>
+<a id="L39" name="L39"></a>
+<a id="L40" name="L40"></a><span class="c1"># What a caller may set on a training, in the field language every form in this project speaks.</span>
+<a id="L41" name="L41"></a><span class="c1"># The GUI&#39;s queue dialog is generated from `spec_fields()`: a new switch is declared here and</span>
+<a id="L42" name="L42"></a><span class="c1"># appears in the terminal, the queue and the dialog without touching any of them.</span>
+<a id="L43" name="L43"></a><span class="n">_EXTRA_FIELDS</span> <span class="o">=</span> <span class="p">[</span>
+<a id="L44" name="L44"></a>    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;device&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Accelerator&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;choice&quot;</span><span class="p">,</span> <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">DEVICES</span><span class="p">),</span>
+<a id="L45" name="L45"></a>     <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;What the job asks torch for&quot;</span><span class="p">},</span>
+<a id="L46" name="L46"></a>    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;gpus&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Pin to GPUs&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L47" name="L47"></a>     <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;CUDA_VISIBLE_DEVICES for this job only, e.g. 2,3&quot;</span><span class="p">},</span>
+<a id="L48" name="L48"></a>    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;sweep&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Sweep points&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L49" name="L49"></a>     <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;Only these points of the config&#39;s sweep (numbers or name globs); empty runs them all&quot;</span><span class="p">},</span>
+<a id="L50" name="L50"></a>    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;save_model&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Save model&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;bool&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">},</span>
+<a id="L51" name="L51"></a>    <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;save_plugins&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Save plugins&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;bool&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;</span><span class="p">},</span>
+<a id="L52" name="L52"></a><span class="p">]</span>
+<a id="L53" name="L53"></a>
+<a id="L54" name="L54"></a>
+<a id="L55" name="L55"></a><span class="k">def</span><span class="w"> </span><span class="nf">spec_fields</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<a id="L56" name="L56"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The launch switches: the spec&#39;s own keys plus the training fields the CLI can reach.&quot;&quot;&quot;</span>
+<a id="L57" name="L57"></a>    <span class="kn">from</span><span class="w"> </span><a href="../dataclasses/training_dataclasses.py.html"><a href="../dataclasses/training_dataclasses.py.html"><span class="nn">matformer.dataclasses.training_dataclasses</span></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">TrainingConfig</span>
+<a id="L58" name="L58"></a>    <span class="kn">from</span><span class="w"> </span><a href="../utils/schema.py.html"><span class="nn">matformer.utils.schema</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">fields_schema</span>
+<a id="L59" name="L59"></a>
+<a id="L60" name="L60"></a>    <span class="n">keep</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">CLI_TO_TRAINING_FIELD</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<a id="L61" name="L61"></a>    <span class="n">trained</span> <span class="o">=</span> <span class="p">[</span><span class="n">field</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">fields_schema</span><span class="p">(</span><span class="n">TrainingConfig</span><span class="p">)</span> <span class="k">if</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">keep</span><span class="p">]</span>
+<a id="L62" name="L62"></a>    <span class="k">return</span> <span class="n">_EXTRA_FIELDS</span> <span class="o">+</span> <span class="n">trained</span>
+<a id="L63" name="L63"></a>
+<a id="L64" name="L64"></a>
+<a id="L65" name="L65"></a><span class="k">def</span><span class="w"> </span><span class="nf">probe_parameters</span><span class="p">():</span>
+<a id="L66" name="L66"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The memory probe&#39;s own knobs, taken from the method that runs them: `probe_memory` stays the</span>
+<a id="L67" name="L67"></a><span class="sd">    one place a default is written, and the terminal, the queue and the GUI all follow it.&quot;&quot;&quot;</span>
+<a id="L68" name="L68"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<a id="L69" name="L69"></a>    <span class="kn">from</span><span class="w"> </span><a href="matformer_trainer.py.html"><a href="matformer_trainer.py.html"><span class="nn">matformer.training.matformer_trainer</span></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerTrainer</span>
+<a id="L70" name="L70"></a>    <span class="k">return</span> <span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">parameter</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">parameter</span>
+<a id="L71" name="L71"></a>            <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">MatformerTrainer</span><span class="o">.</span><span class="n">probe_memory</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<a id="L72" name="L72"></a>            <span class="k">if</span> <span class="n">parameter</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span><span class="p">}</span>
+<a id="L73" name="L73"></a>
+<a id="L74" name="L74"></a>
+<a id="L75" name="L75"></a><span class="n">PROBE_DOCS</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L76" name="L76"></a>    <span class="s2">&quot;fill&quot;</span><span class="p">:</span> <span class="s2">&quot;Fraction of the GPU&#39;s memory the probe is allowed to reach&quot;</span><span class="p">,</span>
+<a id="L77" name="L77"></a>    <span class="s2">&quot;max_rows&quot;</span><span class="p">:</span> <span class="s2">&quot;Hard ceiling on rows per rank; 0 means none&quot;</span><span class="p">,</span>
+<a id="L78" name="L78"></a>    <span class="s2">&quot;steps&quot;</span><span class="p">:</span> <span class="s2">&quot;Consecutive steps run at the winning size: confirms it holds, and times it&quot;</span><span class="p">,</span>
+<a id="L79" name="L79"></a>    <span class="s2">&quot;apply&quot;</span><span class="p">:</span> <span class="s2">&quot;Train at the batch size the probe found, in the same job&quot;</span><span class="p">,</span>
+<a id="L80" name="L80"></a>    <span class="s2">&quot;keep_weights&quot;</span><span class="p">:</span> <span class="s2">&quot;Give back the weights and optimizer state the probe&#39;s steps touched&quot;</span><span class="p">,</span>
+<a id="L81" name="L81"></a><span class="p">}</span>
+<a id="L82" name="L82"></a><span class="n">PROBE_SKIP</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;seq_len&quot;</span><span class="p">,</span> <span class="s2">&quot;report_path&quot;</span><span class="p">)</span>
+<a id="L83" name="L83"></a>
+<a id="L84" name="L84"></a>
+<a id="L85" name="L85"></a><span class="k">def</span><span class="w"> </span><span class="nf">probe_fields</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<a id="L86" name="L86"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The probe dialog, generated: name, kind, default and doc for each knob.&quot;&quot;&quot;</span>
+<a id="L87" name="L87"></a>    <span class="n">fields</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L88" name="L88"></a>    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">probe_parameters</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L89" name="L89"></a>        <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">PROBE_SKIP</span><span class="p">:</span>
+<a id="L90" name="L90"></a>            <span class="k">continue</span>
+<a id="L91" name="L91"></a>        <span class="n">default</span> <span class="o">=</span> <span class="n">parameter</span><span class="o">.</span><span class="n">default</span>
+<a id="L92" name="L92"></a>        <span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;bool&quot;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="nb">bool</span><span class="p">)</span> <span class="k">else</span> \
+<a id="L93" name="L93"></a>            <span class="s2">&quot;float&quot;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;int&quot;</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">default</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="s2">&quot;text&quot;</span>
+<a id="L94" name="L94"></a>        <span class="n">fields</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="n">name</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="s2">&quot; &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">capitalize</span><span class="p">(),</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">kind</span><span class="p">,</span>
+<a id="L95" name="L95"></a>                       <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="n">default</span><span class="p">,</span> <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="n">PROBE_DOCS</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)})</span>
+<a id="L96" name="L96"></a>    <span class="k">return</span> <span class="n">fields</span>
+<a id="L97" name="L97"></a>
+<a id="L98" name="L98"></a>
+<a id="L99" name="L99"></a><span class="k">def</span><span class="w"> </span><span class="nf">probe_settings</span><span class="p">(</span><span class="n">tokens</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L100" name="L100"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;`--probe fill=0.9 steps=5` typed the way `probe_memory` declares them.&quot;&quot;&quot;</span>
+<a id="L101" name="L101"></a>    <span class="n">parameters</span> <span class="o">=</span> <span class="n">probe_parameters</span><span class="p">()</span>
+<a id="L102" name="L102"></a>    <span class="n">settings</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L103" name="L103"></a>    <span class="k">for</span> <span class="n">token</span> <span class="ow">in</span> <span class="n">tokens</span> <span class="ow">or</span> <span class="p">[]:</span>
+<a id="L104" name="L104"></a>        <span class="n">key</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">value</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">token</span><span class="p">)</span><span class="o">.</span><span class="n">partition</span><span class="p">(</span><span class="s2">&quot;=&quot;</span><span class="p">)</span>
+<a id="L105" name="L105"></a>        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
+<a id="L106" name="L106"></a>            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--probe accepts </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">parameters</span><span class="p">)</span><span class="si">}</span><span class="s2">, not &#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+<a id="L107" name="L107"></a>        <span class="n">kind</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">default</span><span class="p">)</span>
+<a id="L108" name="L108"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="ow">is</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="L109" name="L109"></a>            <span class="n">settings</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;1&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;yes&quot;</span><span class="p">,</span> <span class="s2">&quot;on&quot;</span><span class="p">)</span>
+<a id="L110" name="L110"></a>        <span class="k">elif</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">):</span>
+<a id="L111" name="L111"></a>            <span class="n">settings</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">kind</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="L112" name="L112"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L113" name="L113"></a>            <span class="n">settings</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+<a id="L114" name="L114"></a>    <span class="k">return</span> <span class="n">settings</span>
+<a id="L115" name="L115"></a>
+<a id="L116" name="L116"></a>
+<a id="L117" name="L117"></a><span class="k">def</span><span class="w"> </span><span class="nf">parser</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">:</span>
+<a id="L118" name="L118"></a>    <span class="n">p</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Train a Matformer model&quot;</span><span class="p">)</span>
+<a id="L119" name="L119"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--cfg&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;append&quot;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;YAML&quot;</span><span class="p">,</span>
+<a id="L120" name="L120"></a>                   <span class="n">help</span><span class="o">=</span><span class="s2">&quot;One or more YAMLs; they merge left to right.&quot;</span><span class="p">)</span>
+<a id="L121" name="L121"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--override&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;append&quot;</span><span class="p">,</span>
+<a id="L122" name="L122"></a>                   <span class="n">help</span><span class="o">=</span><span class="s2">&quot;In-line overrides (ex. data.batch_size=48), merged left to right.&quot;</span><span class="p">)</span>
+<a id="L123" name="L123"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--gpu&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of GPU(s)&quot;</span><span class="p">)</span>
+<a id="L124" name="L124"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--nodes&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Number of Node(s)&quot;</span><span class="p">)</span>
+<a id="L125" name="L125"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--checkpoint&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Checkpoint to resume from (see --reset)&quot;</span><span class="p">)</span>
+<a id="L126" name="L126"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--reset&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;What to reset: &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">RESET_CHOICES</span><span class="p">))</span>
+<a id="L127" name="L127"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--start-from-scratch&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+<a id="L128" name="L128"></a>                   <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Ignore the checkpoint&#39;s weights, advance the version&quot;</span><span class="p">)</span>
+<a id="L129" name="L129"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--max-steps&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Train one epoch over this many steps&quot;</span><span class="p">)</span>
+<a id="L130" name="L130"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--ckpt-version&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="o">=</span><span class="nb">int</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Resume a specific checkpoint version&quot;</span><span class="p">)</span>
+<a id="L131" name="L131"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--compile&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;torch.compile the whole model&quot;</span><span class="p">)</span>
+<a id="L132" name="L132"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--device&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="n">DEVICES</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Accelerator (default: detect)&quot;</span><span class="p">)</span>
+<a id="L133" name="L133"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--no-save-model&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Skip model saving&quot;</span><span class="p">)</span>
+<a id="L134" name="L134"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--no-save-plugins&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Skip plugins saving&quot;</span><span class="p">)</span>
+<a id="L135" name="L135"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--sweep&quot;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;POINTS&quot;</span><span class="p">,</span>
+<a id="L136" name="L136"></a>                   <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Only these points of the config&#39;s sweep: numbers (1-based) or name globs, &quot;</span>
+<a id="L137" name="L137"></a>                        <span class="s2">&quot;comma separated. Default: every point.&quot;</span><span class="p">)</span>
+<a id="L138" name="L138"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--sweeps&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+<a id="L139" name="L139"></a>                   <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Print the sweep the configs declare -- every point, and what it changes -- &quot;</span>
+<a id="L140" name="L140"></a>                        <span class="s2">&quot;and run nothing&quot;</span><span class="p">)</span>
+<a id="L141" name="L141"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--gpus&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Pin the run to these devices, e.g. &#39;2,3&#39; (CUDA_VISIBLE_DEVICES)&quot;</span><span class="p">)</span>
+<a id="L142" name="L142"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--probe&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;*&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;KEY=VALUE&quot;</span><span class="p">,</span>
+<a id="L143" name="L143"></a>                   <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Measure the largest batch the GPUs fit and how fast it runs (knobs: fill, &quot;</span>
+<a id="L144" name="L144"></a>                        <span class="s2">&quot;max_rows, steps, keep_weights); without --then-train nothing is trained&quot;</span><span class="p">)</span>
+<a id="L145" name="L145"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--then-train&quot;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s2">&quot;store_true&quot;</span><span class="p">,</span>
+<a id="L146" name="L146"></a>                   <span class="n">help</span><span class="o">=</span><span class="s2">&quot;After probing, train at the batch size the probe found&quot;</span><span class="p">)</span>
+<a id="L147" name="L147"></a>    <span class="n">p</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--queue&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="n">const</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">metavar</span><span class="o">=</span><span class="s2">&quot;HOST:PORT&quot;</span><span class="p">,</span>
+<a id="L148" name="L148"></a>                   <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Ask a server to run this instead: its address, or nothing for a local one&quot;</span><span class="p">)</span>
+<a id="L149" name="L149"></a>    <span class="k">return</span> <span class="n">p</span>
+<a id="L150" name="L150"></a>
+<a id="L151" name="L151"></a>
+<a id="L152" name="L152"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_configs</span><span class="p">(</span><span class="n">config_files</span><span class="p">,</span> <span class="n">overrides</span><span class="p">,</span> <span class="n">options</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MatformerConfigs</span><span class="p">:</span>
+<a id="L153" name="L153"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The configs every caller ends up with: YAMLs merged left to right, then the training</span>
+<a id="L154" name="L154"></a><span class="sd">    switches (only the ones actually given) on top.&quot;&quot;&quot;</span>
+<a id="L155" name="L155"></a>    <span class="n">configs</span> <span class="o">=</span> <span class="n">MatformerConfigs</span><span class="o">.</span><span class="n">create_configs</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">config_files</span> <span class="ow">or</span> <span class="p">[]),</span> <span class="n">overrides</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">overrides</span> <span class="ow">or</span> <span class="p">[]))</span>
+<a id="L156" name="L156"></a>    <span class="kn">from</span><span class="w"> </span><a href="../dataclasses/training_dataclasses.py.html"><a href="../dataclasses/training_dataclasses.py.html"><span class="nn">matformer.dataclasses.training_dataclasses</span></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">TrainingConfig</span>
+<a id="L157" name="L157"></a>
+<a id="L158" name="L158"></a>    <span class="n">known</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">TrainingConfig</span><span class="o">.</span><span class="n">__dataclass_fields__</span><span class="p">)</span>
+<a id="L159" name="L159"></a>    <span class="n">picked</span> <span class="o">=</span> <span class="p">{</span><span class="n">field</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="n">options</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<a id="L160" name="L160"></a>              <span class="k">if</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">known</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
+<a id="L161" name="L161"></a>    <span class="k">if</span> <span class="n">picked</span><span class="p">:</span>
+<a id="L162" name="L162"></a>        <span class="n">configs</span><span class="o">.</span><span class="n">load_config</span><span class="p">(</span><span class="n">stdin</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;training&quot;</span><span class="p">:</span> <span class="n">picked</span><span class="p">})</span>
+<a id="L163" name="L163"></a>    <span class="k">return</span> <span class="n">configs</span>
+<a id="L164" name="L164"></a>
+<a id="L165" name="L165"></a>
+<a id="L166" name="L166"></a><span class="k">def</span><span class="w"> </span><span class="nf">options_from_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L167" name="L167"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The training switches the user actually typed, translated to config fields.&quot;&quot;&quot;</span>
+<a id="L168" name="L168"></a>    <span class="n">defaults</span> <span class="o">=</span> <span class="n">parser</span><span class="p">()</span><span class="o">.</span><span class="n">parse_args</span><span class="p">([])</span>
+<a id="L169" name="L169"></a>    <span class="k">return</span> <span class="p">{</span><span class="n">CLI_TO_TRAINING_FIELD</span><span class="p">[</span><span class="n">dest</span><span class="p">]:</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span>
+<a id="L170" name="L170"></a>            <span class="k">for</span> <span class="n">dest</span> <span class="ow">in</span> <span class="n">CLI_TO_TRAINING_FIELD</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">args</span><span class="p">,</span> <span class="n">dest</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">defaults</span><span class="p">,</span> <span class="n">dest</span><span class="p">)}</span>
+<a id="L171" name="L171"></a>
+<a id="L172" name="L172"></a>
+<a id="L173" name="L173"></a><span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L174" name="L174"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run what a job description asks for: one training, or every run of the sweep its configs</span>
+<a id="L175" name="L175"></a><span class="sd">    declare. Everything a caller needs to say is in the dict: config files, overrides, the training</span>
+<a id="L176" name="L176"></a><span class="sd">    switches, which sweep points to run, and how to save. Nothing here reads argv, and nothing here</span>
+<a id="L177" name="L177"></a><span class="sd">    knows who called it.</span>
+<a id="L178" name="L178"></a>
+<a id="L179" name="L179"></a><span class="sd">    One configs object is built, then expanded (`MatformerConfigs.sweep_variants`): each point of</span>
+<a id="L180" name="L180"></a><span class="sd">    the sweep runs on a detached copy of it, whose logs, checkpoints and saved outputs carry the</span>
+<a id="L181" name="L181"></a><span class="sd">    point&#39;s name. A probe (`spec[&#39;probe&#39;]`) is run per point too, which is what makes a sweep a way</span>
+<a id="L182" name="L182"></a><span class="sd">    to measure before launching: the batch size each combination fits, in one job.&quot;&quot;&quot;</span>
+<a id="L183" name="L183"></a>    <span class="kn">from</span><span class="w"> </span><a href="matformer_trainer.py.html"><a href="matformer_trainer.py.html"><span class="nn">matformer.training.matformer_trainer</span></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerTrainer</span>
+<a id="L184" name="L184"></a>
+<a id="L185" name="L185"></a>    <span class="n">torch</span><span class="o">.</span><span class="n">set_float32_matmul_precision</span><span class="p">(</span><span class="n">env_variables</span><span class="o">.</span><span class="n">matmul_precision</span><span class="p">)</span>
+<a id="L186" name="L186"></a>    <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;gpus&quot;</span><span class="p">):</span>
+<a id="L187" name="L187"></a>        <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;CUDA_VISIBLE_DEVICES&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="s2">&quot;gpus&quot;</span><span class="p">])</span>
+<a id="L188" name="L188"></a>    <span class="n">device</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;device&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">detect_device</span><span class="p">()</span>
+<a id="L189" name="L189"></a>    <span class="k">if</span> <span class="n">device</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+<a id="L190" name="L190"></a>        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="s2">&quot;device cuda, but torch sees no GPU&quot;</span><span class="p">)</span>
+<a id="L191" name="L191"></a>    <span class="n">configs</span> <span class="o">=</span> <span class="n">build_configs</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;config&quot;</span><span class="p">),</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overrides&quot;</span><span class="p">),</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;options&quot;</span><span class="p">))</span>
+<a id="L192" name="L192"></a>    <span class="n">variants</span> <span class="o">=</span> <span class="n">configs</span><span class="o">.</span><span class="n">sweep_variants</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;sweep&quot;</span><span class="p">))</span>
+<a id="L193" name="L193"></a>    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variants</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+<a id="L194" name="L194"></a>        <span class="n">sweeps</span><span class="o">.</span><span class="n">summarize</span><span class="p">([</span><span class="n">variant</span><span class="o">.</span><span class="n">active_sweep</span> <span class="k">for</span> <span class="n">variant</span> <span class="ow">in</span> <span class="n">variants</span><span class="p">])</span>
+<a id="L195" name="L195"></a>    <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="n">variant</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">variants</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<a id="L196" name="L196"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variants</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+<a id="L197" name="L197"></a>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== Run </span><span class="si">{</span><span class="n">index</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">variants</span><span class="p">)</span><span class="si">}</span><span class="s2"> of the sweep ===  </span><span class="si">{</span><span class="n">variant</span><span class="o">.</span><span class="n">active_sweep</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+<a id="L198" name="L198"></a>                  <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L199" name="L199"></a>        <span class="n">trainer</span> <span class="o">=</span> <span class="n">MatformerTrainer</span><span class="p">(</span><span class="n">variant</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<a id="L200" name="L200"></a>        <span class="n">apply</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L201" name="L201"></a>        <span class="n">probe</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;probe&quot;</span><span class="p">)</span>
+<a id="L202" name="L202"></a>        <span class="k">if</span> <span class="n">probe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L203" name="L203"></a>            <span class="c1"># One allocation answers both questions: the biggest batch these GPUs run, and how fast it</span>
+<a id="L204" name="L204"></a>            <span class="c1"># goes there.</span>
+<a id="L205" name="L205"></a>            <span class="n">apply</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">probe</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;apply&quot;</span><span class="p">))</span>
+<a id="L206" name="L206"></a>            <span class="n">trainer</span><span class="o">.</span><span class="n">probe_memory</span><span class="p">(</span><span class="n">apply</span><span class="o">=</span><span class="n">apply</span><span class="p">,</span>
+<a id="L207" name="L207"></a>                                 <span class="o">**</span><span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">probe</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="o">!=</span> <span class="s2">&quot;apply&quot;</span><span class="p">})</span>
+<a id="L208" name="L208"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">apply</span><span class="p">:</span>
+<a id="L209" name="L209"></a>                <span class="c1"># Without `apply` the probe is the whole job: report the ceiling, free the GPU, leave.</span>
+<a id="L210" name="L210"></a>                <span class="k">del</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">variant</span>
+<a id="L211" name="L211"></a>                <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<a id="L212" name="L212"></a>                <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+<a id="L213" name="L213"></a>                    <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+<a id="L214" name="L214"></a>                <span class="k">continue</span>
+<a id="L215" name="L215"></a>        <span class="n">trainer</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">save_at_end</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_model</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save_model&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">),</span>
+<a id="L216" name="L216"></a>                    <span class="n">save_plugins</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save_plugins&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">))</span>
+<a id="L217" name="L217"></a>        <span class="k">del</span> <span class="n">trainer</span><span class="p">,</span> <span class="n">variant</span>
+<a id="L218" name="L218"></a>        <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
+<a id="L219" name="L219"></a>        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+<a id="L220" name="L220"></a>            <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">empty_cache</span><span class="p">()</span>
+<a id="L221" name="L221"></a>
+<a id="L222" name="L222"></a>
+<a id="L223" name="L223"></a><span class="c1"># ── command line ───────────────────────────────────────────────────────────────────────────────</span>
+<a id="L224" name="L224"></a><span class="k">def</span><span class="w"> </span><span class="nf">spec_from_args</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L225" name="L225"></a>    <span class="n">probe</span> <span class="o">=</span> <span class="n">probe_settings</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">probe</span><span class="p">)</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">probe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">({}</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">then_train</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L226" name="L226"></a>    <span class="k">if</span> <span class="n">probe</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">args</span><span class="o">.</span><span class="n">then_train</span><span class="p">:</span>
+<a id="L227" name="L227"></a>        <span class="n">probe</span><span class="p">[</span><span class="s2">&quot;apply&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L228" name="L228"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;config&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">cfg</span> <span class="ow">or</span> <span class="p">[]),</span> <span class="s2">&quot;overrides&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">override</span> <span class="ow">or</span> <span class="p">[]),</span>
+<a id="L229" name="L229"></a>            <span class="s2">&quot;options&quot;</span><span class="p">:</span> <span class="n">options_from_args</span><span class="p">(</span><span class="n">args</span><span class="p">),</span> <span class="s2">&quot;device&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span> <span class="k">else</span> <span class="n">args</span><span class="o">.</span><span class="n">device</span><span class="p">,</span>
+<a id="L230" name="L230"></a>            <span class="s2">&quot;save_model&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">no_save_model</span><span class="p">,</span> <span class="s2">&quot;save_plugins&quot;</span><span class="p">:</span> <span class="ow">not</span> <span class="n">args</span><span class="o">.</span><span class="n">no_save_plugins</span><span class="p">,</span>
+<a id="L231" name="L231"></a>            <span class="s2">&quot;sweep&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">sweep</span><span class="p">,</span> <span class="s2">&quot;gpus&quot;</span><span class="p">:</span> <span class="n">args</span><span class="o">.</span><span class="n">gpus</span><span class="p">,</span> <span class="s2">&quot;probe&quot;</span><span class="p">:</span> <span class="n">probe</span><span class="p">}</span>
+<a id="L232" name="L232"></a>
+<a id="L233" name="L233"></a>
+<a id="L234" name="L234"></a><span class="k">def</span><span class="w"> </span><span class="nf">_validate</span><span class="p">(</span><span class="n">args</span><span class="p">):</span>
+<a id="L235" name="L235"></a>    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">reset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L236" name="L236"></a>        <span class="n">unknown</span> <span class="o">=</span> <span class="p">[</span><span class="n">one</span> <span class="k">for</span> <span class="n">one</span> <span class="ow">in</span> <span class="n">args</span><span class="o">.</span><span class="n">reset</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;,&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">one</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">RESET_CHOICES</span><span class="p">]</span>
+<a id="L237" name="L237"></a>        <span class="k">if</span> <span class="n">unknown</span><span class="p">:</span>
+<a id="L238" name="L238"></a>            <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;--reset accepts </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">RESET_CHOICES</span><span class="p">)</span><span class="si">}</span><span class="s2">, not </span><span class="si">{</span><span class="n">unknown</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L239" name="L239"></a>
+<a id="L240" name="L240"></a>
+<a id="L241" name="L241"></a><span class="k">def</span><span class="w"> </span><span class="nf">_await</span><span class="p">(</span><span class="n">srv</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">60</span><span class="p">):</span>
+<a id="L242" name="L242"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;One blocking request/response over the asynchronous client: what a script wants. The client</span>
+<a id="L243" name="L243"></a><span class="sd">    hands answers to its events queue and the callbacks are run from there — the GUI pumps it from its</span>
+<a id="L244" name="L244"></a><span class="sd">    main loop, so a script has to pump it too, otherwise it waits for a reply that is already sitting</span>
+<a id="L245" name="L245"></a><span class="sd">    in the queue and the request looks like it never came back.&quot;&quot;&quot;</span>
+<a id="L246" name="L246"></a>    <span class="n">box</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L247" name="L247"></a>
+<a id="L248" name="L248"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">callback</span><span class="p">(</span><span class="n">result</span><span class="p">):</span>
+<a id="L249" name="L249"></a>        <span class="n">box</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;result&quot;</span><span class="p">,</span> <span class="n">result</span><span class="p">)</span>
+<a id="L250" name="L250"></a>
+<a id="L251" name="L251"></a>    <span class="n">srv</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="n">method</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">callback</span><span class="p">)</span>
+<a id="L252" name="L252"></a>    <span class="n">deadline</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="n">timeout</span>
+<a id="L253" name="L253"></a>    <span class="k">while</span> <span class="s2">&quot;result&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">box</span> <span class="ow">and</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">deadline</span><span class="p">:</span>
+<a id="L254" name="L254"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="L255" name="L255"></a>            <span class="n">_</span><span class="p">,</span> <span class="n">kind</span><span class="p">,</span> <span class="n">data</span> <span class="o">=</span> <span class="n">srv</span><span class="o">.</span><span class="n">events</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">timeout</span><span class="o">=</span><span class="mf">0.1</span><span class="p">)</span>
+<a id="L256" name="L256"></a>        <span class="k">except</span> <span class="n">queue</span><span class="o">.</span><span class="n">Empty</span><span class="p">:</span>
+<a id="L257" name="L257"></a>            <span class="k">continue</span>
+<a id="L258" name="L258"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;__result__&quot;</span><span class="p">:</span>
+<a id="L259" name="L259"></a>            <span class="n">rid</span><span class="p">,</span> <span class="n">result</span> <span class="o">=</span> <span class="n">data</span>
+<a id="L260" name="L260"></a>            <span class="k">if</span> <span class="n">srv</span><span class="o">.</span><span class="n">pending</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">rid</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="n">callback</span><span class="p">:</span>
+<a id="L261" name="L261"></a>                <span class="n">callback</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+<a id="L262" name="L262"></a>        <span class="k">elif</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;__dead__&quot;</span><span class="p">:</span>
+<a id="L263" name="L263"></a>            <span class="k">for</span> <span class="n">rid</span><span class="p">,</span> <span class="n">waiting</span> <span class="ow">in</span> <span class="p">(</span><span class="n">data</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L264" name="L264"></a>                <span class="k">if</span> <span class="n">waiting</span> <span class="ow">is</span> <span class="n">callback</span><span class="p">:</span>
+<a id="L265" name="L265"></a>                    <span class="n">callback</span><span class="p">((</span><span class="s2">&quot;error&quot;</span><span class="p">,</span> <span class="s2">&quot;connection lost&quot;</span><span class="p">))</span>
+<a id="L266" name="L266"></a>    <span class="k">if</span> <span class="s2">&quot;result&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">box</span><span class="p">:</span>
+<a id="L267" name="L267"></a>        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">: no answer from </span><span class="si">{</span><span class="n">srv</span><span class="o">.</span><span class="n">url</span><span class="si">}</span><span class="s2"> within </span><span class="si">{</span><span class="n">timeout</span><span class="si">}</span><span class="s2">s&quot;</span><span class="p">)</span>
+<a id="L268" name="L268"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">box</span><span class="p">[</span><span class="s2">&quot;result&quot;</span><span class="p">],</span> <span class="nb">tuple</span><span class="p">):</span>
+<a id="L269" name="L269"></a>        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">method</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">box</span><span class="p">[</span><span class="s1">&#39;result&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L270" name="L270"></a>    <span class="k">return</span> <span class="n">box</span><span class="p">[</span><span class="s2">&quot;result&quot;</span><span class="p">]</span>
+<a id="L271" name="L271"></a>
+<a id="L272" name="L272"></a>
+<a id="L273" name="L273"></a><span class="k">def</span><span class="w"> </span><span class="nf">_submit</span><span class="p">(</span><span class="n">args</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="L274" name="L274"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Hand the whole thing to a server&#39;s queue and follow the job until it ends: the terminal keeps</span>
+<a id="L275" name="L275"></a><span class="sd">    printing what the training prints, the server owns the process.&quot;&quot;&quot;</span>
+<a id="L276" name="L276"></a>    <span class="kn">from</span><span class="w"> </span><a href="../remote/net.py.html"><span class="nn">matformer.remote.net</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">Server</span>
+<a id="L277" name="L277"></a>
+<a id="L278" name="L278"></a>    <span class="n">events</span> <span class="o">=</span> <span class="n">queue</span><span class="o">.</span><span class="n">Queue</span><span class="p">()</span>
+<a id="L279" name="L279"></a>    <span class="n">address</span> <span class="o">=</span> <span class="n">args</span><span class="o">.</span><span class="n">queue</span> <span class="ow">or</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MATFORMER_SERVER_ADDRESS&quot;</span><span class="p">,</span> <span class="s2">&quot;127.0.0.1:8765&quot;</span><span class="p">)</span>
+<a id="L280" name="L280"></a>    <span class="k">if</span> <span class="s2">&quot;:&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">address</span><span class="p">:</span>
+<a id="L281" name="L281"></a>        <span class="n">address</span> <span class="o">+=</span> <span class="s2">&quot;:8765&quot;</span>
+<a id="L282" name="L282"></a>    <span class="n">srv</span> <span class="o">=</span> <span class="n">Server</span><span class="p">(</span><span class="s2">&quot;cli&quot;</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">events</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;MATFORMER_API_KEY&quot;</span><span class="p">))</span>
+<a id="L283" name="L283"></a>    <span class="n">srv</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<a id="L284" name="L284"></a>    <span class="n">deadline</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">+</span> <span class="mi">15</span>
+<a id="L285" name="L285"></a>    <span class="k">while</span> <span class="ow">not</span> <span class="n">srv</span><span class="o">.</span><span class="n">up</span> <span class="ow">and</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">&lt;</span> <span class="n">deadline</span><span class="p">:</span>
+<a id="L286" name="L286"></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mf">0.2</span><span class="p">)</span>
+<a id="L287" name="L287"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">srv</span><span class="o">.</span><span class="n">up</span><span class="p">:</span>
+<a id="L288" name="L288"></a>        <span class="n">srv</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+<a id="L289" name="L289"></a>        <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;no server answering on </span><span class="si">{</span><span class="n">address</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L290" name="L290"></a>    <span class="n">job_id</span> <span class="o">=</span> <span class="n">_await</span><span class="p">(</span><span class="n">srv</span><span class="p">,</span> <span class="s2">&quot;train.start&quot;</span><span class="p">,</span> <span class="n">spec_from_args</span><span class="p">(</span><span class="n">args</span><span class="p">))[</span><span class="s2">&quot;run&quot;</span><span class="p">]</span>
+<a id="L291" name="L291"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;queued as </span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2"> on </span><span class="si">{</span><span class="n">address</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L292" name="L292"></a>    <span class="n">shown</span><span class="p">,</span> <span class="n">job</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="p">{}</span>
+<a id="L293" name="L293"></a>    <span class="k">while</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;done&quot;</span><span class="p">,</span> <span class="s2">&quot;failed&quot;</span><span class="p">,</span> <span class="s2">&quot;cancelled&quot;</span><span class="p">):</span>
+<a id="L294" name="L294"></a>        <span class="n">text</span> <span class="o">=</span> <span class="n">_await</span><span class="p">(</span><span class="n">srv</span><span class="p">,</span> <span class="s2">&quot;jobs.log&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="n">job_id</span><span class="p">})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+<a id="L295" name="L295"></a>        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">text</span><span class="p">[</span><span class="n">shown</span><span class="p">:])</span>
+<a id="L296" name="L296"></a>        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+<a id="L297" name="L297"></a>        <span class="n">shown</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<a id="L298" name="L298"></a>        <span class="n">job</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">j</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">_await</span><span class="p">(</span><span class="n">srv</span><span class="p">,</span> <span class="s2">&quot;jobs.list&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="n">j</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;id&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="n">job_id</span><span class="p">),</span> <span class="n">job</span><span class="p">)</span>
+<a id="L299" name="L299"></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<a id="L300" name="L300"></a>    <span class="n">srv</span><span class="o">.</span><span class="n">shutdown</span><span class="p">()</span>
+<a id="L301" name="L301"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;status&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L302" name="L302"></a>    <span class="k">return</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">job</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;status&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;done&quot;</span> <span class="k">else</span> <span class="mi">1</span>
+<a id="L303" name="L303"></a>
+<a id="L304" name="L304"></a>
+<a id="L305" name="L305"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<a id="L306" name="L306"></a>    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="p">()</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+<a id="L307" name="L307"></a>    <span class="n">_validate</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+<a id="L308" name="L308"></a>    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">sweeps</span><span class="p">:</span>
+<a id="L309" name="L309"></a>        <span class="c1"># What the configs declare, without running any of it: the plan, one line per point.</span>
+<a id="L310" name="L310"></a>        <span class="n">configs</span> <span class="o">=</span> <span class="n">build_configs</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">cfg</span><span class="p">,</span> <span class="n">args</span><span class="o">.</span><span class="n">override</span><span class="p">,</span> <span class="n">options_from_args</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+<a id="L311" name="L311"></a>        <span class="n">sweeps</span><span class="o">.</span><span class="n">summarize</span><span class="p">(</span><span class="n">configs</span><span class="o">.</span><span class="n">sweep_points</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">sweep</span><span class="p">))</span>
+<a id="L312" name="L312"></a>        <span class="k">return</span> <span class="mi">0</span>
+<a id="L313" name="L313"></a>    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">queue</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L314" name="L314"></a>        <span class="k">return</span> <span class="n">_submit</span><span class="p">(</span><span class="n">args</span><span class="p">)</span>
+<a id="L315" name="L315"></a>    <span class="n">execute</span><span class="p">(</span><span class="n">spec_from_args</span><span class="p">(</span><span class="n">args</span><span class="p">))</span>
+<a id="L316" name="L316"></a>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Training complete.  Bye.&quot;</span><span class="p">)</span>
+<a id="L317" name="L317"></a>    <span class="k">return</span> <span class="mi">0</span>
+<a id="L318" name="L318"></a>
+<a id="L319" name="L319"></a>
+<a id="L320" name="L320"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="L321" name="L321"></a>    <span class="k">raise</span> <span class="ne">SystemExit</span><span class="p">(</span><span class="n">main</span><span class="p">())</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

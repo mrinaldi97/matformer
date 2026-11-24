@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/server/slurm_cmd.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../../../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/server/slurm_cmd.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="slurm_cmd.py.html"><code>matformer/server/slurm_cmd.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/server/</code></a></p><h1><code>slurm_cmd.py</code></h1><p class="muted">matformer/server/slurm_cmd.py · 108 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/server/slurm_cmd.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L17"><code>commands</code></a><span class="line">L17</span></li><li class="depth-0"><a href="#L23"><code>slurm_methods</code></a><span class="line">L23</span></li><li class="depth-0"><a href="#L48"><code>slurm_call</code></a><span class="line">L48</span></li><li class="depth-0"><a href="#L55"><code>slurm_line</code></a><span class="line">L55</span></li><li class="depth-0"><a href="#L64"><code>slurm_fields</code></a><span class="line">L64</span></li><li class="depth-0"><a href="#L74"><code>slurm_watch</code></a><span class="line">L74</span></li><li class="depth-0"><a href="#L82"><code>_rows</code></a><span class="line">L82</span></li><li class="depth-0"><a href="#L89"><code>start_watcher</code></a><span class="line">L89</span></li><li class="depth-0"><a href="#L95"><code>_watch</code></a><span class="line">L95</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="core.py.html"><code>matformer.server.core</code></a> <span class="muted">broadcast, rpc</span></li><li><a href="../slurm.py.html"><code>matformer.slurm</code></a> <span class="muted">SlurmCommands</span></li><li><a href="../slurm.py.html"><code>matformer.slurm</code></a> <span class="muted">line</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># matformer/server/slurm_cmd.py</span>
+<a id="L2" name="L2"></a><span class="sd">&quot;&quot;&quot;The SLURM interpreter as RPC. Like MDAT, the server owns no cluster logic: it publishes</span>
+<a id="L3" name="L3"></a><span class="sd">`SlurmCommands` — `slurm.methods` describes the operations so the interface generates itself,</span>
+<a id="L4" name="L4"></a><span class="sd">`slurm.call` runs one, `slurm.line` accepts what a person would type in the terminal — and adds a</span>
+<a id="L5" name="L5"></a><span class="sd">watchdog that turns a change of state of a job into a `slurm_job` broadcast, which is what lets a</span>
+<a id="L6" name="L6"></a><span class="sd">GUI on another machine follow a training it does not own.&quot;&quot;&quot;</span>
+<a id="L7" name="L7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<a id="L8" name="L8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">threading</span>
+<a id="L9" name="L9"></a><span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<a id="L10" name="L10"></a>
+<a id="L11" name="L11"></a><span class="kn">from</span><span class="w"> </span><a href="core.py.html"><span class="nn">matformer.server.core</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">broadcast</span><span class="p">,</span> <span class="n">rpc</span>
+<a id="L12" name="L12"></a>
+<a id="L13" name="L13"></a><span class="n">WATCHER</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span>
+<a id="L14" name="L14"></a><span class="n">SEEN</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L15" name="L15"></a>
+<a id="L16" name="L16"></a>
+<a id="L17" name="L17"></a><span class="k">def</span><span class="w"> </span><span class="nf">commands</span><span class="p">():</span>
+<a id="L18" name="L18"></a>    <span class="kn">from</span><span class="w"> </span><a href="../slurm.py.html"><a href="../slurm.py.html"><a href="../slurm.py.html"><a href="../slurm.py.html"><span class="nn">matformer.slurm</span></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">SlurmCommands</span>
+<a id="L19" name="L19"></a>    <span class="k">return</span> <span class="n">SlurmCommands</span><span class="p">()</span>
+<a id="L20" name="L20"></a>
+<a id="L21" name="L21"></a>
+<a id="L22" name="L22"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;slurm.methods&quot;</span><span class="p">)</span>
+<a id="L23" name="L23"></a><span class="k">def</span><span class="w"> </span><span class="nf">slurm_methods</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L24" name="L24"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;[{name, doc, args}] for every cluster operation, introspected from the interpreter.&quot;&quot;&quot;</span>
+<a id="L25" name="L25"></a>    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L26" name="L26"></a>    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">dir</span><span class="p">(</span><span class="n">commands</span><span class="p">()):</span>
+<a id="L27" name="L27"></a>        <span class="k">if</span> <span class="n">name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">):</span>
+<a id="L28" name="L28"></a>            <span class="k">continue</span>
+<a id="L29" name="L29"></a>        <span class="n">fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">commands</span><span class="p">()),</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L30" name="L30"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isfunction</span><span class="p">(</span><span class="n">fn</span><span class="p">):</span>
+<a id="L31" name="L31"></a>            <span class="k">continue</span>
+<a id="L32" name="L32"></a>        <span class="n">args</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L33" name="L33"></a>        <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">fn</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+<a id="L34" name="L34"></a>            <span class="k">if</span> <span class="n">parameter</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;self&quot;</span><span class="p">:</span>
+<a id="L35" name="L35"></a>                <span class="k">continue</span>
+<a id="L36" name="L36"></a>            <span class="n">annotation</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">parameter</span><span class="o">.</span><span class="n">annotation</span><span class="p">)</span>
+<a id="L37" name="L37"></a>            <span class="n">kind</span> <span class="o">=</span> <span class="s2">&quot;bool&quot;</span> <span class="k">if</span> <span class="n">annotation</span> <span class="o">==</span> <span class="s2">&quot;&lt;class &#39;bool&#39;&gt;&quot;</span> <span class="k">else</span> \
+<a id="L38" name="L38"></a>                <span class="s2">&quot;int&quot;</span> <span class="k">if</span> <span class="n">annotation</span> <span class="o">==</span> <span class="s2">&quot;&lt;class &#39;int&#39;&gt;&quot;</span> <span class="k">else</span> <span class="s2">&quot;str&quot;</span>
+<a id="L39" name="L39"></a>            <span class="n">args</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">parameter</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="n">kind</span><span class="p">,</span>
+<a id="L40" name="L40"></a>                         <span class="s2">&quot;default&quot;</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">parameter</span><span class="o">.</span><span class="n">default</span> <span class="ow">is</span> <span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">empty</span>
+<a id="L41" name="L41"></a>                         <span class="k">else</span> <span class="n">parameter</span><span class="o">.</span><span class="n">default</span><span class="p">})</span>
+<a id="L42" name="L42"></a>        <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">&quot;args&quot;</span><span class="p">:</span> <span class="n">args</span><span class="p">,</span>
+<a id="L43" name="L43"></a>                    <span class="s2">&quot;doc&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">fn</span><span class="o">.</span><span class="vm">__doc__</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">fn</span><span class="o">.</span><span class="vm">__doc__</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">})</span>
+<a id="L44" name="L44"></a>    <span class="k">return</span> <span class="n">out</span>
+<a id="L45" name="L45"></a>
+<a id="L46" name="L46"></a>
+<a id="L47" name="L47"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;slurm.call&quot;</span><span class="p">)</span>
+<a id="L48" name="L48"></a><span class="k">def</span><span class="w"> </span><span class="nf">slurm_call</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L49" name="L49"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;One operation, programmatically: {cmd: &#39;nodes&#39;, args: {partition: &#39;…&#39;}}.&quot;&quot;&quot;</span>
+<a id="L50" name="L50"></a>    <span class="n">fn</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">commands</span><span class="p">(),</span> <span class="n">p</span><span class="p">[</span><span class="s2">&quot;cmd&quot;</span><span class="p">])</span>
+<a id="L51" name="L51"></a>    <span class="k">return</span> <span class="n">fn</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;args&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">})</span>
+<a id="L52" name="L52"></a>
+<a id="L53" name="L53"></a>
+<a id="L54" name="L54"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;slurm.line&quot;</span><span class="p">)</span>
+<a id="L55" name="L55"></a><span class="k">def</span><span class="w"> </span><span class="nf">slurm_line</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L56" name="L56"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Type it as you would in a terminal: &#39;queue&#39;, &#39;nodes epito&#39;, &#39;save 4712&#39;. Returns text for</span>
+<a id="L57" name="L57"></a><span class="sd">    tables, structures for everything else.&quot;&quot;&quot;</span>
+<a id="L58" name="L58"></a>    <span class="kn">from</span><span class="w"> </span><a href="../slurm.py.html"><a href="../slurm.py.html"><a href="../slurm.py.html"><a href="../slurm.py.html"><span class="nn">matformer.slurm</span></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">line</span>
+<a id="L59" name="L59"></a>    <span class="n">result</span> <span class="o">=</span> <span class="n">line</span><span class="p">(</span><span class="n">p</span><span class="p">[</span><span class="s2">&quot;line&quot;</span><span class="p">])</span>
+<a id="L60" name="L60"></a>    <span class="k">return</span> <span class="n">result</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;result&quot;</span><span class="p">:</span> <span class="n">result</span><span class="p">}</span>
+<a id="L61" name="L61"></a>
+<a id="L62" name="L62"></a>
+<a id="L63" name="L63"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;slurm.fields&quot;</span><span class="p">)</span>
+<a id="L64" name="L64"></a><span class="k">def</span><span class="w"> </span><span class="nf">slurm_fields</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L65" name="L65"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Where a training can run, as fields: the dialog that submits a job is generated from here.&quot;&quot;&quot;</span>
+<a id="L66" name="L66"></a>    <span class="kn">from</span><span class="w"> </span><a href="../slurm.py.html"><a href="../slurm.py.html"><a href="../slurm.py.html"><a href="../slurm.py.html"><span class="nn">matformer.slurm</span></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">SlurmCommands</span>
+<a id="L67" name="L67"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;fields&quot;</span><span class="p">:</span> <span class="n">SlurmCommands</span><span class="p">()</span><span class="o">.</span><span class="n">allocation_fields</span><span class="p">(),</span>
+<a id="L68" name="L68"></a>            <span class="s2">&quot;cluster&quot;</span><span class="p">:</span> <span class="n">commands</span><span class="p">()</span><span class="o">.</span><span class="n">cluster</span><span class="p">(),</span>
+<a id="L69" name="L69"></a>            <span class="s2">&quot;partitions&quot;</span><span class="p">:</span> <span class="n">commands</span><span class="p">()</span><span class="o">.</span><span class="n">partitions</span><span class="p">()</span><span class="o">.</span><span class="n">asdict</span><span class="p">(),</span>
+<a id="L70" name="L70"></a>            <span class="s2">&quot;venvs&quot;</span><span class="p">:</span> <span class="n">commands</span><span class="p">()</span><span class="o">.</span><span class="n">venvs</span><span class="p">()</span><span class="o">.</span><span class="n">asdict</span><span class="p">()}</span>
+<a id="L71" name="L71"></a>
+<a id="L72" name="L72"></a>
+<a id="L73" name="L73"></a><span class="nd">@rpc</span><span class="p">(</span><span class="s2">&quot;slurm.watch&quot;</span><span class="p">)</span>
+<a id="L74" name="L74"></a><span class="k">def</span><span class="w"> </span><span class="nf">slurm_watch</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">p</span><span class="p">):</span>
+<a id="L75" name="L75"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Replay the cluster&#39;s jobs to this connection and keep pushing changes.&quot;&quot;&quot;</span>
+<a id="L76" name="L76"></a>    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">_rows</span><span class="p">():</span>
+<a id="L77" name="L77"></a>        <span class="n">conn</span><span class="o">.</span><span class="n">push</span><span class="p">(</span><span class="s2">&quot;slurm_job&quot;</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+<a id="L78" name="L78"></a>    <span class="n">start_watcher</span><span class="p">()</span>
+<a id="L79" name="L79"></a>    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;msg&quot;</span><span class="p">:</span> <span class="s2">&quot;watching cluster jobs&quot;</span><span class="p">}</span>
+<a id="L80" name="L80"></a>
+<a id="L81" name="L81"></a>
+<a id="L82" name="L82"></a><span class="k">def</span><span class="w"> </span><span class="nf">_rows</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<a id="L83" name="L83"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;The interpreter&#39;s job table as plain dicts: one shape for the replay, the broadcast and the</span>
+<a id="L84" name="L84"></a><span class="sd">    dock, so a client never has to know which of the three a row came from.&quot;&quot;&quot;</span>
+<a id="L85" name="L85"></a>    <span class="kn">from</span><span class="w"> </span><a href="../slurm.py.html"><a href="../slurm.py.html"><a href="../slurm.py.html"><a href="../slurm.py.html"><span class="nn">matformer.slurm</span></a></a></a></a><span class="w"> </span><span class="kn">import</span> <span class="n">SlurmCommands</span>
+<a id="L86" name="L86"></a>    <span class="k">return</span> <span class="n">SlurmCommands</span><span class="p">()</span><span class="o">.</span><span class="n">jobs</span><span class="p">()</span><span class="o">.</span><span class="n">asdict</span><span class="p">()[</span><span class="s2">&quot;rows&quot;</span><span class="p">]</span>
+<a id="L87" name="L87"></a>
+<a id="L88" name="L88"></a>
+<a id="L89" name="L89"></a><span class="k">def</span><span class="w"> </span><span class="nf">start_watcher</span><span class="p">():</span>
+<a id="L90" name="L90"></a>    <span class="k">if</span> <span class="n">WATCHER</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">WATCHER</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">is_alive</span><span class="p">():</span>
+<a id="L91" name="L91"></a>        <span class="n">WATCHER</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">_watch</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;slurm-watch&quot;</span><span class="p">,</span> <span class="n">daemon</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L92" name="L92"></a>        <span class="n">WATCHER</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<a id="L93" name="L93"></a>
+<a id="L94" name="L94"></a>
+<a id="L95" name="L95"></a><span class="k">def</span><span class="w"> </span><span class="nf">_watch</span><span class="p">():</span>
+<a id="L96" name="L96"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Poll the controller, not the training: a job that changes state, step or checkpoint is worth</span>
+<a id="L97" name="L97"></a><span class="sd">    a broadcast, and nothing else is.&quot;&quot;&quot;</span>
+<a id="L98" name="L98"></a>    <span class="k">global</span> <span class="n">SEEN</span>
+<a id="L99" name="L99"></a>    <span class="k">while</span> <span class="kc">True</span><span class="p">:</span>
+<a id="L100" name="L100"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="L101" name="L101"></a>            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">_rows</span><span class="p">():</span>
+<a id="L102" name="L102"></a>                <span class="n">signature</span> <span class="o">=</span> <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;state&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;step&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;saved&quot;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;left&quot;</span><span class="p">])</span>
+<a id="L103" name="L103"></a>                <span class="k">if</span> <span class="n">SEEN</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;job&quot;</span><span class="p">])</span> <span class="o">!=</span> <span class="n">signature</span><span class="p">:</span>
+<a id="L104" name="L104"></a>                    <span class="n">SEEN</span><span class="p">[</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;job&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">signature</span>
+<a id="L105" name="L105"></a>                    <span class="n">broadcast</span><span class="p">(</span><span class="s2">&quot;slurm_job&quot;</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+<a id="L106" name="L106"></a>        <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+<a id="L107" name="L107"></a>            <span class="k">pass</span>
+<a id="L108" name="L108"></a>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

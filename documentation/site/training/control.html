@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Control · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section" open><summary>Training</summary><ul><li><a href="wrapper.html">MatformerWrapper</a></li><li><a href="trainer.html">MatformerTrainer</a></li><li><a href="learning-signals.html">Learning signals</a></li><li><a href="logger.html">Logging</a></li><li><a class="current" href="control.html">Control</a></li><li><a href="checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Training <span class="sep">/</span> Control</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/training/control.py.html"><code>matformer/training/control.py</code></a> <a href="../file/matformer/slurm.py.html"><code>matformer/slurm.py</code></a></div>
+<h1 id="control">Control<a class="headerlink" href="#control" title="Permanent link"></a></h1>
+<p><code>Control</code> lets an external process send commands to a running training through the filesystem.</p>
+<h2 id="files">Files<a class="headerlink" href="#files" title="Permanent link"></a></h2>
+<p>The mailbox is a JSON file. A supervisor writes a command into it; every rank reads the command at its next optimizer step. Reading the same command on every rank keeps a distributed checkpoint consistent.</p>
+<p>The heartbeat is written by rank 0. It contains the step, the epoch, the host and the memory. A server can use it to describe a run on another machine.</p>
+<p>The paths are passed to <code>Control</code> or read from <code>MATFORMER_CONTROL</code> and <code>MATFORMER_STATUS</code>. Without a mailbox, the control channel is inactive.</p>
+<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link"></a></h2>
+<table>
+<thead>
+<tr>
+<th><code>cmd</code></th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>save</code></td>
+<td>save a checkpoint</td>
+</tr>
+<tr>
+<td><code>save_and_stop</code></td>
+<td>save a checkpoint, then stop after the step</td>
+</tr>
+<tr>
+<td><code>stop</code></td>
+<td>stop after the step</td>
+</tr>
+<tr>
+<td><code>set</code></td>
+<td>change a training field (<code>{"cmd": "set", "field": "lr", "value": 1e-4}</code>)</td>
+</tr>
+</tbody>
+</table>
+<p>Each command has an <code>at</code> timestamp. Each rank remembers the last timestamp it consumed, so one write is one command.</p>
+<h2 id="signals">Signals<a class="headerlink" href="#signals" title="Permanent link"></a></h2>
+<p><code>install_signals()</code> handles <code>SIGTERM</code>, <code>SIGINT</code> and <code>SIGUSR1</code>. The SLURM wrapper sends <code>SIGUSR1</code> before the time slot ends and <code>SIGTERM</code> when the job is stopped. Both requests save a checkpoint at the next optimizer step. The handler is installed after <code>Fabric.launch()</code>.</p>
+<h2 id="loop">Loop<a class="headerlink" href="#loop" title="Permanent link"></a></h2>
+<p>The trainer calls <code>control.poll(self)</code> once per optimizer step. The method executes one pending command and writes the heartbeat. <code>save</code> and <code>save_and_stop</code> call <code>trainer.save(...)</code>. After a save, a <code>saved.json</code> marker is written next to the heartbeat.</p>
+<h2 id="filesystem-transport">Filesystem transport<a class="headerlink" href="#filesystem-transport" title="Permanent link"></a></h2>
+<p>The mailbox and the heartbeat are plain files on the shared filesystem. No socket is opened inside the training, so the channel works with a local run, a SLURM job or a server on another machine.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

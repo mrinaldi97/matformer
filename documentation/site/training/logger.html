@@ -1,0 +1,69 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logging · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section" open><summary>Training</summary><ul><li><a href="wrapper.html">MatformerWrapper</a></li><li><a href="trainer.html">MatformerTrainer</a></li><li><a href="learning-signals.html">Learning signals</a></li><li><a class="current" href="logger.html">Logging</a></li><li><a href="control.html">Control</a></li><li><a href="checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Training <span class="sep">/</span> Logging</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/training/logger.py.html"><code>matformer/training/logger.py</code></a> <a href="../file/matformer/training/jsonl_logger.py.html"><code>matformer/training/jsonl_logger.py</code></a></div>
+<h1 id="logging">Logging<a class="headerlink" href="#logging" title="Permanent link"></a></h1>
+<p><code>MatformerLogger</code> collects the metrics of one optimizer step and sends the row to every backend. Backends are registered in the <code>logger</code> category.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">training</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">logger</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">jsonl</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">tqdm</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+
+<h2 id="matformerlogger">MatformerLogger<a class="headerlink" href="#matformerlogger" title="Permanent link"></a></h2>
+<p><code>log(key, value, step=None, prog_bar=False)</code> writes to the current row. <code>advance()</code> sends the row to the backends and advances the step. <code>flush()</code> sends the row without advancing. <code>reset()</code> clears the bars, and <code>close()</code> flushes and closes the backends.</p>
+<p>A backend with a <code>buffer</code> method is treated as a progress bar. It receives <code>buffer</code>, <code>advance</code>, <code>reset</code> and <code>close</code>. Other backends receive <code>log(row, step)</code> and optionally <code>define_step_metric</code>.</p>
+<h2 id="backends">Backends<a class="headerlink" href="#backends" title="Permanent link"></a></h2>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>jsonl</code></td>
+<td><code>run.jsonl</code>, <code>config.json</code> and <code>meta.json</code> under <code>{save_dir}/logs/{run_name}_v{version}/</code></td>
+</tr>
+<tr>
+<td><code>wandb</code></td>
+<td>a Fabric <code>WandbLogger</code>; hyperparameters and one row per step</td>
+</tr>
+<tr>
+<td><code>tqdm</code></td>
+<td>a progress bar, disabled on every rank except 0</td>
+</tr>
+</tbody>
+</table>
+<p>The JSONL backend has no external dependency. A run folder is computed by <code>run_dir_for(training_configs)</code>, the same function used by the memory probe, so <code>memory_probe.json</code> is written next to the run log. A resumed run keeps the original <code>started</code> value from <code>meta.json</code>.</p>
+<p><code>flatten_configs(configs)</code> converts a <code>MatformerConfigs</code> object to <code>section/entry/field</code> keys. It is used by the backends that store hyperparameters.</p>
+<h2 id="scoped-logging">Scoped logging<a class="headerlink" href="#scoped-logging" title="Permanent link"></a></h2>
+<p><code>logger.scoped(prefix)</code> returns a logger that prefixes each key with <code>prefix/</code> and uses its own <code>prefix/step</code>. It does not advance the parent step or close the parent backends. <code>sandbox_train</code> uses it for the training runs it starts inside a validation step.</p>
+<h2 id="environment-variables">Environment variables<a class="headerlink" href="#environment-variables" title="Permanent link"></a></h2>
+<p><code>LOG_WANDB</code>, <code>LOG_TQDM</code> and <code>LOG_PROGRESS_BAR_STEPS</code> control the defaults. See <a href="../intro/env-vars.html">Environment variables</a>.</p>
+<h2 id="logged-metrics">Logged metrics<a class="headerlink" href="#logged-metrics" title="Permanent link"></a></h2>
+<p>The wrapper logs <code>train/loss</code>, <code>train/aux_loss</code>, the learning-signal metrics (<code>train/accuracy</code> from <code>post_loss</code>), <code>train/skipped_oom</code>, <code>train/EXCEPTIONS</code>, and <code>lr0</code>, <code>lr1</code>, ... for the schedulers. The trainer adds <code>speed/*</code>: tokens per second, sequences per second, TFLOPs, MFU and step time, measured over <code>log_speed_every_n_steps</code> steps. Tasks log their summary under <code>&lt;task name&gt;/&lt;metric&gt;</code>.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

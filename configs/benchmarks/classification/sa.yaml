@@ -18,7 +18,7 @@ data:
     label_column: "label_pos"
     tokenize: true
     task: "sentence-level"
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/SA/train.jsonl"
+    data_root: "$DATA_ASSETS/SA/train.jsonl"
     batch_size: 24
     num_workers: 1
     max_seq_len: 1024
@@ -35,7 +35,7 @@ data:
     label_column: "label_pos"
     tokenize: true
     task: "sentence-level"
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/SA/test.jsonl"
+    data_root: "$DATA_ASSETS/SA/test.jsonl"
     batch_size: 24
     num_workers: 1
     max_seq_len: 1024

@@ -71,9 +71,16 @@ def calc_banned_ngram_tokens(
 
 class GenerationMixin:
 
-    def _get_logits(self, current_ids: torch.LongTensor) -> torch.Tensor:
+    def _get_logits(self, current_ids) -> torch.Tensor:
         """Run one forward pass and return logits (batch, seq_len, vocab_size)."""
-        return self(NormalTensor(tensor=current_ids)).tensor
+        if isinstance(current_ids, torch.Tensor):
+            current_ids = NormalTensor(tensor=current_ids)
+        return self(current_ids).tensor
+
+    def paged_cache(self, tokens, dtype=None):
+        """The KV cache for this model, sized once for `tokens` of conversation."""
+        return self.cache.kv_cache(tokens=tokens, dtype=dtype or next(self.parameters()).dtype,
+                                   device=self.device)
 
     @torch.no_grad()
     def generate(
@@ -96,6 +103,8 @@ class GenerationMixin:
         stopping_criteria: Optional[Callable[[torch.LongTensor, Optional[list]], bool]] = None,
         stream_callback: Optional[Callable[[torch.LongTensor, int], None]] = None,
         return_timing: bool = False,
+        use_cache: bool = False,
+        kv_state=None,
     ) -> Union[torch.LongTensor, Tuple]:
         """Generate token sequences autoregressively.
 
@@ -118,6 +127,13 @@ class GenerationMixin:
             stream_callback: fn(next_tokens: LongTensor[batch], step: int).
                 Called immediately after each decoding step; use for streaming UIs.
             return_timing: Include tokens/second throughput in the return value.
+            use_cache: Keep the keys and values of what was already computed in a paged KV cache
+                (matformer.utils.kv_cache) and feed the model one token per step instead of the
+                whole sequence. Needs an attention implementation that reads the cache, and
+                prompts of the same length across the batch.
+            kv_state: A state from a previous call, already holding the prefix: the conversation
+                continues from it instead of being recomputed, and the state is left intact (and
+                grown) for the next caller. Implies use_cache.
 
         Returns:
             current_ids  [always]          (batch * num_return_sequences, full_len)
@@ -168,10 +184,28 @@ class GenerationMixin:
         all_scores: Optional[List[torch.Tensor]] = [] if output_scores else None
         t0 = time.perf_counter() if return_timing else None
 
+        state, owned = kv_state, False
+        if state is None and use_cache and max_new_tokens > 0:
+            if len(set(input_ids.ne(pad_token_id).sum(-1).tolist() + [prompt_len])) > 1:
+                raise ValueError("Paged generation cannot start from a padded batch: every sequence "
+                                 "needs the same number of real tokens.")
+            state = self.paged_cache(batch_size * (prompt_len + max_new_tokens)).new_state(batch_size)
+            owned = True
+
+        def forward(ids, q_lens, phase):
+            if state is None:
+                return self._get_logits(ids)
+            state.prepare(q_lens, phase=phase)
+            step = NormalTensor(tensor=ids, attributes={
+                'kv_state': state, 'seqlen_offsets': state.lengths[0] - q_lens[0]})
+            return self._get_logits(step)
+
         for step in range(max_new_tokens):
             cur_len = current_ids.shape[1]
 
-            logits = self._get_logits(current_ids)      # (B, cur_len, V)
+            logits = forward(current_ids if state is None or step == 0 else current_ids[:, -1:],
+                             [prompt_len] * batch_size if step == 0 else [1] * batch_size,
+                             'prefill' if step == 0 else 'decode')
             next_token_logits = logits[:, -1, :]        # (B, V) — view into buffer
 
             # Store raw logits before any processing
@@ -220,6 +254,8 @@ class GenerationMixin:
                 break
 
         extras = []
+        if owned:
+            state.release()
         if output_scores:
             extras.append(torch.stack(all_scores, dim=1))  # (B, steps, V)
         if return_timing:

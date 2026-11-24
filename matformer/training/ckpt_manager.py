@@ -35,16 +35,68 @@ class CheckpointDirectoryManager:
             return []
         out, prefix = [], self.model_name + self.version_string
         for p in self.save_path.glob(f"{prefix}*{self.extension}"):
-            try:
-                v_part      = p.stem.split(self.version_string)[1]   # "2_s5000"
-                v, s        = v_part.split(self.step_string)
-                out.append((int(v), int(s), p))
-            except (IndexError, ValueError):
-                continue
+            if (parsed := self.parse(p.name)):
+                out.append((parsed[1], parsed[2], p))
         return out
+
+    @classmethod
+    def parse(cls, filename: str):
+        """The (model_name, version, step) one checkpoint filename states, None when it is not ours.
+
+        The filename is the whole of the resume metadata, so the scan above and the selection below
+        both read it through here: one place knows the convention."""
+        try:
+            name, _, tail = Path(filename).stem.partition(cls.version_string)
+            version, _, step = tail.partition(cls.step_string)
+            return name, int(version), int(step)
+        except ValueError:
+            return None
 
     def _latest_version(self) -> int:
         return max((v for v, _, _ in self._scan()), default=1)
+
+    @classmethod
+    def select(cls, location, model_name: str = None, every_n_steps: int = 0,
+               versions=None, last: int = 0) -> list[str]:
+        """The checkpoints one location stands for, oldest first.
+
+        `location` may be a single checkpoint, a HuggingFace repo, a loose folder... anything the
+        loaders already read: when it does not hold Matformer checkpoints it comes back as it is,
+        so a selection rule never swallows a plain path. When it does, the rule picks among what is
+        there -- `model_name` one run of them, `every_n_steps` the steps that are a multiple of it,
+        only the newest version per run unless `versions` asks for others, and `last` the N newest
+        of what is left.
+
+        This is what lets a config address a *series* of models ("every 500 steps of this run")
+        instead of one file, and so lets a sweep be declared over models as plainly as over
+        learning rates."""
+        path = Path(location)
+        if not path.is_dir():
+            return [str(location)]
+        found = []
+        for one in sorted(path.glob(f"*{cls.extension}")):
+            parsed = cls.parse(one.name)
+            if parsed and (model_name is None or parsed[0] == model_name):
+                found.append(parsed + (one,))
+        if not found:
+            return [str(location)]               # not a checkpoint folder: the loaders know it best
+        found.sort(key=lambda one: (one[0], one[1], one[2]))     # numeric, not by filename
+        if versions:
+            found = [one for one in found if one[1] in set(versions)]
+        else:                              # each run contributes its newest version, and one only
+            newest = {}
+            for name, version, *_ in found:
+                newest[name] = max(newest.get(name, version), version)
+            found = [one for one in found if one[1] == newest[one[0]]]
+        if every_n_steps:
+            stepped = [one for one in found if one[2] % int(every_n_steps) == 0]
+            if not stepped:
+                raise ValueError(f"every_n_steps={every_n_steps} selects none of the checkpoints "
+                                 f"in {path} (steps: "
+                                 f"{', '.join(str(one[2]) for one in found[:8])})")
+            found = stepped
+        picked = [str(one[3]) for one in found]
+        return picked[-int(last):] if (last and picked) else (picked or [str(location)])
 
     def _ckpt_path(self, step: int) -> Path:
         name = f"{self.model_name}{self.version_string}{self.current_version}{self.step_string}{step}{self.extension}"

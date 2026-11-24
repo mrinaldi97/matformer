@@ -1,0 +1,102 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>TensorsDC · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section" open><summary>Core</summary><ul><li><a href="registry.html">The Matformer Registry</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="transformer.html">Transformer architecture</a></li><li><a href="sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="plugins.html">Plugins</a></li><li><a href="virtual-models.html">Virtual models and activation stores</a></li><li><a href="matformer-module.html">MatformerModule</a></li><li><a class="current" href="tensors.html">TensorsDC</a></li><li><a href="cache.html">The cache</a></li><li><a href="maskerator.html">The Maskerator</a></li><li><a href="tokenizers.html">Tokenizers</a></li><li><a href="source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Core <span class="sep">/</span> TensorsDC</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/dataclasses/tensors_dataclasses.py.html"><code>matformer/dataclasses/tensors_dataclasses.py</code></a></div>
+<h1 id="tensordc">TensorDC<a class="headerlink" href="#tensordc" title="Permanent link"></a></h1>
+<p>As you will see by browsing the code, plain torch.Tensor(s) are rarely used inside Matformer.
+Instead, all tensors are wrapped inside a custom dataclass, whose base is called TensorDC.
+The reason why TensorDC are used inside Matformer is twofold.</p>
+<h3 id="padding-and-unpacking">Padding and unpacking<a class="headerlink" href="#padding-and-unpacking" title="Permanent link"></a></h3>
+<p>A <code>PaddedTensor</code> is a datastructure where a tensor with batch dimension (B,S) is supplied with a boolean padding mask. 
+The padding mask should have FALSE for each position that contains true data and TRUE for any padding position.
+Having defined a PaddedTensor gives several advantage. First of all, you will not have to worry again about the padding mask: this will be embedded into the
+tensors' dataclass. Then, you will have access to the .unpad() method.
+The .unpad() method of PaddedTensor objects convert the PaddedTensor into an UnpaddedTensor. An UnpaddedTensor stores only the real tokens, concatenated into one flat <code>(total_tokens, ...)</code> tensor, together with the <code>indices</code> that say where each token came from, the <code>cu_seqlens</code> boundaries of every sequence, <code>max_seq_len</code>, <code>original_seq_len</code> and <code>batch_size</code>. Varlen kernels use this layout, so the same batch can be passed to a padded kernel or to a packed kernel.
+Other useful methods available in the PaddedTensor objects are .detach(), which returns a list of tensors each of its "true" length, without any padding, 
+and .pad_right() which converts the padding convention from right-padding to left-padding, so the real tokens are flush-right and the pads sit on the left. Autoregressive generation uses this layout, because the last position must be a real token.</p>
+<h3 id="additional-data">Additional data<a class="headerlink" href="#additional-data" title="Permanent link"></a></h3>
+<p>The TensorDC objects can carry with themselves additional data apart from the tensor itself and its padding mask.
+For example, a <code>PaddedTensor</code> needs a <code>padding_mask</code>, an <code>UnpaddedTensor</code> needs its <code>cu_seqlens</code>, and an attention implementation may need a document mask. The fields that every instance of a class needs are dataclass fields; everything else goes in one of the two dictionaries below.
+Sometimes those extra tensors should follow the main tensor during the padding/unpadding operations. In those cases, the tensors should be added as
+"following_attributes". A typical example is the "cloze_mask" used by masked models and used in the training step to recall if at that position there 
+was a normal token or a [MASK]. The cloze_mask should be of the same shape of the original tensor, thus it will be included in the "following_attributes".
+On the contrary, an example for an attribute that should NOT follow the main tensor in its pad/unpad tour is the "same_doc_mask" tensor. This tensor
+is generated by the default Matformer dataloaders to signal if the current chunk belongs to the same document of the previous batch (more info <a href="tensors.html#same-document">same_doc_mask</a> below). 
+In this case, it will enter inside the attributes.
+While the following_attributes must be torch.Tensor of a compatible shape with the main tensor, the attributes are completely free.
+They can be tensors, such as the "same_doc_mask", but even other types. For example, a convention in Matformer is to keep the ["metadata"] key of 
+the attributes dict free to store metadata of the documents contained in the batch. While it may seem weird to carry metadata (such as author,
+genre, year and so on) inside the TensorDC, it proved to be an handy solution for experimental scenario such as when a plugin connected deep inside the model
+(ex. for interpretability purpose) should access the metadata to store them in an external database together with the models' intermediate activations.</p>
+<div class="callout note">
+<p>To run a plain-tensor <code>nn.Module</code> over a <code>TensorDC</code>, keeping the wrapper and all its attributes, use the sugar <code>x.apply(module)</code>.</p>
+</div>
+<p><a id="same-document"></a></p>
+<h2 id="the-same-document-mask">The same-document mask<a class="headerlink" href="#the-same-document-mask" title="Permanent link"></a></h2>
+<p>A batch is not always a set of independent rows. In a packed stream, a row can continue the document of the previous chunk, and a recurrent mixer must know whether to carry its state across the boundary. The dataloader puts this information in the batch attributes:</p>
+<ul>
+<li><code>is_same_document</code> in a raw dataset item becomes <code>same_document_mask</code>, a boolean tensor of shape <code>[B]</code> (<code>True</code> means "this row continues the previous one");</li>
+<li>the value is <code>None</code> when the dataset has no notion of documents, and the tensor is then absent.</li>
+</ul>
+<p>Older code calls the same concept <code>same_doc_mask</code>; the two names refer to the same flag. Because its shape is the batch dimension and not the sequence dimension, it belongs in <code>attributes</code>, not in <code>following_attributes</code>: padding and unpadding must not touch it.</p>
+<h2 id="classes">Classes<a class="headerlink" href="#classes" title="Permanent link"></a></h2>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th>What it adds</th>
+<th>Typical use</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>TensorDC</code></td>
+<td>the base wrapper: <code>tensor</code>, <code>tensor_order</code>, <code>following_attributes</code>, <code>attributes</code></td>
+<td>the type every model receives</td>
+</tr>
+<tr>
+<td><code>NormalTensor</code></td>
+<td>no padding, no packing; <code>pad()</code> is a no-op</td>
+<td>generation, single examples, pooled outputs</td>
+</tr>
+<tr>
+<td><code>PaddedTensor</code></td>
+<td>a boolean <code>padding_mask</code> (<code>True</code> = padding)</td>
+<td>the default training path</td>
+</tr>
+<tr>
+<td><code>UnpaddedTensor</code></td>
+<td><code>indices</code>, <code>cu_seqlens</code>, <code>max_seq_len</code>, <code>original_seq_len</code>, <code>batch_size</code></td>
+<td>packed / varlen kernels</td>
+</tr>
+</tbody>
+</table>
+<p><code>PaddedTensor.unpad()</code> and <code>UnpaddedTensor.pad()</code> are inverses. <code>detach()</code> returns one tensor per batch element with padding removed; <code>from_rows()</code> rebuilds a padded tensor from variable-length rows; <code>reverse()</code> flips each packed segment in place. The layout helpers (<code>layout</code>, <code>segment_ids</code>, <code>reverse_index</code>) are cached per <code>cu_seqlens</code>, so a batch pays for them once per step even when every layer uses them.</p>
+<h2 id="tensor-operations">Tensor operations<a class="headerlink" href="#tensor-operations" title="Permanent link"></a></h2>
+<p><code>+</code> and <code>*</code> operate on the wrapped tensor and leave the attributes untouched, which is what residual connections and gated MLPs need. <code>to(device, dtype)</code> moves the tensor and every tensor-valued attribute. <code>has(key)</code> checks both dictionaries. <code>apply(module)</code> runs a plain module on the tensor and returns a new wrapper, which is the idiom for a kernel that knows nothing about Matformer.</p>
+<p><code>apply_kernel(module, x)</code> is the tolerant version used inside kernels: it applies <code>x.apply(module)</code> when <code>x</code> is a <code>TensorDC</code> and calls the module directly when it is a plain tensor. That is what lets the same linear layer work inside an MLP (plain tensor) and at the top level (wrapper).</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,70 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Virtual models and activation stores · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section" open><summary>Core</summary><ul><li><a href="registry.html">The Matformer Registry</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="transformer.html">Transformer architecture</a></li><li><a href="sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="plugins.html">Plugins</a></li><li><a class="current" href="virtual-models.html">Virtual models and activation stores</a></li><li><a href="matformer-module.html">MatformerModule</a></li><li><a href="tensors.html">TensorsDC</a></li><li><a href="cache.html">The cache</a></li><li><a href="maskerator.html">The Maskerator</a></li><li><a href="tokenizers.html">Tokenizers</a></li><li><a href="source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li><li><a href="../data/savers.html">Savers</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Core <span class="sep">/</span> Virtual models and activation stores</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/matformer_wrapper.py.html"><code>matformer/matformer_wrapper.py</code></a> <a href="../file/matformer/plugins/plugin_modules/save_activations.py.html"><code>matformer/plugins/plugin_modules/save_activations.py</code></a> <a href="../file/matformer/utils/matformer_cache.py.html"><code>matformer/utils/matformer_cache.py</code></a></div>
+<h1 id="virtual-models-and-activation-stores">Virtual models and activation stores<a class="headerlink" href="#virtual-models-and-activation-stores" title="Permanent link"></a></h1>
+<p>A virtual model reads stored activations instead of executing the backbone. Sockets, plugins and the wrapper forward still run. The transformer is replaced by a lookup in an activation store.</p>
+<p>This is useful in three situations:</p>
+<ul>
+<li><strong>Interpretability.</strong> You want to mount a probe on every layer of a model, but running the full model for every probe configuration is wasteful. Store the activations once, then replay them.</li>
+<li><strong>Distillation or linear probing.</strong> The backbone is frozen and only the head is trained.</li>
+<li><strong>Debugging.</strong> You want to know what a plugin sees without depending on the model's numerical behaviour.</li>
+</ul>
+<h2 id="runtime-modes">Runtime modes<a class="headerlink" href="#runtime-modes" title="Permanent link"></a></h2>
+<p><code>MatformerModelWrapper</code> is constructed with a <code>runtime_mode</code>, either <code>"live"</code> or <code>"virtual"</code>, and keeps one model per mode in <code>self._models</code>. <code>set_runtime_mode(mode)</code> switches the active one:</p>
+<ol>
+<li>every mounted plugin is unmounted from the current model;</li>
+<li>the other model is built (a live model through the registry, a <code>VirtualModel</code> from the activation store);</li>
+<li>sockets are re-indexed;</li>
+<li>every plugin is mounted again on the socket with the same address. If the new model has no such socket, the plugin is dropped with a warning.</li>
+</ol>
+<p>The plugin objects are moved to the new model, so their parameters and state survive the switch.</p>
+<h2 id="the-activation-store">The activation store<a class="headerlink" href="#the-activation-store" title="Permanent link"></a></h2>
+<p>An activation store is a registered component in the <code>activation_store</code> category. It implements two things:</p>
+<ul>
+<li><code>available_addresses()</code>: the socket addresses for which activations were stored;</li>
+<li><code>fetch_all(indices, addresses)</code>: the tensors for a batch of item indices.</li>
+</ul>
+<p>It also exposes <code>switch_databank(name, rewind=True)</code>, which selects which stored dataset is being replayed and rewinds its position. The trainer calls it at the end of an epoch for a virtual model, and the task base class calls it at the start of every task run, so a task that is re-run on a cached instance still reads the right databank.</p>
+<p>The <code>VirtualModel</code> builds one nested socket per available address and, in <code>forward</code>, fetches the needed activations, applies the mounted plugins in address order and returns either <code>cache.storage['probe_outputs']</code> or the configured <code>default_return</code>. If <code>check_input</code> is on (the default), it compares the stored input activation with the ids it received and warns when they diverge.</p>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="nt">activation_store</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">duckdb</span><span class="w">          </span><span class="c1"># or lmdb</span>
+<span class="nt">virtual_model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">check_input</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">input_address</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">encoder.model_input</span>
+<span class="w">  </span><span class="nt">return_multiprobe</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="nt">training</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">virtual_only</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">    </span><span class="c1"># use only the virtual model, no backbone weights are loaded</span>
+</code></pre></div>
+
+<p>With <code>training.virtual_only</code>, <code>load_model</code> instantiates the store before the wrapper, asks it for the model config, and never loads the backbone weights. The wrapper is built in virtual mode from the start.</p>
+<p>Without <code>virtual_only</code>, the wrapper is built live, and <code>set_runtime_mode("virtual")</code> can switch at any time. This is the usual workflow: run a <code>forward</code> task with plugins attached to capture activations, then switch to virtual and replay them.</p>
+<h2 id="integration">Integration<a class="headerlink" href="#integration" title="Permanent link"></a></h2>
+<p>The virtual model is a <a href="matformer-module.html">MatformerModule</a> with sockets, so the <a href="plugins.html">plugin manager</a> mounts plugins in the same way as on a live model. Its <code>default_plugins()</code> asks the live model class which plugins it would mount, so a classification head or a set of probes is created automatically.</p>
+<p>The activation stores are registered under <a href="../registry/activation-store.html">activation_store</a>.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-23 17:34 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

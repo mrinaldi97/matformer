@@ -40,7 +40,7 @@ class PluginManager:
         return_dict={}
         for p in path:
             p = Path(p)
-            if p.is_dir:
+            if p.is_dir():
                 files.extend([f for f in p.glob("*.pt")])
             else:
                 files.append(p)

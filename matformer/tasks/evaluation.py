@@ -4,7 +4,8 @@ from typing import ClassVar, Optional, Union
 import torch
 import torch.nn.functional as F
 from matformer.matformer_registry import registry
-from matformer.tasks.task import TaskConfig, MatformerTask
+from matformer.dataclasses.tensors_dataclasses import TensorDC
+from matformer.tasks.task import TaskConfig, MatformerTask, per_position, surface, top_k
 import math
 @registry.register_dataclass("task", "evaluation")
 @dataclass
@@ -22,6 +23,10 @@ class EvaluationTaskConfig(TaskConfig):
     limit_to_classes: Optional[list] = None     # Usage [27, 42, 9] to restrict saved outputs
     logit_diff_classes: Optional[list] = None   # Usage [idx1, idx2] to track specific logit margins
     use_tokenizer: bool = False
+    topk_present: int = 2                       # candidates kept per prediction (interactive):
+                                                # 0 = none, -1 = the whole class set
+    save_probs: bool = False                    # keep the full distribution: task.probs answers
+                                                # any position, not only the kept candidates
 
 @registry.register("task", "evaluation", "default")
 class EvaluationTask(MatformerTask):
@@ -48,14 +53,58 @@ class EvaluationTask(MatformerTask):
                 "token_nll_sum": None,      
                 "token_count_by_id": None,  
                 "confusion": None,          
+                "topk_correct": {},         # filled per top-k actually computed (see process_batch)
             }
-            if self.config.topk:
-                s["topk_correct"] = {k: 0.0 for k in self.config.topk}  
             self._state[name] = s
         return self._state[name]
 
+    @property
+    def id2label(self):
+        """Class id -> class name, from the model config or from the dataset it was trained on.
+        None when the head has no named classes (a language model, usually)."""
+        l2id = getattr(self.model.config, "label2id", None) or getattr(self.config.data, "label2id", None)
+        return {int(v): k for k, v in l2id.items()} if l2id else None
+
+    def input_tokens(self, batch):
+        """What to show on the left of a per-token prediction, and which row of the predictions
+        each shown item corresponds to. A token-classification head labels the first subword of
+        every word and nothing of the rest, so when the input was split into words the words
+        themselves are what deserves a row."""
+        tokenizer = getattr(self.model, 'tokenizer', None)
+        if tokenizer is None:
+            return None, None
+        words, word_ids = batch.attributes.get('words'), batch.attributes.get('word_ids')
+        if words and word_ids and len(words) == len(word_ids):
+            rows = [[(word, start) for word, start in zip(vocabulary, self._word_starts(ids))]
+                    for vocabulary, ids in zip(words, word_ids)]
+            return [[word for word, _ in row] for row in rows], [[start for _, start in row] for row in rows]
+        pieces = [tokenizer.tokens(row.flatten().tolist()) for row in batch.pad().detach()]
+        return pieces, [[range(len(pieces[row]))] and list(range(len(pieces[row]))) for row in range(len(pieces))]
+
+    @staticmethod
+    def _word_starts(word_ids):
+        """Position of the first subword of every word: where the label of that word lives."""
+        previous, starts = None, []
+        for position, word in enumerate(word_ids):
+            if word is not None and word != previous:
+                starts.append(position)
+            previous = word
+        return starts
+
+    def class_name(self, index):
+        labels = self.id2label
+        if labels:
+            return labels.get(index, str(index))
+        if self.config.use_tokenizer:
+            return self.model.tokenizer.decode([index])
+        return str(index)
+
     @torch.no_grad()
-    def process_batch(self, batch, interactive=False) -> None:
+    def process_batch(self, batch, interactive=None) -> None:
+        # interactive defaults to how the task is being driven: called one batch at a time, the
+        # caller wants the per-item outputs, even when saving them was not configured.
+        if interactive is None:
+            interactive = self.interactive
         if self.config.learning_signal:
             input_sequence, metadata = self.learning_signal.prepare_inputs(batch)
             predictions = self.model(input_sequence, **self.learning_signal.model_kwargs(metadata))
@@ -68,22 +117,24 @@ class EvaluationTask(MatformerTask):
         if isinstance(preds, dict):
             # multiprobe: {address: logits}. targets from multiprobe_ls is a
             # tensor (batch.attributes['labels']), but a dict is handled too.
+            tokens, positions = self.input_tokens(batch) if interactive else (None, None)
             data_out = {}
             for name, preds_i in preds.items():
                 targets_i = targets[name] if isinstance(targets, dict) else targets
-                data_out[name] = self._process_single(preds_i, targets_i, name, interactive)
+                data_out[name] = self._process_single(preds_i, targets_i, name, interactive, tokens, positions)
             if any(v is not None for v in data_out.values()):
                 return batch, data_out
             return batch, None
 
         # single-head path 
-        data = self._process_single(preds, targets, None, interactive)
+        tokens, positions = self.input_tokens(batch) if interactive else (None, None)
+        data = self._process_single(preds, targets, None, interactive, tokens, positions)
         if data is not None:
             return batch, data
         return batch, None
 
 
-    def _process_single(self, preds, targets, name, interactive):
+    def _process_single(self, preds, targets, name, interactive, tokens=None, positions=None):
         s = self._state_for(name)
 
 
@@ -98,7 +149,7 @@ class EvaluationTask(MatformerTask):
         s["entropy_sum"] += (-(probs * log_probs).sum(-1)).sum().item()  
         s["pred_count"] += preds.shape[:-1].numel()                       
 
-        if self.config.learning_signal:
+        if targets is not None:
             nll = -log_probs.gather(-1, targets.unsqueeze(-1)).squeeze(-1) 
             s["nll_sum"] += nll.sum().item()                               
             s["token_count"] += targets.numel()                            
@@ -107,6 +158,9 @@ class EvaluationTask(MatformerTask):
 
             if self.config.topk:
                 for k in self.config.topk:
+                    if k > preds.shape[-1]:      # top-k wider than the number of classes is meaningless
+                        continue
+                    s["topk_correct"].setdefault(k, 0.0)
                     s["topk_correct"][k] += (preds.topk(k, dim=-1).indices == targets.unsqueeze(-1)).any(-1).sum().item()  
 
         if self.config.compute_perplexity_by_token:
@@ -123,7 +177,7 @@ class EvaluationTask(MatformerTask):
                 s["confusion"] = torch.zeros(n, n, device=targets.device)
             s["confusion"] += torch.bincount(targets * n + predicted_ids, minlength=n * n).view(n, n).float()  
         if getattr(self.config, "save_batch", False) or interactive:
-            data = {"targets": targets, "accuracy": (predicted_ids == targets).float()} if self.config.learning_signal else {}
+            data = {"targets": targets, "accuracy": (predicted_ids == targets).float()} if targets is not None else {}
             cls_idx = torch.tensor(self.config.limit_to_classes, device=preds.device) if self.config.limit_to_classes else None
 
             if self.config.save_argmax:
@@ -137,12 +191,20 @@ class EvaluationTask(MatformerTask):
             if self.config.save_logprobs:
                 data["logprobs"] = log_probs.index_select(-1, cls_idx) if cls_idx is not None else log_probs
 
+            if self.config.save_probs:
+                data["probs"] = probs.index_select(-1, cls_idx) if cls_idx is not None else probs
+
+            if interactive and self.config.topk_present:
+                k = top_k(self.config.topk_present, probs.shape[-1])
+                values, indices = probs.topk(k, dim=-1)
+                data["topk_ids"], data["topk_probs"] = indices, values
+                if tokens is not None:
+                    data["tokens"], data["positions"] = tokens, positions
+
             if getattr(self.config, "logit_diff_classes", None) and len(self.config.logit_diff_classes) == 2:
                 data["logit_diff"] = preds[..., self.config.logit_diff_classes[0]] - preds[..., self.config.logit_diff_classes[1]]
 
-            l2id = getattr(self.model.config, "label2id", None)
-            i2l = {v: k for k, v in l2id.items()} if l2id else None
-
+            i2l = self.id2label
             if i2l or getattr(self.config, "use_tokenizer", False):
                 fmt = (lambda x: i2l.get(x, str(x))) if i2l else (lambda x: self.model.tokenizer.decode([x]))
                 for k in [x for x in ["targets", "argmax", "selection_argmax"] if x in data]:
@@ -151,6 +213,62 @@ class EvaluationTask(MatformerTask):
 
             return data
         return None
+
+    @property
+    def token_level(self) -> bool:
+        """True when the head predicts one class per token rather than one per sequence."""
+        return getattr(self.model.config, 'scope', None) == 'token' \
+            or 'token' in str(self.config.learning_signal)
+
+    @property
+    def word_level(self) -> bool:
+        """True when the input should be split into words before tokenizing, the way the
+        dataset it was trained on was: labelling one token at a time only makes sense if the
+        word boundaries the model saw at training time are reproduced."""
+        return self.token_level
+
+    def present(self, rows) -> Optional[str]:
+        """Read the predictions: a token/class table for sequence labelling, the ranked classes
+        for a whole-sequence decision. 'full' leaves the raw result to the console."""
+        show = self.config.presentation
+        if show == 'full' or not rows or not isinstance(rows[0], dict):
+            return None
+        if 'topk_ids' not in rows[0] and 'argmax' not in rows[0]:
+            return None
+        blocks = [self._present_row(row, show) for row in rows]
+        return '\n'.join(block for block in blocks if block)
+
+    def _present_row(self, row, show):
+        if 'topk_ids' not in row:               # detail knob off: the decision, without the odds
+            argmax = per_position(row['argmax'])
+            labels = [self.class_name(int(one[0])) for one in argmax.tolist()] if argmax.dim() > 1 \
+                else [self.class_name(int(argmax))]
+            tokens = row.get('tokens') or [str(i + 1) for i in range(len(labels))]
+            return self._present_table([surface(t) for t in tokens], [[name] for name in labels],
+                                       [[1.0] for _ in labels], show)
+        ids, probs = per_position(row['topk_ids']), per_position(row['topk_probs'])
+        if self.token_level and row.get('tokens'):
+            keeps = row['positions']
+            return self._present_table(row['tokens'], ids[keeps].tolist() if keeps else ids.tolist(),
+                                       probs[keeps].tolist() if keeps else probs.tolist(), show)
+        if self.token_level:
+            return self._present_table([str(i) for i in range(ids.shape[0])], ids.tolist(),
+                                       probs.tolist(), show)
+        return '  '.join(f"{self.class_name(cls)} {p:.1%}" if show == 'probs' else self.class_name(cls)
+                         for cls, p in zip(ids[0].tolist(), probs[0].tolist()))
+
+    def _present_table(self, tokens, ids, probs, show):
+        names = [[self.class_name(cls) for cls in row] for row in ids]
+        tokens = [surface(token) for token in tokens]
+        width = max([len(token) for token in tokens] + [5])
+        if show == 'argmax':
+            return '\n'.join(f"  {token:<{width}}  {name[0]}" for token, name in zip(tokens, names))
+        label_width = max(len(name[0]) for name in names)
+        lines = [f"  {'token':<{width}}  {'label':<{label_width}}  {'p':>7}"]
+        for token, candidates, ps in zip(tokens, names, probs):
+            runner_up = f"   ({candidates[1]} {ps[1]:.0%})" if len(candidates) > 1 and ps[1] >= 0.05 else ''
+            lines.append(f"  {token:<{width}}  {candidates[0]:<{label_width}}  {ps[0]:6.1%}{runner_up}")
+        return '\n'.join(lines)
 
     def compute(self) -> dict:
         names = list(self._state.keys())
@@ -190,7 +308,7 @@ class EvaluationTask(MatformerTask):
                 # A fully correct, fully confident block costs exactly 0 bits (bf16 log_softmax
                 # saturates at log p = 0): compression is unbounded, and inf is not JSON-safe.
                 metrics["compression"] = uniform_bits / metrics["codelength_bits"] if metrics["codelength_bits"] > 0 else None
-            if self.config.topk:
+            if s.get("topk_correct"):
                 for k, v in s["topk_correct"].items():                     
                     metrics[f"acc@{k}"] = v / s["token_count"]             
 

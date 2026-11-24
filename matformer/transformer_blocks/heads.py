@@ -19,6 +19,8 @@ from dataclasses import replace
 from warnings import warn
 from typing import Optional, List, Literal, Any
 
+
+# TODO2: move AddPositions, AddTokenType, ScaleEmbeddings, LMHeadTransform to a different file
 class AddPositions:
     def __init__(self, embed_positions, offset=0): self.embed, self.offset = embed_positions, offset
     def __call__(self, embeddings, **kw):
@@ -198,16 +200,6 @@ class TransformerWithLMHead(MatformerModule):
         self.register_socket("encoder", TransformerWithEmbeddingHead(config, cache=self.cache),
                              attr="encoder")
         
-        ################## WARNING !!! ##################
-        # Due to a bug discovered too late, currently weight tying is allowed only
-        # with the environment variable ALLOW_WEIGHT_TYING set to TRUE
-        # This is extremely temporary: we have several checkpoints trained with
-        # weight tying set up in the config but that actually didn't worked
-        # until we fix the configurations file present in those checkpoints
-        # for easiness the weight tying is disabled
-        # Be aware of this if you are going to train a model with Matformer!
-        ################## WARNING !!! ##################
-        # Weight tying: share embeddings with output projection
         import os 
         allow_tying = os.environ.get("ALLOW_WEIGHT_TYING", "true").lower() == "true" # necessary for a legacy bug
 
@@ -233,6 +225,7 @@ class TransformerWithLMHead(MatformerModule):
         return self.stream.exit()
         
 
+# Work in progress, no documentation yet.
 class MultiModalModel(MatformerModule):
     def __init__(self, config: ModelConfig, device=None, cache=None):
         self.router=None

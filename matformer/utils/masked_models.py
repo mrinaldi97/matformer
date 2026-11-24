@@ -1,6 +1,7 @@
 """
 matformer/masked_models.py
 """
+# TODO2: Supporto a roberta style
 import random
 from typing import Optional, Union, List, Tuple, Literal
 import torch
