@@ -33,7 +33,7 @@ class MatformerCheckpointHolder(CheckpointHolder):
             self._load_state(p, map_location)
         elif p.is_dir():
             from matformer.matformer_configs import MatformerConfigs
-            self.configs = MatformerConfigs.create_configs(p.rglob('*.yaml'))
+            self.configs = MatformerConfigs.create_configs([str(y) for y in p.rglob('*.yaml')])
             weight_files = list(chain(p.rglob('*.pt'), p.rglob('*.safetensors')))
             if not weight_files:
                 raise ValueError(f"No weight file (.pt, .safetensors) found in {p}")

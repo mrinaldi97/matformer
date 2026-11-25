@@ -1,0 +1,115 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Built-in tasks · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section" open><summary>Tasks</summary><ul><li><a href="index.html">MatformerTask</a></li><li><a class="current" href="built-in-tasks.html">Built-in tasks</a></li><li><a href="interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Tasks <span class="sep">/</span> Built-in tasks</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/tasks/forward.py.html"><code>matformer/tasks/forward.py</code></a> <a href="../file/matformer/tasks/evaluation.py.html"><code>matformer/tasks/evaluation.py</code></a> <a href="../file/matformer/tasks/generation.py.html"><code>matformer/tasks/generation.py</code></a> <a href="../file/matformer/tasks/masking.py.html"><code>matformer/tasks/masking.py</code></a> <a href="../file/matformer/tasks/sandbox_train.py.html"><code>matformer/tasks/sandbox_train.py</code></a></div>
+<h1 id="built-in-tasks">Built-in tasks<a class="headerlink" href="#built-in-tasks" title="Permanent link"></a></h1>
+<p>The registry lists every task under <a href="../registry/task.html">task</a>.</p>
+<h2 id="forward">forward<a class="headerlink" href="#forward" title="Permanent link"></a></h2>
+<p>Runs one forward pass and returns no result. It is used with plugins that record activations, for example when collecting data for a <a href="../components/virtual-models.html">VirtualModel</a>.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">task</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">collect</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">forward</span>
+<span class="w">    </span><span class="nt">ref_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">train</span>
+<span class="w">    </span><span class="nt">save_batch</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+</code></pre></div>
+
+<h2 id="evaluation">evaluation<a class="headerlink" href="#evaluation" title="Permanent link"></a></h2>
+<p>Runs the evaluation pipeline. If <code>learning_signal</code> is set, it uses the same <code>prepare_inputs</code>, forward and <code>select_targets</code> path as training. If it is unset, it calls the model directly and uses the batch labels.</p>
+<p>The task accumulates:</p>
+<ul>
+<li><code>mean_confidence</code>, <code>mean_entropy</code>;</li>
+<li><code>nll</code>, <code>perplexity</code>, <code>accuracy</code>, <code>brier_score</code>, <code>codelength_bits</code>, <code>num_tokens</code>;</li>
+<li><code>acc@k</code> for each value in <code>topk</code>;</li>
+<li><code>perplexity_by_token</code> when <code>compute_perplexity_by_token</code> is enabled;</li>
+<li>macro and micro precision, recall and F1, with per-class arrays, when <code>compute_confusion_matrix</code> is enabled.</li>
+</ul>
+<p>The <code>save_*</code> flags select the fields of each record: <code>save_argmax</code>, <code>save_logits</code>, <code>save_logprobs</code>, <code>save_probs</code>, <code>save_input_ids</code>, <code>save_attributes</code>. Per-item records are stored only when <code>save_batch: true</code>; the summary is always logged to <code>task_summaries</code>. <code>limit_to_classes</code> restricts the saved logits. <code>logit_diff_classes: [i, j]</code> adds the margin between two classes. <code>presentation</code> (<code>probs</code>, <code>argmax</code>, <code>full</code>) controls the interactive output.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">task</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">evaluation</span>
+<span class="w">    </span><span class="nt">ref_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">    </span><span class="nt">learning_signal</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">token_classification</span>
+<span class="w">    </span><span class="nt">compute_confusion_matrix</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">num_classes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">7</span>
+<span class="w">    </span><span class="nt">topk</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">1</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">3</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">5</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">save_argmax</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+
+<p>A dictionary prediction from <code>MultiProbeClassifier</code> produces one metric group per address, with the address as prefix.</p>
+<h2 id="generation">generation<a class="headerlink" href="#generation" title="Permanent link"></a></h2>
+<p>Generates text for autoregressive models. The sampling fields are <code>temperature</code>, <code>top_k</code>, <code>top_p</code>, <code>repetition_penalty</code>, <code>no_repeat_ngram_size</code>, <code>do_sample</code>, <code>max_new_tokens</code> and <code>min_new_tokens</code>.</p>
+<p>Interactive options:</p>
+<ul>
+<li><code>stream: true</code> prints tokens as they are generated. A UI can pass <code>stream_callback</code> to receive <code>(tokens, step)</code>.</li>
+<li><code>keep_context: true</code> keeps the conversation before the next prompt and returns only the new text.</li>
+<li><code>max_context_tokens</code> trims the context from the left.</li>
+<li><code>use_cache: true</code> uses the paged KV cache. This requires <code>flash_kv</code>, <code>sdpa_kv</code> or <code>flashinfer</code>.</li>
+<li><code>topk_present</code> keeps the top-k candidates of each generated token. <code>0</code> is plain text, <code>-1</code> is the whole vocabulary.</li>
+</ul>
+<div class="highlight"><pre><span></span><code><span class="nt">task</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">chat</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">generation</span>
+<span class="w">    </span><span class="nt">prompt</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;Once</span><span class="nv"> </span><span class="s">upon</span><span class="nv"> </span><span class="s">a</span><span class="nv"> </span><span class="s">time&quot;</span>
+<span class="w">    </span><span class="nt">max_new_tokens</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">200</span>
+<span class="w">    </span><span class="nt">temperature</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.8</span>
+<span class="w">    </span><span class="nt">top_p</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">0.95</span>
+<span class="w">    </span><span class="nt">stream</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">keep_context</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+</code></pre></div>
+
+<h2 id="masking">masking<a class="headerlink" href="#masking" title="Permanent link"></a></h2>
+<p>Runs a cloze test. The <a href="../components/maskerator.html">Maskerator</a> hides a fraction of the tokens, the model restores them, and the score is computed on the hidden positions. Over a dataset the task accumulates the same metrics as <code>evaluation</code>. Interactively it shows the alternatives for each hole.</p>
+<p><code>masking_ratio</code> is the fraction hidden, <code>bidirectional</code> controls the attention direction, and <code>topk_present</code> controls the number of alternatives. A class head predicts labels, so <code>vocab_head</code> is false and the original token is shown as context without being scored.</p>
+<h2 id="sandbox_train">sandbox_train<a class="headerlink" href="#sandbox_train" title="Permanent link"></a></h2>
+<p>Runs a training inside a validation step. <code>sandbox_train</code> saves a snapshot of the current model, moves the outer model to CPU, drops the DDP wrapper, and runs one or more <code>MatformerTrainer</code> runs on the snapshot with their own configs and scoped logger. At the end it rebuilds the outer model and deletes the snapshot unless <code>keep_snapshot</code> is true.</p>
+<p>The snapshot is written inside the checkpoint directory and named after the run and the step. The task needs a trainer, so it is used from <code>validation</code>.</p>
+<h2 id="static_model_analysis">static_model_analysis<a class="headerlink" href="#static_model_analysis" title="Permanent link"></a></h2>
+<p>Reads every parameter and logs the full tensor statistics, layer/family metadata, model and family
+totals, and optionally the current gradients. It needs no dataset and can therefore run from a
+<code>validation</code> entry as a weight-health check. See <a href="../training/analysis.html">analysis</a>.</p>
+<h2 id="activation_analysis">activation_analysis<a class="headerlink" href="#activation_analysis" title="Permanent link"></a></h2>
+<p>Runs the model over a dataset and records the same statistics for every module output, padding
+excluded, including per-token norm quantiles and outliers. With <code>gradients: true</code> it differentiates
+a learning-signal loss through <code>torch.autograd.grad</code>, which does not touch the training gradients.
+<code>module_logs: true</code> collects the architecture-specific <code>_log()</code> of mixers, and <code>profile: true</code>
+records per-component time and CUDA allocator deltas. See <a href="../training/analysis.html">analysis</a>.</p>
+<h2 id="new-tasks">New tasks<a class="headerlink" href="#new-tasks" title="Permanent link"></a></h2>
+<p>Subclass <code>MatformerTask</code>, implement <code>process_batch</code>, and register the task and its config:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;my_task&quot;</span><span class="p">)</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyTaskConfig</span><span class="p">(</span><span class="n">TaskConfig</span><span class="p">):</span>
+    <span class="n">my_option</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;my_task&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyTask</span><span class="p">(</span><span class="n">MatformerTask</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">process_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">batch</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;prediction&quot;</span><span class="p">:</span> <span class="n">result</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)}</span>
+</code></pre></div>
+
+<p>The <a href="../tutorials/add-a-task.html">add a task tutorial</a> contains a complete example.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

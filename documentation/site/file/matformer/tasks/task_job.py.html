@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/tasks/task_job.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li><li><a href="../../../tools/wizards.html">Wizards</a></li><li><a href="../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/tasks/task_job.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="task_job.py.html"><code>matformer/tasks/task_job.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/tasks/</code></a></p><h1><code>task_job.py</code></h1><p class="muted">matformer/tasks/task_job.py · 119 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/tasks/task_job.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L19"><code>_configs</code></a><span class="line">L19</span></li><li class="depth-0"><a href="#L29"><code>_overrides</code></a><span class="line">L29</span></li><li class="depth-0"><a href="#L41"><code>_finish</code></a><span class="line">L41</span></li><li class="depth-0"><a href="#L63"><code>execute</code></a><span class="line">L63</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../matformer_configs.py.html"><code>matformer.matformer_configs</code></a> <span class="muted">MatformerConfigs</span></li><li><a href="../matformer_wrapper.py.html"><code>matformer.matformer_wrapper</code></a> <span class="muted">load_model</span></li><li><a href="session.py.html"><code>matformer.tasks.session</code></a> <span class="muted">TaskSession, format_rows</span></li><li><a href="../vectors/pooling.py.html"><code>matformer.vectors.pooling</code></a> <span class="muted">pool_activation_store</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># matformer/tasks/task_job.py</span>
+<a id="L2" name="L2"></a><span class="sd">&quot;&quot;&quot;The queue entry for *any* task: one implementation, several modes.</span>
+<a id="L3" name="L3"></a>
+<a id="L4" name="L4"></a><span class="sd">An annotation was only one way to run a task over data. The same job now also runs the task as a</span>
+<a id="L5" name="L5"></a><span class="sd">plain dataset pass (`run`), one or more texts (`text`), or a run that additionally pools its</span>
+<a id="L6" name="L6"></a><span class="sd">activation store into vectors. Every mode loads its own model and config, so the console can</span>
+<a id="L7" name="L7"></a><span class="sd">close; the queue, the log and abort are the same for all of them.</span>
+<a id="L8" name="L8"></a>
+<a id="L9" name="L9"></a><span class="sd">Spec:</span>
+<a id="L10" name="L10"></a><span class="sd">  mode       annotate (default) | run | text</span>
+<a id="L11" name="L11"></a><span class="sd">  model, cfg, tokenizer, device, overrides, task, presentation</span>
+<a id="L12" name="L12"></a><span class="sd">  annotate:  input, output, format, column, label, dataset, keys_only, limit, batch_size</span>
+<a id="L13" name="L13"></a><span class="sd">  run:       vectorize {...} (optional), label_key</span>
+<a id="L14" name="L14"></a><span class="sd">  text:      text or texts, output (optional JSONL of rendered answers)</span>
+<a id="L15" name="L15"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L16" name="L16"></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<a id="L17" name="L17"></a>
+<a id="L18" name="L18"></a>
+<a id="L19" name="L19"></a><span class="k">def</span><span class="w"> </span><span class="nf">_configs</span><span class="p">(</span><span class="n">spec</span><span class="p">):</span>
+<a id="L20" name="L20"></a>    <span class="kn">from</span><span class="w"> </span><a href="../matformer_configs.py.html"><span class="nn">matformer.matformer_configs</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerConfigs</span>
+<a id="L21" name="L21"></a>    <span class="n">files</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;cfg&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+<a id="L22" name="L22"></a>    <span class="n">files</span> <span class="o">=</span> <span class="p">[</span><span class="n">files</span><span class="p">]</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">files</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="k">else</span> <span class="nb">list</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+<a id="L23" name="L23"></a>    <span class="n">configs</span> <span class="o">=</span> <span class="n">MatformerConfigs</span><span class="o">.</span><span class="n">create_configs</span><span class="p">(</span><span class="n">files</span><span class="p">)</span>
+<a id="L24" name="L24"></a>    <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;tokenizer&quot;</span><span class="p">):</span>
+<a id="L25" name="L25"></a>        <span class="n">configs</span><span class="o">.</span><span class="n">import_config</span><span class="p">({</span><span class="s2">&quot;tokenizer&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;pretrained_name&quot;</span><span class="p">:</span> <span class="n">spec</span><span class="p">[</span><span class="s2">&quot;tokenizer&quot;</span><span class="p">]}})</span>
+<a id="L26" name="L26"></a>    <span class="k">return</span> <span class="n">configs</span>
+<a id="L27" name="L27"></a>
+<a id="L28" name="L28"></a>
+<a id="L29" name="L29"></a><span class="k">def</span><span class="w"> </span><span class="nf">_overrides</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">task</span><span class="p">):</span>
+<a id="L30" name="L30"></a>    <span class="n">overrides</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;overrides&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[])</span>
+<a id="L31" name="L31"></a>    <span class="k">if</span> <span class="n">task</span> <span class="o">==</span> <span class="s2">&quot;generation&quot;</span><span class="p">:</span>
+<a id="L32" name="L32"></a>        <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;max_new_tokens&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L33" name="L33"></a>            <span class="n">overrides</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;task.generation.max_new_tokens=</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;max_new_tokens&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L34" name="L34"></a>        <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;temperature&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L35" name="L35"></a>            <span class="n">overrides</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;task.generation.temperature=</span><span class="si">{</span><span class="nb">float</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;temperature&#39;</span><span class="p">])</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L36" name="L36"></a>        <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
+<a id="L37" name="L37"></a>            <span class="n">overrides</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;task.generation.stream=false&quot;</span><span class="p">)</span>
+<a id="L38" name="L38"></a>    <span class="k">return</span> <span class="n">overrides</span>
+<a id="L39" name="L39"></a>
+<a id="L40" name="L40"></a>
+<a id="L41" name="L41"></a><span class="k">def</span><span class="w"> </span><span class="nf">_finish</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="n">spec</span><span class="p">):</span>
+<a id="L42" name="L42"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Flush and close the stores the config mounted, then pool them into vectors when asked.</span>
+<a id="L43" name="L43"></a><span class="sd">    Every mode that ran a forward shares this tail.&quot;&quot;&quot;</span>
+<a id="L44" name="L44"></a>    <span class="n">mounted</span> <span class="o">=</span> <span class="nb">list</span><span class="p">((</span><span class="nb">getattr</span><span class="p">(</span><span class="n">loaded</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">],</span> <span class="s2">&quot;plugins&quot;</span><span class="p">,</span> <span class="p">{})</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+<a id="L45" name="L45"></a>    <span class="n">stores</span> <span class="o">=</span> <span class="p">[</span><span class="n">plugin</span> <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">mounted</span>
+<a id="L46" name="L46"></a>              <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">plugin</span><span class="p">,</span> <span class="s2">&quot;databank&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">plugin</span><span class="p">,</span> <span class="s2">&quot;available_addresses&quot;</span><span class="p">)</span>
+<a id="L47" name="L47"></a>              <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">plugin</span><span class="p">,</span> <span class="s2">&quot;flush&quot;</span><span class="p">)]</span>
+<a id="L48" name="L48"></a>    <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">stores</span><span class="p">:</span>
+<a id="L49" name="L49"></a>        <span class="n">plugin</span><span class="o">.</span><span class="n">flush</span><span class="p">()</span>
+<a id="L50" name="L50"></a>    <span class="n">vector</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;vectorize&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{}</span>
+<a id="L51" name="L51"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;stores: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">stores</span><span class="p">)</span><span class="si">}</span><span class="s2">; vectorize: </span><span class="si">{</span><span class="n">vector</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;enabled&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">vector</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;filename&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+<a id="L52" name="L52"></a>          <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L53" name="L53"></a>    <span class="k">if</span> <span class="n">vector</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;enabled&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">vector</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;filename&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">stores</span><span class="p">:</span>
+<a id="L54" name="L54"></a>        <span class="kn">from</span><span class="w"> </span><a href="../vectors/pooling.py.html"><span class="nn">matformer.vectors.pooling</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">pool_activation_store</span>
+<a id="L55" name="L55"></a>        <span class="n">vector</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;source&quot;</span><span class="p">,</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">stores</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="s2">&quot;config&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;filename&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+<a id="L56" name="L56"></a>        <span class="n">saved</span> <span class="o">=</span> <span class="n">pool_activation_store</span><span class="p">(</span><span class="n">stores</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">vector</span><span class="p">,</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;label_key&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;label&quot;</span><span class="p">,</span>
+<a id="L57" name="L57"></a>                                      <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">))</span>
+<a id="L58" name="L58"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;vectors: </span><span class="si">{</span><span class="n">saved</span><span class="si">}</span><span class="s2"> rows -&gt; </span><span class="si">{</span><span class="n">vector</span><span class="p">[</span><span class="s1">&#39;filename&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L59" name="L59"></a>    <span class="k">for</span> <span class="n">plugin</span> <span class="ow">in</span> <span class="n">stores</span><span class="p">:</span>
+<a id="L60" name="L60"></a>        <span class="n">plugin</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<a id="L61" name="L61"></a>
+<a id="L62" name="L62"></a>
+<a id="L63" name="L63"></a><span class="k">def</span><span class="w"> </span><span class="nf">execute</span><span class="p">(</span><span class="n">spec</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L64" name="L64"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L65" name="L65"></a>    <span class="kn">from</span><span class="w"> </span><a href="../matformer_wrapper.py.html"><span class="nn">matformer.matformer_wrapper</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
+<a id="L66" name="L66"></a>    <span class="kn">from</span><span class="w"> </span><a href="session.py.html"><span class="nn">matformer.tasks.session</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">TaskSession</span><span class="p">,</span> <span class="n">format_rows</span>
+<a id="L67" name="L67"></a>
+<a id="L68" name="L68"></a>    <span class="n">device_name</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;device&quot;</span><span class="p">)</span>
+<a id="L69" name="L69"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">device_name</span> <span class="ow">or</span> <span class="nb">str</span><span class="p">(</span><span class="n">device_name</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+<a id="L70" name="L70"></a>        <span class="n">device_name</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+<a id="L71" name="L71"></a>    <span class="n">configs</span> <span class="o">=</span> <span class="n">_configs</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+<a id="L72" name="L72"></a>    <span class="n">loaded</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">),</span> <span class="n">map_location</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_name</span><span class="p">),</span>
+<a id="L73" name="L73"></a>                        <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span><span class="p">,</span> <span class="n">inference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">configs</span><span class="o">=</span><span class="n">configs</span><span class="p">)</span>
+<a id="L74" name="L74"></a>    <span class="n">task</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="s2">&quot;forward&quot;</span> <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;run&quot;</span> <span class="k">else</span> <span class="s2">&quot;evaluation&quot;</span><span class="p">)</span>
+<a id="L75" name="L75"></a>    <span class="n">session</span> <span class="o">=</span> <span class="n">TaskSession</span><span class="p">(</span><span class="n">loaded</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">],</span> <span class="n">loaded</span><span class="p">[</span><span class="s2">&quot;configs&quot;</span><span class="p">],</span> <span class="n">task</span><span class="o">=</span><span class="n">task</span><span class="p">,</span>
+<a id="L76" name="L76"></a>                          <span class="n">overrides</span><span class="o">=</span><span class="n">_overrides</span><span class="p">(</span><span class="n">spec</span><span class="p">,</span> <span class="n">task</span><span class="p">),</span> <span class="n">source</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">),</span>
+<a id="L77" name="L77"></a>                          <span class="n">presentation</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;presentation&quot;</span><span class="p">))</span>
+<a id="L78" name="L78"></a>    <span class="n">mode</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;annotate&quot;</span>
+<a id="L79" name="L79"></a>
+<a id="L80" name="L80"></a>    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;run&quot;</span><span class="p">:</span>
+<a id="L81" name="L81"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;task </span><span class="si">{</span><span class="n">task</span><span class="si">}</span><span class="s2"> over the dataset&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L82" name="L82"></a>        <span class="n">summary</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+<a id="L83" name="L83"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;run complete: </span><span class="si">{</span><span class="n">summary</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L84" name="L84"></a>        <span class="n">_finish</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+<a id="L85" name="L85"></a>        <span class="k">return</span>
+<a id="L86" name="L86"></a>
+<a id="L87" name="L87"></a>    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s2">&quot;text&quot;</span><span class="p">:</span>
+<a id="L88" name="L88"></a>        <span class="n">texts</span> <span class="o">=</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;texts&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">([</span><span class="n">spec</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">]]</span> <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;text&quot;</span><span class="p">)</span> <span class="k">else</span> <span class="p">[])</span>
+<a id="L89" name="L89"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">texts</span><span class="p">:</span>
+<a id="L90" name="L90"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;mode &#39;text&#39; needs text or texts&quot;</span><span class="p">)</span>
+<a id="L91" name="L91"></a>        <span class="n">rendered</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L92" name="L92"></a>        <span class="k">for</span> <span class="n">text</span> <span class="ow">in</span> <span class="n">texts</span><span class="p">:</span>
+<a id="L93" name="L93"></a>            <span class="n">rows</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">feed</span><span class="p">(</span><span class="n">text</span><span class="p">,</span> <span class="n">stream</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">save</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;save&quot;</span><span class="p">)))</span>
+<a id="L94" name="L94"></a>            <span class="n">line</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">task</span><span class="o">.</span><span class="n">present</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span>
+<a id="L95" name="L95"></a>            <span class="k">if</span> <span class="n">line</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L96" name="L96"></a>                <span class="n">line</span> <span class="o">=</span> <span class="n">format_rows</span><span class="p">(</span><span class="n">rows</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<a id="L97" name="L97"></a>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">=== </span><span class="si">{</span><span class="n">text</span><span class="si">!r}</span><span class="s2"> ===</span><span class="se">\n</span><span class="si">{</span><span class="n">line</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">session</span><span class="o">.</span><span class="n">status</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L98" name="L98"></a>            <span class="n">rendered</span><span class="o">.</span><span class="n">append</span><span class="p">({</span><span class="s2">&quot;text&quot;</span><span class="p">:</span> <span class="n">text</span><span class="p">,</span> <span class="s2">&quot;rendered&quot;</span><span class="p">:</span> <span class="n">line</span><span class="p">,</span> <span class="s2">&quot;status&quot;</span><span class="p">:</span> <span class="n">session</span><span class="o">.</span><span class="n">status</span><span class="p">()})</span>
+<a id="L99" name="L99"></a>        <span class="k">if</span> <span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">):</span>
+<a id="L100" name="L100"></a>            <span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="L101" name="L101"></a>            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">spec</span><span class="p">[</span><span class="s2">&quot;output&quot;</span><span class="p">],</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+<a id="L102" name="L102"></a>                <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rendered</span><span class="p">:</span>
+<a id="L103" name="L103"></a>                    <span class="n">handle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">row</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L104" name="L104"></a>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;answers written to </span><span class="si">{</span><span class="n">spec</span><span class="p">[</span><span class="s1">&#39;output&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L105" name="L105"></a>        <span class="n">_finish</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+<a id="L106" name="L106"></a>        <span class="k">return</span>
+<a id="L107" name="L107"></a>
+<a id="L108" name="L108"></a>    <span class="c1"># annotate: predictions over a file, a CSV or an MDAT dataset</span>
+<a id="L109" name="L109"></a>    <span class="n">summary</span> <span class="o">=</span> <span class="n">session</span><span class="o">.</span><span class="n">annotate</span><span class="p">(</span>
+<a id="L110" name="L110"></a>        <span class="n">spec</span><span class="p">[</span><span class="s2">&quot;input&quot;</span><span class="p">],</span> <span class="n">output_path</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;output&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L111" name="L111"></a>        <span class="n">column</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;column&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;label&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L112" name="L112"></a>        <span class="n">limit</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;limit&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;batch_size&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L113" name="L113"></a>        <span class="n">output_format</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;format&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">,</span> <span class="n">keys_only</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;keys_only&quot;</span><span class="p">)),</span>
+<a id="L114" name="L114"></a>        <span class="n">mdat_dataset</span><span class="o">=</span><span class="n">spec</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;dataset&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L115" name="L115"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;annotation complete: </span><span class="si">{</span><span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;rows&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2"> rows -&gt; </span><span class="si">{</span><span class="n">summary</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;output&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L116" name="L116"></a>    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">summary</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L117" name="L117"></a>        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;rows&quot;</span><span class="p">,</span> <span class="s2">&quot;output&quot;</span><span class="p">):</span>
+<a id="L118" name="L118"></a>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">flush</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L119" name="L119"></a>    <span class="n">_finish</span><span class="p">(</span><span class="n">loaded</span><span class="p">,</span> <span class="n">spec</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

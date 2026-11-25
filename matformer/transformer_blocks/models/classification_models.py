@@ -203,9 +203,9 @@ class ClassificationConfig(ModelConfig):
     freeze_base_model: bool = False
     base_model: Optional[str] = None #The path (or repo name) of the base model to take config and weights from
     base_model_hf: bool = False #wether the base model is from huggingface or not
-    do_rms_norm: bool = False 
+    do_rms_norm: bool = False
     rms_elementwise_affine: bool = False
-    in_features: Optional[int] = None 
+    in_features: Optional[int] = None
 @registry.register("model", "classification", "default")
 class TransformerWithClassificationHead(MatformerModule):
     encoder: "transparent"

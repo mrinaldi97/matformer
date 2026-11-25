@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/modules/implementations/rope.py · Matformer</title>
+<link rel="stylesheet" href="../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../index.html">Documentation</a><a class="" href="../../../../registry/index.html">Registry</a><a class="" href="../../../../configuration/index.html">Configuration</a><a class="" href="../../../../tools/commands.html">Commands</a><a class="current" href="../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../index.html">Matformer</a></li><li><a href="../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../components/cache.html">The cache</a></li><li><a href="../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../training/logger.html">Logging</a></li><li><a href="../../../../training/control.html">Control</a></li><li><a href="../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../data/index.html">Data</a></li><li><a href="../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../data/data-module.html">Data module</a></li><li><a href="../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../tools/server.html">Server</a></li><li><a href="../../../../tools/gui.html">GUI</a></li><li><a href="../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../tools/commands.html">Commands</a></li><li><a href="../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../about/repository.html">Repository</a></li><li><a href="../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../index.html">Repository</a> <span class="sep">/</span> matformer/modules/implementations/rope.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="rope.py.html"><code>matformer/modules/implementations/rope.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/modules/implementations/</code></a></p><h1><code>rope.py</code></h1><p class="muted">matformer/modules/implementations/rope.py · 302 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/modules/implementations/rope.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L20"><code>FlashRotaryEmbedding</code></a><span class="line">L20</span> <span class="bases">(<code>Module</code>)</span></li><li class="depth-1"><a href="#L30"><code>FlashRotaryEmbedding._test</code></a><span class="line">L30</span></li><li class="depth-1"><a href="#L37"><code>FlashRotaryEmbedding.__init__</code></a><span class="line">L37</span></li><li class="depth-1"><a href="#L46"><code>FlashRotaryEmbedding._halve_cos_sin</code></a><span class="line">L46</span></li><li class="depth-1"><a href="#L56"><code>FlashRotaryEmbedding.forward</code></a><span class="line">L56</span></li><li class="depth-0"><a href="#L176"><code>TorchRotaryEmbedding</code></a><span class="line">L176</span> <span class="bases">(<code>Module</code>)</span></li><li class="depth-1"><a href="#L187"><code>TorchRotaryEmbedding._test</code></a><span class="line">L187</span></li><li class="depth-1"><a href="#L192"><code>TorchRotaryEmbedding.__init__</code></a><span class="line">L192</span></li><li class="depth-1"><a href="#L196"><code>TorchRotaryEmbedding._neg_half</code></a><span class="line">L196</span></li><li class="depth-1"><a href="#L214"><code>TorchRotaryEmbedding._positions</code></a><span class="line">L214</span></li><li class="depth-1"><a href="#L220"><code>TorchRotaryEmbedding._rotate_3d</code></a><span class="line">L220</span></li><li class="depth-1"><a href="#L227"><code>TorchRotaryEmbedding._apply_rotary</code></a><span class="line">L227</span></li><li class="depth-1"><a href="#L250"><code>TorchRotaryEmbedding.forward</code></a><span class="line">L250</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
+<a id="L2" name="L2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L3" name="L3"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<a id="L4" name="L4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
+<a id="L5" name="L5"></a><span class="kn">from</span><span class="w"> </span><a href="../../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L6" name="L6"></a>
+<a id="L7" name="L7"></a>
+<a id="L8" name="L8"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+<a id="L9" name="L9"></a>    <span class="s1">&#39;positional_encoding&#39;</span><span class="p">,</span> <span class="s1">&#39;rope&#39;</span><span class="p">,</span> <span class="s1">&#39;flash&#39;</span><span class="p">,</span>
+<a id="L10" name="L10"></a>    <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;flash_attn&#39;</span><span class="p">],</span>
+<a id="L11" name="L11"></a>    <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="c1">#Check against new FA3/FA4!!!</span>
+<a id="L12" name="L12"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+<a id="L13" name="L13"></a>        <span class="s1">&#39;tensor_order_input&#39;</span><span class="p">:</span> <span class="s1">&#39;BSHD&#39;</span><span class="p">,</span>
+<a id="L14" name="L14"></a>        <span class="s1">&#39;tensor_order_output&#39;</span><span class="p">:</span> <span class="s1">&#39;BSHD&#39;</span><span class="p">,</span>
+<a id="L15" name="L15"></a>        <span class="s1">&#39;tensor_order_qkv_packed_input&#39;</span><span class="p">:</span> <span class="s1">&#39;BS3HD&#39;</span><span class="p">,</span>
+<a id="L16" name="L16"></a>        <span class="s1">&#39;supports_unpadding&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<a id="L17" name="L17"></a>        <span class="s1">&#39;supports_packed_qkv&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>  <span class="c1"># But NOT simultaneously with unpadding</span>
+<a id="L18" name="L18"></a>    <span class="p">}</span>
+<a id="L19" name="L19"></a><span class="p">)</span>
+<a id="L20" name="L20"></a><span class="k">class</span><span class="w"> </span><span class="nc">FlashRotaryEmbedding</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="L21" name="L21"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L22" name="L22"></a><span class="sd">    RoPE implementation using Flash Attention&#39;s optimized CUDA kernels.</span>
+<a id="L23" name="L23"></a><span class="sd">    </span>
+<a id="L24" name="L24"></a><span class="sd">    Note: Flash Attention&#39;s apply_rotary_emb_qkv_ does NOT support variable-length</span>
+<a id="L25" name="L25"></a><span class="sd">    sequences (unpadding). When unpadding is needed, we fall back to applying</span>
+<a id="L26" name="L26"></a><span class="sd">    rotary embeddings separately to Q and K using apply_rotary_emb.</span>
+<a id="L27" name="L27"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L28" name="L28"></a>    
+<a id="L29" name="L29"></a>    <span class="nd">@staticmethod</span>
+<a id="L30" name="L30"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_test</span><span class="p">():</span>
+<a id="L31" name="L31"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;flash-attn&#39;s rotary kernels need CUDA and are installed only as a side effect of</span>
+<a id="L32" name="L32"></a><span class="sd">        flash-attn itself: try one real rotation on the smallest possible tensor.&quot;&quot;&quot;</span>
+<a id="L33" name="L33"></a>        <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+<a id="L34" name="L34"></a>        <span class="n">FlashRotaryEmbedding</span><span class="p">()(</span><span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="n">cos</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span> <span class="n">sin</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+<a id="L35" name="L35"></a>        <span class="k">return</span> <span class="kc">True</span>
+<a id="L36" name="L36"></a>    
+<a id="L37" name="L37"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interleaved</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L38" name="L38"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L39" name="L39"></a><span class="sd">        Args:</span>
+<a id="L40" name="L40"></a><span class="sd">            interleaved: If True, rotate pairs of even and odd dimensions (GPT-J style).</span>
+<a id="L41" name="L41"></a><span class="sd">                        If False, rotate 1st half and 2nd half (GPT-NeoX style, default).</span>
+<a id="L42" name="L42"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L43" name="L43"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L44" name="L44"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">interleaved</span> <span class="o">=</span> <span class="n">interleaved</span>
+<a id="L45" name="L45"></a>    
+<a id="L46" name="L46"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_halve_cos_sin</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">cos</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">sin</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<a id="L47" name="L47"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L48" name="L48"></a><span class="sd">        Convert cos/sin from shape (seqlen, dim) to (seqlen, dim/2).</span>
+<a id="L49" name="L49"></a><span class="sd">        </span>
+<a id="L50" name="L50"></a><span class="sd">        The cache computes cos/sin with the full head dimension by concatenating</span>
+<a id="L51" name="L51"></a><span class="sd">        [freqs, freqs], but Flash Attention expects only (seqlen, rotary_dim/2).</span>
+<a id="L52" name="L52"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L53" name="L53"></a>        <span class="n">rotary_dim_half</span> <span class="o">=</span> <span class="n">cos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>
+<a id="L54" name="L54"></a>        <span class="k">return</span> <span class="n">cos</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">rotary_dim_half</span><span class="p">],</span> <span class="n">sin</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">rotary_dim_half</span><span class="p">]</span>
+<a id="L55" name="L55"></a>    
+<a id="L56" name="L56"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+<a id="L57" name="L57"></a>        <span class="bp">self</span><span class="p">,</span>
+<a id="L58" name="L58"></a>        <span class="n">qkv</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L59" name="L59"></a>        <span class="n">q</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L60" name="L60"></a>        <span class="n">k</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L61" name="L61"></a>        <span class="n">cos</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L62" name="L62"></a>        <span class="n">sin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L63" name="L63"></a>        <span class="n">cu_seqlens</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L64" name="L64"></a>        <span class="n">max_seq_len</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L65" name="L65"></a>        <span class="n">seqlen_offsets</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="L66" name="L66"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]:</span>
+<a id="L67" name="L67"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L68" name="L68"></a><span class="sd">        Apply rotary embeddings to Q and K.</span>
+<a id="L69" name="L69"></a><span class="sd">        </span>
+<a id="L70" name="L70"></a><span class="sd">        Args:</span>
+<a id="L71" name="L71"></a><span class="sd">            qkv: Packed QKV tensor of shape (batch, seqlen, 3, nheads, headdim)</span>
+<a id="L72" name="L72"></a><span class="sd">                 or (total_seqlen, 3, nheads, headdim) for unpadded.</span>
+<a id="L73" name="L73"></a><span class="sd">                 Mutually exclusive with separate q, k inputs.</span>
+<a id="L74" name="L74"></a><span class="sd">            q: Query tensor of shape (batch, seqlen, nheads, headdim)</span>
+<a id="L75" name="L75"></a><span class="sd">               or (total_seqlen, nheads, headdim) for unpadded.</span>
+<a id="L76" name="L76"></a><span class="sd">            k: Key tensor of shape (batch, seqlen, nheads, headdim)</span>
+<a id="L77" name="L77"></a><span class="sd">               or (total_seqlen, nheads, headdim) for unpadded.</span>
+<a id="L78" name="L78"></a><span class="sd">            cos: Cosine values, shape (seqlen, dim). Will be halved internally.</span>
+<a id="L79" name="L79"></a><span class="sd">            sin: Sine values, shape (seqlen, dim). Will be halved internally.</span>
+<a id="L80" name="L80"></a><span class="sd">            cu_seqlens: Cumulative sequence lengths for variable-length batching.</span>
+<a id="L81" name="L81"></a><span class="sd">                       Shape (batch + 1,). If provided, uses unpadded path.</span>
+<a id="L82" name="L82"></a><span class="sd">            max_seq_len: Maximum sequence length (required if cu_seqlens provided).</span>
+<a id="L83" name="L83"></a><span class="sd">            seqlen_offsets: Position offset(s) for KV cache inference.</span>
+<a id="L84" name="L84"></a><span class="sd">        </span>
+<a id="L85" name="L85"></a><span class="sd">        Returns:</span>
+<a id="L86" name="L86"></a><span class="sd">            Tuple of (qkv, q, k) where:</span>
+<a id="L87" name="L87"></a><span class="sd">            - If qkv input was provided: (rotated_qkv, None, None)</span>
+<a id="L88" name="L88"></a><span class="sd">            - If q, k inputs were provided: (None, rotated_q, rotated_k)</span>
+<a id="L89" name="L89"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L90" name="L90"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">flash_attn.layers.rotary</span><span class="w"> </span><span class="kn">import</span> <span class="n">apply_rotary_emb</span><span class="p">,</span> <span class="n">apply_rotary_emb_qkv_</span>
+<a id="L91" name="L91"></a>        
+<a id="L92" name="L92"></a>        <span class="c1"># Halve cos/sin to match Flash Attention&#39;s expected format</span>
+<a id="L93" name="L93"></a>        <span class="n">cos_half</span><span class="p">,</span> <span class="n">sin_half</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_halve_cos_sin</span><span class="p">(</span><span class="n">cos</span><span class="p">,</span> <span class="n">sin</span><span class="p">)</span>
+<a id="L94" name="L94"></a>        
+<a id="L95" name="L95"></a>        <span class="n">is_unpadded</span> <span class="o">=</span> <span class="n">cu_seqlens</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+<a id="L96" name="L96"></a>        
+<a id="L97" name="L97"></a>        <span class="k">if</span> <span class="n">qkv</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L98" name="L98"></a>            <span class="c1"># Packed QKV path</span>
+<a id="L99" name="L99"></a>            <span class="k">if</span> <span class="n">is_unpadded</span><span class="p">:</span>
+<a id="L100" name="L100"></a>                <span class="c1"># Flash Attention&#39;s apply_rotary_emb_qkv_ does NOT support unpadding.</span>
+<a id="L101" name="L101"></a>                <span class="c1"># We must unpack, apply separately, and repack.</span>
+<a id="L102" name="L102"></a>                <span class="c1"># qkv shape: (total_seqlen, 3, nheads, headdim)</span>
+<a id="L103" name="L103"></a>                <span class="n">q_rot</span> <span class="o">=</span> <span class="n">apply_rotary_emb</span><span class="p">(</span>
+<a id="L104" name="L104"></a>                    <span class="n">qkv</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span>  <span class="c1"># (total_seqlen, nheads, headdim)</span>
+<a id="L105" name="L105"></a>                    <span class="n">cos_half</span><span class="p">,</span>
+<a id="L106" name="L106"></a>                    <span class="n">sin_half</span><span class="p">,</span>
+<a id="L107" name="L107"></a>                    <span class="n">interleaved</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interleaved</span><span class="p">,</span>
+<a id="L108" name="L108"></a>                    <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="L109" name="L109"></a>                    <span class="n">seqlen_offsets</span><span class="o">=</span><span class="n">seqlen_offsets</span><span class="p">,</span>
+<a id="L110" name="L110"></a>                    <span class="n">cu_seqlens</span><span class="o">=</span><span class="n">cu_seqlens</span><span class="p">,</span>
+<a id="L111" name="L111"></a>                    <span class="n">max_seqlen</span><span class="o">=</span><span class="n">max_seq_len</span><span class="p">,</span>
+<a id="L112" name="L112"></a>                <span class="p">)</span>
+<a id="L113" name="L113"></a>                <span class="n">k_rot</span> <span class="o">=</span> <span class="n">apply_rotary_emb</span><span class="p">(</span>
+<a id="L114" name="L114"></a>                    <span class="n">qkv</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>  <span class="c1"># (total_seqlen, nheads, headdim)</span>
+<a id="L115" name="L115"></a>                    <span class="n">cos_half</span><span class="p">,</span>
+<a id="L116" name="L116"></a>                    <span class="n">sin_half</span><span class="p">,</span>
+<a id="L117" name="L117"></a>                    <span class="n">interleaved</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interleaved</span><span class="p">,</span>
+<a id="L118" name="L118"></a>                    <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="L119" name="L119"></a>                    <span class="n">seqlen_offsets</span><span class="o">=</span><span class="n">seqlen_offsets</span><span class="p">,</span>
+<a id="L120" name="L120"></a>                    <span class="n">cu_seqlens</span><span class="o">=</span><span class="n">cu_seqlens</span><span class="p">,</span>
+<a id="L121" name="L121"></a>                    <span class="n">max_seqlen</span><span class="o">=</span><span class="n">max_seq_len</span><span class="p">,</span>
+<a id="L122" name="L122"></a>                <span class="p">)</span>
+<a id="L123" name="L123"></a>                <span class="c1"># Repack: stack along dim=1 to get (total_seqlen, 3, nheads, headdim)</span>
+<a id="L124" name="L124"></a>                <span class="n">qkv_out</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">q_rot</span><span class="p">,</span> <span class="n">k_rot</span><span class="p">,</span> <span class="n">qkv</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="L125" name="L125"></a>                <span class="k">return</span> <span class="n">qkv_out</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<a id="L126" name="L126"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L127" name="L127"></a>                <span class="c1"># Padded path: use the optimized packed function</span>
+<a id="L128" name="L128"></a>                <span class="c1"># qkv shape: (batch, seqlen, 3, nheads, headdim)</span>
+<a id="L129" name="L129"></a>                <span class="n">qkv_rot</span> <span class="o">=</span> <span class="n">apply_rotary_emb_qkv_</span><span class="p">(</span>
+<a id="L130" name="L130"></a>                    <span class="n">qkv</span><span class="p">,</span>
+<a id="L131" name="L131"></a>                    <span class="n">cos_half</span><span class="p">,</span>
+<a id="L132" name="L132"></a>                    <span class="n">sin_half</span><span class="p">,</span>
+<a id="L133" name="L133"></a>                    <span class="n">interleaved</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interleaved</span><span class="p">,</span>
+<a id="L134" name="L134"></a>                    <span class="n">seqlen_offsets</span><span class="o">=</span><span class="n">seqlen_offsets</span><span class="p">,</span>
+<a id="L135" name="L135"></a>                <span class="p">)</span>
+<a id="L136" name="L136"></a>                <span class="k">return</span> <span class="n">qkv_rot</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<a id="L137" name="L137"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L138" name="L138"></a>            <span class="c1"># Separate Q, K path</span>
+<a id="L139" name="L139"></a>            <span class="k">assert</span> <span class="n">q</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Must provide either qkv or both q and k&quot;</span>
+<a id="L140" name="L140"></a>            
+<a id="L141" name="L141"></a>            <span class="n">q_rot</span> <span class="o">=</span> <span class="n">apply_rotary_emb</span><span class="p">(</span>
+<a id="L142" name="L142"></a>                <span class="n">q</span><span class="p">,</span>
+<a id="L143" name="L143"></a>                <span class="n">cos_half</span><span class="p">,</span>
+<a id="L144" name="L144"></a>                <span class="n">sin_half</span><span class="p">,</span>
+<a id="L145" name="L145"></a>                <span class="n">interleaved</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interleaved</span><span class="p">,</span>
+<a id="L146" name="L146"></a>                <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="L147" name="L147"></a>                <span class="n">seqlen_offsets</span><span class="o">=</span><span class="n">seqlen_offsets</span><span class="p">,</span>
+<a id="L148" name="L148"></a>                <span class="n">cu_seqlens</span><span class="o">=</span><span class="n">cu_seqlens</span> <span class="k">if</span> <span class="n">is_unpadded</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L149" name="L149"></a>                <span class="n">max_seqlen</span><span class="o">=</span><span class="n">max_seq_len</span> <span class="k">if</span> <span class="n">is_unpadded</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L150" name="L150"></a>            <span class="p">)</span>
+<a id="L151" name="L151"></a>            <span class="n">k_rot</span> <span class="o">=</span> <span class="n">apply_rotary_emb</span><span class="p">(</span>
+<a id="L152" name="L152"></a>                <span class="n">k</span><span class="p">,</span>
+<a id="L153" name="L153"></a>                <span class="n">cos_half</span><span class="p">,</span>
+<a id="L154" name="L154"></a>                <span class="n">sin_half</span><span class="p">,</span>
+<a id="L155" name="L155"></a>                <span class="n">interleaved</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interleaved</span><span class="p">,</span>
+<a id="L156" name="L156"></a>                <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="L157" name="L157"></a>                <span class="n">seqlen_offsets</span><span class="o">=</span><span class="n">seqlen_offsets</span><span class="p">,</span>
+<a id="L158" name="L158"></a>                <span class="n">cu_seqlens</span><span class="o">=</span><span class="n">cu_seqlens</span> <span class="k">if</span> <span class="n">is_unpadded</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L159" name="L159"></a>                <span class="n">max_seqlen</span><span class="o">=</span><span class="n">max_seq_len</span> <span class="k">if</span> <span class="n">is_unpadded</span> <span class="k">else</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L160" name="L160"></a>            <span class="p">)</span>
+<a id="L161" name="L161"></a>            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">q_rot</span><span class="p">,</span> <span class="n">k_rot</span>
+<a id="L162" name="L162"></a>
+<a id="L163" name="L163"></a>
+<a id="L164" name="L164"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+<a id="L165" name="L165"></a>    <span class="s1">&#39;positional_encoding&#39;</span><span class="p">,</span> <span class="s1">&#39;rope&#39;</span><span class="p">,</span> <span class="s1">&#39;torch&#39;</span><span class="p">,</span>
+<a id="L166" name="L166"></a>    <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;torch&#39;</span><span class="p">],</span>
+<a id="L167" name="L167"></a>    <span class="n">priority</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="L168" name="L168"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span>
+<a id="L169" name="L169"></a>        <span class="s1">&#39;tensor_order_input&#39;</span><span class="p">:</span> <span class="s1">&#39;BSHD&#39;</span><span class="p">,</span>
+<a id="L170" name="L170"></a>        <span class="s1">&#39;tensor_order_output&#39;</span><span class="p">:</span> <span class="s1">&#39;BSHD&#39;</span><span class="p">,</span>
+<a id="L171" name="L171"></a>        <span class="s1">&#39;tensor_order_qkv_packed_input&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>  <span class="c1"># packed qkv not accepted; the loader unpacks it</span>
+<a id="L172" name="L172"></a>        <span class="s1">&#39;supports_unpadding&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<a id="L173" name="L173"></a>        <span class="s1">&#39;supports_packed_qkv&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+<a id="L174" name="L174"></a>        <span class="p">}</span>
+<a id="L175" name="L175"></a><span class="p">)</span>
+<a id="L176" name="L176"></a><span class="k">class</span><span class="w"> </span><span class="nc">TorchRotaryEmbedding</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="L177" name="L177"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L178" name="L178"></a><span class="sd">    Pure PyTorch RoPE implementation (fallback when Flash Attention unavailable).</span>
+<a id="L179" name="L179"></a>
+<a id="L180" name="L180"></a><span class="sd">    Supports both padded ((B, S, H, D) with position-indexed cos/sin) and</span>
+<a id="L181" name="L181"></a><span class="sd">    varlen-packed ((T, H, D) with cu_seqlens) inputs. Positions for a pack are</span>
+<a id="L182" name="L182"></a><span class="sd">    computed with a vectorized searchsorted (no python loops, no GPU-&gt;CPU</span>
+<a id="L183" name="L183"></a><span class="sd">    syncs), so this implementation never forces a pad/unpad round trip.</span>
+<a id="L184" name="L184"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L185" name="L185"></a>    
+<a id="L186" name="L186"></a>    <span class="nd">@staticmethod</span>
+<a id="L187" name="L187"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_test</span><span class="p">():</span>
+<a id="L188" name="L188"></a>        <span class="n">q</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">16</span><span class="p">)</span>
+<a id="L189" name="L189"></a>        <span class="n">TorchRotaryEmbedding</span><span class="p">()(</span><span class="n">q</span><span class="o">=</span><span class="n">q</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="n">cos</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span> <span class="n">sin</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">16</span><span class="p">))</span>
+<a id="L190" name="L190"></a>        <span class="k">return</span> <span class="kc">True</span>
+<a id="L191" name="L191"></a>    
+<a id="L192" name="L192"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">interleaved</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L193" name="L193"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L194" name="L194"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">interleaved</span> <span class="o">=</span> <span class="n">interleaved</span>
+<a id="L195" name="L195"></a>    
+<a id="L196" name="L196"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_neg_half</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<a id="L197" name="L197"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L198" name="L198"></a><span class="sd">        Rearrange for rotation: [-x[..., d/2:], x[..., :d/2]]</span>
+<a id="L199" name="L199"></a><span class="sd">        </span>
+<a id="L200" name="L200"></a><span class="sd">        This creates the &quot;rotated&quot; version needed for the rotation formula:</span>
+<a id="L201" name="L201"></a><span class="sd">        x_rot = x * cos + neg_half(x) * sin</span>
+<a id="L202" name="L202"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L203" name="L203"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interleaved</span><span class="p">:</span>
+<a id="L204" name="L204"></a>
+<a id="L205" name="L205"></a>            <span class="c1"># GPT-J style: rotate the (even, odd) pairs - x[..., 2i] pairs with x[..., 2i+1]</span>
+<a id="L206" name="L206"></a>
+<a id="L207" name="L207"></a>            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">)</span>
+<a id="L208" name="L208"></a>
+<a id="L209" name="L209"></a>        <span class="n">d_2</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">//</span> <span class="mi">2</span>
+<a id="L210" name="L210"></a>
+<a id="L211" name="L211"></a>        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="o">-</span><span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">d_2</span><span class="p">:],</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">d_2</span><span class="p">]],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L212" name="L212"></a>
+<a id="L213" name="L213"></a>    <span class="nd">@staticmethod</span>
+<a id="L214" name="L214"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_positions</span><span class="p">(</span><span class="n">cu_seqlens</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">total</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<a id="L215" name="L215"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-token positions within each packed segment, (T,), all vectorized.&quot;&quot;&quot;</span>
+<a id="L216" name="L216"></a>        <span class="n">ar</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">total</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">cu_seqlens</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L217" name="L217"></a>        <span class="n">seg</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">cu_seqlens</span><span class="p">,</span> <span class="n">ar</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+<a id="L218" name="L218"></a>        <span class="k">return</span> <span class="n">ar</span> <span class="o">-</span> <span class="n">cu_seqlens</span><span class="p">[</span><span class="n">seg</span><span class="p">]</span>
+<a id="L219" name="L219"></a>
+<a id="L220" name="L220"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_rotate_3d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cos</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">sin</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<a id="L221" name="L221"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;x: (T, H, D); cos/sin: (T, dim) already indexed per token.&quot;&quot;&quot;</span>
+<a id="L222" name="L222"></a>        <span class="n">rot_dim</span> <span class="o">=</span> <span class="n">cos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<a id="L223" name="L223"></a>        <span class="n">x_rot</span><span class="p">,</span> <span class="n">x_pass</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">rot_dim</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">rot_dim</span><span class="p">:]</span>
+<a id="L224" name="L224"></a>        <span class="n">c</span><span class="p">,</span> <span class="n">s</span> <span class="o">=</span> <span class="n">cos</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">),</span> <span class="n">sin</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>  <span class="c1"># broadcast over heads</span>
+<a id="L225" name="L225"></a>        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x_rot</span> <span class="o">*</span> <span class="n">c</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_neg_half</span><span class="p">(</span><span class="n">x_rot</span><span class="p">)</span> <span class="o">*</span> <span class="n">s</span><span class="p">,</span> <span class="n">x_pass</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L226" name="L226"></a>    
+<a id="L227" name="L227"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_rotary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">cos</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">sin</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<a id="L228" name="L228"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L229" name="L229"></a><span class="sd">        Apply rotary embedding to tensor x.</span>
+<a id="L230" name="L230"></a><span class="sd">        </span>
+<a id="L231" name="L231"></a><span class="sd">        Args:</span>
+<a id="L232" name="L232"></a><span class="sd">            x: Input tensor of shape (batch, seq_len, nheads, headdim)</span>
+<a id="L233" name="L233"></a><span class="sd">            cos: Cosine values of shape (seq_len, headdim)</span>
+<a id="L234" name="L234"></a><span class="sd">            sin: Sine values of shape (seq_len, headdim)</span>
+<a id="L235" name="L235"></a><span class="sd">        </span>
+<a id="L236" name="L236"></a><span class="sd">        Returns:</span>
+<a id="L237" name="L237"></a><span class="sd">            Rotated tensor of same shape as x</span>
+<a id="L238" name="L238"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L239" name="L239"></a>        <span class="n">seq_len</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<a id="L240" name="L240"></a>        <span class="n">rot_dim</span> <span class="o">=</span> <span class="n">cos</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<a id="L241" name="L241"></a>        <span class="n">x_rot</span><span class="p">,</span> <span class="n">x_pass</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="n">rot_dim</span><span class="p">],</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">rot_dim</span><span class="p">:]</span>
+<a id="L242" name="L242"></a>
+<a id="L243" name="L243"></a>        <span class="n">cos</span> <span class="o">=</span> <span class="n">cos</span><span class="p">[:</span><span class="n">seq_len</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<a id="L244" name="L244"></a>        <span class="n">sin</span> <span class="o">=</span> <span class="n">sin</span><span class="p">[:</span><span class="n">seq_len</span><span class="p">]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+<a id="L245" name="L245"></a>
+<a id="L246" name="L246"></a>        <span class="n">rotated</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_neg_half</span><span class="p">(</span><span class="n">x_rot</span><span class="p">)</span>   <span class="c1"># note: _neg_half must operate on rot_dim width now</span>
+<a id="L247" name="L247"></a>        <span class="n">x_rotated</span> <span class="o">=</span> <span class="n">x_rot</span> <span class="o">*</span> <span class="n">cos</span> <span class="o">+</span> <span class="n">rotated</span> <span class="o">*</span> <span class="n">sin</span>
+<a id="L248" name="L248"></a>        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x_rotated</span><span class="p">,</span> <span class="n">x_pass</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L249" name="L249"></a>    
+<a id="L250" name="L250"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span>
+<a id="L251" name="L251"></a>        <span class="bp">self</span><span class="p">,</span>
+<a id="L252" name="L252"></a>        <span class="n">qkv</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L253" name="L253"></a>        <span class="n">q</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L254" name="L254"></a>        <span class="n">k</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L255" name="L255"></a>        <span class="n">cos</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L256" name="L256"></a>        <span class="n">sin</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L257" name="L257"></a>        <span class="n">cu_seqlens</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L258" name="L258"></a>        <span class="n">max_seq_len</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L259" name="L259"></a>        <span class="n">seqlen_offsets</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
+<a id="L260" name="L260"></a>    <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]]:</span>
+<a id="L261" name="L261"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L262" name="L262"></a><span class="sd">        Apply rotary embeddings to Q and K.</span>
+<a id="L263" name="L263"></a><span class="sd">        </span>
+<a id="L264" name="L264"></a><span class="sd">        Args:</span>
+<a id="L265" name="L265"></a><span class="sd">            qkv: Not supported in this implementation, must be None.</span>
+<a id="L266" name="L266"></a><span class="sd">            q: Query tensor of shape (batch, seq_len, nheads, headdim) or (T, nheads, headdim)</span>
+<a id="L267" name="L267"></a><span class="sd">            k: Key tensor of shape (batch, seq_len, nheads, headdim) or (T, nheads, headdim)</span>
+<a id="L268" name="L268"></a><span class="sd">            cos: Cosine values, shape (seq_len, headdim)</span>
+<a id="L269" name="L269"></a><span class="sd">            sin: Sine values, shape (seq_len, headdim)</span>
+<a id="L270" name="L270"></a><span class="sd">            cu_seqlens: cumulative sequence lengths of the pack (T path).</span>
+<a id="L271" name="L271"></a><span class="sd">            max_seq_len: ignored (kept for interface compatibility).</span>
+<a id="L272" name="L272"></a><span class="sd">            seqlen_offsets: Position offset for KV cache (int only).</span>
+<a id="L273" name="L273"></a><span class="sd">        </span>
+<a id="L274" name="L274"></a><span class="sd">        Returns:</span>
+<a id="L275" name="L275"></a><span class="sd">            Tuple of (None, rotated_q, rotated_k)</span>
+<a id="L276" name="L276"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L277" name="L277"></a>        <span class="k">assert</span> <span class="n">qkv</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;TorchRotaryEmbedding does not support packed QKV&quot;</span>
+<a id="L278" name="L278"></a>        <span class="k">assert</span> <span class="n">q</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Must provide both q and k&quot;</span>
+<a id="L279" name="L279"></a>        <span class="n">offset</span> <span class="o">=</span> <span class="n">seqlen_offsets</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seqlen_offsets</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="mi">0</span>
+<a id="L280" name="L280"></a>
+<a id="L281" name="L281"></a>        <span class="k">if</span> <span class="n">cu_seqlens</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L282" name="L282"></a>            <span class="c1"># Varlen: x may arrive either as a pack (T, H, D) or as a padded-grid</span>
+<a id="L283" name="L283"></a>            <span class="c1"># (B, S, H, D) laid out so that each segment is a contiguous span of</span>
+<a id="L284" name="L284"></a>            <span class="c1"># grid rows (the layout _transpose_for_kernel produces from cu_seqlens).</span>
+<a id="L285" name="L285"></a>            <span class="c1"># Flatten to (T, H, D) and index cos/sin per token with vectorized positions.</span>
+<a id="L286" name="L286"></a>            <span class="n">x</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span> <span class="k">if</span> <span class="n">q</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">4</span> <span class="k">else</span> <span class="n">q</span>
+<a id="L287" name="L287"></a>            <span class="c1"># k keeps its own head count: grouped-query keys have fewer heads than queries,</span>
+<a id="L288" name="L288"></a>            <span class="c1"># and cos/sin are per token, so they broadcast over heads either way.</span>
+<a id="L289" name="L289"></a>            <span class="n">k_x</span> <span class="o">=</span> <span class="n">k</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">k</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span> <span class="k">if</span> <span class="n">k</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">4</span> <span class="k">else</span> <span class="n">k</span>
+<a id="L290" name="L290"></a>            <span class="n">positions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_positions</span><span class="p">(</span><span class="n">cu_seqlens</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">offset</span>
+<a id="L291" name="L291"></a>            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate_3d</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">cos</span><span class="p">[</span><span class="n">positions</span><span class="p">],</span> <span class="n">sin</span><span class="p">[</span><span class="n">positions</span><span class="p">]),</span> <span class="bp">self</span><span class="o">.</span><span class="n">_rotate_3d</span><span class="p">(</span><span class="n">k_x</span><span class="p">,</span> <span class="n">cos</span><span class="p">[</span><span class="n">positions</span><span class="p">],</span> <span class="n">sin</span><span class="p">[</span><span class="n">positions</span><span class="p">])</span>
+<a id="L292" name="L292"></a>
+<a id="L293" name="L293"></a>        <span class="c1"># Padded path</span>
+<a id="L294" name="L294"></a>        <span class="k">if</span> <span class="n">offset</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<a id="L295" name="L295"></a>            <span class="n">seq_len</span> <span class="o">=</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<a id="L296" name="L296"></a>            <span class="n">cos</span> <span class="o">=</span> <span class="n">cos</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span> <span class="o">+</span> <span class="n">seq_len</span><span class="p">]</span>
+<a id="L297" name="L297"></a>            <span class="n">sin</span> <span class="o">=</span> <span class="n">sin</span><span class="p">[</span><span class="n">offset</span><span class="p">:</span><span class="n">offset</span> <span class="o">+</span> <span class="n">seq_len</span><span class="p">]</span>
+<a id="L298" name="L298"></a>        
+<a id="L299" name="L299"></a>        <span class="n">q_rot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_rotary</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span><span class="p">)</span>
+<a id="L300" name="L300"></a>        <span class="n">k_rot</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_rotary</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">cos</span><span class="p">,</span> <span class="n">sin</span><span class="p">)</span>
+<a id="L301" name="L301"></a>        
+<a id="L302" name="L302"></a>        <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">q_rot</span><span class="p">,</span> <span class="n">k_rot</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

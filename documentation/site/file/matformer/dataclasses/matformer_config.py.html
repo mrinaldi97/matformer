@@ -1,0 +1,388 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/dataclasses/matformer_config.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li><li><a href="../../../tools/wizards.html">Wizards</a></li><li><a href="../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/dataclasses/matformer_config.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="matformer_config.py.html"><code>matformer/dataclasses/matformer_config.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/dataclasses/</code></a></p><h1><code>matformer_config.py</code></h1><p class="muted">matformer/dataclasses/matformer_config.py · 180 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/dataclasses/matformer_config.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L8"><code>MatformerConfig</code></a><span class="line">L8</span></li><li class="depth-1"><a href="#L29"><code>MatformerConfig.__getitem__</code></a><span class="line">L29</span></li><li class="depth-1"><a href="#L33"><code>MatformerConfig.__setitem__</code></a><span class="line">L33</span></li><li class="depth-1"><a href="#L37"><code>MatformerConfig.get</code></a><span class="line">L37</span></li><li class="depth-1"><a href="#L41"><code>MatformerConfig.asdict</code></a><span class="line">L41</span></li><li class="depth-1"><a href="#L49"><code>MatformerConfig._check_ref_safety</code></a><span class="line">L49</span></li><li class="depth-1"><a href="#L57"><code>MatformerConfig._field_types</code></a><span class="line">L57</span></li><li class="depth-1"><a href="#L67"><code>MatformerConfig._coerce_dict</code></a><span class="line">L67</span></li><li class="depth-1"><a href="#L82"><code>MatformerConfig.update</code></a><span class="line">L82</span></li><li class="depth-1"><a href="#L113"><code>MatformerConfig.from_dict</code></a><span class="line">L113</span></li><li class="depth-1"><a href="#L130"><code>MatformerConfig.instantiate</code></a><span class="line">L130</span></li><li class="depth-0"><a href="#L162"><code>MatformerMultiConfig</code></a><span class="line">L162</span> <span class="bases">(<a href="matformer_config.py.html#L8"><code>MatformerConfig</code></a>)</span><div class="mro">MRO: <code>MatformerMultiConfig</code> -> <code>MatformerConfig</code></div></li><li class="depth-0"><a href="#L166"><code>deep_merge</code></a><span class="line">L166</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># matformer/dataclasses/matformer_config.py</span>
+<a id="L2" name="L2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">fields</span><span class="p">,</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">replace</span>
+<a id="L3" name="L3"></a>
+<a id="L4" name="L4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">get_type_hints</span><span class="p">,</span> <span class="n">get_origin</span><span class="p">,</span> <span class="n">get_args</span><span class="p">,</span> <span class="n">Union</span>
+<a id="L5" name="L5"></a>
+<a id="L6" name="L6"></a><span class="kn">from</span><span class="w"> </span><a href="../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L7" name="L7"></a><span class="nd">@dataclass</span>
+<a id="L8" name="L8"></a><span class="k">class</span><span class="w"> </span><span class="nc">MatformerConfig</span><span class="p">:</span>
+<a id="L9" name="L9"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L10" name="L10"></a><span class="sd">    Base for all Matformer config dataclasses.</span>
+<a id="L11" name="L11"></a><span class="sd">    A subclass can be linked to its registered implementation with the registry decorator:</span>
+<a id="L12" name="L12"></a><span class="sd">        @registry.register_dataclass(&quot;logger&quot;, &quot;sqlite&quot;, default=True)</span>
+<a id="L13" name="L13"></a><span class="sd">    which stamps _matformer_category / _matformer_variant onto the class.</span>
+<a id="L14" name="L14"></a><span class="sd">    When this function is used, load_config.py resolves everything through the registry.</span>
+<a id="L15" name="L15"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L16" name="L16"></a>    <span class="n">_merge_fields</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">frozenset</span><span class="p">]</span> <span class="o">=</span> <span class="nb">frozenset</span><span class="p">()</span>
+<a id="L17" name="L17"></a>    <span class="c1"># The fields naming something this config writes. A sweep gives each of its runs its own copy</span>
+<a id="L18" name="L18"></a>    <span class="c1"># of them, so two points can never overwrite each other (see matformer/sweeps.py).</span>
+<a id="L19" name="L19"></a>    <span class="n">_sweep_scoped</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L20" name="L20"></a>    <span class="n">_matformer_category</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L21" name="L21"></a>    <span class="nb">type</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L22" name="L22"></a>    <span class="n">_matformer_variant</span><span class="p">:</span>  <span class="n">ClassVar</span><span class="p">[</span><span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L23" name="L23"></a>    <span class="n">_matformer_multi</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L24" name="L24"></a>    <span class="n">name</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L25" name="L25"></a>    <span class="n">_ref_fields</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>    
+<a id="L26" name="L26"></a>    <span class="n">_mandatory_references</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">list</span><span class="p">]</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L27" name="L27"></a>    <span class="n">instance</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1">#When instantiated, the object is cached</span>
+<a id="L28" name="L28"></a>    <span class="c1"># dict-style accessors</span>
+<a id="L29" name="L29"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<a id="L30" name="L30"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Allow config[key] access.&quot;&quot;&quot;</span>
+<a id="L31" name="L31"></a>        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">)</span>
+<a id="L32" name="L32"></a>
+<a id="L33" name="L33"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__setitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L34" name="L34"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Allow config[key] = value assignment.&quot;&quot;&quot;</span>
+<a id="L35" name="L35"></a>        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<a id="L36" name="L36"></a>
+<a id="L37" name="L37"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">default</span><span class="p">:</span> <span class="n">Any</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Any</span><span class="p">:</span>
+<a id="L38" name="L38"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Dict-style .get with a default, mirroring dict.get.&quot;&quot;&quot;</span>
+<a id="L39" name="L39"></a>        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">default</span><span class="p">)</span>
+<a id="L40" name="L40"></a>
+<a id="L41" name="L41"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_defaults</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L42" name="L42"></a>        <span class="n">d</span> <span class="o">=</span> <span class="n">asdict</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<a id="L43" name="L43"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_defaults</span><span class="p">:</span>
+<a id="L44" name="L44"></a>            <span class="n">explicit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_explicit_fields&#39;</span><span class="p">,</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="L45" name="L45"></a>            <span class="n">d</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">explicit</span><span class="p">}</span>
+<a id="L46" name="L46"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matformer_variant</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L47" name="L47"></a>            <span class="n">d</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matformer_variant</span> <span class="c1"># Type is preserved for correctly serializing the class</span>
+<a id="L48" name="L48"></a>        <span class="k">return</span> <span class="n">d</span>
+<a id="L49" name="L49"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_check_ref_safety</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L50" name="L50"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;_ref_fields pointers get stamped onto the instance as attributes named after the</span>
+<a id="L51" name="L51"></a><span class="sd">        target section (see resolve_references), so no dataclass field may share that name.&quot;&quot;&quot;</span>
+<a id="L52" name="L52"></a>        <span class="n">valid</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)}</span>
+<a id="L53" name="L53"></a>        <span class="k">for</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">target_section</span> <span class="ow">in</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_ref_fields&#39;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L54" name="L54"></a>            <span class="k">if</span> <span class="n">target_section</span> <span class="ow">in</span> <span class="n">valid</span><span class="p">:</span>
+<a id="L55" name="L55"></a>                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&#39; declares a field &#39;</span><span class="si">{</span><span class="n">target_section</span><span class="si">}</span><span class="s2">&#39; that collides with ref target section &#39;</span><span class="si">{</span><span class="n">target_section</span><span class="si">}</span><span class="s2">&#39; (from &#39;</span><span class="si">{</span><span class="n">field_name</span><span class="si">}</span><span class="s2">&#39;)&quot;</span><span class="p">)</span>
+<a id="L56" name="L56"></a>    <span class="nd">@classmethod</span>
+<a id="L57" name="L57"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_field_types</span><span class="p">(</span><span class="bp">cls</span><span class="p">):</span>
+<a id="L58" name="L58"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Cached {field_name: resolved type}, so Optional[...]-unwrapping only happens once</span>
+<a id="L59" name="L59"></a><span class="sd">        per class rather than on every dict coerced.&quot;&quot;&quot;</span>
+<a id="L60" name="L60"></a>        <span class="n">cached</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="vm">__dict__</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;_cached_field_types&#39;</span><span class="p">)</span>
+<a id="L61" name="L61"></a>        <span class="k">if</span> <span class="n">cached</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L62" name="L62"></a>            <span class="n">cached</span> <span class="o">=</span> <span class="n">get_type_hints</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+<a id="L63" name="L63"></a>            <span class="bp">cls</span><span class="o">.</span><span class="n">_cached_field_types</span> <span class="o">=</span> <span class="n">cached</span>
+<a id="L64" name="L64"></a>        <span class="k">return</span> <span class="n">cached</span>
+<a id="L65" name="L65"></a>
+<a id="L66" name="L66"></a>    <span class="nd">@classmethod</span>
+<a id="L67" name="L67"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_coerce_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L68" name="L68"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Coerce string values onto their field&#39;s declared int/float type. Needed because</span>
+<a id="L69" name="L69"></a><span class="sd">        PyYAML doesn&#39;t recognize exponential notation without a decimal point (e.g. &#39;5e-4&#39;) as</span>
+<a id="L70" name="L70"></a><span class="sd">        a float -- it stays a string -- and dataclasses never validate/cast field types on</span>
+<a id="L71" name="L71"></a><span class="sd">        construction, so it would otherwise silently overwrite a float default and fail</span>
+<a id="L72" name="L72"></a><span class="sd">        downstream (e.g. AdamW&#39;s `0.0 &lt;= lr` check).&quot;&quot;&quot;</span>
+<a id="L73" name="L73"></a>        <span class="n">types</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_field_types</span><span class="p">()</span>
+<a id="L74" name="L74"></a>        <span class="n">out</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L75" name="L75"></a>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L76" name="L76"></a>            <span class="n">t</span> <span class="o">=</span> <span class="n">types</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">)</span>
+<a id="L77" name="L77"></a>            <span class="k">if</span> <span class="n">get_origin</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="ow">is</span> <span class="n">Union</span> <span class="ow">and</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">)</span> <span class="ow">in</span> <span class="n">get_args</span><span class="p">(</span><span class="n">t</span><span class="p">):</span>
+<a id="L78" name="L78"></a>                <span class="n">t</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">a</span> <span class="k">for</span> <span class="n">a</span> <span class="ow">in</span> <span class="n">get_args</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="k">if</span> <span class="n">a</span> <span class="ow">is</span> <span class="ow">not</span> <span class="nb">type</span><span class="p">(</span><span class="kc">None</span><span class="p">))</span>
+<a id="L79" name="L79"></a>            <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">t</span> <span class="ow">in</span> <span class="p">(</span><span class="nb">float</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="k">else</span> <span class="n">v</span>
+<a id="L80" name="L80"></a>        <span class="k">return</span> <span class="n">out</span>
+<a id="L81" name="L81"></a>
+<a id="L82" name="L82"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;MatformerConfig&quot;</span><span class="p">:</span>
+<a id="L83" name="L83"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Like from_dict, but merges onto an existing instance instead of the class defaults,</span>
+<a id="L84" name="L84"></a><span class="sd">        and extends (not replaces) the record of which fields were explicitly set.</span>
+<a id="L85" name="L85"></a>
+<a id="L86" name="L86"></a><span class="sd">        Fields in _merge_fields are deep-merged (see deep_merge); a field currently holding a</span>
+<a id="L87" name="L87"></a><span class="sd">        MatformerConfig instance (e.g. default_layer) delegates to that instance&#39;s own update(),</span>
+<a id="L88" name="L88"></a><span class="sd">        so nested configs patch instead of being overwritten wholesale.&quot;&quot;&quot;</span>
+<a id="L89" name="L89"></a>        <span class="n">d</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="n">_coerce_dict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<a id="L90" name="L90"></a>        <span class="n">valid</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">self</span><span class="p">)}</span>
+<a id="L91" name="L91"></a>        <span class="n">unknown</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">-</span> <span class="n">valid</span>
+<a id="L92" name="L92"></a>        <span class="k">if</span> <span class="n">strict</span> <span class="ow">and</span> <span class="n">unknown</span><span class="p">:</span>
+<a id="L93" name="L93"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown field(s) </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L94" name="L94"></a>        <span class="n">resolved</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L95" name="L95"></a>        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L96" name="L96"></a>            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">valid</span><span class="p">:</span>
+<a id="L97" name="L97"></a>                <span class="k">continue</span>
+<a id="L98" name="L98"></a>            <span class="n">current</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span>
+<a id="L99" name="L99"></a>            <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge_fields</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="L100" name="L100"></a>                <span class="n">resolved</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">deep_merge</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+<a id="L101" name="L101"></a>            <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">current</span><span class="p">,</span> <span class="n">MatformerConfig</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="L102" name="L102"></a>                <span class="n">resolved</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">current</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="n">strict</span><span class="p">)</span>
+<a id="L103" name="L103"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L104" name="L104"></a>                <span class="n">resolved</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+<a id="L105" name="L105"></a>        <span class="n">new</span> <span class="o">=</span> <span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">resolved</span><span class="p">)</span>
+<a id="L106" name="L106"></a>        <span class="n">explicit</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_explicit_fields&#39;</span><span class="p">,</span> <span class="nb">set</span><span class="p">())</span> <span class="o">|</span> <span class="p">(</span><span class="n">valid</span> <span class="o">&amp;</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="L107" name="L107"></a>        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">new</span><span class="p">,</span> <span class="s1">&#39;_explicit_fields&#39;</span><span class="p">,</span> <span class="n">explicit</span><span class="p">)</span>
+<a id="L108" name="L108"></a>        <span class="n">new</span><span class="o">.</span><span class="n">_check_ref_safety</span><span class="p">()</span>
+<a id="L109" name="L109"></a>        <span class="k">return</span> <span class="n">new</span>
+<a id="L110" name="L110"></a>  
+<a id="L111" name="L111"></a><span class="c1"># construction</span>
+<a id="L112" name="L112"></a>    <span class="nd">@classmethod</span>
+<a id="L113" name="L113"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">d</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">strict</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;MatformerConfig&quot;</span><span class="p">:</span>
+<a id="L114" name="L114"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Build an instance from a dict. If strict (default), raises ValueError on keys that</span>
+<a id="L115" name="L115"></a><span class="sd">        aren&#39;t declared dataclass fields; otherwise those keys are silently dropped.</span>
+<a id="L116" name="L116"></a>
+<a id="L117" name="L117"></a><span class="sd">        Also records, on the instance, which fields were explicitly present in &#39;d&#39; and not</span>
+<a id="L118" name="L118"></a><span class="sd">        override with default</span>
+<a id="L119" name="L119"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L120" name="L120"></a>        <span class="n">d</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_coerce_dict</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
+<a id="L121" name="L121"></a>        <span class="n">valid</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="bp">cls</span><span class="p">)}</span>
+<a id="L122" name="L122"></a>        <span class="n">unknown</span> <span class="o">=</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="o">-</span> <span class="n">valid</span>
+<a id="L123" name="L123"></a>        <span class="k">if</span> <span class="n">strict</span> <span class="ow">and</span> <span class="n">unknown</span><span class="p">:</span>
+<a id="L124" name="L124"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown field(s) </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">unknown</span><span class="p">)</span><span class="si">}</span><span class="s2"> for </span><span class="si">{</span><span class="bp">cls</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">; valid fields: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">valid</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L125" name="L125"></a>        <span class="n">instance</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">d</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">valid</span><span class="p">})</span>
+<a id="L126" name="L126"></a>        <span class="nb">object</span><span class="o">.</span><span class="fm">__setattr__</span><span class="p">(</span><span class="n">instance</span><span class="p">,</span> <span class="s1">&#39;_explicit_fields&#39;</span><span class="p">,</span> <span class="n">valid</span> <span class="o">&amp;</span> <span class="n">d</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="L127" name="L127"></a>        <span class="n">instance</span><span class="o">.</span><span class="n">_check_ref_safety</span><span class="p">()</span>
+<a id="L128" name="L128"></a>        <span class="k">return</span> <span class="n">instance</span>
+<a id="L129" name="L129"></a>
+<a id="L130" name="L130"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">instantiate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">refresh</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">preferred</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L131" name="L131"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Resolve section_name (and object_name for grouped sections, falling back to that</span>
+<a id="L132" name="L132"></a><span class="sd">        group&#39;s default) to its MatformerConfig, then build the implementation class registered</span>
+<a id="L133" name="L133"></a><span class="sd">        for that config&#39;s category/variant -- e.g. configs.instantiate(&#39;data&#39;, &#39;train&#39;).</span>
+<a id="L134" name="L134"></a><span class="sd">        </span>
+<a id="L135" name="L135"></a><span class="sd">        Args:</span>
+<a id="L136" name="L136"></a><span class="sd">            cache: If True, cache the instance for reuse</span>
+<a id="L137" name="L137"></a><span class="sd">            refresh: If True, force re-instantiation even if cached</span>
+<a id="L138" name="L138"></a><span class="sd">            preferred: Optional preferred implementation name to pass to registry</span>
+<a id="L139" name="L139"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L140" name="L140"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">refresh</span> <span class="ow">and</span> <span class="n">use_cache</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span><span class="p">:</span>
+<a id="L141" name="L141"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span>
+<a id="L142" name="L142"></a>        <span class="k">assert</span> <span class="s1">&#39;config&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;&#39;config&#39; is a reserved kwarg for instantiate().&quot;</span>
+<a id="L143" name="L143"></a>        
+<a id="L144" name="L144"></a>        <span class="c1"># Use registry.create to get the instantiated object</span>
+<a id="L145" name="L145"></a>        <span class="c1"># The registry will handle priority, environment variables, etc.</span>
+<a id="L146" name="L146"></a>        <span class="n">instance</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<a id="L147" name="L147"></a>            <span class="n">category</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_matformer_category</span><span class="p">,</span>
+<a id="L148" name="L148"></a>            <span class="n">variant</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_matformer_variant</span><span class="p">,</span>
+<a id="L149" name="L149"></a>            <span class="n">preferred</span><span class="o">=</span><span class="n">preferred</span><span class="p">,</span>
+<a id="L150" name="L150"></a>            <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="p">,</span>  <span class="c1"># Pass config as kwarg</span>
+<a id="L151" name="L151"></a>            <span class="o">**</span><span class="n">kwargs</span>
+<a id="L152" name="L152"></a>        <span class="p">)</span>
+<a id="L153" name="L153"></a>        <span class="c1">#if hasattr(instance,&#39;__init__&#39;):</span>
+<a id="L154" name="L154"></a>        <span class="c1">#    instance.__init__()</span>
+<a id="L155" name="L155"></a>
+<a id="L156" name="L156"></a>        <span class="k">if</span> <span class="n">refresh</span> <span class="ow">or</span> <span class="n">use_cache</span><span class="p">:</span>
+<a id="L157" name="L157"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">instance</span> <span class="o">=</span> <span class="n">instance</span>
+<a id="L158" name="L158"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">instance</span>
+<a id="L159" name="L159"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L160" name="L160"></a>            <span class="k">return</span> <span class="n">instance</span>   
+<a id="L161" name="L161"></a><span class="nd">@dataclass</span>
+<a id="L162" name="L162"></a><span class="k">class</span><span class="w"> </span><span class="nc">MatformerMultiConfig</span><span class="p">(</span><a href="#L8"><span class="n">MatformerConfig</span></a><span class="p">):</span>
+<a id="L163" name="L163"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Marker base for multi-entry categories (data, task, validation, ...).&quot;&quot;&quot;</span>
+<a id="L164" name="L164"></a>    <span class="n">_matformer_multi</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>        
+<a id="L165" name="L165"></a>
+<a id="L166" name="L166"></a><span class="k">def</span><span class="w"> </span><span class="nf">deep_merge</span><span class="p">(</span><span class="n">base</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">patch</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L167" name="L167"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Recursively merge `patch` onto `base`: nested dicts merge key-wise, a patch value of</span>
+<a id="L168" name="L168"></a><span class="sd">    None deletes that key (so a patch can remove something inherited), everything else</span>
+<a id="L169" name="L169"></a><span class="sd">    (including lists) replaces outright. Shared by MatformerConfig.update() for fields</span>
+<a id="L170" name="L170"></a><span class="sd">    declared in _merge_fields, and by ModelConfig&#39;s per-layer cascade.&quot;&quot;&quot;</span>
+<a id="L171" name="L171"></a>    <span class="n">out</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">base</span><span class="p">)</span>
+<a id="L172" name="L172"></a>    <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">patch</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L173" name="L173"></a>        <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">out</span><span class="p">:</span>
+<a id="L174" name="L174"></a>            <span class="k">del</span> <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+<a id="L175" name="L175"></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">),</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="L176" name="L176"></a>            <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">deep_merge</span><span class="p">(</span><span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">v</span><span class="p">)</span>
+<a id="L177" name="L177"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L178" name="L178"></a>            <span class="n">out</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+<a id="L179" name="L179"></a>    <span class="k">return</span> <span class="n">out</span>    
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

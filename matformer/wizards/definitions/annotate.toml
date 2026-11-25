@@ -1,0 +1,122 @@
+id = "annotate"
+title = "Annotate a dataset"
+description = "Run a task over every row of a file or an MDAT and write the predictions as JSONL or MDAT."
+category = "Tasks"
+order = 10
+
+[[steps]]
+id = "model"
+title = "Model"
+description = "The job loads its own copy of the model, so it keeps running when the console is closed."
+[[steps.fields]]
+name = "model"
+kind = "path"
+label = "Model"
+default = ""
+required = true
+doc = "A Matformer checkpoint, a HuggingFace repo (hf://org/model) or a local model folder."
+prefill = "model"
+[[steps.fields]]
+name = "cfg"
+kind = "path"
+label = "Config"
+doc = "Optional YAML merged into the model's own configuration."
+[[steps.fields]]
+name = "task"
+kind = "choice"
+label = "Task"
+default = "evaluation"
+options = ["evaluation", "generation", "masking"]
+required = true
+[[steps.fields]]
+name = "device"
+kind = "choice"
+label = "Accelerator"
+default = "auto"
+options = ["auto", "cuda", "cpu"]
+
+[[steps]]
+id = "input"
+title = "Input and output"
+[[steps.fields]]
+name = "input"
+kind = "path"
+label = "Input"
+default = ""
+required = true
+doc = "A JSONL, CSV or CoNLL file, or an MDAT folder."
+[[steps.fields]]
+name = "dataset"
+kind = "text"
+label = "MDAT dataset"
+doc = "Dataset inside a multi-dataset container. Leave empty for a standalone dataset."
+[[steps.fields]]
+name = "column"
+kind = "text"
+label = "Text column"
+default = "text"
+[[steps.fields]]
+name = "label"
+kind = "text"
+label = "Label column"
+doc = "Optional gold labels, used to score the predictions."
+[[steps.fields]]
+name = "format"
+kind = "choice"
+label = "Output format"
+default = "jsonl"
+options = ["jsonl", "mdat"]
+[[steps.fields]]
+name = "output"
+kind = "path"
+label = "Output"
+default = ""
+doc = "Empty writes <input>.annotated.<format>."
+[[steps.fields]]
+name = "keys_only"
+kind = "bool"
+label = "Only keys and predictions"
+default = false
+doc = "MDAT output without a copy of the original documents."
+when = { field = "format", is = "mdat" }
+[[steps.fields]]
+name = "limit"
+kind = "int"
+label = "Row limit"
+default = 0
+doc = "Zero annotates every row."
+[[steps.fields]]
+name = "batch_size"
+kind = "int"
+label = "Batch size"
+default = 8
+[[steps.fields]]
+name = "max_new_tokens"
+kind = "int"
+label = "Max new tokens"
+default = 64
+when = { field = "task", is = "generation" }
+[[steps.fields]]
+name = "temperature"
+kind = "float"
+label = "Temperature"
+default = 0.7
+when = { field = "task", is = "generation" }
+
+[action]
+kind = "annotate"
+task = "${task}"
+model = "${model}"
+cfg = "${cfg}"
+device = "${device}"
+input = "${input}"
+dataset = "${dataset}"
+column = "${column}"
+label = "${label}"
+format = "${format}"
+output = "${output}"
+keys_only = "${keys_only}"
+limit = "${limit}"
+batch_size = "${batch_size}"
+max_new_tokens = "${max_new_tokens}"
+temperature = "${temperature}"

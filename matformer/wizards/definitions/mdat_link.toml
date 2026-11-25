@@ -1,0 +1,54 @@
+id = "mdat_link"
+title = "Link a dataset into a container"
+description = "Attach an existing linked dataset folder to a container."
+category = "Data"
+order = 40
+
+[[steps]]
+id = "paths"
+title = "Container and dataset"
+description = "The container keeps the alias and the view bookkeeping. The data and strategy outputs stay in the dataset folder."
+[[steps.fields]]
+name = "container"
+kind = "path"
+label = "Container"
+default = ""
+required = true
+[[steps.fields]]
+name = "dataset_path"
+kind = "path"
+label = "Linked dataset"
+default = ""
+required = true
+[[steps.fields]]
+name = "alias"
+kind = "text"
+label = "Alias"
+doc = "Name used by views and strategies. Empty uses the dataset's own name."
+[[steps.fields]]
+name = "repair"
+kind = "bool"
+label = "Repair views after linking"
+default = true
+doc = "Rebuild the pointer files so the new dataset is part of every view."
+
+[action]
+kind = "mdat"
+name = "link"
+container = "${container}"
+[[action.commands]]
+cmd = "open"
+args = { path = "${container}" }
+[[action.commands]]
+cmd = "link"
+when = { field = "alias", truthy = true }
+args = { path = "${dataset_path}", alias = "${alias}" }
+[[action.commands]]
+cmd = "link"
+when = { field = "alias", exists = false }
+args = { path = "${dataset_path}" }
+[[action.commands]]
+cmd = "repair"
+when = { field = "repair", truthy = true }
+[[action.commands]]
+cmd = "close"

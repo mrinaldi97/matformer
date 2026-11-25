@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configuration · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section" open><summary>Core</summary><ul><li><a href="registry.html">The Matformer Registry</a></li><li><a class="current" href="configuration.html">Configuration</a></li><li><a href="transformer.html">Transformer architecture</a></li><li><a href="sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="plugins.html">Plugins</a></li><li><a href="virtual-models.html">Virtual models and activation stores</a></li><li><a href="matformer-module.html">MatformerModule</a></li><li><a href="tensors.html">TensorsDC</a></li><li><a href="cache.html">The cache</a></li><li><a href="maskerator.html">The Maskerator</a></li><li><a href="tokenizers.html">Tokenizers</a></li><li><a href="source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Core <span class="sep">/</span> Configuration</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/matformer_configs.py.html"><code>matformer/matformer_configs.py</code></a> <a href="../file/matformer/dataclasses/matformer_config.py.html"><code>matformer/dataclasses/matformer_config.py</code></a> <a href="../file/matformer/utils/matformer_assets.py.html"><code>matformer/utils/matformer_assets.py</code></a> <a href="../file/matformer/sweeps.py.html"><code>matformer/sweeps.py</code></a></div>
+<h1 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link"></a></h1>
+<p>Matformer contains a complex configuration system that is able to control in an integrated manner all the framework's components.
+Classes that requires a configuration must have their dataclass. This dataclass is automatically discovered by the <a href="registry.html">MatformerRegistry</a> with the decorator <code>@register_dataclass</code>.
+The <code>MatformerConfigs</code> class is then able to load YAML/JSON config file(s) into a tree of typed <code>MatformerConfig</code> dataclasses.
+Because dataclasses are very flexible and able to configure almost every aspect of the framework, you can use the <a href="../configuration/index.html">configuration reference</a> to explore all the configuration's options for anything registered in the <a href="registry.html">MatformerRegistry</a>.</p>
+<p>For example, let's assume the YAML contains:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">train</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HFDataset</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HFDataset</span>
+</code></pre></div>
+
+<p>This means that <code>MatformerConfigs</code> will look in the registry for a dataclass for the category <code>data</code> and of variant <code>HFDataset</code>, which is addressed by the special <code>type</code> key. If the <code>type</code> key is missing, <code>MatformerConfigs</code> will use the category's default (<code>default=True</code> in the registry).</p>
+<p>Another special, optional, key is <code>name</code>, as it is specialized for giving a unique alias to a specific object in the Configs system: this is necessary when the objects present in the configuration compose with each other, for example when a specific evaluation task refers to a specific dataset on which the task is evaluated.</p>
+<p>When a <code>MatformerConfigs</code> is created or updated, it is possible to provide several files (ex. a list of YAMLs). In this case, the order may be important: if a section is declared more than once, its existing fields are patched from left to right, the latest imported file wins. Files may also include other files by declaring a special section <code>includes</code>. Includes are the first element resolved, so they are lowest priority. Highest priority are <code>overrides</code>, which can be set at any moment and give the user a final decision over the <code>MatformerConfigs</code> object.</p>
+<p>An important distinction is that some categories only allow for a single configuration object; for example, it is possible to have only a single <code>model</code> section and so if more than one <code>model</code> section is present, their content get merged as explained above. Some categories, however, may allow for more than one configured object, as it is the case for the <code>data</code> and <code>task</code> sections. They are distinguished because their dataclass inherit from <code>MatformerMultiConfig</code> instead of <code>MatformerConfig</code>. When it is initialized, <code>MatformerConfigs</code> automatically checks if there are inconsistencies (clearly, all the variants of a category must either be all grouped or all listed).</p>
+<p>It is particularly for <code>MultiConfigs</code> dataclasses that the <code>name</code> field exists, in order to avoid ambiguities. In this way, it is possible to have named object in the configuration tree, and those objects can refer to each other. This behaviour is governed by the dataclass itself, thanks to three <code>ClassVar</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="n">_ref_fields</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;ref_section&quot;</span><span class="p">:</span> <span class="s2">&quot;section_name&quot;</span><span class="p">}</span>
+</code></pre></div>
+
+<p><code>_ref_fields</code> in this case is saying to <code>MatformerConfigs</code> that the configuration's key <code>ref_section</code> must contain the reference to an object registered in the section <code>section_name</code>. For example, <code>_ref_fields: ClassVar[dict] = {"ref_data": "data"}</code> means that the configuration of this object should contain a field called <code>ref_data</code> containing the name of a (named) object insterted in the <code>data</code> section.
+If this is the data section:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">train</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HFDataset</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">HFDataset</span>
+</code></pre></div>
+
+<p>this means that this config should contain a <code>ref_data</code> key with either <code>train</code> or <code>test</code> as a value.
+The referenced object is automatically looked for by the <code>MatformerConfigs</code> systems. If it missing, no errors are raised if the key doesn't appear in the <code>_mandatory_references: ClassVar[list] = []</code> classvar; in the counter case, an exception is raised. After the object is looked for, it is automatically linked: this means that calling <code>my_section.ref_data</code> will resolve to <code>data.train</code>.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">my_section</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">my_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">1</span>
+<span class="w">  </span><span class="nt">foo_value</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bar</span>
+<span class="w">  </span><span class="nt">ref_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">train</span>
+</code></pre></div>
+
+<p>Because this <code>linking</code> capability can be useful in some cases, the <code>linked_fields</code> classvar acts a syntactic sugar to directly have a specific section linked inside the configuration object.</p>
+<p>A <code>MatformerConfig</code> object can also be used to rapidly instantiate the configured object. For example, if we have loaded a tokenizer's configuration:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">tokenizer</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">huggingface</span>
+<span class="w">  </span><span class="nt">pretrained_name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mrinaldi/Gettone</span>
+</code></pre></div>
+
+<p>we can get an instance of the actual tokenizer with <code>configs.tokenizer.instantiate()</code> (see <code>instantiate</code> in <a href="../file/matformer/matformer_configs.py.html">matformer_configs.py</a>).</p>
+<h2 id="generated-reference">Generated reference<a class="headerlink" href="#generated-reference" title="Permanent link"></a></h2>
+<p>The reference is rendered from <code>registry.get_definition(category, variant)</code> with <code>matformer.utils.schema</code>, the same helper used by the GUI and the task console. <code>fields_schema</code> gives the name, type, default and options; <code>field_docs</code> gives the inline comment; <code>field_sections</code> gives the standalone comment above a group of fields. A new field appears in the reference as soon as it is added to the dataclass.</p>
+<h2 id="validation">Validation<a class="headerlink" href="#validation" title="Permanent link"></a></h2>
+<p>The configuration is typed. <code>from_dict</code> rejects unknown fields unless <code>strict=False</code>, coerces <code>5e-4</code> from YAML's string form to a float, and checks that a mandatory reference points to a real entry.</p>
+<h2 id="sweeps">Sweeps<a class="headerlink" href="#sweeps" title="Permanent link"></a></h2>
+<p>A value can declare several candidates separated by a pipe, and the file then describes a sweep:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">training</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2e-3 | 1e-4 | 5e-5</span>
+<span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">pooling_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">attention | mean</span>
+<span class="nt">task</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">    </span><span class="nt">topk</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false | true</span>
+</code></pre></div>
+
+<p>The YAML parser keeps the pipe inside the scalar. <code>MatformerConfigs</code> splits the scalar on top-level pipes and parses each candidate as YAML, so <code>true</code> is a bool, <code>8</code> is an int, and <code>positional_encoding: alibi | [alibi, rope]</code> sweeps between one strategy and two. <code>\|</code> is a pipe that means itself.</p>
+<p>The configs keep the first candidate, so a config that is not expanded is still one valid run. <code>sweep_variants()</code> returns one detached config per combination. Each point gets its own run name, checkpoint name and output names, and its <code>meta.json</code> records the values it chose. <code>check_sweeps()</code> raises when a swept path does not address a real field.</p>
+<div class="highlight"><pre><span></span><code>python<span class="w"> </span>train_model.py<span class="w"> </span>--cfg<span class="w"> </span>exp.yaml<span class="w"> </span>--sweeps<span class="w">     </span><span class="c1"># print the plan and run nothing</span>
+python<span class="w"> </span>train_model.py<span class="w"> </span>--cfg<span class="w"> </span>exp.yaml<span class="w">              </span><span class="c1"># run every point</span>
+python<span class="w"> </span>run_task.py<span class="w"> </span>--cfg<span class="w"> </span>exp.yaml<span class="w"> </span>--sweep<span class="w"> </span><span class="m">3</span><span class="w">       </span><span class="c1"># one point</span>
+</code></pre></div>
+
+<p>The implementation is in <code>matformer/sweeps.py</code>: <code>harvest</code> records the candidates during import, <code>plan</code> builds the product, <code>select</code> applies a selection, and <code>apply</code> produces the config of one point. <code>_sweep_scoped</code> names the fields that must be renamed per point.</p>
+<h2 id="assets">Assets<a class="headerlink" href="#assets" title="Permanent link"></a></h2>
+<p><code>MATFORMER_ASSETS</code> sets one folder outside the repository for configs, checkpoints, datasets, logs, virtual environments, experiments and extra plugins. The folder can be declared in <code>configuration.yaml</code> in the repository root, or with the environment variable.</p>
+<div class="highlight"><pre><span></span><code><span class="c1"># configuration.yaml</span>
+<span class="nt">assets</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">/data/matformer_assets</span>
+</code></pre></div>
+
+<p>The folder is created with <code>python -m matformer.utils.matformer_assets</code>. Its area folders are <code>configs</code>, <code>checkpoints</code>, <code>venvs</code>, <code>logs</code>, <code>dataset</code>, <code>experiments</code> and <code>extra_plugins</code>.</p>
+<p>In YAML values, <code>includes</code> and overrides, the tokens <code>$ASSETS</code>, <code>$CONFIG_ASSETS</code>, <code>$CHECKPOINT_ASSETS</code>, <code>$DATA_ASSETS</code>, <code>$LOG_ASSETS</code>, <code>$VENV_ASSETS</code>, <code>$EXPERIMENT_ASSETS</code> and <code>$PLUGIN_ASSETS</code> expand to the corresponding folders. If no folder is configured, the tokens are not used and relative paths work as usual. See <a href="../intro/env-vars.html">Environment variables</a>.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

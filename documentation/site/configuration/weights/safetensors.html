@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Configuration · weights.safetensors · Matformer</title>
+<link rel="stylesheet" href="../../assets/style.css">
+<link rel="stylesheet" href="../../assets/pygments.css">
+</head>
+<body class="reference-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../index.html">Documentation</a><a class="" href="../../registry/index.html">Registry</a><a class="current" href="../index.html">Configuration</a><a class="" href="../../tools/commands.html">Commands</a><a class="" href="../../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section" open><summary>Registry categories</summary><ul><li><a class="" href="../../registry/model.html"><code>model</code></a></li><li><a class="" href="../../registry/layer.html"><code>layer</code></a></li><li><a class="" href="../../registry/sequence-mixer.html"><code>sequence_mixer</code></a></li><li><a class="" href="../../registry/attention.html"><code>attention</code></a></li><li><a class="" href="../../registry/mlp.html"><code>mlp</code></a></li><li><a class="" href="../../registry/norm.html"><code>norm</code></a></li><li><a class="" href="../../registry/norm-style.html"><code>norm_style</code></a></li><li><a class="" href="../../registry/embedding.html"><code>embedding</code></a></li><li><a class="" href="../../registry/linear.html"><code>linear</code></a></li><li><a class="" href="../../registry/dropout.html"><code>dropout</code></a></li><li><a class="" href="../../registry/positional-encoding.html"><code>positional_encoding</code></a></li><li><a class="" href="../../registry/loss.html"><code>loss</code></a></li><li><a class="" href="../../registry/loss-fn.html"><code>loss_fn</code></a></li><li><a class="" href="../../registry/learning-signal.html"><code>learning_signal</code></a></li><li><a class="" href="../../registry/learning-signal-selector.html"><code>learning_signal_selector</code></a></li><li><a class="" href="../../registry/stream.html"><code>stream</code></a></li><li><a class="" href="../../registry/plugin.html"><code>plugin</code></a></li><li><a class="" href="../../registry/tokenizer.html"><code>tokenizer</code></a></li><li><a class="" href="../../registry/task.html"><code>task</code></a></li><li><a class="" href="../../registry/data.html"><code>data</code></a></li><li><a class="" href="../../registry/logger.html"><code>logger</code></a></li><li><a class="" href="../../registry/checkpoint.html"><code>checkpoint</code></a></li><li><a class="" href="../../registry/checkpoint-holder.html"><code>checkpoint_holder</code></a></li><li><a class="current" href="../../registry/weights.html"><code>weights</code></a></li><li><a class="" href="../../registry/training.html"><code>training</code></a></li><li><a class="" href="../../registry/validation.html"><code>validation</code></a></li><li><a class="" href="../../registry/masking.html"><code>masking</code></a></li><li><a class="" href="../../registry/virtual-model.html"><code>virtual_model</code></a></li><li><a class="" href="../../registry/activation-store.html"><code>activation_store</code></a></li><li><a class="" href="../../registry/saver.html"><code>saver</code></a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../index.html">Docs</a> <span class="sep">/</span> <a href="../index.html">Configuration</a> <span class="sep">/</span> <a href="../weights.html">weights</a> <span class="sep">/</span> safetensors</nav>
+    
+<h1>Configuration: <code>weights.safetensors</code></h1><p>Dataclass <code>SafetensorWeightConfig</code> · <a href="../../registry/weights/safetensors.html">registry entry</a> · <a href="../../registry/weights.html">category</a></p><h2>Fields</h2><table class="fields"><thead><tr><th>Field</th><th>Type</th><th>Default</th><th>Meaning</th></tr></thead><tbody><tr><td id="field-name"><code>name</code></td><td><code>Optional[str]</code></td><td><code>&#x27;default&#x27;</code></td><td></td></tr><tr><td id="field-path"><code>path</code></td><td><code>str</code></td><td><code>None</code></td><td></td></tr><tr><td id="field-weight-mapping"><code>weight_mapping</code></td><td><code>dict</code></td><td><code>{}</code></td><td></td></tr><tr><td id="field-definition"><code>definition</code></td><td><code>Optional[dict]</code></td><td><code>None</code></td><td>adapter definition override (weight_mapping/weight_transforms) handed to the checkpoint holder</td></tr><tr><td id="field-wanted"><code>wanted</code></td><td><code>Union[List[str], str, NoneType]</code></td><td><code>None</code></td><td>stable keys (or fnmatch patterns) to inherit; mutually exclusive with discard</td></tr><tr><td id="field-discard"><code>discard</code></td><td><code>Union[List[str], str, NoneType]</code></td><td><code>None</code></td><td>stable keys (or fnmatch patterns) not to inherit; mutually exclusive with wanted</td></tr></tbody></table><h2>In a YAML file</h2><pre><code class="language-yaml">weights:
+  type: safetensors</code></pre>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

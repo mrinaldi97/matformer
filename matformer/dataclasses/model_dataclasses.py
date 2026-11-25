@@ -60,7 +60,16 @@ class LayerConfig(MatformerConfig):
     def __post_init__(self):
         if self.mlp_bias is None:
             self.mlp_bias = self.bias
-        self.sequence_mixer_config=registry.get_definition("sequence_mixer",self.sequence_mixer).from_dict(self.sequence_mixer_config)
+        smc = self.sequence_mixer_config
+        if isinstance(smc, MatformerConfig):
+            # Re-entrant call (dataclasses.replace inside update() re-runs this): the config is
+            # already converted. Keep it as-is for the same mixer, rebuild from a dict if the
+            # mixer changed. Without this guard, any update()/replace on a LayerConfig crashes
+            # in from_dict because it receives an instance instead of a dict.
+            if self.sequence_mixer is None or getattr(smc, "_matformer_variant", None) == self.sequence_mixer:
+                return
+            smc = smc.asdict()
+        self.sequence_mixer_config = registry.get_definition("sequence_mixer", self.sequence_mixer).from_dict(smc or {})
 
 @registry.register_dataclass("tokenizer", "huggingface", default=True)
 @dataclass
@@ -131,6 +140,10 @@ class ModelConfig(MatformerConfig):
     is_causal: Optional[bool] = None
 
     hooks: Dict[str, Union[str, Dict[str, Any]]] = field(default_factory=dict)
+    # Names of the classes a head predicts, as {label: id}. They say something about the model,
+    # not about a dataset: they are declared here, saved with the checkpoint, and read by the
+    # datasets through the linked 'model' field and by anything that has to name a prediction.
+    label2id: Optional[Dict[str, int]] = None
 
     # Nested configs. custom_layers values are *patches* (partial LayerConfig dicts), resolved
     # lazily and cascaded on top of default_layer by get_layer_config() -- see module docstring.

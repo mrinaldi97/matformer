@@ -1,0 +1,66 @@
+sections:
+  - title: Introduction
+    pages:
+      - index
+      - intro/limitations
+      - intro/env-vars
+  - title: Core
+    pages:
+      - components/registry
+      - components/configuration
+      - components/transformer
+      - components/sockets-and-stream
+      - components/plugins
+      - components/virtual-models
+      - components/matformer-module
+      - components/tensors
+      - components/cache
+      - components/maskerator
+      - components/tokenizers
+      - components/source-layout
+  - title: Training
+    pages:
+      - training/wrapper
+      - training/trainer
+      - training/learning-signals
+      - training/logger
+      - training/control
+      - training/analysis
+      - training/checkpointing
+  - title: Data
+    pages:
+      - data/index
+      - data/mdat
+      - data/data-module
+      - data/lazy-dataset
+  - title: Tasks
+    pages:
+      - tasks/index
+      - tasks/built-in-tasks
+      - tasks/interactive-session
+  - title: Models
+    pages:
+      - loading/checkpoint-holder
+      - loading/huggingface
+  - title: Tools
+    pages:
+      - tools/server
+      - tools/gui
+      - tools/remote
+      - tools/cluster
+      - tools/commands
+      - tools/wizards
+      - tools/analysis
+  - title: Tutorials
+    pages:
+      - tutorials/index
+      - tutorials/registry
+      - tutorials/add-a-task
+      - tutorials/use-matformer-model
+      - tutorials/write-a-plugin
+      - tutorials/custom-tokenizer
+      - tutorials/train-and-run
+  - title: About
+    pages:
+      - about/repository
+      - about/documentation-system

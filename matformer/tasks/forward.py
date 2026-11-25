@@ -5,7 +5,7 @@ from matformer.tasks.task import MatformerTask, TaskConfig
 from matformer.matformer_registry import registry
 from dataclasses import dataclass, field
 from typing import Optional, ClassVar, Union
-@registry.register_dataclass("task", "forward", default=True)
+@registry.register_dataclass("task", "forward")
 @dataclass
 class ForwardTaskConfig(TaskConfig):
     prompt:               Optional[str] = None
@@ -17,6 +17,6 @@ class ForwardTask(MatformerTask):
     A pure forward. Useful if you attach plugins.
     """
 
-    def process_batch(self, batch) -> list[str]:
+    def process_batch(self, batch):
         _ = self.model(batch)
-        return None, None
+        return batch, None

@@ -1,0 +1,61 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Source layout · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section" open><summary>Core</summary><ul><li><a href="registry.html">The Matformer Registry</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="transformer.html">Transformer architecture</a></li><li><a href="sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="plugins.html">Plugins</a></li><li><a href="virtual-models.html">Virtual models and activation stores</a></li><li><a href="matformer-module.html">MatformerModule</a></li><li><a href="tensors.html">TensorsDC</a></li><li><a href="cache.html">The cache</a></li><li><a href="maskerator.html">The Maskerator</a></li><li><a href="tokenizers.html">Tokenizers</a></li><li><a class="current" href="source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Core <span class="sep">/</span> Source layout</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/transformer_blocks/__init__.py.html"><code>matformer/transformer_blocks/__init__.py</code></a> <a href="../file/matformer/modules/stream.py.html"><code>matformer/modules/stream.py</code></a> <a href="../file/matformer/modules/norm_positions.py.html"><code>matformer/modules/norm_positions.py</code></a></div>
+<h1 id="source-layout">Source layout<a class="headerlink" href="#source-layout" title="Permanent link"></a></h1>
+<p>This folder contains the implementation of the neural network components of Matformer.</p>
+<div class="callout warning">
+<p>The annotations at the top of each class are described in <a href="matformer-module.html#class-annotations">MatformerModule</a>.</p>
+</div>
+<div class="callout warning">
+<p>The <code>registry.create(...)</code> calls instantiate modules from the <a href="registry.html">registry</a>.</p>
+</div>
+<ul>
+<li>
+<p><code>attention.py</code>: multi-head attention without a fixed kernel. The kernel is selected by the registry. The file also contains the interpretability-friendly attention implementation, which exposes the weights of each head for QK/OV studies. The attention documentation is intentionally empty until the mixer is reworked.</p>
+</li>
+<li>
+<p><code>transformer.py</code>: <a href="transformer.html#nakedtransformer">NakedTransformer</a> and <a href="transformer.html#transformerblock">TransformerBlock</a>. NakedTransformer stacks the blocks described by the config. TransformerBlock supports pre-normalization, post-normalization and the other registered normalisation styles.</p>
+</li>
+<li>
+<p><code>heads.py</code>: input and output heads. <a href="transformer.html#transformerwithembeddinghead">TransformerWithEmbeddingHead</a> adds a linear embedding head to the NakedTransformer, with optional learnable positional embeddings. <a href="transformer.html#transformerwithlmhead">TransformerWithLMHead</a> adds an LM head and supports weight tying.</p>
+</li>
+<li>
+<p><code>mixin/</code>: model functions such as autoregressive generation (<code>GenerationMixin</code>) and masked-language-model inference.</p>
+</li>
+<li>
+<p><code>models/</code>: the complete models. <a href="transformer.html#languagemodel">LanguageModel</a> covers GPT-like and BERT-like models; <code>TransformerWithClassificationHead</code> and <code>MultiProbeClassifier</code> add classification heads through plugins.</p>
+</li>
+<li>
+<p><code>sequence_mixer/</code>: attention and the other mixers. A sequence mixer receives a <code>TensorDC</code> and returns a <code>TensorDC</code> with the same leading dimensions. The <code>sequence_mixer</code> field of a <code>LayerConfig</code> selects it.</p>
+</li>
+<li>
+<p><code>matformer/modules/norm_positions.py</code>: the normalisation styles (<code>pre</code>, <code>post</code>, <code>inner</code>, <code>pre_no_attn</code>, <code>sandwich</code>). A custom style is a registry entry.</p>
+</li>
+</ul>
+<p>All implementations in this folder are reached through the registry. Model code does not import a concrete kernel.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

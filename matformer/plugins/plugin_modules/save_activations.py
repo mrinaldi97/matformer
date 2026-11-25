@@ -34,10 +34,16 @@ class ActivationCache(Plugin):
         self.cache.storage.setdefault('activation_cache', {})
     def forward(self, x, *args, **kwargs):
         self.cache.storage['activation_cache'][self.socket.address] = copy.deepcopy(x).to('cpu') if self.move_to_cpu else x
+        # The store writes one metadata row per sequence: whatever the dataset put on the batch
+        # (a contrastive pair id, a label, a source) travels with the activations it describes.
+        metadata = getattr(x, "attributes", {}).get("metadata") if hasattr(x, "attributes") else None
+        if metadata is not None:
+            self.cache.storage['metadata_cache'] = metadata
         return None
 
 import atexit, json
 from dataclasses import dataclass, asdict
+from typing import ClassVar
 
 import torch
 
@@ -52,6 +58,10 @@ class ActivationStoreBaseConfig(PluginConfig):
     flush_every: int = 8          # batches per write
     preload: bool = True          # read the needed addresses into RAM once, then serve from memory
     readonly: bool = False        # True for replay-only runs: no writer lock, so several processes can read the same file
+    # One store file per sweep point: what a point caches depends on the point itself (which
+    # addresses, which data), and two writers into one store would tangle it beyond recovery.
+    # A `readonly` store is an input instead, so it keeps the name it was given.
+    _sweep_scoped: ClassVar[list] = ["filename"]
 
 
 def _samples(tdc):
@@ -125,11 +135,16 @@ class ActivationStore(Plugin):
         metas = self.cache.storage.get('metadata_cache')
         if not acts:
             return None
-        ids = range(self.next_id, self.next_id + x.batch_size)
+        # A socket can carry a tensor without a batch dimension (the final projection, a scalar
+        # readout): there is no sequence to key it to, so that step is not a batch to store.
+        batch_size = getattr(x, "batch_size", None)
+        if not batch_size:
+            return None
+        ids = range(self.next_id, self.next_id + batch_size)
         self.seq_rows += [(i, json.dumps(metas[k]) if metas else None) for k, i in enumerate(ids)]
         for address, tdc in acts.items():
             self.act_rows += [self._encode(i, address, row) for i, row in zip(ids, _samples(tdc))]
-        self.next_id += x.batch_size
+        self.next_id += batch_size
         self.n_batches += 1
         if self.n_batches % self.flush_every == 0:
             self.flush()

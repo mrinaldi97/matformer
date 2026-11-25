@@ -87,6 +87,59 @@ class CachedStuff:
         self.storage={}
         self.additional_logs={}
         self.layer_states = LayerStateCache()
+        self.kv_layers = {}          # layer_idx -> what that layer said about its own cache
+
+    def register_kv_layer(self, layer_idx, num_kv_heads, head_dim, *metadatas):
+        """Called by a mixer when it builds its kernels: the cache learns, from the layers
+        themselves, what a cached step of this model needs. Anything that can hold per-layer state
+        (paged attention today, a recurrent mixer through layer_states tomorrow) registers here."""
+        self.kv_layers[layer_idx] = {
+            'num_kv_heads': num_kv_heads, 'head_dim': head_dim,
+            'paged': all(meta.get('needs_kv_cache', False) for meta in metadatas if meta),
+            'page_multiple': max([meta.get('kv_page_multiple', 1) for meta in metadatas if meta] or [1]),
+        }
+
+    def kv_cache(self, tokens=0, dtype=None, device=None, page_size=16):
+        """The model's paged KV cache, built once and reused. What each layer can cache is theirs
+        to say (register_kv_layer): this only collects it, and refuses when a layer would silently
+        ignore the cache.
+
+        It never resizes itself. The cache holds a conversation, so growing it behind a live state
+        would both corrupt that state and ratchet memory up one allocation per turn; a conversation
+        that outgrows it is an explicit reset away, never a silent reallocation."""
+        from matformer.utils.kv_cache import PAGED_KV_CACHE_KEY, PagedKVCache
+        kv = self.storage.get(PAGED_KV_CACHE_KEY)
+        if kv is not None:
+            if kv.capacity_tokens < tokens:
+                raise RuntimeError(f"the KV cache holds {kv.capacity_tokens} tokens and this needs "
+                                   f"{tokens}: clear the conversation ('clear' in the console) to "
+                                   f"allocate a bigger one")
+            return kv
+        if not self.kv_layers:
+            raise RuntimeError("No layer registered a KV cache: this model cannot generate incrementally.")
+        missing = sorted(idx for idx, layer in self.kv_layers.items() if not layer['paged'])
+        if missing:
+            raise RuntimeError(f"Layers {missing[:4]}{'...' if len(missing) > 4 else ''} have no "
+                               "cache-aware attention kernel: use_cache=True needs one "
+                               "(sdpa_kv, flash_kv or flashinfer).")
+        geometry = self.kv_layers[max(self.kv_layers)]
+        page_size = max(page_size, max(l['page_multiple'] for l in self.kv_layers.values()))
+        kv = PagedKVCache(num_layers=len(self.kv_layers), num_kv_heads=geometry['num_kv_heads'],
+                          head_dim=geometry['head_dim'], dtype=dtype, device=device,
+                          page_size=page_size, max_tokens=tokens)
+        self.storage[PAGED_KV_CACHE_KEY] = kv
+        return kv
+
+    def kv_cache_report(self):
+        """What the KV cache costs right now, or None when there is none."""
+        from matformer.utils.kv_cache import PAGED_KV_CACHE_KEY
+        kv = self.storage.get(PAGED_KV_CACHE_KEY)
+        return kv.report() if kv is not None else None
+
+    def reset_kv_cache(self):
+        """Drop the KV cache entirely: its pages and their memory are given back."""
+        from matformer.utils.kv_cache import PAGED_KV_CACHE_KEY
+        return self.storage.pop(PAGED_KV_CACHE_KEY, None)
     # --------- ALiBi---------
     
     def _get_slopes(self, n):

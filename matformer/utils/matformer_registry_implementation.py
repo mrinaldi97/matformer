@@ -26,7 +26,9 @@
                                         with different implementations
      
      == Add a custom implementation ==
-			Put your script in the external_modules folder.
+			Put your script in the external_modules folder, or, to keep it out of the repo, in
+			MATFORMER_ASSETS/extra_plugins (see matformer/utils/matformer_assets.py): the registry
+			scans both.
             Then, you don't have to do anything by hand, as the registration is handled by an easy to use decorator, example:
             from matformer.matformer_registry import registry
             @registry.register("mlp", "swiglu", "a_name_for_your_swiglu_kernel",
@@ -128,16 +130,16 @@
     A dataclass can be bound to a registered implementation with register_dataclass, instead of carrying its own
     bookkeeping fields:
 
-        @registry.register("saver", "JSONLSaver", "default")
-        class JSONLSaver: ...
+        @registry.register("logger", "sqlite", "default")
+        class SQLiteLogger: ...
 
-        @registry.register_dataclass("saver", "JSONLSaver", default=True)
+        @registry.register_dataclass("logger", "sqlite", default=True)
         @dataclass
-        class JSONLSaverConfig(SaverConfig):
+        class SQLiteLoggerConfig(LoggerConfig):
             filename: str = "output.jsonl"
 
     Every YAML section is keyed by category and picks its variant with a "type" field
-    (saver: {type: JSONLSaver, ...}); a section with no "type" falls back to whichever
+    (logger: {type: sqlite, ...}); a section with no "type" falls back to whichever
     variant was registered with default=True. load_config.instantiate() then resolves a config
     straight through the registry, so the config dataclass itself carries no bookkeeping fields
     and no build() logic.
@@ -146,8 +148,11 @@
 """
 import ast
 import importlib
+import importlib.util
 import inspect
 import os
+import re
+import sys
 from collections import defaultdict
 from functools import total_ordering
 from pathlib import Path
@@ -437,13 +442,18 @@ class MatformerRegistry:
         # To reconstruct the inheritance graph
         self.class_bases={}
         self.class_lines={}          # class name -> (lineno, end_lineno)
+        # Modules living outside the package (MATFORMER_ASSETS/extra_plugins): they are loaded by
+        # file path instead of by dotted name. See walk_asset_plugins().
+        self.external_modules=set()
 
     # (mostly) internal functions
     def populate_registry(self):
         """
-        Scans all the py files in matformer's root and populate the registry
+        Scans all the py files in matformer's root, plus the user's extra_plugins folder when
+        MATFORMER_ASSETS is configured, and populate the registry
         """
         self.walk_py_files()
+        self.walk_asset_plugins()
         self.ast_scan()
 
     def register_package(self, pkgname: str, modname: str):
@@ -473,6 +483,9 @@ class MatformerRegistry:
         if modname in self.imported_modules:
             return self.imported_modules[modname]
         try:
+            if modname in self.external_modules:
+                self.imported_modules[modname] = self._import_file(modname, self.modname_filepath[modname])
+                return self.imported_modules[modname]
             self.imported_modules[modname] = importlib.import_module(modname)
             return self.imported_modules[modname]
         except Exception:
@@ -527,6 +540,40 @@ class MatformerRegistry:
             parts = py.relative_to(self.root_path).with_suffix("").parts
             modname = ".".join((self.root_modname, *parts)) if parts else self.root_modname
             self.modname_filepath[modname]=py
+
+    def walk_asset_plugins(self):
+        """Add MATFORMER_ASSETS/extra_plugins to the scan, so custom modules can live outside the
+        repo and still be registered. No assets folder (or no plugins folder) => nothing happens."""
+        from matformer.utils import matformer_assets
+        folder = matformer_assets.area('extra_plugins')
+        if folder is None or not folder.is_dir():
+            return []
+        added = []
+        for py in sorted(folder.rglob("*.py")):
+            parts = py.relative_to(folder).with_suffix("").parts
+            if any(part.startswith(('.', '__pycache__')) for part in parts):
+                continue
+            modname = "_matformer_plugin_" + "_".join(re.sub(r'\W|^(?=\d)', '_', part) for part in parts)
+            self.modname_filepath[modname] = py
+            self.external_modules.add(modname)
+            added.append(modname)
+        if added and env_variables.registry_verbose:
+            print(f"Registry: scanning {len(added)} extra plugin(s) from {folder}")
+        return added
+
+    def _import_file(self, modname: str, filepath):
+        """Import a python file that lives outside any package, under a synthetic module name."""
+        spec = importlib.util.spec_from_file_location(modname, filepath)
+        if spec is None or spec.loader is None:
+            raise ImportError(f"cannot load {filepath}")
+        module = importlib.util.module_from_spec(spec)
+        sys.modules[modname] = module
+        try:
+            spec.loader.exec_module(module)
+        except Exception:
+            sys.modules.pop(modname, None)
+            raise
+        return module
 
     def ast_scan(self):
         """Two-pass AST scan.

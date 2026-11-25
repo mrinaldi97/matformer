@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Logging · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section" open><summary>Training</summary><ul><li><a href="wrapper.html">MatformerWrapper</a></li><li><a href="trainer.html">MatformerTrainer</a></li><li><a href="learning-signals.html">Learning signals</a></li><li><a class="current" href="logger.html">Logging</a></li><li><a href="control.html">Control</a></li><li><a href="analysis.html">Model and activation analysis</a></li><li><a href="checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Training <span class="sep">/</span> Logging</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/training/logger.py.html"><code>matformer/training/logger.py</code></a> <a href="../file/matformer/training/sqlite_logger.py.html"><code>matformer/training/sqlite_logger.py</code></a> <a href="../file/matformer/utils/run_db.py.html"><code>matformer/utils/run_db.py</code></a></div>
+<h1 id="logging">Logging<a class="headerlink" href="#logging" title="Permanent link"></a></h1>
+<p><code>MatformerLogger</code> collects the metrics of one optimizer step and sends the row to every backend.
+Backends are registered in the <code>logger</code> category.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">training</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">logger</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">sqlite</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">tqdm</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+
+<h2 id="the-run-database">The run database<a class="headerlink" href="#the-run-database" title="Permanent link"></a></h2>
+<p>The default backend is <code>sqlite</code>: every run is written to one SQLite database, and the framework
+reads it from there (server, GUI, scripts). The location defaults to <code>$LOG_ASSETS/matformer.db</code>;
+<code>training.log_db</code> picks another path:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">training</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">log_db</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;$LOG_ASSETS/my_runs.db&quot;</span><span class="w">   </span><span class="c1"># optional; $LOG_ASSETS or an absolute path</span>
+</code></pre></div>
+
+<p>Writes are buffered and committed in batches (1024 rows, or at most once per second), with WAL
+enabled, so a log step costs a list append instead of a disk round-trip. The queue and the GUI read
+the same file while the training writes it.</p>
+<p>The schema has five tables:</p>
+<table>
+<thead>
+<tr>
+<th>Table</th>
+<th>Holds</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>runs</code></td>
+<td>identity: project, run name, version, checkpoint, host, start/end, elapsed, status, sweep</td>
+</tr>
+<tr>
+<td><code>parameters</code></td>
+<td>flattened hyperparameters, one row per <code>section/entry/field</code> key</td>
+</tr>
+<tr>
+<td><code>metrics</code></td>
+<td>step metrics: run, step, key, value (numbers only)</td>
+</tr>
+<tr>
+<td><code>task_runs</code></td>
+<td>one row per task execution: training run, task, phase, step, epoch, start/end, elapsed</td>
+</tr>
+<tr>
+<td><code>task_summaries</code></td>
+<td>the end-of-task result, linked to its <code>task_runs</code> row: key, JSON value</td>
+</tr>
+<tr>
+<td><code>task_records</code></td>
+<td>per-item task output when <code>save_batch: true</code>, linked to its <code>task_runs</code> row</td>
+</tr>
+</tbody>
+</table>
+<p>A run is identified by <code>project/name</code>, with <code>@vN</code> appended when it is not version 1. Resuming the
+same run reopens its row and keeps the original start time.</p>
+<p>A task executed during training (the validation/evaluation tasks) opens one <code>task_runs</code> row with
+<code>phase='training'</code> and the step and epoch it ran at; every summary and record it produces points
+there. A task driven by a script with a logger uses <code>phase='standalone'</code>. This is what makes an
+evaluation inside a training run unambiguous: one execution, one step, one epoch.</p>
+<h2 id="reading-runs">Reading runs<a class="headerlink" href="#reading-runs" title="Permanent link"></a></h2>
+<p><code>matformer.utils.run_db.RunDB</code> is the read and write API. The server uses it for every run
+command: <code>runs.list</code>, <code>runs.query</code>, <code>runs.config</code>, <code>runs.metrics</code>, <code>runs.get</code>, <code>runs.tasks</code>, <code>runs.summaries</code>,
+<code>runs.records</code>, <code>runs.watch</code>, plus the management commands <code>runs.delete</code>, <code>projects.delete</code>, <code>projects.list</code>,
+<code>sweeps.list</code> and <code>runs.plot</code>. Nothing parses log files.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.utils.run_db</span><span class="w"> </span><span class="kn">import</span> <span class="n">RunDB</span>
+
+<span class="k">with</span> <span class="n">RunDB</span><span class="p">(</span><span class="s2">&quot;$LOG_ASSETS/matformer.db&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">db</span><span class="p">:</span>
+    <span class="n">run</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span><span class="s2">&quot;my-project/my-run&quot;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">parameters</span><span class="p">(</span><span class="n">run</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">metrics</span><span class="p">(</span><span class="n">run</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]))</span>          <span class="c1"># {key: [[step, value], ...]}</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">task_runs</span><span class="p">(</span><span class="n">run</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]))</span>        <span class="c1"># one row per evaluation, with step and epoch</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">db</span><span class="o">.</span><span class="n">summaries</span><span class="p">(</span><span class="n">run</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]))</span>        <span class="c1"># {task: [{task_run_id, phase, step, epoch, key, value}]}</span>
+</code></pre></div>
+
+<h2 id="matformerlogger">MatformerLogger<a class="headerlink" href="#matformerlogger" title="Permanent link"></a></h2>
+<p><code>log(key, value, step=None, prog_bar=False)</code> writes to the current row. <code>advance()</code> sends the row
+to the backends and advances the step. <code>flush()</code> sends the row without advancing. <code>reset()</code> clears
+the bars, and <code>close()</code> flushes and closes the backends.</p>
+<p>A backend with a <code>buffer</code> method is treated as a progress bar. It receives <code>buffer</code>, <code>advance</code>,
+<code>reset</code> and <code>close</code>. Other backends receive <code>log(row, step)</code>, and the optional <code>log_summary</code> and
+<code>log_records</code> calls used by tasks.</p>
+<h2 id="backends">Backends<a class="headerlink" href="#backends" title="Permanent link"></a></h2>
+<table>
+<thead>
+<tr>
+<th>Variant</th>
+<th>Output</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>sqlite</code></td>
+<td>the run database: runs, parameters, metrics, task summaries and records</td>
+</tr>
+<tr>
+<td><code>wandb</code></td>
+<td>a Fabric <code>WandbLogger</code>; hyperparameters and one row per step</td>
+</tr>
+<tr>
+<td><code>tqdm</code></td>
+<td>a progress bar, disabled on every rank except 0</td>
+</tr>
+<tr>
+<td><code>memory</code></td>
+<td>task summaries kept in the process, for experiments that want Python objects</td>
+</tr>
+</tbody>
+</table>
+<p><code>flatten_configs(configs)</code> converts a <code>MatformerConfigs</code> object to <code>section/entry/field</code> keys. It is
+used by the backends that store hyperparameters.</p>
+<h2 id="scoped-logging">Scoped logging<a class="headerlink" href="#scoped-logging" title="Permanent link"></a></h2>
+<p><code>logger.scoped(prefix)</code> returns a logger that prefixes each key with <code>prefix/</code> and uses its own
+<code>prefix/step</code>. It does not advance the parent step or close the parent backends. <code>sandbox_train</code>
+uses it for the training runs it starts inside a validation step.</p>
+<h2 id="logged-metrics">Logged metrics<a class="headerlink" href="#logged-metrics" title="Permanent link"></a></h2>
+<p>The wrapper logs <code>train/loss</code>, <code>train/aux_loss</code>, the learning-signal metrics (<code>train/accuracy</code> from
+<code>post_loss</code>), <code>train/skipped_oom</code>, <code>train/EXCEPTIONS</code>, and <code>lr0</code>, <code>lr1</code>, ... for the schedulers. The
+trainer adds <code>speed/*</code>: tokens per second, sequences per second, TFLOPs, MFU and step time, measured
+over <code>log_speed_every_n_steps</code> steps. Tasks log their summary under <code>&lt;task name&gt;/&lt;metric&gt;</code>, and the
+rich summary goes to <code>task_summaries</code>.</p>
+<p>The analysis tasks add <code>weights/*</code>, <code>activations/*</code>, <code>gradients/*</code>, <code>diagnostics/*</code> and, when
+component profiling is enabled, <code>profile/*</code>. They use the same logger and the same <code>task_runs</code>
+row as any other validation task, so no separate log file or reader is involved. See
+<a href="analysis.html">model and activation analysis</a>.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

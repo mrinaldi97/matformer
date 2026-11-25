@@ -1,0 +1,124 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>HuggingFace · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section" open><summary>Models</summary><ul><li><a href="checkpoint-holder.html">CheckpointHolder</a></li><li><a class="current" href="huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Models <span class="sep">/</span> HuggingFace</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/loading/huggingface_holder.py.html"><code>matformer/loading/huggingface_holder.py</code></a> <a href="../file/matformer/loading/huggingface_integration.py.html"><code>matformer/loading/huggingface_integration.py</code></a> <a href="../file/matformer/loading/huggingface_publish.py.html"><code>matformer/loading/huggingface_publish.py</code></a> <code>matformer/loading/adapters/huggingface</code></div>
+<h1 id="huggingface">HuggingFace<a class="headerlink" href="#huggingface" title="Permanent link"></a></h1>
+<p>Matformer can load a HuggingFace model, convert its configuration, train or evaluate it, and publish it back as a HuggingFace repository. The two directions share the adapter definitions and the stable parameter names, so a model does not have to be re-imported from scratch.</p>
+<h2 id="loading-a-checkpoint">Loading a checkpoint<a class="headerlink" href="#loading-a-checkpoint" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_wrapper</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span>
+    <span class="n">path</span><span class="o">=</span><span class="s2">&quot;hf://sapienzanlp/Minerva-350M-base-v1.0&quot;</span><span class="p">,</span>
+    <span class="n">map_location</span><span class="o">=</span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;bfloat16&quot;</span><span class="p">,</span>
+    <span class="n">inference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">model</span><span class="p">,</span> <span class="n">configs</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;configs&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p><code>load_model</code> calls <code>make_holder</code>, which sees the <code>hf://</code> scheme and builds a <code>HuggingFaceCheckpointHolder</code>. A local folder works without the scheme. The holder reads <code>config.json</code>, picks the adapter from <code>model_type</code>, discovers the weight files and streams the stable weights into the wrapper.</p>
+<p>If the adapter does not exist for that <code>model_type</code>, the holder raises a <code>NotImplementedError</code> listing the supported families. Adding one is a YAML file in <code>matformer/loading/adapters/huggingface/&lt;model_type&gt;.yaml</code>; see <a href="checkpoint-holder.html#the-adapter-definition">the adapter definition</a>.</p>
+<h2 id="converting-the-config">Converting the config<a class="headerlink" href="#converting-the-config" title="Permanent link"></a></h2>
+<p><code>HuggingFaceCheckpointHolder.get_configs()</code> calls <code>MatformerConfigs.convert_and_import(definition, source_config)</code>. The adapter's <code>*_mapping</code> sections say which HF config field feeds which Matformer field, and <code>derived</code> sections compute values (for example a head count from another field). The result is a normal <code>MatformerConfigs</code>, so the model is built by the same code as a native one.</p>
+<p>The tokenizer section is filled with the checkpoint folder, so the tokenizer is the one the model was trained with. An override for any section uses the same <code>configs</code> argument as for a native checkpoint:</p>
+<div class="highlight"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;hf://org/model&quot;</span><span class="p">,</span> <span class="n">configs</span><span class="o">=</span><span class="n">my_configs</span><span class="p">)</span>
+</code></pre></div>
+
+<h2 id="the-huggingface-shell">The HuggingFace shell<a class="headerlink" href="#the-huggingface-shell" title="Permanent link"></a></h2>
+<p><code>matformer/loading/huggingface_integration.py</code> provides a <code>PreTrainedModel</code> shell for code that expects the <code>transformers</code> API. <code>from_pretrained</code> delegates to <code>load_model</code>, and every forward delegates to the Matformer wrapper.</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.loading.huggingface_integration</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+    <span class="n">MatformerModel</span><span class="p">,</span> <span class="n">MatformerForCausalLM</span><span class="p">,</span> <span class="n">MatformerForMaskedLM</span><span class="p">,</span>
+    <span class="n">MatformerForSequenceClassification</span><span class="p">,</span> <span class="n">MatformerForTokenClassification</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">model</span> <span class="o">=</span> <span class="n">MatformerForSequenceClassification</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+    <span class="s2">&quot;org/my-matformer-checkpoint&quot;</span><span class="p">,</span>
+    <span class="n">num_labels</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+    <span class="n">pooling_type</span><span class="o">=</span><span class="s2">&quot;mean&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</code></pre></div>
+
+<p>Supported task classes:</p>
+<table>
+<thead>
+<tr>
+<th>Class</th>
+<th><code>matformer_task</code></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>MatformerModel</code></td>
+<td>base model</td>
+</tr>
+<tr>
+<td><code>MatformerForCausalLM</code></td>
+<td>causal language model, with <code>generate</code></td>
+</tr>
+<tr>
+<td><code>MatformerForMaskedLM</code></td>
+<td>masked language model</td>
+</tr>
+<tr>
+<td><code>MatformerForSequenceClassification</code></td>
+<td>sentence-level classification</td>
+</tr>
+<tr>
+<td><code>MatformerForTokenClassification</code></td>
+<td>token-level classification</td>
+</tr>
+</tbody>
+</table>
+<p><code>from_pretrained</code> accepts the extra kwargs <code>checkpoint</code>, <code>matformer_config</code>, <code>num_labels</code>, <code>pooling_type</code>, <code>device</code>, <code>dtype</code>, <code>token</code>, <code>revision</code> and <code>cache_dir</code>. HF-only kwargs that do not apply are accepted and ignored. <code>device_map</code> is not supported: Matformer does not shard a model across devices, so use <code>device</code> or move the model afterwards.</p>
+<p>Classification over a non-classification checkpoint is handled by <code>_apply_task</code>: the model section switches to Matformer's <code>classification</code> variant, and the existing <code>ClassificationPlugin</code> provides the head.</p>
+<h2 id="publishing">Publishing<a class="headerlink" href="#publishing" title="Permanent link"></a></h2>
+<p><code>MatformerPreTrainedModel.save_pretrained(directory)</code> writes a self-contained HF repo:</p>
+<ul>
+<li><code>model.safetensors</code>: the stable state dict, deduplicated and on CPU;</li>
+<li><code>matformer.yaml</code>: the Matformer configs;</li>
+<li><code>config.json</code>: the HF config, with <code>auto_map</code> pointing at the installed package;</li>
+<li><code>modeling_matformer.py</code>: a small shim generated by <code>create_modeling_file()</code>;</li>
+<li>the tokenizer, when <code>save_tokenizer</code> is true.</li>
+</ul>
+<p>The folder is loadable by both frameworks: Matformer reads it with <code>MatformerCheckpointHolder</code>, HuggingFace reads it through <code>auto_map</code>. <code>huggingface_publish.py</code> contains the higher-level publishing helpers.</p>
+<h2 id="a-minimal-fine-tune">A minimal fine-tune<a class="headerlink" href="#a-minimal-fine-tune" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="nt">model</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">classification</span>
+<span class="w">  </span><span class="nt">base_model</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hf://sapienzanlp/Minerva-350M-base-v1.0&quot;</span>
+<span class="w">  </span><span class="nt">base_model_hf</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">  </span><span class="nt">num_classes</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2</span>
+<span class="w">  </span><span class="nt">pooling_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">cls</span>
+
+<span class="nt">training</span><span class="p">:</span>
+<span class="w">  </span><span class="nt">data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">train</span>
+<span class="w">  </span><span class="nt">optimizer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">adamw</span>
+<span class="w">  </span><span class="nt">lr</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">2e-5</span>
+<span class="w">  </span><span class="nt">max_epochs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">3</span>
+</code></pre></div>
+
+<p><code>base_model</code> makes the trainer build a <code>HuggingFaceCheckpointHolder</code> and inherit the model and tokenizer sections from it. The classification head is added on top, and the freeze configuration decides whether the backbone is trained or only the head. The tutorial version is in <a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a>.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

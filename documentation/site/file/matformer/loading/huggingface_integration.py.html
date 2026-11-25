@@ -1,0 +1,1262 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/loading/huggingface_integration.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li><li><a href="../../../tools/wizards.html">Wizards</a></li><li><a href="../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/loading/huggingface_integration.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="huggingface_integration.py.html"><code>matformer/loading/huggingface_integration.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/loading/</code></a></p><h1><code>huggingface_integration.py</code></h1><p class="muted">matformer/loading/huggingface_integration.py · 616 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/loading/huggingface_integration.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L27"><code>_warn_once</code></a><span class="line">L27</span></li><li class="depth-0"><a href="#L33"><code>_is_classifier_config</code></a><span class="line">L33</span></li><li class="depth-0"><a href="#L38"><code>_load_yaml_or_json</code></a><span class="line">L38</span></li><li class="depth-0"><a href="#L43"><code>save_matformer_yaml</code></a><span class="line">L43</span></li><li class="depth-0"><a href="#L51"><code>_auto_map</code></a><span class="line">L51</span></li><li class="depth-0"><a href="#L70"><code>MatformerConfig</code></a><span class="line">L70</span> <span class="bases">(<code>PretrainedConfig</code>)</span></li><li class="depth-1"><a href="#L76"><code>MatformerConfig.__init__</code></a><span class="line">L76</span></li><li class="depth-1"><a href="#L82"><code>MatformerConfig.from_matformer_configs</code></a><span class="line">L82</span></li><li class="depth-1"><a href="#L87"><code>MatformerConfig.sync_from_matformer</code></a><span class="line">L87</span></li><li class="depth-0"><a href="#L117"><code>_to_tensor_dc</code></a><span class="line">L117</span></li><li class="depth-0"><a href="#L138"><code>MatformerPreTrainedModel</code></a><span class="line">L138</span> <span class="bases">(<code>PreTrainedModel</code>)</span></li><li class="depth-1"><a href="#L147"><code>MatformerPreTrainedModel.__init__</code></a><span class="line">L147</span></li><li class="depth-1"><a href="#L152"><code>MatformerPreTrainedModel._init_weights</code></a><span class="line">L152</span></li><li class="depth-1"><a href="#L158"><code>MatformerPreTrainedModel.from_pretrained</code></a><span class="line">L158</span></li><li class="depth-1"><a href="#L244"><code>MatformerPreTrainedModel._install</code></a><span class="line">L244</span></li><li class="depth-1"><a href="#L253"><code>MatformerPreTrainedModel.from_matformer</code></a><span class="line">L253</span></li><li class="depth-1"><a href="#L262"><code>MatformerPreTrainedModel._resolve_device</code></a><span class="line">L262</span></li><li class="depth-1"><a href="#L274"><code>MatformerPreTrainedModel._resolve_dtype</code></a><span class="line">L274</span></li><li class="depth-1"><a href="#L282"><code>MatformerPreTrainedModel._resolve_paths</code></a><span class="line">L282</span></li><li class="depth-1"><a href="#L298"><code>MatformerPreTrainedModel._find_checkpoint</code></a><span class="line">L298</span></li><li class="depth-1"><a href="#L314"><code>MatformerPreTrainedModel._apply_task</code></a><span class="line">L314</span></li><li class="depth-1"><a href="#L340"><code>MatformerPreTrainedModel.matformer_tokenizer</code></a><span class="line">L340</span></li><li class="depth-1"><a href="#L344"><code>MatformerPreTrainedModel.get_tokenizer</code></a><span class="line">L344</span></li><li class="depth-1"><a href="#L349"><code>MatformerPreTrainedModel.get_input_embeddings</code></a><span class="line">L349</span></li><li class="depth-1"><a href="#L358"><code>MatformerPreTrainedModel.get_output_embeddings</code></a><span class="line">L358</span></li><li class="depth-1"><a href="#L367"><code>MatformerPreTrainedModel.resize_token_embeddings</code></a><span class="line">L367</span></li><li class="depth-1"><a href="#L378"><code>MatformerPreTrainedModel._run</code></a><span class="line">L378</span></li><li class="depth-1"><a href="#L388"><code>MatformerPreTrainedModel.save_pretrained</code></a><span class="line">L388</span></li><li class="depth-1"><a href="#L425"><code>MatformerPreTrainedModel._clean_state_dict</code></a><span class="line">L425</span></li><li class="depth-0"><a href="#L438"><code>MatformerModel</code></a><span class="line">L438</span> <span class="bases">(<a href="huggingface_integration.py.html#L138"><code>MatformerPreTrainedModel</code></a>)</span><div class="mro">MRO: <code>MatformerModel</code> -> <code>MatformerPreTrainedModel</code></div></li><li class="depth-1"><a href="#L441"><code>MatformerModel.forward</code></a><span class="line">L441</span></li><li class="depth-0"><a href="#L447"><code>MatformerForMaskedLM</code></a><span class="line">L447</span> <span class="bases">(<a href="huggingface_integration.py.html#L138"><code>MatformerPreTrainedModel</code></a>)</span><div class="mro">MRO: <code>MatformerForMaskedLM</code> -> <code>MatformerPreTrainedModel</code></div></li><li class="depth-1"><a href="#L452"><code>MatformerForMaskedLM.forward</code></a><span class="line">L452</span></li><li class="depth-0"><a href="#L462"><code>MatformerForCausalLM</code></a><span class="line">L462</span> <span class="bases">(<a href="huggingface_integration.py.html#L138"><code>MatformerPreTrainedModel</code></a>, <a href="../transformer_blocks/mixin/text_generation.py.html#L72"><code>GenerationMixin</code></a>)</span><div class="mro">MRO: <code>MatformerForCausalLM</code> -> <code>MatformerPreTrainedModel</code> -> <a href="../transformer_blocks/mixin/text_generation.py.html#L72"><code>GenerationMixin</code></a></div></li><li class="depth-1"><a href="#L470"><code>MatformerForCausalLM.forward</code></a><span class="line">L470</span></li><li class="depth-1"><a href="#L483"><code>MatformerForCausalLM._prompt_len</code></a><span class="line">L483</span></li><li class="depth-1"><a href="#L492"><code>MatformerForCausalLM.generate</code></a><span class="line">L492</span></li><li class="depth-0"><a href="#L557"><code>MatformerForSequenceClassification</code></a><span class="line">L557</span> <span class="bases">(<a href="huggingface_integration.py.html#L138"><code>MatformerPreTrainedModel</code></a>)</span><div class="mro">MRO: <code>MatformerForSequenceClassification</code> -> <code>MatformerPreTrainedModel</code></div></li><li class="depth-1"><a href="#L565"><code>MatformerForSequenceClassification.forward</code></a><span class="line">L565</span></li><li class="depth-0"><a href="#L577"><code>MatformerForTokenClassification</code></a><span class="line">L577</span> <span class="bases">(<a href="huggingface_integration.py.html#L138"><code>MatformerPreTrainedModel</code></a>)</span><div class="mro">MRO: <code>MatformerForTokenClassification</code> -> <code>MatformerPreTrainedModel</code></div></li><li class="depth-1"><a href="#L584"><code>MatformerForTokenClassification.forward</code></a><span class="line">L584</span></li><li class="depth-0"><a href="#L598"><code>register_matformer</code></a><span class="line">L598</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../dataclasses/tensors_dataclasses.py.html"><code>matformer.dataclasses.tensors_dataclasses</code></a> <span class="muted">NormalTensor, PaddedTensor</span></li><li><a href="utils.py.html"><code>matformer.loading.utils</code></a> <span class="muted">make_holder</span></li><li><a href="../matformer_configs.py.html"><code>matformer.matformer_configs</code></a> <span class="muted">MatformerConfigs</span></li><li><a href="../matformer_wrapper.py.html"><code>matformer.matformer_wrapper</code></a> <span class="muted">load_model</span></li><li><a href="huggingface_publish.py.html"><code>matformer.loading.huggingface_publish</code></a> <span class="muted">create_modeling_file</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span>
+<span class="normal">577</span>
+<span class="normal">578</span>
+<span class="normal">579</span>
+<span class="normal">580</span>
+<span class="normal">581</span>
+<span class="normal">582</span>
+<span class="normal">583</span>
+<span class="normal">584</span>
+<span class="normal">585</span>
+<span class="normal">586</span>
+<span class="normal">587</span>
+<span class="normal">588</span>
+<span class="normal">589</span>
+<span class="normal">590</span>
+<span class="normal">591</span>
+<span class="normal">592</span>
+<span class="normal">593</span>
+<span class="normal">594</span>
+<span class="normal">595</span>
+<span class="normal">596</span>
+<span class="normal">597</span>
+<span class="normal">598</span>
+<span class="normal">599</span>
+<span class="normal">600</span>
+<span class="normal">601</span>
+<span class="normal">602</span>
+<span class="normal">603</span>
+<span class="normal">604</span>
+<span class="normal">605</span>
+<span class="normal">606</span>
+<span class="normal">607</span>
+<span class="normal">608</span>
+<span class="normal">609</span>
+<span class="normal">610</span>
+<span class="normal">611</span>
+<span class="normal">612</span>
+<span class="normal">613</span>
+<span class="normal">614</span>
+<span class="normal">615</span>
+<span class="normal">616</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="L2" name="L2"></a><span class="kn">import</span><span class="w"> </span><span class="nn">warnings</span>
+<a id="L3" name="L3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="L4" name="L4"></a>
+<a id="L5" name="L5"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L6" name="L6"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<a id="L7" name="L7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">yaml</span>
+<a id="L8" name="L8"></a><span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">PreTrainedModel</span><span class="p">,</span> <span class="n">PretrainedConfig</span>
+<a id="L9" name="L9"></a><span class="kn">from</span><span class="w"> </span><span class="nn">transformers.generation</span><span class="w"> </span><span class="kn">import</span> <span class="n">GenerationMixin</span><span class="p">,</span> <span class="n">GenerateDecoderOnlyOutput</span>
+<a id="L10" name="L10"></a><span class="kn">from</span><span class="w"> </span><span class="nn">transformers.modeling_outputs</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="L11" name="L11"></a>    <span class="n">BaseModelOutputWithPast</span><span class="p">,</span>
+<a id="L12" name="L12"></a>    <span class="n">CausalLMOutputWithPast</span><span class="p">,</span>
+<a id="L13" name="L13"></a>    <span class="n">MaskedLMOutput</span><span class="p">,</span>
+<a id="L14" name="L14"></a>    <span class="n">SequenceClassifierOutput</span><span class="p">,</span>
+<a id="L15" name="L15"></a>    <span class="n">TokenClassifierOutput</span><span class="p">,</span>
+<a id="L16" name="L16"></a><span class="p">)</span>
+<a id="L17" name="L17"></a>
+<a id="L18" name="L18"></a><span class="n">MATFORMER_CONFIG_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;matformer.yaml&quot;</span>
+<a id="L19" name="L19"></a><span class="n">WEIGHTS_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;model.safetensors&quot;</span>
+<a id="L20" name="L20"></a><span class="n">MODELING_FILENAME</span> <span class="o">=</span> <span class="s2">&quot;modeling_matformer.py&quot;</span>
+<a id="L21" name="L21"></a><span class="n">DEFAULT_CHECKPOINT_NAMES</span> <span class="o">=</span> <span class="p">(</span><span class="n">WEIGHTS_FILENAME</span><span class="p">,</span> <span class="s2">&quot;checkpoint.ckpt&quot;</span><span class="p">,</span> <span class="s2">&quot;checkpoint.pt&quot;</span><span class="p">)</span>
+<a id="L22" name="L22"></a><span class="n">PUBLISH_EXCLUDED_SECTIONS</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="s2">&quot;validation&quot;</span><span class="p">,</span> <span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;weights&quot;</span><span class="p">)</span>
+<a id="L23" name="L23"></a>
+<a id="L24" name="L24"></a><span class="n">_warned</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+<a id="L25" name="L25"></a>
+<a id="L26" name="L26"></a>
+<a id="L27" name="L27"></a><span class="k">def</span><span class="w"> </span><span class="nf">_warn_once</span><span class="p">(</span><span class="n">message</span><span class="p">):</span>
+<a id="L28" name="L28"></a>    <span class="k">if</span> <span class="n">message</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_warned</span><span class="p">:</span>
+<a id="L29" name="L29"></a>        <span class="n">_warned</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">message</span><span class="p">)</span>
+<a id="L30" name="L30"></a>        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">message</span><span class="p">,</span> <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="L31" name="L31"></a>
+<a id="L32" name="L32"></a>
+<a id="L33" name="L33"></a><span class="k">def</span><span class="w"> </span><span class="nf">_is_classifier_config</span><span class="p">(</span><span class="n">model_config</span><span class="p">):</span>
+<a id="L34" name="L34"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;True if a Matformer model config is already a classification config.&quot;&quot;&quot;</span>
+<a id="L35" name="L35"></a>    <span class="k">return</span> <span class="n">model_config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model_config</span><span class="p">,</span> <span class="s2">&quot;scope&quot;</span><span class="p">)</span>
+<a id="L36" name="L36"></a>
+<a id="L37" name="L37"></a>
+<a id="L38" name="L38"></a><span class="k">def</span><span class="w"> </span><span class="nf">_load_yaml_or_json</span><span class="p">(</span><span class="n">path</span><span class="p">):</span>
+<a id="L39" name="L39"></a>    <span class="n">text</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+<a id="L40" name="L40"></a>    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">text</span><span class="p">)</span> <span class="k">if</span> <span class="n">Path</span><span class="p">(</span><span class="n">path</span><span class="p">)</span><span class="o">.</span><span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;.json&quot;</span> <span class="k">else</span> <span class="n">yaml</span><span class="o">.</span><span class="n">safe_load</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<a id="L41" name="L41"></a>
+<a id="L42" name="L42"></a>
+<a id="L43" name="L43"></a><span class="k">def</span><span class="w"> </span><span class="nf">save_matformer_yaml</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="n">PUBLISH_EXCLUDED_SECTIONS</span><span class="p">):</span>
+<a id="L44" name="L44"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Write configs to a YAML file&quot;&quot;&quot;</span>
+<a id="L45" name="L45"></a>    <span class="n">data</span> <span class="o">=</span> <span class="n">configs</span><span class="o">.</span><span class="n">save_config</span><span class="p">(</span><span class="n">fmt</span><span class="o">=</span><span class="s2">&quot;dict&quot;</span><span class="p">,</span> <span class="n">exclude</span><span class="o">=</span><span class="n">exclude</span><span class="p">)</span>
+<a id="L46" name="L46"></a>    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="s2">&quot;w&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+<a id="L47" name="L47"></a>        <span class="n">yaml</span><span class="o">.</span><span class="n">safe_dump</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">f</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L48" name="L48"></a>    <span class="k">return</span> <span class="n">path</span>
+<a id="L49" name="L49"></a>
+<a id="L50" name="L50"></a>
+<a id="L51" name="L51"></a><span class="k">def</span><span class="w"> </span><span class="nf">_auto_map</span><span class="p">(</span><span class="n">tasks</span><span class="p">):</span>
+<a id="L52" name="L52"></a>    <span class="n">mapping</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L53" name="L53"></a>        <span class="s2">&quot;AutoConfig&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">MODELING_FILENAME</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">.MatformerConfig&quot;</span><span class="p">,</span>
+<a id="L54" name="L54"></a>        <span class="s2">&quot;AutoModel&quot;</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">MODELING_FILENAME</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">.MatformerModel&quot;</span><span class="p">,</span>
+<a id="L55" name="L55"></a>    <span class="p">}</span>
+<a id="L56" name="L56"></a>    <span class="n">task_to_auto</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L57" name="L57"></a>        <span class="s2">&quot;causal&quot;</span><span class="p">:</span> <span class="s2">&quot;AutoModelForCausalLM&quot;</span><span class="p">,</span>
+<a id="L58" name="L58"></a>        <span class="s2">&quot;masked&quot;</span><span class="p">:</span> <span class="s2">&quot;AutoModelForMaskedLM&quot;</span><span class="p">,</span>
+<a id="L59" name="L59"></a>        <span class="s2">&quot;sequence&quot;</span><span class="p">:</span> <span class="s2">&quot;AutoModelForSequenceClassification&quot;</span><span class="p">,</span>
+<a id="L60" name="L60"></a>        <span class="s2">&quot;token&quot;</span><span class="p">:</span> <span class="s2">&quot;AutoModelForTokenClassification&quot;</span><span class="p">,</span>
+<a id="L61" name="L61"></a>    <span class="p">}</span>
+<a id="L62" name="L62"></a>    <span class="k">for</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">tasks</span><span class="p">:</span>
+<a id="L63" name="L63"></a>        <span class="k">if</span> <span class="n">task</span> <span class="ow">in</span> <span class="n">task_to_auto</span><span class="p">:</span>
+<a id="L64" name="L64"></a>            <span class="n">mapping</span><span class="p">[</span><span class="n">task_to_auto</span><span class="p">[</span><span class="n">task</span><span class="p">]]</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">MODELING_FILENAME</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="si">}</span><span class="s2">.MatformerFor</span><span class="si">{</span><span class="w"> </span><span class="p">{</span>
+<a id="L65" name="L65"></a><span class="w">                </span><span class="s1">&#39;causal&#39;</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;CausalLM&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;masked&#39;</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;MaskedLM&#39;</span><span class="p">,</span>
+<a id="L66" name="L66"></a><span class="w">                </span><span class="s1">&#39;sequence&#39;</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;SequenceClassification&#39;</span><span class="p">,</span><span class="w"> </span><span class="s1">&#39;token&#39;</span><span class="p">:</span><span class="w"> </span><span class="s1">&#39;TokenClassification&#39;</span><span class="p">}[</span><span class="n">task</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="L67" name="L67"></a>    <span class="k">return</span> <span class="n">mapping</span>
+<a id="L68" name="L68"></a>
+<a id="L69" name="L69"></a>
+<a id="L70" name="L70"></a><span class="k">class</span><span class="w"> </span><span class="nc">MatformerConfig</span><span class="p">(</span><span class="n">PretrainedConfig</span><span class="p">):</span>
+<a id="L71" name="L71"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L72" name="L72"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L73" name="L73"></a>
+<a id="L74" name="L74"></a>    <span class="n">model_type</span> <span class="o">=</span> <span class="s2">&quot;matformer&quot;</span>
+<a id="L75" name="L75"></a>
+<a id="L76" name="L76"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matformer_config_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">checkpoint_file</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L77" name="L77"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">matformer_config_file</span> <span class="o">=</span> <span class="n">matformer_config_file</span> <span class="ow">or</span> <span class="n">MATFORMER_CONFIG_FILENAME</span>
+<a id="L78" name="L78"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">checkpoint_file</span> <span class="o">=</span> <span class="n">checkpoint_file</span> <span class="ow">or</span> <span class="n">WEIGHTS_FILENAME</span>
+<a id="L79" name="L79"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="L80" name="L80"></a>
+<a id="L81" name="L81"></a>    <span class="nd">@classmethod</span>
+<a id="L82" name="L82"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">from_matformer_configs</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="o">**</span><span class="n">overrides</span><span class="p">):</span>
+<a id="L83" name="L83"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the light HF config from a MatformerConfigs tree.&quot;&quot;&quot;</span>
+<a id="L84" name="L84"></a>        <span class="n">config</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">overrides</span><span class="p">)</span>
+<a id="L85" name="L85"></a>        <span class="k">return</span> <span class="n">config</span><span class="o">.</span><span class="n">sync_from_matformer</span><span class="p">(</span><span class="n">configs</span><span class="p">)</span>
+<a id="L86" name="L86"></a>
+<a id="L87" name="L87"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">sync_from_matformer</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">configs</span><span class="p">):</span>
+<a id="L88" name="L88"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Copy standard fields from a MatformerConfigs tree into this config.&quot;&quot;&quot;</span>
+<a id="L89" name="L89"></a>        <span class="n">model</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L90" name="L90"></a>        <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L91" name="L91"></a>            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;hidden_size&quot;</span><span class="p">,</span> <span class="s2">&quot;vocab_size&quot;</span><span class="p">,</span> <span class="s2">&quot;num_hidden_layers&quot;</span><span class="p">,</span>
+<a id="L92" name="L92"></a>                        <span class="s2">&quot;tie_word_embeddings&quot;</span><span class="p">,</span> <span class="s2">&quot;max_position_embeddings&quot;</span><span class="p">,</span> <span class="s2">&quot;is_causal&quot;</span><span class="p">):</span>
+<a id="L93" name="L93"></a>                <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L94" name="L94"></a>                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L95" name="L95"></a>                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<a id="L96" name="L96"></a>            <span class="n">mixer_config</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;default_layer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="s2">&quot;sequence_mixer_config&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L97" name="L97"></a>            <span class="k">if</span> <span class="n">mixer_config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L98" name="L98"></a>                <span class="n">heads</span> <span class="o">=</span> <span class="n">mixer_config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;num_attention_heads&quot;</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">mixer_config</span><span class="p">,</span> <span class="s2">&quot;get&quot;</span><span class="p">)</span> \
+<a id="L99" name="L99"></a>                    <span class="k">else</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">mixer_config</span><span class="p">,</span> <span class="s2">&quot;num_attention_heads&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L100" name="L100"></a>                <span class="k">if</span> <span class="n">heads</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L101" name="L101"></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">num_attention_heads</span> <span class="o">=</span> <span class="n">heads</span>
+<a id="L102" name="L102"></a>            <span class="n">num_classes</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L103" name="L103"></a>            <span class="k">if</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L104" name="L104"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">num_labels</span> <span class="o">=</span> <span class="n">num_classes</span>
+<a id="L105" name="L105"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">matformer_model_name</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L106" name="L106"></a>        <span class="n">tokenizer</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L107" name="L107"></a>        <span class="k">if</span> <span class="n">tokenizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L108" name="L108"></a>            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;pad_token_id&quot;</span><span class="p">,</span> <span class="s2">&quot;bos_token_id&quot;</span><span class="p">,</span> <span class="s2">&quot;eos_token_id&quot;</span><span class="p">,</span> <span class="s2">&quot;mask_token_id&quot;</span><span class="p">):</span>
+<a id="L109" name="L109"></a>                <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L110" name="L110"></a>                <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L111" name="L111"></a>                    <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<a id="L112" name="L112"></a>            <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s2">&quot;pretrained_name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+<a id="L113" name="L113"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_name_or_path</span> <span class="o">=</span> <span class="n">tokenizer</span><span class="o">.</span><span class="n">pretrained_name</span>
+<a id="L114" name="L114"></a>        <span class="k">return</span> <span class="bp">self</span>
+<a id="L115" name="L115"></a>
+<a id="L116" name="L116"></a>
+<a id="L117" name="L117"></a><span class="k">def</span><span class="w"> </span><span class="nf">_to_tensor_dc</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">):</span>
+<a id="L118" name="L118"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Normalize HF-style (input_ids, attention_mask) into a Matformer TensorDC.</span>
+<a id="L119" name="L119"></a>
+<a id="L120" name="L120"></a><span class="sd">    A real attention_mask becomes a PaddedTensor (padding_mask semantics belong to</span>
+<a id="L121" name="L121"></a><span class="sd">    Matformer), so pooling and losses inside the framework see it natively.</span>
+<a id="L122" name="L122"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L123" name="L123"></a>    <span class="kn">from</span><span class="w"> </span><a href="../dataclasses/tensors_dataclasses.py.html"><span class="nn">matformer.dataclasses.tensors_dataclasses</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">NormalTensor</span><span class="p">,</span> <span class="n">PaddedTensor</span>
+<a id="L124" name="L124"></a>
+<a id="L125" name="L125"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+<a id="L126" name="L126"></a>        <span class="n">input_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+<a id="L127" name="L127"></a>    <span class="k">if</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<a id="L128" name="L128"></a>        <span class="n">input_ids</span> <span class="o">=</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a id="L129" name="L129"></a>    <span class="k">if</span> <span class="n">attention_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L130" name="L130"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attention_mask</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+<a id="L131" name="L131"></a>            <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">as_tensor</span><span class="p">(</span><span class="n">attention_mask</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)</span>
+<a id="L132" name="L132"></a>        <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">attention_mask</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">input_ids</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L133" name="L133"></a>        <span class="k">if</span> <span class="n">attention_mask</span><span class="o">.</span><span class="n">shape</span> <span class="o">==</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span> <span class="ow">and</span> <span class="p">(</span><span class="n">attention_mask</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+<a id="L134" name="L134"></a>            <span class="k">return</span> <span class="n">PaddedTensor</span><span class="p">(</span><span class="n">tensor</span><span class="o">=</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">padding_mask</span><span class="o">=</span><span class="p">(</span><span class="n">attention_mask</span> <span class="o">==</span> <span class="mi">0</span><span class="p">))</span>
+<a id="L135" name="L135"></a>    <span class="k">return</span> <span class="n">NormalTensor</span><span class="p">(</span><span class="n">tensor</span><span class="o">=</span><span class="n">input_ids</span><span class="p">)</span>
+<a id="L136" name="L136"></a>
+<a id="L137" name="L137"></a>
+<a id="L138" name="L138"></a><span class="k">class</span><span class="w"> </span><span class="nc">MatformerPreTrainedModel</span><span class="p">(</span><span class="n">PreTrainedModel</span><span class="p">):</span>
+<a id="L139" name="L139"></a>    <span class="n">config_class</span> <span class="o">=</span> <span class="n">MatformerConfig</span>
+<a id="L140" name="L140"></a>    <span class="n">base_model_prefix</span> <span class="o">=</span> <span class="s2">&quot;matformer_model&quot;</span>
+<a id="L141" name="L141"></a>    <span class="n">main_input_name</span> <span class="o">=</span> <span class="s2">&quot;input_ids&quot;</span>
+<a id="L142" name="L142"></a>    <span class="n">supports_gradient_checkpointing</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L143" name="L143"></a>    <span class="n">_no_split_modules</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;TransformerBlock&quot;</span><span class="p">]</span>
+<a id="L144" name="L144"></a>    <span class="c1"># Which HF task this class exposes: None, &quot;causal&quot;, &quot;masked&quot;, &quot;sequence&quot;, &quot;token&quot;</span>
+<a id="L145" name="L145"></a>    <span class="n">matformer_task</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L146" name="L146"></a>
+<a id="L147" name="L147"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L148" name="L148"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="L149" name="L149"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">matformer_model</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L150" name="L150"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">matformer_configs</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L151" name="L151"></a>
+<a id="L152" name="L152"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_init_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">):</span>
+<a id="L153" name="L153"></a>        <span class="c1"># Matformer owns initialization (registry kernels + init_transformer_weights_).</span>
+<a id="L154" name="L154"></a>        <span class="k">pass</span>
+<a id="L155" name="L155"></a>
+<a id="L156" name="L156"></a>    <span class="c1"># ------------------------------------------------------------------ loading</span>
+<a id="L157" name="L157"></a>    <span class="nd">@classmethod</span>
+<a id="L158" name="L158"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">from_pretrained</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">pretrained_model_name_or_path</span><span class="p">,</span> <span class="o">*</span><span class="n">model_args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L159" name="L159"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;HF-compatible entry point that delegates loading to Matformer.</span>
+<a id="L160" name="L160"></a>
+<a id="L161" name="L161"></a><span class="sd">        Extra kwargs beyond the HF ones:</span>
+<a id="L162" name="L162"></a><span class="sd">            checkpoint: path/name of the weights file (overrides config/check auto-detect)</span>
+<a id="L163" name="L163"></a><span class="sd">            matformer_config: path to a YAML/JSON file, or a dict of Matformer configs</span>
+<a id="L164" name="L164"></a><span class="sd">            num_labels / pooling_type: used when adding a fresh classification head</span>
+<a id="L165" name="L165"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L166" name="L166"></a>        <span class="kn">from</span><span class="w"> </span><a href="utils.py.html"><span class="nn">matformer.loading.utils</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">make_holder</span>
+<a id="L167" name="L167"></a>        <span class="kn">from</span><span class="w"> </span><a href="../matformer_configs.py.html"><span class="nn">matformer.matformer_configs</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerConfigs</span>
+<a id="L168" name="L168"></a>        <span class="kn">from</span><span class="w"> </span><a href="../matformer_wrapper.py.html"><span class="nn">matformer.matformer_wrapper</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">load_model</span>
+<a id="L169" name="L169"></a>
+<a id="L170" name="L170"></a>        <span class="n">config</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;config&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L171" name="L171"></a>        <span class="n">matformer_config</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;matformer_config&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L172" name="L172"></a>        <span class="n">checkpoint</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;checkpoint&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L173" name="L173"></a>        <span class="n">num_labels</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;num_labels&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L174" name="L174"></a>        <span class="n">pooling_type</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;pooling_type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L175" name="L175"></a>        <span class="n">device</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;device&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L176" name="L176"></a>        <span class="n">device_map</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;device_map&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L177" name="L177"></a>        <span class="n">dtype</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;dtype&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L178" name="L178"></a>        <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L179" name="L179"></a>            <span class="n">dtype</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;torch_dtype&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L180" name="L180"></a>        <span class="n">token</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;token&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L181" name="L181"></a>        <span class="n">revision</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;revision&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L182" name="L182"></a>        <span class="n">cache_dir</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;cache_dir&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L183" name="L183"></a>        <span class="c1"># Purely HF-side kwargs that mean nothing to Matformer: accept and ignore.</span>
+<a id="L184" name="L184"></a>        <span class="k">for</span> <span class="n">ignored</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;trust_remote_code&quot;</span><span class="p">,</span> <span class="s2">&quot;attn_implementation&quot;</span><span class="p">,</span> <span class="s2">&quot;low_cpu_mem_usage&quot;</span><span class="p">,</span>
+<a id="L185" name="L185"></a>                        <span class="s2">&quot;use_safetensors&quot;</span><span class="p">,</span> <span class="s2">&quot;offload_folder&quot;</span><span class="p">,</span> <span class="s2">&quot;offload_state_dict&quot;</span><span class="p">,</span>
+<a id="L186" name="L186"></a>                        <span class="s2">&quot;max_shard_size&quot;</span><span class="p">,</span> <span class="s2">&quot;_fast_init&quot;</span><span class="p">):</span>
+<a id="L187" name="L187"></a>            <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">ignored</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L188" name="L188"></a>
+<a id="L189" name="L189"></a>        <span class="n">map_location</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_resolve_device</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">device_map</span><span class="p">)</span>
+<a id="L190" name="L190"></a>        <span class="n">dtype</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_resolve_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">)</span>
+<a id="L191" name="L191"></a>
+<a id="L192" name="L192"></a>        <span class="n">repo_dir</span><span class="p">,</span> <span class="n">ckpt_path</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_resolve_paths</span><span class="p">(</span>
+<a id="L193" name="L193"></a>            <span class="n">pretrained_model_name_or_path</span><span class="p">,</span> <span class="n">checkpoint</span><span class="p">,</span>
+<a id="L194" name="L194"></a>            <span class="n">token</span><span class="o">=</span><span class="n">token</span><span class="p">,</span> <span class="n">revision</span><span class="o">=</span><span class="n">revision</span><span class="p">,</span> <span class="n">cache_dir</span><span class="o">=</span><span class="n">cache_dir</span><span class="p">)</span>
+<a id="L195" name="L195"></a>        <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L196" name="L196"></a>            <span class="k">if</span> <span class="n">repo_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="p">(</span><span class="n">repo_dir</span> <span class="o">/</span> <span class="s2">&quot;config.json&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+<a id="L197" name="L197"></a>                <span class="n">config</span> <span class="o">=</span> <span class="n">MatformerConfig</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">repo_dir</span><span class="p">)</span>
+<a id="L198" name="L198"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L199" name="L199"></a>                <span class="n">config</span> <span class="o">=</span> <span class="n">MatformerConfig</span><span class="p">()</span>
+<a id="L200" name="L200"></a>        <span class="k">if</span> <span class="n">ckpt_path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L201" name="L201"></a>            <span class="n">ckpt_path</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_find_checkpoint</span><span class="p">(</span><span class="n">repo_dir</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">checkpoint_file</span><span class="p">)</span>
+<a id="L202" name="L202"></a>
+<a id="L203" name="L203"></a>        <span class="n">base_configs</span> <span class="o">=</span> <span class="n">MatformerConfigs</span><span class="p">()</span>
+<a id="L204" name="L204"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">matformer_config</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="L205" name="L205"></a>            <span class="n">base_configs</span><span class="o">.</span><span class="n">import_config</span><span class="p">(</span><span class="n">matformer_config</span><span class="p">)</span>
+<a id="L206" name="L206"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L207" name="L207"></a>            <span class="n">yaml_path</span> <span class="o">=</span> <span class="n">matformer_config</span> <span class="ow">or</span> <span class="p">(</span><span class="n">repo_dir</span> <span class="o">/</span> <span class="n">config</span><span class="o">.</span><span class="n">matformer_config_file</span>
+<a id="L208" name="L208"></a>                                             <span class="k">if</span> <span class="n">repo_dir</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L209" name="L209"></a>            <span class="k">if</span> <span class="n">yaml_path</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">repo_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L210" name="L210"></a>                <span class="n">yamls</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">repo_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.yaml&quot;</span><span class="p">))</span>
+<a id="L211" name="L211"></a>                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">yamls</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+<a id="L212" name="L212"></a>                    <span class="n">yaml_path</span> <span class="o">=</span> <span class="n">yamls</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L213" name="L213"></a>            <span class="k">if</span> <span class="n">yaml_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L214" name="L214"></a>                <span class="k">if</span> <span class="ow">not</span> <span class="n">Path</span><span class="p">(</span><span class="n">yaml_path</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+<a id="L215" name="L215"></a>                    <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Matformer config not found: </span><span class="si">{</span><span class="n">yaml_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L216" name="L216"></a>                <span class="n">raw</span> <span class="o">=</span> <span class="n">_load_yaml_or_json</span><span class="p">(</span><span class="n">yaml_path</span><span class="p">)</span>
+<a id="L217" name="L217"></a>                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">raw</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">),</span> <span class="nb">dict</span><span class="p">)</span> <span class="ow">and</span> <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">)</span> <span class="o">==</span> <span class="s2">&quot;language_model&quot;</span><span class="p">:</span>
+<a id="L218" name="L218"></a>                    <span class="n">raw</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">][</span><span class="s2">&quot;type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;default&quot;</span>  <span class="c1"># see save_matformer_yaml()</span>
+<a id="L219" name="L219"></a>                <span class="n">base_configs</span><span class="o">.</span><span class="n">import_config</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span>
+<a id="L220" name="L220"></a>
+<a id="L221" name="L221"></a>        <span class="n">holder</span> <span class="o">=</span> <span class="n">make_holder</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">ckpt_path</span><span class="p">),</span> <span class="n">map_location</span><span class="o">=</span><span class="n">map_location</span><span class="p">)</span> <span class="k">if</span> <span class="n">ckpt_path</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L222" name="L222"></a>        <span class="k">if</span> <span class="n">holder</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">base_configs</span><span class="o">.</span><span class="n">list_configs</span><span class="p">():</span>
+<a id="L223" name="L223"></a>            <span class="n">holder</span><span class="o">.</span><span class="n">configs</span> <span class="o">=</span> <span class="n">base_configs</span>
+<a id="L224" name="L224"></a>        <span class="n">ckpt_configs</span> <span class="o">=</span> <span class="n">holder</span><span class="o">.</span><span class="n">get_configs</span><span class="p">()</span> <span class="k">if</span> <span class="n">holder</span> <span class="k">else</span> <span class="n">base_configs</span>
+<a id="L225" name="L225"></a>
+<a id="L226" name="L226"></a>        <span class="n">overrides</span> <span class="o">=</span> <span class="n">MatformerConfigs</span><span class="p">()</span>
+<a id="L227" name="L227"></a>        <span class="k">if</span> <span class="n">repo_dir</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span>
+<a id="L228" name="L228"></a>                <span class="p">(</span><span class="n">repo_dir</span> <span class="o">/</span> <span class="n">f</span><span class="p">)</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;tokenizer_config.json&quot;</span><span class="p">,</span> <span class="s2">&quot;tokenizer.json&quot;</span><span class="p">)):</span>
+<a id="L229" name="L229"></a>            <span class="n">overrides</span><span class="o">.</span><span class="n">import_config</span><span class="p">({</span><span class="s2">&quot;tokenizer&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;pretrained_name&quot;</span><span class="p">:</span> <span class="nb">str</span><span class="p">(</span><span class="n">repo_dir</span><span class="p">)}})</span>
+<a id="L230" name="L230"></a>        <span class="n">overrides</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_apply_task</span><span class="p">(</span><span class="n">overrides</span><span class="p">,</span> <span class="n">ckpt_configs</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span>
+<a id="L231" name="L231"></a>                                    <span class="n">num_labels</span><span class="o">=</span><span class="n">num_labels</span><span class="p">,</span> <span class="n">pooling_type</span><span class="o">=</span><span class="n">pooling_type</span><span class="p">)</span>
+<a id="L232" name="L232"></a>        <span class="k">if</span> <span class="n">holder</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L233" name="L233"></a>            <span class="n">ckpt_configs</span><span class="o">.</span><span class="n">import_config</span><span class="p">(</span><span class="n">overrides</span><span class="o">.</span><span class="n">asdict</span><span class="p">(</span><span class="n">include_defaults</span><span class="o">=</span><span class="kc">False</span><span class="p">))</span>
+<a id="L234" name="L234"></a>            <span class="n">overrides</span> <span class="o">=</span> <span class="n">MatformerConfigs</span><span class="p">()</span>
+<a id="L235" name="L235"></a>
+<a id="L236" name="L236"></a>        <span class="n">model_dict</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">checkpoint_holder</span><span class="o">=</span><span class="n">holder</span><span class="p">,</span> <span class="n">configs</span><span class="o">=</span><span class="n">overrides</span><span class="p">,</span>
+<a id="L237" name="L237"></a>                                <span class="n">map_location</span><span class="o">=</span><span class="n">map_location</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">,</span> <span class="n">inference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="L238" name="L238"></a>                                <span class="n">inherit_sections</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span> <span class="s2">&quot;masking&quot;</span><span class="p">))</span>
+<a id="L239" name="L239"></a>
+<a id="L240" name="L240"></a>        <span class="n">instance</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<a id="L241" name="L241"></a>        <span class="n">instance</span><span class="o">.</span><span class="n">_install</span><span class="p">(</span><span class="n">model_dict</span><span class="p">)</span>
+<a id="L242" name="L242"></a>        <span class="k">return</span> <span class="n">instance</span>
+<a id="L243" name="L243"></a>
+<a id="L244" name="L244"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_install</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_dict</span><span class="p">):</span>
+<a id="L245" name="L245"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Attach a freshly loaded MatformerModelWrapper to this HF shell.&quot;&quot;&quot;</span>
+<a id="L246" name="L246"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">matformer_model</span> <span class="o">=</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+<a id="L247" name="L247"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">matformer_configs</span> <span class="o">=</span> <span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;configs&quot;</span><span class="p">]</span>
+<a id="L248" name="L248"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">sync_from_matformer</span><span class="p">(</span><span class="n">model_dict</span><span class="p">[</span><span class="s2">&quot;configs&quot;</span><span class="p">])</span>
+<a id="L249" name="L249"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">post_init</span><span class="p">()</span>
+<a id="L250" name="L250"></a>        <span class="k">return</span> <span class="bp">self</span>
+<a id="L251" name="L251"></a>
+<a id="L252" name="L252"></a>    <span class="nd">@classmethod</span>
+<a id="L253" name="L253"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">from_matformer</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">wrapper</span><span class="p">,</span> <span class="n">configs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L254" name="L254"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Wrap an already-loaded MatformerModelWrapper (e.g. from load_model).&quot;&quot;&quot;</span>
+<a id="L255" name="L255"></a>        <span class="n">config</span> <span class="o">=</span> <span class="n">config</span> <span class="ow">or</span> <span class="n">MatformerConfig</span><span class="p">()</span>
+<a id="L256" name="L256"></a>        <span class="n">instance</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<a id="L257" name="L257"></a>        <span class="n">instance</span><span class="o">.</span><span class="n">_install</span><span class="p">({</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">wrapper</span><span class="p">,</span> <span class="s2">&quot;configs&quot;</span><span class="p">:</span> <span class="n">configs</span> <span class="ow">or</span> <span class="n">wrapper</span><span class="o">.</span><span class="n">configs</span><span class="p">})</span>
+<a id="L258" name="L258"></a>        <span class="k">return</span> <span class="n">instance</span>
+<a id="L259" name="L259"></a>
+<a id="L260" name="L260"></a>    <span class="c1"># ------------------------------------------------------------- path helpers</span>
+<a id="L261" name="L261"></a>    <span class="nd">@staticmethod</span>
+<a id="L262" name="L262"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_device</span><span class="p">(</span><span class="n">device</span><span class="p">,</span> <span class="n">device_map</span><span class="p">):</span>
+<a id="L263" name="L263"></a>        <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L264" name="L264"></a>            <span class="k">return</span> <span class="nb">str</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<a id="L265" name="L265"></a>        <span class="k">if</span> <span class="n">device_map</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L266" name="L266"></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">device_map</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">device_map</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="s2">&quot;balanced&quot;</span><span class="p">,</span> <span class="s2">&quot;sequential&quot;</span><span class="p">):</span>
+<a id="L267" name="L267"></a>                <span class="k">return</span> <span class="n">device_map</span>
+<a id="L268" name="L268"></a>            <span class="n">_warn_once</span><span class="p">(</span>
+<a id="L269" name="L269"></a>                <span class="s2">&quot;Matformer&#39;s from_pretrained does not shard models: &#39;device_map&#39; is &quot;</span>
+<a id="L270" name="L270"></a>                <span class="s2">&quot;ignored, use &#39;device&#39; (or .to()) instead.&quot;</span><span class="p">)</span>
+<a id="L271" name="L271"></a>        <span class="k">return</span> <span class="s2">&quot;cuda&quot;</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">&quot;cpu&quot;</span>
+<a id="L272" name="L272"></a>
+<a id="L273" name="L273"></a>    <span class="nd">@staticmethod</span>
+<a id="L274" name="L274"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_dtype</span><span class="p">(</span><span class="n">dtype</span><span class="p">):</span>
+<a id="L275" name="L275"></a>        <span class="k">if</span> <span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">dtype</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+<a id="L276" name="L276"></a>            <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">bfloat16</span>
+<a id="L277" name="L277"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dtype</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L278" name="L278"></a>            <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">torch</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+<a id="L279" name="L279"></a>        <span class="k">return</span> <span class="n">dtype</span>
+<a id="L280" name="L280"></a>
+<a id="L281" name="L281"></a>    <span class="nd">@staticmethod</span>
+<a id="L282" name="L282"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_resolve_paths</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">checkpoint</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">token</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">revision</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cache_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L283" name="L283"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return (repo_dir, checkpoint_path) for dirs, bare weight files and hub repo ids.&quot;&quot;&quot;</span>
+<a id="L284" name="L284"></a>        <span class="n">path</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">)</span> <span class="k">if</span> <span class="n">checkpoint</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L285" name="L285"></a>        <span class="n">source</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<a id="L286" name="L286"></a>        <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">is_dir</span><span class="p">():</span>
+<a id="L287" name="L287"></a>            <span class="k">return</span> <span class="n">source</span><span class="p">,</span> <span class="p">(</span><span class="n">path</span> <span class="k">if</span> <span class="n">path</span> <span class="ow">and</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L288" name="L288"></a>        <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+<a id="L289" name="L289"></a>            <span class="c1"># A bare checkpoint file: its folder is NOT treated as a repo, so stray</span>
+<a id="L290" name="L290"></a>            <span class="c1"># YAML/tokenizer files next to it can&#39;t hijack the load.</span>
+<a id="L291" name="L291"></a>            <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="n">source</span>
+<a id="L292" name="L292"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">snapshot_download</span>
+<a id="L293" name="L293"></a>        <span class="n">snapshot</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">snapshot_download</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">name</span><span class="p">),</span> <span class="n">token</span><span class="o">=</span><span class="n">token</span><span class="p">,</span> <span class="n">revision</span><span class="o">=</span><span class="n">revision</span><span class="p">,</span>
+<a id="L294" name="L294"></a>                                          <span class="n">cache_dir</span><span class="o">=</span><span class="n">cache_dir</span><span class="p">))</span>
+<a id="L295" name="L295"></a>        <span class="k">return</span> <span class="n">snapshot</span><span class="p">,</span> <span class="p">(</span><span class="n">path</span> <span class="k">if</span> <span class="n">path</span> <span class="ow">and</span> <span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L296" name="L296"></a>
+<a id="L297" name="L297"></a>    <span class="nd">@staticmethod</span>
+<a id="L298" name="L298"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_find_checkpoint</span><span class="p">(</span><span class="n">repo_dir</span><span class="p">,</span> <span class="n">explicit</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L299" name="L299"></a>        <span class="k">if</span> <span class="n">repo_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L300" name="L300"></a>            <span class="k">return</span> <span class="kc">None</span>
+<a id="L301" name="L301"></a>        <span class="n">candidates</span> <span class="o">=</span> <span class="p">[</span><span class="n">explicit</span><span class="p">]</span> <span class="k">if</span> <span class="n">explicit</span> <span class="k">else</span> <span class="p">[]</span>
+<a id="L302" name="L302"></a>        <span class="n">candidates</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">DEFAULT_CHECKPOINT_NAMES</span><span class="p">)</span>
+<a id="L303" name="L303"></a>        <span class="k">for</span> <span class="n">candidate</span> <span class="ow">in</span> <span class="n">candidates</span><span class="p">:</span>
+<a id="L304" name="L304"></a>            <span class="k">if</span> <span class="n">candidate</span> <span class="ow">and</span> <span class="p">(</span><span class="n">repo_dir</span> <span class="o">/</span> <span class="n">candidate</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">():</span>
+<a id="L305" name="L305"></a>                <span class="k">return</span> <span class="n">repo_dir</span> <span class="o">/</span> <span class="n">candidate</span>
+<a id="L306" name="L306"></a>        <span class="k">for</span> <span class="n">pattern</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;*.ckpt&quot;</span><span class="p">,</span> <span class="s2">&quot;*.safetensors&quot;</span><span class="p">,</span> <span class="s2">&quot;*.pt&quot;</span><span class="p">):</span>
+<a id="L307" name="L307"></a>            <span class="n">found</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">repo_dir</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="n">pattern</span><span class="p">))</span>
+<a id="L308" name="L308"></a>            <span class="k">if</span> <span class="n">found</span><span class="p">:</span>
+<a id="L309" name="L309"></a>                <span class="k">return</span> <span class="n">found</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L310" name="L310"></a>        <span class="k">return</span> <span class="kc">None</span>
+<a id="L311" name="L311"></a>
+<a id="L312" name="L312"></a>    <span class="c1"># ------------------------------------------------------------- task glue</span>
+<a id="L313" name="L313"></a>    <span class="nd">@classmethod</span>
+<a id="L314" name="L314"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_apply_task</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">configs</span><span class="p">,</span> <span class="n">ckpt_configs</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">num_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pooling_type</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L315" name="L315"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Adapt the Matformer configs to the HF task being requested.</span>
+<a id="L316" name="L316"></a>
+<a id="L317" name="L317"></a><span class="sd">        Classification over a non-classification checkpoint: switch the model</span>
+<a id="L318" name="L318"></a><span class="sd">        section to Matformer&#39;s own &#39;classification&#39; variant (the framework&#39;s</span>
+<a id="L319" name="L319"></a><span class="sd">        ClassificationPlugin provides the head, nothing is reimplemented here).</span>
+<a id="L320" name="L320"></a><span class="sd">        If the checkpoint is already a classifier, its configuration wins unless</span>
+<a id="L321" name="L321"></a><span class="sd">        the user explicitly passed num_labels.</span>
+<a id="L322" name="L322"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L323" name="L323"></a>        <span class="k">if</span> <span class="bp">cls</span><span class="o">.</span><span class="n">matformer_task</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;sequence&quot;</span><span class="p">,</span> <span class="s2">&quot;token&quot;</span><span class="p">):</span>
+<a id="L324" name="L324"></a>            <span class="k">return</span> <span class="n">configs</span>
+<a id="L325" name="L325"></a>        <span class="n">base_model</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">ckpt_configs</span> <span class="ow">or</span> <span class="n">configs</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L326" name="L326"></a>        <span class="n">already_classifier</span> <span class="o">=</span> <span class="n">_is_classifier_config</span><span class="p">(</span><span class="n">base_model</span><span class="p">)</span>
+<a id="L327" name="L327"></a>        <span class="k">if</span> <span class="n">already_classifier</span> <span class="ow">and</span> <span class="n">num_labels</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">pooling_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L328" name="L328"></a>            <span class="k">return</span> <span class="n">configs</span>
+<a id="L329" name="L329"></a>        <span class="n">override</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="s2">&quot;classification&quot;</span><span class="p">,</span> <span class="s2">&quot;scope&quot;</span><span class="p">:</span> <span class="bp">cls</span><span class="o">.</span><span class="n">matformer_task</span><span class="p">}</span>
+<a id="L330" name="L330"></a>        <span class="n">labels</span> <span class="o">=</span> <span class="n">num_labels</span> <span class="k">if</span> <span class="n">num_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;num_labels&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L331" name="L331"></a>        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L332" name="L332"></a>            <span class="n">override</span><span class="p">[</span><span class="s2">&quot;num_classes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">labels</span>
+<a id="L333" name="L333"></a>        <span class="k">if</span> <span class="n">pooling_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L334" name="L334"></a>            <span class="n">override</span><span class="p">[</span><span class="s2">&quot;pooling_type&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">pooling_type</span>
+<a id="L335" name="L335"></a>        <span class="n">configs</span><span class="o">.</span><span class="n">import_config</span><span class="p">({</span><span class="s2">&quot;model&quot;</span><span class="p">:</span> <span class="n">override</span><span class="p">})</span>
+<a id="L336" name="L336"></a>        <span class="k">return</span> <span class="n">configs</span>
+<a id="L337" name="L337"></a>
+<a id="L338" name="L338"></a>    <span class="c1"># ------------------------------------------------------------------ access</span>
+<a id="L339" name="L339"></a>    <span class="nd">@property</span>
+<a id="L340" name="L340"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">matformer_tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L341" name="L341"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;The MatformerTokenizer attached to the wrapper, if any.&quot;&quot;&quot;</span>
+<a id="L342" name="L342"></a>        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matformer_model</span><span class="p">,</span> <span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L343" name="L343"></a>
+<a id="L344" name="L344"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_tokenizer</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L345" name="L345"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;The underlying HuggingFace tokenizer (usable exactly like a HF one).&quot;&quot;&quot;</span>
+<a id="L346" name="L346"></a>        <span class="n">tokenizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matformer_tokenizer</span>
+<a id="L347" name="L347"></a>        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">)</span>
+<a id="L348" name="L348"></a>
+<a id="L349" name="L349"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_input_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L350" name="L350"></a>        <span class="n">node</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matformer_model</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L351" name="L351"></a>        <span class="k">while</span> <span class="n">node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L352" name="L352"></a>            <span class="n">embed</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s2">&quot;embed_tokens&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L353" name="L353"></a>            <span class="k">if</span> <span class="n">embed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L354" name="L354"></a>                <span class="k">return</span> <span class="n">embed</span>
+<a id="L355" name="L355"></a>            <span class="n">node</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s2">&quot;encoder&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L356" name="L356"></a>        <span class="k">return</span> <span class="kc">None</span>
+<a id="L357" name="L357"></a>
+<a id="L358" name="L358"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_output_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L359" name="L359"></a>        <span class="n">node</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matformer_model</span><span class="p">,</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L360" name="L360"></a>        <span class="k">while</span> <span class="n">node</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L361" name="L361"></a>            <span class="n">head</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s2">&quot;lm_head&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L362" name="L362"></a>            <span class="k">if</span> <span class="n">head</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L363" name="L363"></a>                <span class="k">return</span> <span class="n">head</span>
+<a id="L364" name="L364"></a>            <span class="n">node</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">node</span><span class="p">,</span> <span class="s2">&quot;encoder&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L365" name="L365"></a>        <span class="k">return</span> <span class="kc">None</span>
+<a id="L366" name="L366"></a>
+<a id="L367" name="L367"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">resize_token_embeddings</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">new_num_tokens</span><span class="p">,</span> <span class="n">pad_to_multiple_of</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L368" name="L368"></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+<a id="L369" name="L369"></a>            <span class="s2">&quot;Matformer models are resized through their own configs (model.vocab_size).&quot;</span><span class="p">)</span>
+<a id="L370" name="L370"></a>
+<a id="L371" name="L371"></a>    <span class="c1"># ---------------------------------------------------------------- forward</span>
+<a id="L372" name="L372"></a>    <span class="c1"># Forward kwargs Matformer models understand; anything HF/Trainer injects</span>
+<a id="L373" name="L373"></a>    <span class="c1"># (num_items_in_batch, return_dict, ...) is filtered out here.</span>
+<a id="L374" name="L374"></a>    <span class="n">_matformer_forward_kwargs</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;return_type&quot;</span><span class="p">,</span> <span class="s2">&quot;token_type_ids&quot;</span><span class="p">,</span> <span class="s2">&quot;is_causal&quot;</span><span class="p">,</span> <span class="s2">&quot;sliding&quot;</span><span class="p">,</span>
+<a id="L375" name="L375"></a>                                 <span class="s2">&quot;block_mask&quot;</span><span class="p">,</span> <span class="s2">&quot;document_mask&quot;</span><span class="p">,</span> <span class="s2">&quot;recurrence_mask&quot;</span><span class="p">,</span>
+<a id="L376" name="L376"></a>                                 <span class="s2">&quot;start&quot;</span><span class="p">,</span> <span class="s2">&quot;stop&quot;</span><span class="p">)</span>
+<a id="L377" name="L377"></a>
+<a id="L378" name="L378"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_ids</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L379" name="L379"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;One Matformer forward, returning a plain logits/hidden tensor.&quot;&quot;&quot;</span>
+<a id="L380" name="L380"></a>        <span class="k">if</span> <span class="n">input_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L381" name="L381"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;input_ids is required&quot;</span><span class="p">)</span>
+<a id="L382" name="L382"></a>        <span class="n">mat_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">kwargs</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_matformer_forward_kwargs</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">}</span>
+<a id="L383" name="L383"></a>        <span class="n">x</span> <span class="o">=</span> <span class="n">_to_tensor_dc</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">)</span>
+<a id="L384" name="L384"></a>        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matformer_model</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">mat_kwargs</span><span class="p">)</span>
+<a id="L385" name="L385"></a>        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s2">&quot;tensor&quot;</span><span class="p">,</span> <span class="n">out</span><span class="p">)</span>
+<a id="L386" name="L386"></a>
+<a id="L387" name="L387"></a>    <span class="c1"># ----------------------------------------------------------------- saving</span>
+<a id="L388" name="L388"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">save_pretrained</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">save_directory</span><span class="p">,</span> <span class="n">save_weights</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">save_tokenizer</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L389" name="L389"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Write a self-contained HF repo: config.json + matformer.yaml + weights.</span>
+<a id="L390" name="L390"></a>
+<a id="L391" name="L391"></a><span class="sd">        Weights are exported in Matformer&#39;s stable-state-dict format as</span>
+<a id="L392" name="L392"></a><span class="sd">        model.safetensors, which MatformerCheckpointHolder reads natively, so the</span>
+<a id="L393" name="L393"></a><span class="sd">        directory is loadable by both frameworks.</span>
+<a id="L394" name="L394"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L395" name="L395"></a>        <span class="kn">from</span><span class="w"> </span><span class="nn">safetensors.torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_file</span>
+<a id="L396" name="L396"></a>
+<a id="L397" name="L397"></a>        <span class="n">save_directory</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">save_directory</span><span class="p">)</span>
+<a id="L398" name="L398"></a>        <span class="n">save_directory</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L399" name="L399"></a>        <span class="n">configs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matformer_model</span><span class="o">.</span><span class="n">configs</span>
+<a id="L400" name="L400"></a>
+<a id="L401" name="L401"></a>        <span class="k">if</span> <span class="n">save_weights</span><span class="p">:</span>
+<a id="L402" name="L402"></a>            <span class="n">save_file</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_clean_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matformer_model</span><span class="o">.</span><span class="n">stable_state_dict</span><span class="p">()),</span>
+<a id="L403" name="L403"></a>                      <span class="nb">str</span><span class="p">(</span><span class="n">save_directory</span> <span class="o">/</span> <span class="n">WEIGHTS_FILENAME</span><span class="p">))</span>
+<a id="L404" name="L404"></a>        <span class="n">save_matformer_yaml</span><span class="p">(</span><span class="n">configs</span><span class="p">,</span> <span class="n">save_directory</span> <span class="o">/</span> <span class="n">MATFORMER_CONFIG_FILENAME</span><span class="p">)</span>
+<a id="L405" name="L405"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">matformer_config_file</span> <span class="o">=</span> <span class="n">MATFORMER_CONFIG_FILENAME</span>
+<a id="L406" name="L406"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">checkpoint_file</span> <span class="o">=</span> <span class="n">WEIGHTS_FILENAME</span>
+<a id="L407" name="L407"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="s2">&quot;auto_map&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">):</span>
+<a id="L408" name="L408"></a>            <span class="n">task</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">matformer_task</span> <span class="ow">or</span> <span class="s2">&quot;masked&quot;</span>
+<a id="L409" name="L409"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">auto_map</span> <span class="o">=</span> <span class="n">_auto_map</span><span class="p">([</span><span class="n">task</span><span class="p">])</span>
+<a id="L410" name="L410"></a>        <span class="c1"># Write config.json directly: PretrainedConfig.save_pretrained would also copy this</span>
+<a id="L411" name="L411"></a>        <span class="c1"># module next to the model and rewrite auto_map to the copy, which cannot work</span>
+<a id="L412" name="L412"></a>        <span class="c1"># standalone (it needs the full matformer package). The shim in modeling_matformer.py</span>
+<a id="L413" name="L413"></a>        <span class="c1"># points at the installed package instead.</span>
+<a id="L414" name="L414"></a>        <span class="p">(</span><span class="n">save_directory</span> <span class="o">/</span> <span class="s2">&quot;config.json&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span>
+<a id="L415" name="L415"></a>            <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">to_dict</span><span class="p">(),</span> <span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">sort_keys</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L416" name="L416"></a>        <span class="kn">from</span><span class="w"> </span><a href="huggingface_publish.py.html"><span class="nn">matformer.loading.huggingface_publish</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">create_modeling_file</span>
+<a id="L417" name="L417"></a>        <span class="p">(</span><span class="n">save_directory</span> <span class="o">/</span> <span class="n">MODELING_FILENAME</span><span class="p">)</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">create_modeling_file</span><span class="p">())</span>
+<a id="L418" name="L418"></a>        <span class="k">if</span> <span class="n">save_tokenizer</span><span class="p">:</span>
+<a id="L419" name="L419"></a>            <span class="n">tokenizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_tokenizer</span><span class="p">()</span>
+<a id="L420" name="L420"></a>            <span class="k">if</span> <span class="n">tokenizer</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L421" name="L421"></a>                <span class="n">tokenizer</span><span class="o">.</span><span class="n">save_pretrained</span><span class="p">(</span><span class="n">save_directory</span><span class="p">)</span>
+<a id="L422" name="L422"></a>        <span class="k">return</span> <span class="n">save_directory</span>
+<a id="L423" name="L423"></a>
+<a id="L424" name="L424"></a>    <span class="nd">@staticmethod</span>
+<a id="L425" name="L425"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_clean_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">):</span>
+<a id="L426" name="L426"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Tensors only, on CPU, deduplicated (tied weights share storage in Matformer).&quot;&quot;&quot;</span>
+<a id="L427" name="L427"></a>        <span class="n">cleaned</span><span class="p">,</span> <span class="n">seen</span> <span class="o">=</span> <span class="p">{},</span> <span class="nb">set</span><span class="p">()</span>
+<a id="L428" name="L428"></a>        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L429" name="L429"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
+<a id="L430" name="L430"></a>                <span class="k">continue</span>
+<a id="L431" name="L431"></a>            <span class="k">if</span> <span class="n">value</span><span class="o">.</span><span class="n">data_ptr</span><span class="p">()</span> <span class="ow">in</span> <span class="n">seen</span><span class="p">:</span>
+<a id="L432" name="L432"></a>                <span class="k">continue</span>
+<a id="L433" name="L433"></a>            <span class="n">seen</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">value</span><span class="o">.</span><span class="n">data_ptr</span><span class="p">())</span>
+<a id="L434" name="L434"></a>            <span class="n">cleaned</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+<a id="L435" name="L435"></a>        <span class="k">return</span> <span class="n">cleaned</span>
+<a id="L436" name="L436"></a>
+<a id="L437" name="L437"></a>
+<a id="L438" name="L438"></a><span class="k">class</span><span class="w"> </span><span class="nc">MatformerModel</span><span class="p">(</span><a href="#L138"><span class="n">MatformerPreTrainedModel</span></a><span class="p">):</span>
+<a id="L439" name="L439"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Base Matformer model exposed as an HF model returning hidden states.&quot;&quot;&quot;</span>
+<a id="L440" name="L440"></a>
+<a id="L441" name="L441"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L442" name="L442"></a>        <span class="n">kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;return_type&quot;</span><span class="p">,</span> <span class="s2">&quot;hidden&quot;</span><span class="p">)</span>
+<a id="L443" name="L443"></a>        <span class="n">hidden_states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="L444" name="L444"></a>        <span class="k">return</span> <span class="n">BaseModelOutputWithPast</span><span class="p">(</span><span class="n">last_hidden_state</span><span class="o">=</span><span class="n">hidden_states</span><span class="p">)</span>
+<a id="L445" name="L445"></a>
+<a id="L446" name="L446"></a>
+<a id="L447" name="L447"></a><span class="k">class</span><span class="w"> </span><span class="nc">MatformerForMaskedLM</span><span class="p">(</span><a href="#L138"><span class="n">MatformerPreTrainedModel</span></a><span class="p">):</span>
+<a id="L448" name="L448"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Masked language modeling head = Matformer&#39;s own lm_head, nothing added.&quot;&quot;&quot;</span>
+<a id="L449" name="L449"></a>
+<a id="L450" name="L450"></a>    <span class="n">matformer_task</span> <span class="o">=</span> <span class="s2">&quot;masked&quot;</span>
+<a id="L451" name="L451"></a>
+<a id="L452" name="L452"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L453" name="L453"></a>        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="L454" name="L454"></a>        <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L455" name="L455"></a>        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L456" name="L456"></a>            <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">logits</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L457" name="L457"></a>            <span class="n">loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span>
+<a id="L458" name="L458"></a>                <span class="n">logits</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">logits</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="n">labels</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">100</span><span class="p">)</span>
+<a id="L459" name="L459"></a>        <span class="k">return</span> <span class="n">MaskedLMOutput</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span> <span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="p">)</span>
+<a id="L460" name="L460"></a>
+<a id="L461" name="L461"></a>
+<a id="L462" name="L462"></a><span class="k">class</span><span class="w"> </span><span class="nc">MatformerForCausalLM</span><span class="p">(</span><a href="#L138"><span class="n">MatformerPreTrainedModel</span></a><span class="p">,</span> <a href="../transformer_blocks/mixin/text_generation.py.html#L72"><span class="n">GenerationMixin</span></a><span class="p">):</span>
+<a id="L463" name="L463"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Causal LM. Generation is delegated to Matformer&#39;s own generate</span>
+<a id="L464" name="L464"></a><span class="sd">    (transformer_blocks/mixin/text_generation.py): no KV-cache, no beam search,</span>
+<a id="L465" name="L465"></a><span class="sd">    but full sampling control (temperature, top-k/top-p, repetition penalty...).</span>
+<a id="L466" name="L466"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L467" name="L467"></a>
+<a id="L468" name="L468"></a>    <span class="n">matformer_task</span> <span class="o">=</span> <span class="s2">&quot;causal&quot;</span>
+<a id="L469" name="L469"></a>
+<a id="L470" name="L470"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L471" name="L471"></a>        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="L472" name="L472"></a>        <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L473" name="L473"></a>        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L474" name="L474"></a>            <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">logits</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L475" name="L475"></a>            <span class="n">shift_logits</span> <span class="o">=</span> <span class="n">logits</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+<a id="L476" name="L476"></a>            <span class="n">shift_labels</span> <span class="o">=</span> <span class="n">labels</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">contiguous</span><span class="p">()</span>
+<a id="L477" name="L477"></a>            <span class="n">loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span>
+<a id="L478" name="L478"></a>                <span class="n">shift_logits</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">shift_logits</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+<a id="L479" name="L479"></a>                <span class="n">shift_labels</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">100</span><span class="p">)</span>
+<a id="L480" name="L480"></a>        <span class="k">return</span> <span class="n">CausalLMOutputWithPast</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span> <span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="p">)</span>
+<a id="L481" name="L481"></a>
+<a id="L482" name="L482"></a>    <span class="nd">@staticmethod</span>
+<a id="L483" name="L483"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_prompt_len</span><span class="p">(</span><span class="n">input_ids</span><span class="p">):</span>
+<a id="L484" name="L484"></a>        <span class="k">if</span> <span class="n">input_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L485" name="L485"></a>            <span class="k">return</span> <span class="mi">0</span>
+<a id="L486" name="L486"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+<a id="L487" name="L487"></a>            <span class="k">return</span> <span class="n">input_ids</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+<a id="L488" name="L488"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">input_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+<a id="L489" name="L489"></a>            <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_ids</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<a id="L490" name="L490"></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>
+<a id="L491" name="L491"></a>
+<a id="L492" name="L492"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">input_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="L493" name="L493"></a>                 <span class="n">max_new_tokens</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">max_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_new_tokens</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">min_length</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="L494" name="L494"></a>                 <span class="n">do_sample</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">temperature</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">top_k</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">top_p</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="L495" name="L495"></a>                 <span class="n">repetition_penalty</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">no_repeat_ngram_size</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="L496" name="L496"></a>                 <span class="n">num_return_sequences</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pad_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">eos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="L497" name="L497"></a>                 <span class="n">bos_token_id</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stopping_criteria</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">stream_callback</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="L498" name="L498"></a>                 <span class="n">output_scores</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">return_dict_in_generate</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L499" name="L499"></a>        <span class="n">engine</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">matformer_model</span><span class="o">.</span><span class="n">model</span><span class="p">,</span> <span class="s2">&quot;generate&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L500" name="L500"></a>        <span class="k">if</span> <span class="n">engine</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L501" name="L501"></a>            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
+<a id="L502" name="L502"></a>                <span class="s2">&quot;The underlying Matformer model does not support generation &quot;</span>
+<a id="L503" name="L503"></a>                <span class="s2">&quot;(no text-generation mixin in its registry variant).&quot;</span><span class="p">)</span>
+<a id="L504" name="L504"></a>        <span class="k">if</span> <span class="n">input_ids</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L505" name="L505"></a>            <span class="n">input_ids</span> <span class="o">=</span> <span class="n">inputs</span>
+<a id="L506" name="L506"></a>        <span class="k">if</span> <span class="n">attention_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">attention_mask</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> \
+<a id="L507" name="L507"></a>                <span class="ow">and</span> <span class="p">(</span><span class="n">attention_mask</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">():</span>
+<a id="L508" name="L508"></a>            <span class="n">_warn_once</span><span class="p">(</span><span class="s2">&quot;Matformer generate ignores attention_mask: padded prompts may &quot;</span>
+<a id="L509" name="L509"></a>                       <span class="s2">&quot;produce incorrect continuations.&quot;</span><span class="p">)</span>
+<a id="L510" name="L510"></a>        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;use_cache&quot;</span><span class="p">,</span> <span class="s2">&quot;cache_position&quot;</span><span class="p">,</span> <span class="s2">&quot;position_ids&quot;</span><span class="p">,</span> <span class="s2">&quot;past_key_values&quot;</span><span class="p">):</span>
+<a id="L511" name="L511"></a>            <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L512" name="L512"></a>        <span class="n">num_beams</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;num_beams&quot;</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+<a id="L513" name="L513"></a>        <span class="k">if</span> <span class="n">num_beams</span> <span class="ow">and</span> <span class="n">num_beams</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+<a id="L514" name="L514"></a>            <span class="n">_warn_once</span><span class="p">(</span><span class="s2">&quot;Matformer generate does not support beam search: &#39;num_beams&#39; ignored.&quot;</span><span class="p">)</span>
+<a id="L515" name="L515"></a>        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;length_penalty&quot;</span><span class="p">,</span> <span class="s2">&quot;early_stopping&quot;</span><span class="p">,</span> <span class="s2">&quot;beam_idx&quot;</span><span class="p">,</span> <span class="s2">&quot;num_beam_groups&quot;</span><span class="p">):</span>
+<a id="L516" name="L516"></a>            <span class="k">if</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L517" name="L517"></a>                <span class="n">_warn_once</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Matformer generate does not support &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;: ignored.&quot;</span><span class="p">)</span>
+<a id="L518" name="L518"></a>        <span class="k">if</span> <span class="n">kwargs</span><span class="p">:</span>
+<a id="L519" name="L519"></a>            <span class="n">_warn_once</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Ignored generate kwargs unsupported by Matformer: </span><span class="si">{</span><span class="nb">sorted</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L520" name="L520"></a>
+<a id="L521" name="L521"></a>        <span class="n">gen_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L522" name="L522"></a>        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">&quot;min_new_tokens&quot;</span><span class="p">,</span> <span class="n">min_new_tokens</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;do_sample&quot;</span><span class="p">,</span> <span class="n">do_sample</span><span class="p">),</span>
+<a id="L523" name="L523"></a>                            <span class="p">(</span><span class="s2">&quot;temperature&quot;</span><span class="p">,</span> <span class="n">temperature</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;top_k&quot;</span><span class="p">,</span> <span class="n">top_k</span><span class="p">),</span> <span class="p">(</span><span class="s2">&quot;top_p&quot;</span><span class="p">,</span> <span class="n">top_p</span><span class="p">),</span>
+<a id="L524" name="L524"></a>                            <span class="p">(</span><span class="s2">&quot;repetition_penalty&quot;</span><span class="p">,</span> <span class="n">repetition_penalty</span><span class="p">),</span>
+<a id="L525" name="L525"></a>                            <span class="p">(</span><span class="s2">&quot;no_repeat_ngram_size&quot;</span><span class="p">,</span> <span class="n">no_repeat_ngram_size</span><span class="p">),</span>
+<a id="L526" name="L526"></a>                            <span class="p">(</span><span class="s2">&quot;num_return_sequences&quot;</span><span class="p">,</span> <span class="n">num_return_sequences</span><span class="p">)):</span>
+<a id="L527" name="L527"></a>            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L528" name="L528"></a>                <span class="n">gen_kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+<a id="L529" name="L529"></a>        <span class="n">prompt_len</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prompt_len</span><span class="p">(</span><span class="n">input_ids</span><span class="p">)</span>
+<a id="L530" name="L530"></a>        <span class="k">if</span> <span class="n">max_new_tokens</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L531" name="L531"></a>            <span class="n">gen_kwargs</span><span class="p">[</span><span class="s2">&quot;max_new_tokens&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">max_new_tokens</span>
+<a id="L532" name="L532"></a>        <span class="k">elif</span> <span class="n">max_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">input_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L533" name="L533"></a>            <span class="n">gen_kwargs</span><span class="p">[</span><span class="s2">&quot;max_new_tokens&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">max_length</span> <span class="o">-</span> <span class="n">prompt_len</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<a id="L534" name="L534"></a>        <span class="k">if</span> <span class="n">min_new_tokens</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">min_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">input_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L535" name="L535"></a>            <span class="n">gen_kwargs</span><span class="p">[</span><span class="s2">&quot;min_new_tokens&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_length</span> <span class="o">-</span> <span class="n">prompt_len</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<a id="L536" name="L536"></a>        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">explicit</span> <span class="ow">in</span> <span class="p">((</span><span class="s2">&quot;pad_token_id&quot;</span><span class="p">,</span> <span class="n">pad_token_id</span><span class="p">),</span>
+<a id="L537" name="L537"></a>                               <span class="p">(</span><span class="s2">&quot;eos_token_id&quot;</span><span class="p">,</span> <span class="n">eos_token_id</span><span class="p">),</span>
+<a id="L538" name="L538"></a>                               <span class="p">(</span><span class="s2">&quot;bos_token_id&quot;</span><span class="p">,</span> <span class="n">bos_token_id</span><span class="p">)):</span>
+<a id="L539" name="L539"></a>            <span class="n">gen_kwargs</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">explicit</span> <span class="k">if</span> <span class="n">explicit</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L540" name="L540"></a>
+<a id="L541" name="L541"></a>        <span class="n">want_scores</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">output_scores</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">bool</span><span class="p">(</span><span class="n">return_dict_in_generate</span><span class="p">)</span>
+<a id="L542" name="L542"></a>        <span class="n">result</span> <span class="o">=</span> <span class="n">engine</span><span class="p">(</span><span class="n">input_ids</span><span class="o">=</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">output_scores</span><span class="o">=</span><span class="n">want_scores</span><span class="p">,</span>
+<a id="L543" name="L543"></a>                        <span class="n">stopping_criteria</span><span class="o">=</span><span class="n">stopping_criteria</span><span class="p">,</span> <span class="n">stream_callback</span><span class="o">=</span><span class="n">stream_callback</span><span class="p">,</span>
+<a id="L544" name="L544"></a>                        <span class="o">**</span><span class="n">gen_kwargs</span><span class="p">)</span>
+<a id="L545" name="L545"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+<a id="L546" name="L546"></a>            <span class="n">sequences</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L547" name="L547"></a>            <span class="n">scores</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="n">result</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span> <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">result</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L548" name="L548"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L549" name="L549"></a>            <span class="n">sequences</span><span class="p">,</span> <span class="n">scores</span> <span class="o">=</span> <span class="n">result</span><span class="p">,</span> <span class="kc">None</span>
+<a id="L550" name="L550"></a>        <span class="k">if</span> <span class="n">return_dict_in_generate</span><span class="p">:</span>
+<a id="L551" name="L551"></a>            <span class="k">return</span> <span class="n">GenerateDecoderOnlyOutput</span><span class="p">(</span><span class="n">sequences</span><span class="o">=</span><span class="n">sequences</span><span class="p">,</span> <span class="n">scores</span><span class="o">=</span><span class="n">scores</span><span class="p">)</span>
+<a id="L552" name="L552"></a>        <span class="k">if</span> <span class="n">output_scores</span><span class="p">:</span>
+<a id="L553" name="L553"></a>            <span class="k">return</span> <span class="n">sequences</span><span class="p">,</span> <span class="n">scores</span>
+<a id="L554" name="L554"></a>        <span class="k">return</span> <span class="n">sequences</span>
+<a id="L555" name="L555"></a>
+<a id="L556" name="L556"></a>
+<a id="L557" name="L557"></a><span class="k">class</span><span class="w"> </span><span class="nc">MatformerForSequenceClassification</span><span class="p">(</span><a href="#L138"><span class="n">MatformerPreTrainedModel</span></a><span class="p">):</span>
+<a id="L558" name="L558"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Sequence classification through Matformer&#39;s classification plugin</span>
+<a id="L559" name="L559"></a><span class="sd">    (registry variant &#39;classification&#39;, scope &#39;sequence&#39;): pooling and head</span>
+<a id="L560" name="L560"></a><span class="sd">    belong to the framework, so heads saved by Matformer load natively.</span>
+<a id="L561" name="L561"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L562" name="L562"></a>
+<a id="L563" name="L563"></a>    <span class="n">matformer_task</span> <span class="o">=</span> <span class="s2">&quot;sequence&quot;</span>
+<a id="L564" name="L564"></a>
+<a id="L565" name="L565"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L566" name="L566"></a>        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="L567" name="L567"></a>        <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L568" name="L568"></a>        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L569" name="L569"></a>            <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">logits</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L570" name="L570"></a>            <span class="k">if</span> <span class="n">labels</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="ow">and</span> <span class="n">logits</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">labels</span><span class="o">.</span><span class="n">shape</span><span class="p">:</span>
+<a id="L571" name="L571"></a>                <span class="n">loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">labels</span><span class="o">.</span><span class="n">long</span><span class="p">())</span>
+<a id="L572" name="L572"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L573" name="L573"></a>                <span class="n">loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">binary_cross_entropy_with_logits</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">logits</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+<a id="L574" name="L574"></a>        <span class="k">return</span> <span class="n">SequenceClassifierOutput</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span> <span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="p">)</span>
+<a id="L575" name="L575"></a>
+<a id="L576" name="L576"></a>
+<a id="L577" name="L577"></a><span class="k">class</span><span class="w"> </span><span class="nc">MatformerForTokenClassification</span><span class="p">(</span><a href="#L138"><span class="n">MatformerPreTrainedModel</span></a><span class="p">):</span>
+<a id="L578" name="L578"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Token classification through Matformer&#39;s classification plugin</span>
+<a id="L579" name="L579"></a><span class="sd">    (registry variant &#39;classification&#39;, scope &#39;token&#39;).</span>
+<a id="L580" name="L580"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L581" name="L581"></a>
+<a id="L582" name="L582"></a>    <span class="n">matformer_task</span> <span class="o">=</span> <span class="s2">&quot;token&quot;</span>
+<a id="L583" name="L583"></a>
+<a id="L584" name="L584"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_ids</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L585" name="L585"></a>        <span class="n">logits</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="n">input_ids</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="L586" name="L586"></a>        <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L587" name="L587"></a>        <span class="k">if</span> <span class="n">labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L588" name="L588"></a>            <span class="n">labels</span> <span class="o">=</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">logits</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L589" name="L589"></a>            <span class="k">if</span> <span class="n">labels</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">):</span>
+<a id="L590" name="L590"></a>                <span class="n">loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">cross_entropy</span><span class="p">(</span>
+<a id="L591" name="L591"></a>                    <span class="n">logits</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">logits</span><span class="o">.</span><span class="n">size</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)),</span>
+<a id="L592" name="L592"></a>                    <span class="n">labels</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">ignore_index</span><span class="o">=-</span><span class="mi">100</span><span class="p">)</span>
+<a id="L593" name="L593"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L594" name="L594"></a>                <span class="n">loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">binary_cross_entropy_with_logits</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">labels</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">logits</span><span class="o">.</span><span class="n">dtype</span><span class="p">))</span>
+<a id="L595" name="L595"></a>        <span class="k">return</span> <span class="n">TokenClassifierOutput</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="n">loss</span><span class="p">,</span> <span class="n">logits</span><span class="o">=</span><span class="n">logits</span><span class="p">)</span>
+<a id="L596" name="L596"></a>
+<a id="L597" name="L597"></a>
+<a id="L598" name="L598"></a><span class="k">def</span><span class="w"> </span><span class="nf">register_matformer</span><span class="p">():</span>
+<a id="L599" name="L599"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Register Matformer with HF&#39;s Auto* classes (safe to call multiple times).&quot;&quot;&quot;</span>
+<a id="L600" name="L600"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span><span class="n">AutoConfig</span><span class="p">,</span> <span class="n">AutoModel</span><span class="p">,</span> <span class="n">AutoModelForCausalLM</span><span class="p">,</span>
+<a id="L601" name="L601"></a>                              <span class="n">AutoModelForMaskedLM</span><span class="p">,</span> <span class="n">AutoModelForSequenceClassification</span><span class="p">,</span>
+<a id="L602" name="L602"></a>                              <span class="n">AutoModelForTokenClassification</span><span class="p">)</span>
+<a id="L603" name="L603"></a>
+<a id="L604" name="L604"></a>    <span class="n">registrations</span> <span class="o">=</span> <span class="p">(</span>
+<a id="L605" name="L605"></a>        <span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">AutoConfig</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;matformer&quot;</span><span class="p">,</span> <span class="n">MatformerConfig</span><span class="p">)),</span>
+<a id="L606" name="L606"></a>        <span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">AutoModel</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MatformerConfig</span><span class="p">,</span> <span class="n">MatformerModel</span><span class="p">)),</span>
+<a id="L607" name="L607"></a>        <span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">AutoModelForCausalLM</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MatformerConfig</span><span class="p">,</span> <span class="n">MatformerForCausalLM</span><span class="p">)),</span>
+<a id="L608" name="L608"></a>        <span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">AutoModelForMaskedLM</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MatformerConfig</span><span class="p">,</span> <span class="n">MatformerForMaskedLM</span><span class="p">)),</span>
+<a id="L609" name="L609"></a>        <span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">AutoModelForSequenceClassification</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MatformerConfig</span><span class="p">,</span> <span class="n">MatformerForSequenceClassification</span><span class="p">)),</span>
+<a id="L610" name="L610"></a>        <span class="p">(</span><span class="k">lambda</span><span class="p">:</span> <span class="n">AutoModelForTokenClassification</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">MatformerConfig</span><span class="p">,</span> <span class="n">MatformerForTokenClassification</span><span class="p">)),</span>
+<a id="L611" name="L611"></a>    <span class="p">)</span>
+<a id="L612" name="L612"></a>    <span class="k">for</span> <span class="n">register</span> <span class="ow">in</span> <span class="n">registrations</span><span class="p">:</span>
+<a id="L613" name="L613"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="L614" name="L614"></a>            <span class="n">register</span><span class="p">()</span>
+<a id="L615" name="L615"></a>        <span class="k">except</span> <span class="ne">ValueError</span><span class="p">:</span>
+<a id="L616" name="L616"></a>            <span class="k">pass</span>  <span class="c1"># already registered in this process</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

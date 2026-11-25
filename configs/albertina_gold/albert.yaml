@@ -88,8 +88,3 @@ training:
   varlen_strategy: "unpadding"
   batch_size: 32
 
-saver:
-  type: jsonl
-  filename: "predictions.jsonl"
-  mode: "a"
-

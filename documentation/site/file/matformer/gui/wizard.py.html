@@ -1,0 +1,1182 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/gui/wizard.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li><li><a href="../../../tools/wizards.html">Wizards</a></li><li><a href="../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/gui/wizard.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="wizard.py.html"><code>matformer/gui/wizard.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/gui/</code></a></p><h1><code>wizard.py</code></h1><p class="muted">matformer/gui/wizard.py · 576 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/gui/wizard.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L19"><code>_options</code></a><span class="line">L19</span></li><li class="depth-0"><a href="#L30"><code>_test</code></a><span class="line">L30</span></li><li class="depth-0"><a href="#L57"><code>WizardDialog</code></a><span class="line">L57</span> <span class="bases">(<code>Toplevel</code>)</span></li><li class="depth-1"><a href="#L58"><code>WizardDialog.__init__</code></a><span class="line">L58</span></li><li class="depth-1"><a href="#L76"><code>WizardDialog.server</code></a><span class="line">L76</span></li><li class="depth-1"><a href="#L79"><code>WizardDialog._build</code></a><span class="line">L79</span></li><li class="depth-1"><a href="#L123"><code>WizardDialog._load</code></a><span class="line">L123</span></li><li class="depth-1"><a href="#L130"><code>WizardDialog._fetch</code></a><span class="line">L130</span></li><li class="depth-1"><a href="#L142"><code>WizardDialog._schema</code></a><span class="line">L142</span></li><li class="depth-1"><a href="#L170"><code>WizardDialog._fill_steps</code></a><span class="line">L170</span></li><li class="depth-1"><a href="#L179"><code>WizardDialog._jump</code></a><span class="line">L179</span></li><li class="depth-1"><a href="#L188"><code>WizardDialog._render</code></a><span class="line">L188</span></li><li class="depth-1"><a href="#L236"><code>WizardDialog._toggle_advanced</code></a><span class="line">L236</span></li><li class="depth-1"><a href="#L246"><code>WizardDialog._field</code></a><span class="line">L246</span></li><li class="depth-1"><a href="#L265"><code>WizardDialog._widget</code></a><span class="line">L265</span></li><li class="depth-1"><a href="#L377"><code>WizardDialog._tasks_widget</code></a><span class="line">L377</span></li><li class="depth-1"><a href="#L455"><code>WizardDialog._pick_into</code></a><span class="line">L455</span></li><li class="depth-1"><a href="#L460"><code>WizardDialog._add_path</code></a><span class="line">L460</span></li><li class="depth-1"><a href="#L465"><code>WizardDialog._choice_changed</code></a><span class="line">L465</span></li><li class="depth-1"><a href="#L470"><code>WizardDialog._collect</code></a><span class="line">L470</span></li><li class="depth-1"><a href="#L480"><code>WizardDialog._current_step</code></a><span class="line">L480</span></li><li class="depth-1"><a href="#L483"><code>WizardDialog._step_errors</code></a><span class="line">L483</span></li><li class="depth-1"><a href="#L498"><code>WizardDialog.back</code></a><span class="line">L498</span></li><li class="depth-1"><a href="#L509"><code>WizardDialog.next</code></a><span class="line">L509</span></li><li class="depth-1"><a href="#L522"><code>WizardDialog.show_summary</code></a><span class="line">L522</span></li><li class="depth-1"><a href="#L527"><code>WizardDialog._planned</code></a><span class="line">L527</span></li><li class="depth-1"><a href="#L557"><code>WizardDialog._leave_summary</code></a><span class="line">L557</span></li><li class="depth-1"><a href="#L563"><code>WizardDialog.submit</code></a><span class="line">L563</span></li><li class="depth-1"><a href="#L567"><code>WizardDialog._submitted</code></a><span class="line">L567</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span>
+<span class="normal">525</span>
+<span class="normal">526</span>
+<span class="normal">527</span>
+<span class="normal">528</span>
+<span class="normal">529</span>
+<span class="normal">530</span>
+<span class="normal">531</span>
+<span class="normal">532</span>
+<span class="normal">533</span>
+<span class="normal">534</span>
+<span class="normal">535</span>
+<span class="normal">536</span>
+<span class="normal">537</span>
+<span class="normal">538</span>
+<span class="normal">539</span>
+<span class="normal">540</span>
+<span class="normal">541</span>
+<span class="normal">542</span>
+<span class="normal">543</span>
+<span class="normal">544</span>
+<span class="normal">545</span>
+<span class="normal">546</span>
+<span class="normal">547</span>
+<span class="normal">548</span>
+<span class="normal">549</span>
+<span class="normal">550</span>
+<span class="normal">551</span>
+<span class="normal">552</span>
+<span class="normal">553</span>
+<span class="normal">554</span>
+<span class="normal">555</span>
+<span class="normal">556</span>
+<span class="normal">557</span>
+<span class="normal">558</span>
+<span class="normal">559</span>
+<span class="normal">560</span>
+<span class="normal">561</span>
+<span class="normal">562</span>
+<span class="normal">563</span>
+<span class="normal">564</span>
+<span class="normal">565</span>
+<span class="normal">566</span>
+<span class="normal">567</span>
+<span class="normal">568</span>
+<span class="normal">569</span>
+<span class="normal">570</span>
+<span class="normal">571</span>
+<span class="normal">572</span>
+<span class="normal">573</span>
+<span class="normal">574</span>
+<span class="normal">575</span>
+<span class="normal">576</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># matformer/gui/wizard.py</span>
+<a id="L2" name="L2"></a><span class="sd">&quot;&quot;&quot;A renderer for the TOML wizard definitions.</span>
+<a id="L3" name="L3"></a>
+<a id="L4" name="L4"></a><span class="sd">The dialog knows nothing about training, MDAT or annotation: it draws the steps the server returns,</span>
+<a id="L5" name="L5"></a><span class="sd">collects answers, and submits them. Every choice, path and list control is generic. Fields marked</span>
+<a id="L6" name="L6"></a><span class="sd">advanced sit behind one expander; conditional fields follow the same `when` language the server</span>
+<a id="L7" name="L7"></a><span class="sd">uses. The summary shows the generated config or command list before anything is queued.</span>
+<a id="L8" name="L8"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L9" name="L9"></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<a id="L10" name="L10"></a>
+<a id="L11" name="L11"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="L12" name="L12"></a><span class="kn">import</span><span class="w"> </span><span class="nn">tkinter</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tk</span>
+<a id="L13" name="L13"></a><span class="kn">from</span><span class="w"> </span><span class="nn">tkinter</span><span class="w"> </span><span class="kn">import</span> <span class="n">ttk</span>
+<a id="L14" name="L14"></a>
+<a id="L15" name="L15"></a><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.gui.explorer</span><span class="w"> </span><span class="kn">import</span> <span class="n">pick</span>
+<a id="L16" name="L16"></a><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.gui.widgets</span><span class="w"> </span><span class="kn">import</span> <span class="n">Console</span><span class="p">,</span> <span class="n">ScrollBox</span><span class="p">,</span> <span class="n">fit_dialog</span>
+<a id="L17" name="L17"></a>
+<a id="L18" name="L18"></a>
+<a id="L19" name="L19"></a><span class="k">def</span><span class="w"> </span><span class="nf">_options</span><span class="p">(</span><span class="n">field</span><span class="p">):</span>
+<a id="L20" name="L20"></a>    <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L21" name="L21"></a>    <span class="k">for</span> <span class="n">option</span> <span class="ow">in</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;options&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]:</span>
+<a id="L22" name="L22"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">option</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+<a id="L23" name="L23"></a>            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">),</span> <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;value&quot;</span><span class="p">))),</span>
+<a id="L24" name="L24"></a>                        <span class="n">option</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;doc&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)))</span>
+<a id="L25" name="L25"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L26" name="L26"></a>            <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">option</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">option</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+<a id="L27" name="L27"></a>    <span class="k">return</span> <span class="n">out</span>
+<a id="L28" name="L28"></a>
+<a id="L29" name="L29"></a>
+<a id="L30" name="L30"></a><span class="k">def</span><span class="w"> </span><span class="nf">_test</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="n">values</span><span class="p">):</span>
+<a id="L31" name="L31"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">condition</span><span class="p">:</span>
+<a id="L32" name="L32"></a>        <span class="k">return</span> <span class="kc">True</span>
+<a id="L33" name="L33"></a>    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">condition</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+<a id="L34" name="L34"></a>        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">_test</span><span class="p">(</span><span class="n">one</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span> <span class="k">for</span> <span class="n">one</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">)</span>
+<a id="L35" name="L35"></a>    <span class="k">if</span> <span class="s2">&quot;any&quot;</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">:</span>
+<a id="L36" name="L36"></a>        <span class="k">return</span> <span class="nb">any</span><span class="p">(</span><span class="n">_test</span><span class="p">(</span><span class="n">one</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span> <span class="k">for</span> <span class="n">one</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;any&quot;</span><span class="p">])</span>
+<a id="L37" name="L37"></a>    <span class="k">if</span> <span class="s2">&quot;all&quot;</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">:</span>
+<a id="L38" name="L38"></a>        <span class="k">return</span> <span class="nb">all</span><span class="p">(</span><span class="n">_test</span><span class="p">(</span><span class="n">one</span><span class="p">,</span> <span class="n">values</span><span class="p">)</span> <span class="k">for</span> <span class="n">one</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;all&quot;</span><span class="p">])</span>
+<a id="L39" name="L39"></a>    <span class="k">if</span> <span class="s2">&quot;not&quot;</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">:</span>
+<a id="L40" name="L40"></a>        <span class="k">return</span> <span class="ow">not</span> <span class="n">_test</span><span class="p">(</span><span class="n">condition</span><span class="p">[</span><span class="s2">&quot;not&quot;</span><span class="p">],</span> <span class="n">values</span><span class="p">)</span>
+<a id="L41" name="L41"></a>    <span class="n">value</span> <span class="o">=</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">condition</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;field&quot;</span><span class="p">))</span>
+<a id="L42" name="L42"></a>    <span class="k">if</span> <span class="s2">&quot;is&quot;</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">:</span>
+<a id="L43" name="L43"></a>        <span class="k">return</span> <span class="n">value</span> <span class="o">==</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;is&quot;</span><span class="p">]</span>
+<a id="L44" name="L44"></a>    <span class="k">if</span> <span class="s2">&quot;equals&quot;</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">:</span>
+<a id="L45" name="L45"></a>        <span class="k">return</span> <span class="n">value</span> <span class="o">==</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;equals&quot;</span><span class="p">]</span>
+<a id="L46" name="L46"></a>    <span class="k">if</span> <span class="s2">&quot;in&quot;</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">:</span>
+<a id="L47" name="L47"></a>        <span class="k">return</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;in&quot;</span><span class="p">]</span>
+<a id="L48" name="L48"></a>    <span class="k">if</span> <span class="s2">&quot;not_in&quot;</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">:</span>
+<a id="L49" name="L49"></a>        <span class="k">return</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">[</span><span class="s2">&quot;not_in&quot;</span><span class="p">]</span>
+<a id="L50" name="L50"></a>    <span class="k">if</span> <span class="n">condition</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;truthy&quot;</span><span class="p">):</span>
+<a id="L51" name="L51"></a>        <span class="k">return</span> <span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="L52" name="L52"></a>    <span class="k">if</span> <span class="s2">&quot;exists&quot;</span> <span class="ow">in</span> <span class="n">condition</span><span class="p">:</span>
+<a id="L53" name="L53"></a>        <span class="k">return</span> <span class="p">(</span><span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="nb">bool</span><span class="p">(</span><span class="n">condition</span><span class="p">[</span><span class="s2">&quot;exists&quot;</span><span class="p">])</span>
+<a id="L54" name="L54"></a>    <span class="k">return</span> <span class="kc">True</span>
+<a id="L55" name="L55"></a>
+<a id="L56" name="L56"></a>
+<a id="L57" name="L57"></a><span class="k">class</span><span class="w"> </span><span class="nc">WizardDialog</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">Toplevel</span><span class="p">):</span>
+<a id="L58" name="L58"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">app</span><span class="p">,</span> <span class="n">wizard_id</span><span class="p">,</span> <span class="n">on_done</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L59" name="L59"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+<a id="L60" name="L60"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wizard_id</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_done</span> <span class="o">=</span> <span class="n">app</span><span class="p">,</span> <span class="n">wizard_id</span><span class="p">,</span> <span class="n">on_done</span>
+<a id="L61" name="L61"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">answers</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">initial</span> <span class="ow">or</span> <span class="p">{})</span>
+<a id="L62" name="L62"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">schema</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">[]</span>
+<a id="L63" name="L63"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L64" name="L64"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">False</span><span class="p">,</span> <span class="kc">False</span>
+<a id="L65" name="L65"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_generation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_advanced</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="kc">False</span>
+<a id="L66" name="L66"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_widgets</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L67" name="L67"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Wizard&quot;</span><span class="p">)</span>
+<a id="L68" name="L68"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">geometry</span><span class="p">(</span><span class="s2">&quot;920x680&quot;</span><span class="p">)</span>
+<a id="L69" name="L69"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">minsize</span><span class="p">(</span><span class="mi">760</span><span class="p">,</span> <span class="mi">520</span><span class="p">)</span>
+<a id="L70" name="L70"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">transient</span><span class="p">(</span><span class="n">app</span><span class="p">)</span>
+<a id="L71" name="L71"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_build</span><span class="p">()</span>
+<a id="L72" name="L72"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_load</span><span class="p">()</span>
+<a id="L73" name="L73"></a>        <span class="n">fit_dialog</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="mi">920</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+<a id="L74" name="L74"></a>
+<a id="L75" name="L75"></a>    <span class="nd">@property</span>
+<a id="L76" name="L76"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">server</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L77" name="L77"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">server</span>
+<a id="L78" name="L78"></a>
+<a id="L79" name="L79"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_build</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L80" name="L80"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<a id="L81" name="L81"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<a id="L82" name="L82"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title_lbl</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;reading the wizard…&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Title.TLabel&quot;</span><span class="p">)</span>
+<a id="L83" name="L83"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title_lbl</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<a id="L84" name="L84"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">description</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Subtitle.TLabel&quot;</span><span class="p">,</span> <span class="n">wraplength</span><span class="o">=</span><span class="mi">840</span><span class="p">,</span>
+<a id="L85" name="L85"></a>                                     <span class="n">justify</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+<a id="L86" name="L86"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<a id="L87" name="L87"></a>        <span class="n">body</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">PanedWindow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">orient</span><span class="o">=</span><span class="s2">&quot;horizontal&quot;</span><span class="p">)</span>
+<a id="L88" name="L88"></a>        <span class="n">body</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">12</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="mi">6</span><span class="p">)</span>
+<a id="L89" name="L89"></a>        <span class="n">left</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+<a id="L90" name="L90"></a>        <span class="n">body</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<a id="L91" name="L91"></a>        <span class="n">palette</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">palette</span><span class="p">()</span>
+<a id="L92" name="L92"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Listbox</span><span class="p">(</span><span class="n">left</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;TkDefaultFont&quot;</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span>
+<a id="L93" name="L93"></a>                                    <span class="n">activestyle</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">,</span> <span class="n">exportselection</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="L94" name="L94"></a>                                    <span class="n">bg</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s2">&quot;surface&quot;</span><span class="p">],</span> <span class="n">fg</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+<a id="L95" name="L95"></a>                                    <span class="n">selectbackground</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s2">&quot;accent_soft&quot;</span><span class="p">],</span>
+<a id="L96" name="L96"></a>                                    <span class="n">selectforeground</span><span class="o">=</span><span class="n">palette</span><span class="p">[</span><span class="s2">&quot;text&quot;</span><span class="p">],</span>
+<a id="L97" name="L97"></a>                                    <span class="n">highlightthickness</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">bd</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<a id="L98" name="L98"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L99" name="L99"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;&lt;ListboxSelect&gt;&gt;&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_jump</span><span class="p">)</span>
+<a id="L100" name="L100"></a>        <span class="n">right</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">body</span><span class="p">)</span>
+<a id="L101" name="L101"></a>        <span class="n">body</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">right</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="L102" name="L102"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_title</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">right</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Head.TLabel&quot;</span><span class="p">)</span>
+<a id="L103" name="L103"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_title</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<a id="L104" name="L104"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_doc</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">right</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Muted.TLabel&quot;</span><span class="p">,</span> <span class="n">wraplength</span><span class="o">=</span><span class="mi">610</span><span class="p">,</span>
+<a id="L105" name="L105"></a>                                  <span class="n">justify</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+<a id="L106" name="L106"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_doc</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<a id="L107" name="L107"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">scroll</span> <span class="o">=</span> <span class="n">ScrollBox</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="n">right</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="L108" name="L108"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">scroll</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L109" name="L109"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">form</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">scroll</span><span class="o">.</span><span class="n">inner</span><span class="p">)</span>
+<a id="L110" name="L110"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;n&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<a id="L111" name="L111"></a>        <span class="n">bottom</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+<a id="L112" name="L112"></a>        <span class="n">bottom</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="L113" name="L113"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">bottom</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;&lt; Back&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="p">)</span>
+<a id="L114" name="L114"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+<a id="L115" name="L115"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">bottom</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Next &gt;&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Accent.TButton&quot;</span><span class="p">,</span>
+<a id="L116" name="L116"></a>                                   <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">next</span><span class="p">)</span>
+<a id="L117" name="L117"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<a id="L118" name="L118"></a>        <span class="n">ttk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">bottom</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Cancel&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Ghost.TButton&quot;</span><span class="p">,</span>
+<a id="L119" name="L119"></a>                   <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+<a id="L120" name="L120"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;Escape&gt;&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">())</span>
+<a id="L121" name="L121"></a>
+<a id="L122" name="L122"></a>    <span class="c1"># ── server round-trips ────────────────────────────────────────────────────</span>
+<a id="L123" name="L123"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_load</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L124" name="L124"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">got</span><span class="p">(</span><span class="n">context</span><span class="p">):</span>
+<a id="L125" name="L125"></a>            <span class="k">if</span> <span class="n">context</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">context</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+<a id="L126" name="L126"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">context</span> <span class="o">=</span> <span class="n">context</span>
+<a id="L127" name="L127"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_fetch</span><span class="p">()</span>
+<a id="L128" name="L128"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s2">&quot;wizard.context&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">got</span><span class="p">)</span>
+<a id="L129" name="L129"></a>
+<a id="L130" name="L130"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_fetch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keep</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L131" name="L131"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_generation</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="L132" name="L132"></a>        <span class="n">generation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generation</span>
+<a id="L133" name="L133"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L134" name="L134"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="L135" name="L135"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="s2">&quot;disabled&quot;</span><span class="p">)</span>
+<a id="L136" name="L136"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="s2">&quot;disabled&quot;</span><span class="p">)</span>
+<a id="L137" name="L137"></a>        <span class="k">except</span> <span class="n">tk</span><span class="o">.</span><span class="n">TclError</span><span class="p">:</span>
+<a id="L138" name="L138"></a>            <span class="k">pass</span>
+<a id="L139" name="L139"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s2">&quot;wizard.schema&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wizard_id</span><span class="p">,</span> <span class="s2">&quot;answers&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">answers</span><span class="p">},</span>
+<a id="L140" name="L140"></a>                         <span class="k">lambda</span> <span class="n">payload</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_schema</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="n">generation</span><span class="p">,</span> <span class="n">keep</span><span class="p">))</span>
+<a id="L141" name="L141"></a>
+<a id="L142" name="L142"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_schema</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">payload</span><span class="p">,</span> <span class="n">generation</span><span class="p">,</span> <span class="n">keep</span><span class="p">):</span>
+<a id="L143" name="L143"></a>        <span class="k">if</span> <span class="n">generation</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_generation</span> <span class="ow">or</span> <span class="ow">not</span> <span class="n">payload</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">payload</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+<a id="L144" name="L144"></a>            <span class="k">return</span>
+<a id="L145" name="L145"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L146" name="L146"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">schema</span> <span class="o">=</span> <span class="n">payload</span>
+<a id="L147" name="L147"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="o">=</span> <span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;steps&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+<a id="L148" name="L148"></a>        <span class="k">for</span> <span class="n">step</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+<a id="L149" name="L149"></a>            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">step</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fields&quot;</span><span class="p">,</span> <span class="p">[]):</span>
+<a id="L150" name="L150"></a>                <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;prefill&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">answers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+<a id="L151" name="L151"></a>                    <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">context</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;prefill&quot;</span><span class="p">])</span>
+<a id="L152" name="L152"></a>                    <span class="k">if</span> <span class="n">value</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">):</span>
+<a id="L153" name="L153"></a>                        <span class="bp">self</span><span class="o">.</span><span class="n">answers</span><span class="p">[</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+<a id="L154" name="L154"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title_lbl</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;title&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">wizard_id</span><span class="p">))</span>
+<a id="L155" name="L155"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">description</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+<a id="L156" name="L156"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;title&#39;</span><span class="p">,</span><span class="w"> </span><span class="bp">self</span><span class="o">.</span><span class="n">wizard_id</span><span class="p">)</span><span class="si">}</span><span class="s2"> - wizard&quot;</span><span class="p">)</span>
+<a id="L157" name="L157"></a>        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span><span class="n">payload</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;values&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L158" name="L158"></a>            <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">answers</span> <span class="ow">and</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L159" name="L159"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">answers</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+<a id="L160" name="L160"></a>        <span class="k">if</span> <span class="n">keep</span><span class="p">:</span>
+<a id="L161" name="L161"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">i</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span> <span class="k">if</span> <span class="n">step</span><span class="p">[</span><span class="s2">&quot;id&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="n">keep</span><span class="p">),</span> <span class="mi">0</span><span class="p">)</span>
+<a id="L162" name="L162"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">min</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)))</span>
+<a id="L163" name="L163"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_fill_steps</span><span class="p">()</span>
+<a id="L164" name="L164"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_render</span><span class="p">()</span>
+<a id="L165" name="L165"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="L166" name="L166"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span><span class="p">)</span>
+<a id="L167" name="L167"></a>        <span class="k">except</span> <span class="n">tk</span><span class="o">.</span><span class="n">TclError</span><span class="p">:</span>
+<a id="L168" name="L168"></a>            <span class="k">pass</span>
+<a id="L169" name="L169"></a>
+<a id="L170" name="L170"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_fill_steps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L171" name="L171"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;end&quot;</span><span class="p">)</span>
+<a id="L172" name="L172"></a>        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">step</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">,</span> <span class="n">start</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<a id="L173" name="L173"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">.  </span><span class="si">{</span><span class="n">step</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L174" name="L174"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+<a id="L175" name="L175"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">selection_clear</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;end&quot;</span><span class="p">)</span>
+<a id="L176" name="L176"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">selection_set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+<a id="L177" name="L177"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">see</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+<a id="L178" name="L178"></a>
+<a id="L179" name="L179"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_jump</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">_event</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L180" name="L180"></a>        <span class="n">selection</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">curselection</span><span class="p">()</span>
+<a id="L181" name="L181"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">selection</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">:</span>
+<a id="L182" name="L182"></a>            <span class="k">return</span>
+<a id="L183" name="L183"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_collect</span><span class="p">()</span>
+<a id="L184" name="L184"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">=</span> <span class="n">selection</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L185" name="L185"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_fetch</span><span class="p">(</span><span class="n">keep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">][</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
+<a id="L186" name="L186"></a>
+<a id="L187" name="L187"></a>    <span class="c1"># ── rendering ─────────────────────────────────────────────────────────────</span>
+<a id="L188" name="L188"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_render</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L189" name="L189"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L190" name="L190"></a>        <span class="k">for</span> <span class="n">widget</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">winfo_children</span><span class="p">():</span>
+<a id="L191" name="L191"></a>            <span class="n">widget</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+<a id="L192" name="L192"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_widgets</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L193" name="L193"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">:</span>
+<a id="L194" name="L194"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">form</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;this wizard has no step for the current answers&quot;</span><span class="p">,</span>
+<a id="L195" name="L195"></a>                      <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Muted.TLabel&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<a id="L196" name="L196"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Next &gt;&quot;</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;disabled&quot;</span><span class="p">)</span>
+<a id="L197" name="L197"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="s2">&quot;disabled&quot;</span><span class="p">)</span>
+<a id="L198" name="L198"></a>            <span class="k">return</span>
+<a id="L199" name="L199"></a>        <span class="n">step</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">]</span>
+<a id="L200" name="L200"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_title</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">step</span><span class="p">[</span><span class="s2">&quot;title&quot;</span><span class="p">])</span>
+<a id="L201" name="L201"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_doc</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="n">step</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;description&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+<a id="L202" name="L202"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="k">else</span> <span class="s2">&quot;disabled&quot;</span><span class="p">)</span>
+<a id="L203" name="L203"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Next &gt;&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">else</span> <span class="s2">&quot;Summary &gt;&quot;</span><span class="p">,</span>
+<a id="L204" name="L204"></a>                                <span class="n">state</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span><span class="p">)</span>
+<a id="L205" name="L205"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">selection_clear</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;end&quot;</span><span class="p">)</span>
+<a id="L206" name="L206"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">selection_set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">)</span>
+<a id="L207" name="L207"></a>        <span class="n">visible</span> <span class="o">=</span> <span class="p">[</span><span class="n">field</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">step</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;fields&quot;</span><span class="p">,</span> <span class="p">[])</span>
+<a id="L208" name="L208"></a>                   <span class="k">if</span> <span class="n">_test</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;when&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">answers</span><span class="p">)]</span>
+<a id="L209" name="L209"></a>        <span class="n">focused</span> <span class="o">=</span> <span class="p">[</span><span class="n">field</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">visible</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;advanced&quot;</span><span class="p">)]</span>
+<a id="L210" name="L210"></a>        <span class="n">advanced</span> <span class="o">=</span> <span class="p">[</span><span class="n">field</span> <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">visible</span> <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;advanced&quot;</span><span class="p">)]</span>
+<a id="L211" name="L211"></a>        <span class="n">button</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L212" name="L212"></a>        <span class="k">if</span> <span class="n">advanced</span><span class="p">:</span>
+<a id="L213" name="L213"></a>            <span class="n">frame</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">form</span><span class="p">)</span>
+<a id="L214" name="L214"></a>            <span class="n">frame</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<a id="L215" name="L215"></a>            <span class="n">count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">advanced</span><span class="p">)</span>
+<a id="L216" name="L216"></a>            <span class="n">button</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Advanced options (</span><span class="si">{</span><span class="n">count</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">,</span>
+<a id="L217" name="L217"></a>                                <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Ghost.TButton&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_toggle_advanced</span><span class="p">)</span>
+<a id="L218" name="L218"></a>            <span class="n">button</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<a id="L219" name="L219"></a>        <span class="n">section</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L220" name="L220"></a>        <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">focused</span><span class="p">:</span>
+<a id="L221" name="L221"></a>            <span class="n">section</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">section</span><span class="p">)</span>
+<a id="L222" name="L222"></a>        <span class="k">if</span> <span class="n">advanced</span><span class="p">:</span>
+<a id="L223" name="L223"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">advanced_holder</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">form</span><span class="p">)</span>
+<a id="L224" name="L224"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_button</span> <span class="o">=</span> <span class="n">button</span>
+<a id="L225" name="L225"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">advanced</span><span class="p">)</span>
+<a id="L226" name="L226"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_advanced</span><span class="p">:</span>
+<a id="L227" name="L227"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">advanced_holder</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;n&quot;</span><span class="p">)</span>
+<a id="L228" name="L228"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_frame</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">advanced_holder</span>
+<a id="L229" name="L229"></a>            <span class="n">section</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L230" name="L230"></a>            <span class="k">for</span> <span class="n">field</span> <span class="ow">in</span> <span class="n">advanced</span><span class="p">:</span>
+<a id="L231" name="L231"></a>                <span class="n">section</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_field</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">advanced_holder</span><span class="p">)</span>
+<a id="L232" name="L232"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">visible</span><span class="p">:</span>
+<a id="L233" name="L233"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">form</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;no option in this step for the current answers&quot;</span><span class="p">,</span>
+<a id="L234" name="L234"></a>                      <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Muted.TLabel&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<a id="L235" name="L235"></a>
+<a id="L236" name="L236"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_toggle_advanced</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L237" name="L237"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_advanced</span> <span class="o">=</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_advanced</span>
+<a id="L238" name="L238"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_advanced</span><span class="p">:</span>
+<a id="L239" name="L239"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_frame</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;n&quot;</span><span class="p">)</span>
+<a id="L240" name="L240"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_button</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Hide advanced options (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_advanced_count</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<a id="L241" name="L241"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L242" name="L242"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_frame</span><span class="o">.</span><span class="n">pack_forget</span><span class="p">()</span>
+<a id="L243" name="L243"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_advanced_button</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span>
+<a id="L244" name="L244"></a>                <span class="n">text</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;Advanced options (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_advanced_count</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<a id="L245" name="L245"></a>
+<a id="L246" name="L246"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_field</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">section</span><span class="p">,</span> <span class="n">parent</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L247" name="L247"></a>        <span class="n">parent</span> <span class="o">=</span> <span class="n">parent</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">form</span>
+<a id="L248" name="L248"></a>        <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;section&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;section&quot;</span><span class="p">]</span> <span class="o">!=</span> <span class="n">section</span><span class="p">:</span>
+<a id="L249" name="L249"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">parent</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;section&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">,</span> <span class="s2">&quot; · &quot;</span><span class="p">)</span><span class="o">.</span><span class="n">upper</span><span class="p">(),</span>
+<a id="L250" name="L250"></a>                      <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Head.TLabel&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<a id="L251" name="L251"></a>            <span class="n">section</span> <span class="o">=</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;section&quot;</span><span class="p">]</span>
+<a id="L252" name="L252"></a>        <span class="n">row</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">parent</span><span class="p">)</span>
+<a id="L253" name="L253"></a>        <span class="n">row</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="L254" name="L254"></a>        <span class="n">row</span><span class="o">.</span><span class="n">columnconfigure</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="L255" name="L255"></a>        <span class="n">label</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+<a id="L256" name="L256"></a>        <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">label</span> <span class="o">+</span> <span class="s2">&quot;:&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;nw&quot;</span><span class="p">)</span>
+<a id="L257" name="L257"></a>        <span class="n">value</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">answers</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">))</span>
+<a id="L258" name="L258"></a>        <span class="n">getter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_widget</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<a id="L259" name="L259"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_widgets</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">field</span><span class="p">,</span> <span class="n">getter</span><span class="p">))</span>
+<a id="L260" name="L260"></a>        <span class="k">if</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;doc&quot;</span><span class="p">):</span>
+<a id="L261" name="L261"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">row</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;doc&quot;</span><span class="p">],</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Faint.TLabel&quot;</span><span class="p">,</span> <span class="n">wraplength</span><span class="o">=</span><span class="mi">430</span><span class="p">,</span>
+<a id="L262" name="L262"></a>                      <span class="n">justify</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+<a id="L263" name="L263"></a>        <span class="k">return</span> <span class="n">section</span>
+<a id="L264" name="L264"></a>
+<a id="L265" name="L265"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_widget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">row</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<a id="L266" name="L266"></a>        <span class="n">kind</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kind&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+<a id="L267" name="L267"></a>        <span class="n">holder</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+<a id="L268" name="L268"></a>        <span class="n">holder</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L269" name="L269"></a>        <span class="n">holder</span><span class="o">.</span><span class="n">columnconfigure</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="L270" name="L270"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;bool&quot;</span><span class="p">:</span>
+<a id="L271" name="L271"></a>            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L272" name="L272"></a>                <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="L273" name="L273"></a>                <span class="n">box</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Combobox</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;true&quot;</span><span class="p">,</span> <span class="s2">&quot;false&quot;</span><span class="p">],</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;readonly&quot;</span><span class="p">)</span>
+<a id="L274" name="L274"></a>                <span class="n">box</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L275" name="L275"></a>                <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="kc">None</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="k">else</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;true&quot;</span>
+<a id="L276" name="L276"></a>            <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">BooleanVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="nb">bool</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+<a id="L277" name="L277"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Checkbutton</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<a id="L278" name="L278"></a>            <span class="k">return</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span>
+<a id="L279" name="L279"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;choice&quot;</span><span class="p">,</span> <span class="s2">&quot;radio&quot;</span><span class="p">):</span>
+<a id="L280" name="L280"></a>            <span class="n">options</span> <span class="o">=</span> <span class="n">_options</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+<a id="L281" name="L281"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">options</span><span class="p">:</span>
+<a id="L282" name="L282"></a>                <span class="n">options</span> <span class="o">=</span> <span class="p">[(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">),</span> <span class="s2">&quot;&quot;</span><span class="p">)]</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="p">[]</span>
+<a id="L283" name="L283"></a>            <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">label</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">options</span><span class="p">]</span>
+<a id="L284" name="L284"></a>            <span class="n">values</span> <span class="o">=</span> <span class="p">{</span><span class="n">label</span><span class="p">:</span> <span class="n">option</span> <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">options</span><span class="p">}</span>
+<a id="L285" name="L285"></a>            <span class="n">current</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">label</span> <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">options</span> <span class="k">if</span> <span class="n">option</span> <span class="o">==</span> <span class="n">value</span><span class="p">),</span>
+<a id="L286" name="L286"></a>                           <span class="n">labels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">labels</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="L287" name="L287"></a>            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;choice&quot;</span><span class="p">:</span>
+<a id="L288" name="L288"></a>                <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">current</span><span class="p">)</span>
+<a id="L289" name="L289"></a>                <span class="n">box</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Combobox</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;readonly&quot;</span><span class="p">,</span> <span class="n">textvariable</span><span class="o">=</span><span class="n">var</span><span class="p">)</span>
+<a id="L290" name="L290"></a>                <span class="n">box</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L291" name="L291"></a>                <span class="n">box</span><span class="o">.</span><span class="n">bind</span><span class="p">(</span><span class="s2">&quot;&lt;&lt;ComboboxSelected&gt;&gt;&quot;</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">e</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_choice_changed</span><span class="p">())</span>
+<a id="L292" name="L292"></a>                <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+<a id="L293" name="L293"></a>            <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">current</span><span class="p">)</span>
+<a id="L294" name="L294"></a>            <span class="n">frame</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">holder</span><span class="p">)</span>
+<a id="L295" name="L295"></a>            <span class="n">frame</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L296" name="L296"></a>            <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+<a id="L297" name="L297"></a>                <span class="n">button</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Radiobutton</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">value</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="n">var</span><span class="p">,</span>
+<a id="L298" name="L298"></a>                                         <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_choice_changed</span><span class="p">)</span>
+<a id="L299" name="L299"></a>                <span class="n">button</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<a id="L300" name="L300"></a>                <span class="k">if</span> <span class="n">doc</span><span class="p">:</span>
+<a id="L301" name="L301"></a>                    <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">doc</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Faint.TLabel&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">22</span><span class="p">)</span>
+<a id="L302" name="L302"></a>            <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">values</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">var</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+<a id="L303" name="L303"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;multi&quot;</span><span class="p">:</span>
+<a id="L304" name="L304"></a>            <span class="n">options</span> <span class="o">=</span> <span class="n">_options</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+<a id="L305" name="L305"></a>            <span class="n">selected</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">value</span> <span class="ow">or</span> <span class="p">[])</span>
+<a id="L306" name="L306"></a>            <span class="n">frame</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">holder</span><span class="p">)</span>
+<a id="L307" name="L307"></a>            <span class="n">frame</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L308" name="L308"></a>            <span class="n">variables</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L309" name="L309"></a>            <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">options</span><span class="p">:</span>
+<a id="L310" name="L310"></a>                <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">BooleanVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">option</span> <span class="ow">in</span> <span class="n">selected</span><span class="p">)</span>
+<a id="L311" name="L311"></a>                <span class="n">ttk</span><span class="o">.</span><span class="n">Checkbutton</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">label</span><span class="p">,</span> <span class="n">variable</span><span class="o">=</span><span class="n">var</span><span class="p">,</span>
+<a id="L312" name="L312"></a>                                <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_choice_changed</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<a id="L313" name="L313"></a>                <span class="k">if</span> <span class="n">doc</span><span class="p">:</span>
+<a id="L314" name="L314"></a>                    <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">doc</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Faint.TLabel&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">22</span><span class="p">)</span>
+<a id="L315" name="L315"></a>                <span class="n">variables</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">option</span><span class="p">,</span> <span class="n">var</span><span class="p">))</span>
+<a id="L316" name="L316"></a>            <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="p">[</span><span class="n">option</span> <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">variables</span> <span class="k">if</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span><span class="p">()]</span>
+<a id="L317" name="L317"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;int&quot;</span><span class="p">,</span> <span class="s2">&quot;float&quot;</span><span class="p">,</span> <span class="s2">&quot;sci&quot;</span><span class="p">):</span>
+<a id="L318" name="L318"></a>            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="L319" name="L319"></a>            <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
+<a id="L320" name="L320"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">textvariable</span><span class="o">=</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L321" name="L321"></a>            <span class="k">def</span><span class="w"> </span><span class="nf">number</span><span class="p">(</span><span class="n">cast</span><span class="p">):</span>
+<a id="L322" name="L322"></a>                <span class="n">raw</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<a id="L323" name="L323"></a>                <span class="k">return</span> <span class="kc">None</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">raw</span> <span class="k">else</span> <span class="n">cast</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">raw</span><span class="p">))</span>
+<a id="L324" name="L324"></a>            <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;int&quot;</span><span class="p">:</span>
+<a id="L325" name="L325"></a>                <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">number</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+<a id="L326" name="L326"></a>            <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="n">number</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+<a id="L327" name="L327"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;json&quot;</span><span class="p">:</span>
+<a id="L328" name="L328"></a>            <span class="n">text</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">value</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">))</span> <span class="k">else</span> <span class="p">(</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+<a id="L329" name="L329"></a>            <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">text</span><span class="p">)</span>
+<a id="L330" name="L330"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">textvariable</span><span class="o">=</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L331" name="L331"></a>            <span class="k">def</span><span class="w"> </span><span class="nf">get_json</span><span class="p">():</span>
+<a id="L332" name="L332"></a>                <span class="n">raw</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+<a id="L333" name="L333"></a>                <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">raw</span><span class="p">)</span> <span class="k">if</span> <span class="n">raw</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L334" name="L334"></a>            <span class="k">return</span> <span class="n">get_json</span>
+<a id="L335" name="L335"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;path&quot;</span><span class="p">:</span>
+<a id="L336" name="L336"></a>            <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+<a id="L337" name="L337"></a>            <span class="n">entry</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">textvariable</span><span class="o">=</span><span class="n">var</span><span class="p">)</span>
+<a id="L338" name="L338"></a>            <span class="n">entry</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L339" name="L339"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;…&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<a id="L340" name="L340"></a>                       <span class="n">command</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pick_into</span><span class="p">(</span><span class="n">var</span><span class="p">))</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<a id="L341" name="L341"></a>            <span class="k">return</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span>
+<a id="L342" name="L342"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;paths&quot;</span><span class="p">:</span>
+<a id="L343" name="L343"></a>            <span class="n">frame</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">holder</span><span class="p">)</span>
+<a id="L344" name="L344"></a>            <span class="n">frame</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L345" name="L345"></a>            <span class="n">box</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">Listbox</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">font</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;TkFixedFont&quot;</span><span class="p">,</span> <span class="mi">9</span><span class="p">),</span> <span class="n">activestyle</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+<a id="L346" name="L346"></a>            <span class="n">box</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L347" name="L347"></a>            <span class="n">frame</span><span class="o">.</span><span class="n">columnconfigure</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="L348" name="L348"></a>            <span class="k">for</span> <span class="n">one</span> <span class="ow">in</span> <span class="n">value</span> <span class="ow">or</span> <span class="p">[]:</span>
+<a id="L349" name="L349"></a>                <span class="n">box</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">one</span><span class="p">))</span>
+<a id="L350" name="L350"></a>            <span class="n">buttons</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+<a id="L351" name="L351"></a>            <span class="n">buttons</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;n&quot;</span><span class="p">)</span>
+<a id="L352" name="L352"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">buttons</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Add…&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span>
+<a id="L353" name="L353"></a>                       <span class="n">command</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_add_path</span><span class="p">(</span><span class="n">box</span><span class="p">))</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<a id="L354" name="L354"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">buttons</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Remove&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Ghost.TButton&quot;</span><span class="p">,</span>
+<a id="L355" name="L355"></a>                       <span class="n">command</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">box</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="n">tk</span><span class="o">.</span><span class="n">ACTIVE</span><span class="p">)</span> <span class="k">if</span> <span class="n">box</span><span class="o">.</span><span class="n">curselection</span><span class="p">()</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L356" name="L356"></a>                       <span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
+<a id="L357" name="L357"></a>            <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;end&quot;</span><span class="p">))</span>
+<a id="L358" name="L358"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;tasks&quot;</span><span class="p">:</span>
+<a id="L359" name="L359"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tasks_widget</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<a id="L360" name="L360"></a>        <span class="k">if</span> <span class="n">kind</span> <span class="o">==</span> <span class="s2">&quot;mapping&quot;</span><span class="p">:</span>
+<a id="L361" name="L361"></a>            <span class="n">frame</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">holder</span><span class="p">)</span>
+<a id="L362" name="L362"></a>            <span class="n">frame</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L363" name="L363"></a>            <span class="n">frame</span><span class="o">.</span><span class="n">columnconfigure</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">weight</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="L364" name="L364"></a>            <span class="n">keys</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;options&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">list</span><span class="p">((</span><span class="n">value</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="L365" name="L365"></a>            <span class="n">entries</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L366" name="L366"></a>            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">key</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">keys</span><span class="p">):</span>
+<a id="L367" name="L367"></a>                <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">))</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<a id="L368" name="L368"></a>                <span class="n">current</span> <span class="o">=</span> <span class="p">(</span><span class="n">value</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;preserved&quot;</span><span class="p">))</span>
+<a id="L369" name="L369"></a>                <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">current</span><span class="p">))</span>
+<a id="L370" name="L370"></a>                <span class="n">ttk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">textvariable</span><span class="o">=</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="n">i</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L371" name="L371"></a>                <span class="n">entries</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">var</span><span class="p">))</span>
+<a id="L372" name="L372"></a>            <span class="k">return</span> <span class="k">lambda</span><span class="p">:</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span><span class="p">()</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">var</span> <span class="ow">in</span> <span class="n">entries</span><span class="p">}</span>
+<a id="L373" name="L373"></a>        <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="s2">&quot;&quot;</span> <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">str</span><span class="p">(</span><span class="n">value</span><span class="p">))</span>
+<a id="L374" name="L374"></a>        <span class="n">ttk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="n">holder</span><span class="p">,</span> <span class="n">textvariable</span><span class="o">=</span><span class="n">var</span><span class="p">)</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L375" name="L375"></a>        <span class="k">return</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span>
+<a id="L376" name="L376"></a>
+<a id="L377" name="L377"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_tasks_widget</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">holder</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<a id="L378" name="L378"></a>        <span class="n">columns</span> <span class="o">=</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;columns&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[</span>
+<a id="L379" name="L379"></a>            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;type&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Task&quot;</span><span class="p">},</span>
+<a id="L380" name="L380"></a>            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Name&quot;</span><span class="p">},</span>
+<a id="L381" name="L381"></a>            <span class="p">{</span><span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;kind&quot;</span><span class="p">:</span> <span class="s2">&quot;path&quot;</span><span class="p">,</span> <span class="s2">&quot;label&quot;</span><span class="p">:</span> <span class="s2">&quot;Data&quot;</span><span class="p">},</span>
+<a id="L382" name="L382"></a>        <span class="p">]</span>
+<a id="L383" name="L383"></a>        <span class="n">frame</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">holder</span><span class="p">)</span>
+<a id="L384" name="L384"></a>        <span class="n">frame</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">row</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">column</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sticky</span><span class="o">=</span><span class="s2">&quot;ew&quot;</span><span class="p">)</span>
+<a id="L385" name="L385"></a>        <span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L386" name="L386"></a>
+<a id="L387" name="L387"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">add_row</span><span class="p">(</span><span class="n">initial</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L388" name="L388"></a>            <span class="n">initial</span> <span class="o">=</span> <span class="n">initial</span> <span class="ow">or</span> <span class="p">{}</span>
+<a id="L389" name="L389"></a>            <span class="n">row_frame</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">frame</span><span class="p">)</span>
+<a id="L390" name="L390"></a>            <span class="n">row_frame</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="L391" name="L391"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">row_frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;✕&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Ghost.TButton&quot;</span><span class="p">,</span>
+<a id="L392" name="L392"></a>                       <span class="n">command</span><span class="o">=</span><span class="k">lambda</span> <span class="n">f</span><span class="o">=</span><span class="n">row_frame</span><span class="p">:</span> <span class="n">remove_row</span><span class="p">(</span><span class="n">f</span><span class="p">))</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+<a id="L393" name="L393"></a>            <span class="n">widgets</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L394" name="L394"></a>            <span class="k">for</span> <span class="n">column</span> <span class="ow">in</span> <span class="n">columns</span><span class="p">:</span>
+<a id="L395" name="L395"></a>                <span class="n">name</span><span class="p">,</span> <span class="n">ckind</span> <span class="o">=</span> <span class="n">column</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">],</span> <span class="n">column</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;kind&quot;</span><span class="p">,</span> <span class="s2">&quot;text&quot;</span><span class="p">)</span>
+<a id="L396" name="L396"></a>                <span class="k">if</span> <span class="n">ckind</span> <span class="o">==</span> <span class="s2">&quot;choice&quot;</span><span class="p">:</span>
+<a id="L397" name="L397"></a>                    <span class="n">options</span> <span class="o">=</span> <span class="n">_options</span><span class="p">(</span><span class="n">column</span><span class="p">)</span>
+<a id="L398" name="L398"></a>                    <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">label</span> <span class="k">for</span> <span class="n">_value</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">_doc</span> <span class="ow">in</span> <span class="n">options</span><span class="p">]</span>
+<a id="L399" name="L399"></a>                    <span class="n">values</span> <span class="o">=</span> <span class="p">{</span><span class="n">label</span><span class="p">:</span> <span class="n">option</span> <span class="k">for</span> <span class="n">option</span><span class="p">,</span> <span class="n">label</span><span class="p">,</span> <span class="n">_doc</span> <span class="ow">in</span> <span class="n">options</span><span class="p">}</span>
+<a id="L400" name="L400"></a>                    <span class="n">current</span> <span class="o">=</span> <span class="n">initial</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">column</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">))</span>
+<a id="L401" name="L401"></a>                    <span class="n">label</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">l</span> <span class="k">for</span> <span class="n">o</span><span class="p">,</span> <span class="n">l</span><span class="p">,</span> <span class="n">_d</span> <span class="ow">in</span> <span class="n">options</span> <span class="k">if</span> <span class="n">o</span> <span class="o">==</span> <span class="n">current</span><span class="p">),</span>
+<a id="L402" name="L402"></a>                                 <span class="n">labels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">if</span> <span class="n">labels</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+<a id="L403" name="L403"></a>                    <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">label</span><span class="p">)</span>
+<a id="L404" name="L404"></a>                    <span class="n">box</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Combobox</span><span class="p">(</span><span class="n">row_frame</span><span class="p">,</span> <span class="n">values</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span> <span class="n">state</span><span class="o">=</span><span class="s2">&quot;readonly&quot;</span><span class="p">,</span>
+<a id="L405" name="L405"></a>                                       <span class="n">width</span><span class="o">=</span><span class="n">column</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="mi">14</span><span class="p">),</span> <span class="n">textvariable</span><span class="o">=</span><span class="n">var</span><span class="p">)</span>
+<a id="L406" name="L406"></a>                    <span class="n">box</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="L407" name="L407"></a>                    <span class="n">widgets</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">v</span><span class="o">=</span><span class="n">var</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="n">values</span><span class="p">:</span> <span class="n">table</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">(),</span> <span class="n">v</span><span class="o">.</span><span class="n">get</span><span class="p">())</span>
+<a id="L408" name="L408"></a>                <span class="k">elif</span> <span class="n">ckind</span> <span class="o">==</span> <span class="s2">&quot;path&quot;</span><span class="p">:</span>
+<a id="L409" name="L409"></a>                    <span class="n">box</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="n">row_frame</span><span class="p">)</span>
+<a id="L410" name="L410"></a>                    <span class="n">box</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="L411" name="L411"></a>                    <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">initial</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">column</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+<a id="L412" name="L412"></a>                    <span class="n">entry</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="n">box</span><span class="p">,</span> <span class="n">textvariable</span><span class="o">=</span><span class="n">var</span><span class="p">)</span>
+<a id="L413" name="L413"></a>                    <span class="n">entry</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L414" name="L414"></a>                    <span class="n">ttk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">box</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;…&quot;</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<a id="L415" name="L415"></a>                               <span class="n">command</span><span class="o">=</span><span class="k">lambda</span> <span class="n">v</span><span class="o">=</span><span class="n">var</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_pick_into</span><span class="p">(</span><span class="n">v</span><span class="p">))</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+<a id="L416" name="L416"></a>                    <span class="n">widgets</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span>
+<a id="L417" name="L417"></a>                <span class="k">else</span><span class="p">:</span>
+<a id="L418" name="L418"></a>                    <span class="n">var</span> <span class="o">=</span> <span class="n">tk</span><span class="o">.</span><span class="n">StringVar</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">initial</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">column</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;default&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">))</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span><span class="p">))</span>
+<a id="L419" name="L419"></a>                    <span class="n">entry</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Entry</span><span class="p">(</span><span class="n">row_frame</span><span class="p">,</span> <span class="n">textvariable</span><span class="o">=</span><span class="n">var</span><span class="p">,</span>
+<a id="L420" name="L420"></a>                                      <span class="n">width</span><span class="o">=</span><span class="n">column</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;width&quot;</span><span class="p">,</span> <span class="mi">12</span><span class="p">))</span>
+<a id="L421" name="L421"></a>                    <span class="n">entry</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="n">padx</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+<a id="L422" name="L422"></a>                    <span class="n">widgets</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">var</span><span class="o">.</span><span class="n">get</span>
+<a id="L423" name="L423"></a>            <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">row_frame</span><span class="p">,</span> <span class="n">widgets</span><span class="p">))</span>
+<a id="L424" name="L424"></a>            <span class="k">return</span> <span class="n">row_frame</span><span class="p">,</span> <span class="n">widgets</span>
+<a id="L425" name="L425"></a>
+<a id="L426" name="L426"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">remove_row</span><span class="p">(</span><span class="n">row_frame</span><span class="p">):</span>
+<a id="L427" name="L427"></a>            <span class="k">for</span> <span class="n">index</span><span class="p">,</span> <span class="p">(</span><span class="n">widget</span><span class="p">,</span> <span class="n">_w</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+<a id="L428" name="L428"></a>                <span class="k">if</span> <span class="n">widget</span> <span class="ow">is</span> <span class="n">row_frame</span><span class="p">:</span>
+<a id="L429" name="L429"></a>                    <span class="n">rows</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+<a id="L430" name="L430"></a>                    <span class="k">break</span>
+<a id="L431" name="L431"></a>            <span class="n">row_frame</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+<a id="L432" name="L432"></a>
+<a id="L433" name="L433"></a>        <span class="k">for</span> <span class="n">initial</span> <span class="ow">in</span> <span class="n">value</span> <span class="ow">or</span> <span class="p">[{}]:</span>
+<a id="L434" name="L434"></a>            <span class="n">add_row</span><span class="p">(</span><span class="n">initial</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">initial</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span> <span class="k">else</span> <span class="p">{</span><span class="s2">&quot;type&quot;</span><span class="p">:</span> <span class="n">initial</span><span class="p">})</span>
+<a id="L435" name="L435"></a>        <span class="n">ttk</span><span class="o">.</span><span class="n">Button</span><span class="p">(</span><span class="n">frame</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;Add task&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Ghost.TButton&quot;</span><span class="p">,</span>
+<a id="L436" name="L436"></a>                   <span class="n">command</span><span class="o">=</span><span class="k">lambda</span><span class="p">:</span> <span class="n">add_row</span><span class="p">({}))</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<a id="L437" name="L437"></a>
+<a id="L438" name="L438"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">values</span><span class="p">():</span>
+<a id="L439" name="L439"></a>            <span class="n">out</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L440" name="L440"></a>            <span class="k">for</span> <span class="n">_row_frame</span><span class="p">,</span> <span class="n">widgets</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+<a id="L441" name="L441"></a>                <span class="n">row</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L442" name="L442"></a>                <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">getter</span> <span class="ow">in</span> <span class="n">widgets</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L443" name="L443"></a>                    <span class="k">try</span><span class="p">:</span>
+<a id="L444" name="L444"></a>                        <span class="n">item</span> <span class="o">=</span> <span class="n">getter</span><span class="p">()</span>
+<a id="L445" name="L445"></a>                    <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">tk</span><span class="o">.</span><span class="n">TclError</span><span class="p">):</span>
+<a id="L446" name="L446"></a>                        <span class="n">item</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L447" name="L447"></a>                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">item</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">item</span><span class="o">.</span><span class="n">strip</span><span class="p">():</span>
+<a id="L448" name="L448"></a>                        <span class="n">item</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<a id="L449" name="L449"></a>                    <span class="n">row</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">item</span>
+<a id="L450" name="L450"></a>                <span class="k">if</span> <span class="n">row</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;type&quot;</span><span class="p">):</span>
+<a id="L451" name="L451"></a>                    <span class="n">out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">row</span><span class="p">)</span>
+<a id="L452" name="L452"></a>            <span class="k">return</span> <span class="n">out</span>
+<a id="L453" name="L453"></a>        <span class="k">return</span> <span class="n">values</span>
+<a id="L454" name="L454"></a>
+<a id="L455" name="L455"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_pick_into</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">var</span><span class="p">):</span>
+<a id="L456" name="L456"></a>        <span class="n">path</span> <span class="o">=</span> <span class="n">pick</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="p">(),</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Choose a path&quot;</span><span class="p">)</span>
+<a id="L457" name="L457"></a>        <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+<a id="L458" name="L458"></a>            <span class="n">var</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+<a id="L459" name="L459"></a>
+<a id="L460" name="L460"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_add_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">box</span><span class="p">):</span>
+<a id="L461" name="L461"></a>        <span class="n">path</span> <span class="o">=</span> <span class="n">pick</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;.yaml&quot;</span><span class="p">,</span> <span class="s2">&quot;.yml&quot;</span><span class="p">),</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;Add a YAML config&quot;</span><span class="p">)</span>
+<a id="L462" name="L462"></a>        <span class="k">if</span> <span class="n">path</span><span class="p">:</span>
+<a id="L463" name="L463"></a>            <span class="n">box</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="s2">&quot;end&quot;</span><span class="p">,</span> <span class="n">path</span><span class="p">)</span>
+<a id="L464" name="L464"></a>
+<a id="L465" name="L465"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_choice_changed</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L466" name="L466"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_collect</span><span class="p">()</span>
+<a id="L467" name="L467"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_render</span><span class="p">()</span>
+<a id="L468" name="L468"></a>
+<a id="L469" name="L469"></a>    <span class="c1"># ── values and navigation ─────────────────────────────────────────────────</span>
+<a id="L470" name="L470"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_collect</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L471" name="L471"></a>        <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">getter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_widgets</span><span class="p">:</span>
+<a id="L472" name="L472"></a>            <span class="k">try</span><span class="p">:</span>
+<a id="L473" name="L473"></a>                <span class="n">value</span> <span class="o">=</span> <span class="n">getter</span><span class="p">()</span>
+<a id="L474" name="L474"></a>            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">tk</span><span class="o">.</span><span class="n">TclError</span><span class="p">):</span>
+<a id="L475" name="L475"></a>                <span class="k">continue</span>
+<a id="L476" name="L476"></a>            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;required&quot;</span><span class="p">):</span>
+<a id="L477" name="L477"></a>                <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L478" name="L478"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">answers</span><span class="p">[</span><span class="n">field</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]]</span> <span class="o">=</span> <span class="n">value</span>
+<a id="L479" name="L479"></a>
+<a id="L480" name="L480"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_current_step</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L481" name="L481"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">]</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L482" name="L482"></a>
+<a id="L483" name="L483"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_step_errors</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L484" name="L484"></a>        <span class="n">errors</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L485" name="L485"></a>        <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">getter</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_widgets</span><span class="p">:</span>
+<a id="L486" name="L486"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;required&quot;</span><span class="p">):</span>
+<a id="L487" name="L487"></a>                <span class="k">continue</span>
+<a id="L488" name="L488"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">_test</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;when&quot;</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">answers</span><span class="p">):</span>
+<a id="L489" name="L489"></a>                <span class="k">continue</span>
+<a id="L490" name="L490"></a>            <span class="k">try</span><span class="p">:</span>
+<a id="L491" name="L491"></a>                <span class="n">value</span> <span class="o">=</span> <span class="n">getter</span><span class="p">()</span>
+<a id="L492" name="L492"></a>            <span class="k">except</span> <span class="p">(</span><span class="ne">ValueError</span><span class="p">,</span> <span class="n">tk</span><span class="o">.</span><span class="n">TclError</span><span class="p">):</span>
+<a id="L493" name="L493"></a>                <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L494" name="L494"></a>            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">value</span><span class="o">.</span><span class="n">strip</span><span class="p">()):</span>
+<a id="L495" name="L495"></a>                <span class="n">errors</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;label&quot;</span><span class="p">,</span> <span class="n">field</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]))</span>
+<a id="L496" name="L496"></a>        <span class="k">return</span> <span class="n">errors</span>
+<a id="L497" name="L497"></a>
+<a id="L498" name="L498"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">back</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L499" name="L499"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary</span><span class="p">:</span>
+<a id="L500" name="L500"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L501" name="L501"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_render</span><span class="p">()</span>
+<a id="L502" name="L502"></a>            <span class="k">return</span>
+<a id="L503" name="L503"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+<a id="L504" name="L504"></a>            <span class="k">return</span>
+<a id="L505" name="L505"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_collect</span><span class="p">()</span>
+<a id="L506" name="L506"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">-=</span> <span class="mi">1</span>
+<a id="L507" name="L507"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_fetch</span><span class="p">(</span><span class="n">keep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">][</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
+<a id="L508" name="L508"></a>
+<a id="L509" name="L509"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">next</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L510" name="L510"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_busy</span><span class="p">:</span>
+<a id="L511" name="L511"></a>            <span class="k">return</span>
+<a id="L512" name="L512"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_collect</span><span class="p">()</span>
+<a id="L513" name="L513"></a>        <span class="n">errors</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_step_errors</span><span class="p">()</span>
+<a id="L514" name="L514"></a>        <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+<a id="L515" name="L515"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">toast</span><span class="p">(</span><span class="s2">&quot;required: &quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">errors</span><span class="p">),</span> <span class="n">error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L516" name="L516"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">&lt;</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+<a id="L517" name="L517"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="L518" name="L518"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_fetch</span><span class="p">(</span><span class="n">keep</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">steps</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">index</span><span class="p">][</span><span class="s2">&quot;id&quot;</span><span class="p">])</span>
+<a id="L519" name="L519"></a>            <span class="k">return</span>
+<a id="L520" name="L520"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">show_summary</span><span class="p">()</span>
+<a id="L521" name="L521"></a>
+<a id="L522" name="L522"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">show_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L523" name="L523"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_collect</span><span class="p">()</span>
+<a id="L524" name="L524"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s2">&quot;wizard.plan&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wizard_id</span><span class="p">,</span> <span class="s2">&quot;answers&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">answers</span><span class="p">},</span>
+<a id="L525" name="L525"></a>                         <span class="bp">self</span><span class="o">.</span><span class="n">_planned</span><span class="p">)</span>
+<a id="L526" name="L526"></a>
+<a id="L527" name="L527"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_planned</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">plan</span><span class="p">):</span>
+<a id="L528" name="L528"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">plan</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plan</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+<a id="L529" name="L529"></a>            <span class="k">return</span>
+<a id="L530" name="L530"></a>        <span class="n">errors</span> <span class="o">=</span> <span class="n">plan</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;errors&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]</span>
+<a id="L531" name="L531"></a>        <span class="k">if</span> <span class="n">errors</span><span class="p">:</span>
+<a id="L532" name="L532"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">toast</span><span class="p">(</span><span class="s2">&quot;; &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">errors</span><span class="p">),</span> <span class="n">error</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L533" name="L533"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L534" name="L534"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_title</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Summary&quot;</span><span class="p">)</span>
+<a id="L535" name="L535"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_doc</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Review the work. Nothing has been queued yet.&quot;</span><span class="p">)</span>
+<a id="L536" name="L536"></a>        <span class="k">for</span> <span class="n">widget</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">form</span><span class="o">.</span><span class="n">winfo_children</span><span class="p">():</span>
+<a id="L537" name="L537"></a>            <span class="n">widget</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+<a id="L538" name="L538"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_widgets</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L539" name="L539"></a>        <span class="n">head</span> <span class="o">=</span> <span class="n">ttk</span><span class="o">.</span><span class="n">Frame</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">form</span><span class="p">)</span>
+<a id="L540" name="L540"></a>        <span class="n">head</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">pady</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
+<a id="L541" name="L541"></a>        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">plan</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;lines&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="p">[]:</span>
+<a id="L542" name="L542"></a>            <span class="n">ttk</span><span class="o">.</span><span class="n">Label</span><span class="p">(</span><span class="n">head</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="n">line</span><span class="p">)</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">anchor</span><span class="o">=</span><span class="s2">&quot;w&quot;</span><span class="p">)</span>
+<a id="L543" name="L543"></a>        <span class="n">text</span> <span class="o">=</span> <span class="n">plan</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;yaml&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+<a id="L544" name="L544"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">text</span> <span class="ow">and</span> <span class="n">plan</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;commands&quot;</span><span class="p">):</span>
+<a id="L545" name="L545"></a>            <span class="n">text</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mdat&gt; </span><span class="si">{</span><span class="n">one</span><span class="p">[</span><span class="s1">&#39;cmd&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">one</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;args&#39;</span><span class="p">)</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="p">{},</span><span class="w"> </span><span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+<a id="L546" name="L546"></a>                             <span class="k">for</span> <span class="n">one</span> <span class="ow">in</span> <span class="n">plan</span><span class="p">[</span><span class="s2">&quot;commands&quot;</span><span class="p">])</span>
+<a id="L547" name="L547"></a>        <span class="k">if</span> <span class="n">text</span><span class="p">:</span>
+<a id="L548" name="L548"></a>            <span class="n">console</span> <span class="o">=</span> <span class="n">Console</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">form</span><span class="p">)</span>
+<a id="L549" name="L549"></a>            <span class="n">console</span><span class="o">.</span><span class="n">pack</span><span class="p">(</span><span class="n">fill</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">expand</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L550" name="L550"></a>            <span class="n">console</span><span class="o">.</span><span class="n">text</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">height</span><span class="o">=</span><span class="mi">18</span><span class="p">)</span>
+<a id="L551" name="L551"></a>            <span class="n">console</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">text</span><span class="p">)</span>
+<a id="L552" name="L552"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">step_list</span><span class="o">.</span><span class="n">selection_clear</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="s2">&quot;end&quot;</span><span class="p">)</span>
+<a id="L553" name="L553"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Queue job&quot;</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="s2">&quot;Accent.TButton&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">submit</span><span class="p">)</span>
+<a id="L554" name="L554"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="n">text</span><span class="o">=</span><span class="s2">&quot;&lt; Back&quot;</span><span class="p">)</span>
+<a id="L555" name="L555"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_leave_summary</span><span class="p">)</span>
+<a id="L556" name="L556"></a>
+<a id="L557" name="L557"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_leave_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L558" name="L558"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">summary</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L559" name="L559"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">next_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">text</span><span class="o">=</span><span class="s2">&quot;Summary &gt;&quot;</span><span class="p">,</span> <span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">next</span><span class="p">)</span>
+<a id="L560" name="L560"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">back_btn</span><span class="o">.</span><span class="n">configure</span><span class="p">(</span><span class="n">command</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">back</span><span class="p">)</span>
+<a id="L561" name="L561"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_render</span><span class="p">()</span>
+<a id="L562" name="L562"></a>
+<a id="L563" name="L563"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">submit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L564" name="L564"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">server</span><span class="o">.</span><span class="n">call</span><span class="p">(</span><span class="s2">&quot;wizard.submit&quot;</span><span class="p">,</span> <span class="p">{</span><span class="s2">&quot;id&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">wizard_id</span><span class="p">,</span> <span class="s2">&quot;answers&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">answers</span><span class="p">},</span>
+<a id="L565" name="L565"></a>                         <span class="bp">self</span><span class="o">.</span><span class="n">_submitted</span><span class="p">)</span>
+<a id="L566" name="L566"></a>
+<a id="L567" name="L567"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_submitted</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">answer</span><span class="p">):</span>
+<a id="L568" name="L568"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">answer</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">answer</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+<a id="L569" name="L569"></a>            <span class="k">return</span>
+<a id="L570" name="L570"></a>        <span class="n">detail</span> <span class="o">=</span> <span class="n">answer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;run&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">answer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;config&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="s2">&quot;&quot;</span>
+<a id="L571" name="L571"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">toast</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">answer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;kind&#39;</span><span class="p">)</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">detail</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L572" name="L572"></a>        <span class="k">if</span> <span class="n">answer</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;run&quot;</span><span class="p">):</span>
+<a id="L573" name="L573"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">app</span><span class="o">.</span><span class="n">toggle_dock</span><span class="p">(</span><span class="n">force</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L574" name="L574"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">on_done</span><span class="p">:</span>
+<a id="L575" name="L575"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">on_done</span><span class="p">(</span><span class="n">answer</span><span class="p">)</span>
+<a id="L576" name="L576"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">destroy</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

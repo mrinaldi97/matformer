@@ -12,12 +12,12 @@ training:
 
 data:
   - name: train
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/POLI-ITA/train.jsonl"
+    data_root: "$DATA_ASSETS/POLI-ITA/train.jsonl"
     label2id:
       0: 0
       1: 1
   - name: test
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/POLI-ITA/test.jsonl"
+    data_root: "$DATA_ASSETS/POLI-ITA/test.jsonl"
     label2id:
       0: 0
       1: 1

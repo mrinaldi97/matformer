@@ -1,0 +1,41 @@
+id = "mdat_create"
+title = "Create an MDAT container"
+description = "Create the container that will link datasets and hold the views used for training."
+category = "Data"
+order = 10
+
+[[steps]]
+id = "container"
+title = "Container"
+description = "The container stores links to datasets, pretokenization strategies, views and the distributed layout. Documents stay in each linked dataset folder."
+[[steps.fields]]
+name = "container"
+kind = "path"
+label = "Path"
+default = ""
+required = true
+doc = "New folder for the container."
+[[steps.fields]]
+name = "dsmap_bits"
+kind = "choice"
+label = "Dataset bits"
+default = 8
+options = [
+  { value = 8, label = "8 bits (up to 255 datasets)" },
+  { value = 16, label = "16 bits (up to 65535 datasets)" },
+]
+[[steps.fields]]
+name = "modalities"
+kind = "text"
+label = "Modalities"
+default = "text"
+doc = "Comma-separated modalities stored by the container."
+
+[action]
+kind = "mdat"
+name = "create"
+container = "${container}"
+open = false
+[[action.commands]]
+cmd = "create"
+args = { path = "${container}", dsmap_bits = "${dsmap_bits}", modalities = ["${modalities}"] }

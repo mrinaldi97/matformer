@@ -1,0 +1,190 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/loading/adapters/huggingface/create_adapters/convertion_prompt_generator.py · Matformer</title>
+<link rel="stylesheet" href="../../../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../../../index.html">Documentation</a><a class="" href="../../../../../../registry/index.html">Registry</a><a class="" href="../../../../../../configuration/index.html">Configuration</a><a class="" href="../../../../../../tools/commands.html">Commands</a><a class="current" href="../../../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../../../index.html">Matformer</a></li><li><a href="../../../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../../../components/cache.html">The cache</a></li><li><a href="../../../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../../../training/logger.html">Logging</a></li><li><a href="../../../../../../training/control.html">Control</a></li><li><a href="../../../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../../../data/index.html">Data</a></li><li><a href="../../../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../../../data/data-module.html">Data module</a></li><li><a href="../../../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../../../tools/server.html">Server</a></li><li><a href="../../../../../../tools/gui.html">GUI</a></li><li><a href="../../../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../../../tools/commands.html">Commands</a></li><li><a href="../../../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../../../about/repository.html">Repository</a></li><li><a href="../../../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../../../index.html">Repository</a> <span class="sep">/</span> matformer/loading/adapters/huggingface/create_adapters/convertion_prompt_generator.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="convertion_prompt_generator.py.html"><code>matformer/loading/adapters/huggingface/create_adapters/convertion_prompt_generator.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/loading/adapters/huggingface/create_adapters/</code></a></p><h1><code>convertion_prompt_generator.py</code></h1><p class="muted">matformer/loading/adapters/huggingface/create_adapters/convertion_prompt_generator.py · 80 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/loading/adapters/huggingface/create_adapters/convertion_prompt_generator.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L18"><code>collapse</code></a><span class="line">L18</span></li><li class="depth-0"><a href="#L22"><code>build_prompt</code></a><span class="line">L22</span></li><li class="depth-0"><a href="#L58"><code>main</code></a><span class="line">L58</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span>
+<span class="normal">69</span>
+<span class="normal">70</span>
+<span class="normal">71</span>
+<span class="normal">72</span>
+<span class="normal">73</span>
+<span class="normal">74</span>
+<span class="normal">75</span>
+<span class="normal">76</span>
+<span class="normal">77</span>
+<span class="normal">78</span>
+<span class="normal">79</span>
+<span class="normal">80</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="ch">#!/usr/bin/env python3</span>
+<a id="L2" name="L2"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L3" name="L3"></a><span class="sd">prompt_generator.py — builds a ready-to-send conversion prompt for a HF model.</span>
+<a id="L4" name="L4"></a>
+<a id="L5" name="L5"></a><span class="sd">Usage:</span>
+<a id="L6" name="L6"></a><span class="sd">    python prompt_generator.py Qwen/Qwen3-1.7B</span>
+<a id="L7" name="L7"></a><span class="sd">    python prompt_generator.py --file-list models.txt   # one HF repo id per line</span>
+<a id="L8" name="L8"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L9" name="L9"></a><span class="kn">import</span><span class="w"> </span><span class="nn">re</span><span class="o">,</span><span class="w"> </span><span class="nn">json</span><span class="o">,</span><span class="w"> </span><span class="nn">argparse</span><span class="o">,</span><span class="w"> </span><span class="nn">requests</span>
+<a id="L10" name="L10"></a><span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+<a id="L11" name="L11"></a><span class="kn">from</span><span class="w"> </span><span class="nn">huggingface_hub</span><span class="w"> </span><span class="kn">import</span> <span class="n">hf_hub_download</span><span class="p">,</span> <span class="n">get_safetensors_metadata</span>
+<a id="L12" name="L12"></a>
+<a id="L13" name="L13"></a><span class="n">PROMPT_TEMPLATE</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">with_name</span><span class="p">(</span><span class="s2">&quot;convertion_generation_prompt.txt&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span>
+<a id="L14" name="L14"></a><span class="n">ADAPTERS_DIR</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
+<a id="L15" name="L15"></a><span class="n">GH_RAW</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/huggingface/transformers/main/src/transformers/models/</span><span class="si">{t}</span><span class="s2">/modeling_</span><span class="si">{t}</span><span class="s2">.py&quot;</span>
+<a id="L16" name="L16"></a>
+<a id="L17" name="L17"></a>
+<a id="L18" name="L18"></a><span class="k">def</span><span class="w"> </span><span class="nf">collapse</span><span class="p">(</span><span class="n">names</span><span class="p">):</span>
+<a id="L19" name="L19"></a>    <span class="k">return</span> <span class="nb">sorted</span><span class="p">({</span><span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;\d+&quot;</span><span class="p">,</span> <span class="s2">&quot;N&quot;</span><span class="p">,</span> <span class="n">p</span><span class="p">)</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">n</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">))</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">names</span><span class="p">})</span>
+<a id="L20" name="L20"></a>
+<a id="L21" name="L21"></a>
+<a id="L22" name="L22"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_prompt</span><span class="p">(</span><span class="n">model_id</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L23" name="L23"></a>    <span class="c1"># 1. config.json — tiny file, cheap to fetch, gives us model_type to check the skip condition.</span>
+<a id="L24" name="L24"></a>    <span class="n">config</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">hf_hub_download</span><span class="p">(</span><span class="n">model_id</span><span class="p">,</span> <span class="s2">&quot;config.json&quot;</span><span class="p">))</span><span class="o">.</span><span class="n">read_text</span><span class="p">())</span>
+<a id="L25" name="L25"></a>    <span class="n">model_type</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;model_type&quot;</span><span class="p">,</span> <span class="s2">&quot;unknown&quot;</span><span class="p">)</span>
+<a id="L26" name="L26"></a>
+<a id="L27" name="L27"></a>    <span class="n">out_yaml</span> <span class="o">=</span> <span class="n">ADAPTERS_DIR</span> <span class="o">/</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">model_type</span><span class="si">}</span><span class="s2">.yaml&quot;</span>
+<a id="L28" name="L28"></a>    <span class="k">if</span> <span class="n">out_yaml</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
+<a id="L29" name="L29"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[skip] </span><span class="si">{</span><span class="n">model_id</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">out_yaml</span><span class="si">}</span><span class="s2"> already exists&quot;</span><span class="p">)</span>
+<a id="L30" name="L30"></a>        <span class="k">return</span>
+<a id="L31" name="L31"></a>
+<a id="L32" name="L32"></a>    <span class="c1"># 2. Weight names WITHOUT downloading any tensor data: get_safetensors_metadata does a</span>
+<a id="L33" name="L33"></a>    <span class="c1">#    range-request for just the safetensors header (works for sharded and single-file repos).</span>
+<a id="L34" name="L34"></a>    <span class="n">weight_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">get_safetensors_metadata</span><span class="p">(</span><span class="n">model_id</span><span class="p">)</span><span class="o">.</span><span class="n">weight_map</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<a id="L35" name="L35"></a>    <span class="n">collapsed</span> <span class="o">=</span> <span class="n">collapse</span><span class="p">(</span><span class="n">weight_names</span><span class="p">)</span>
+<a id="L36" name="L36"></a>
+<a id="L37" name="L37"></a>    <span class="c1"># 3. Modeling file, best-effort from GitHub.</span>
+<a id="L38" name="L38"></a>    <span class="n">modeling_src</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+<a id="L39" name="L39"></a>    <span class="n">resp</span> <span class="o">=</span> <span class="n">requests</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">GH_RAW</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">model_type</span><span class="p">),</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+<a id="L40" name="L40"></a>    <span class="k">if</span> <span class="n">resp</span><span class="o">.</span><span class="n">ok</span><span class="p">:</span>
+<a id="L41" name="L41"></a>        <span class="n">modeling_src</span> <span class="o">=</span> <span class="n">resp</span><span class="o">.</span><span class="n">text</span>
+<a id="L42" name="L42"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="L43" name="L43"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[warn] no modeling file for &#39;</span><span class="si">{</span><span class="n">model_type</span><span class="si">}</span><span class="s2">&#39; (HTTP </span><span class="si">{</span><span class="n">resp</span><span class="o">.</span><span class="n">status_code</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<a id="L44" name="L44"></a>
+<a id="L45" name="L45"></a>    <span class="n">parts</span> <span class="o">=</span> <span class="p">[</span>
+<a id="L46" name="L46"></a>        <span class="n">PROMPT_TEMPLATE</span><span class="p">,</span>
+<a id="L47" name="L47"></a>        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">=== HF CONFIG.JSON (</span><span class="si">{</span><span class="n">model_id</span><span class="si">}</span><span class="s2">) ===</span><span class="se">\n</span><span class="si">{</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">config</span><span class="p">,</span><span class="w"> </span><span class="n">indent</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+<a id="L48" name="L48"></a>        <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">=== COLLAPSED WEIGHT NAME LIST ===</span><span class="se">\n</span><span class="s2">&quot;</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">collapsed</span><span class="p">),</span>
+<a id="L49" name="L49"></a>    <span class="p">]</span>
+<a id="L50" name="L50"></a>    <span class="k">if</span> <span class="n">modeling_src</span><span class="p">:</span>
+<a id="L51" name="L51"></a>        <span class="n">parts</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">=== HF MODELING FILE (modeling_</span><span class="si">{</span><span class="n">model_type</span><span class="si">}</span><span class="s2">.py) ===</span><span class="se">\n</span><span class="si">{</span><span class="n">modeling_src</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L52" name="L52"></a>
+<a id="L53" name="L53"></a>    <span class="n">out_file</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">model_type</span><span class="si">}</span><span class="s2">_prompt.txt&quot;</span><span class="p">)</span>
+<a id="L54" name="L54"></a>    <span class="n">out_file</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">parts</span><span class="p">))</span>
+<a id="L55" name="L55"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[ok] </span><span class="si">{</span><span class="n">model_id</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">out_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L56" name="L56"></a>
+<a id="L57" name="L57"></a>
+<a id="L58" name="L58"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">():</span>
+<a id="L59" name="L59"></a>    <span class="n">ap</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">()</span>
+<a id="L60" name="L60"></a>    <span class="n">ap</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;model_id&quot;</span><span class="p">,</span> <span class="n">nargs</span><span class="o">=</span><span class="s2">&quot;?&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;e.g. Qwen/Qwen3-1.7B&quot;</span><span class="p">)</span>
+<a id="L61" name="L61"></a>    <span class="n">ap</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s2">&quot;--file-list&quot;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;text file, one HF repo id per line&quot;</span><span class="p">)</span>
+<a id="L62" name="L62"></a>    <span class="n">args</span> <span class="o">=</span> <span class="n">ap</span><span class="o">.</span><span class="n">parse_args</span><span class="p">()</span>
+<a id="L63" name="L63"></a>
+<a id="L64" name="L64"></a>    <span class="n">ids</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L65" name="L65"></a>    <span class="k">if</span> <span class="n">args</span><span class="o">.</span><span class="n">file_list</span><span class="p">:</span>
+<a id="L66" name="L66"></a>        <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">l</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="k">for</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">Path</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">file_list</span><span class="p">)</span><span class="o">.</span><span class="n">read_text</span><span class="p">()</span><span class="o">.</span><span class="n">splitlines</span><span class="p">()</span> <span class="k">if</span> <span class="n">l</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">l</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;#&quot;</span><span class="p">)]</span>
+<a id="L67" name="L67"></a>    <span class="k">elif</span> <span class="n">args</span><span class="o">.</span><span class="n">model_id</span><span class="p">:</span>
+<a id="L68" name="L68"></a>        <span class="n">ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">args</span><span class="o">.</span><span class="n">model_id</span><span class="p">]</span>
+<a id="L69" name="L69"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="L70" name="L70"></a>        <span class="n">ap</span><span class="o">.</span><span class="n">error</span><span class="p">(</span><span class="s2">&quot;provide a model_id or --file-list&quot;</span><span class="p">)</span>
+<a id="L71" name="L71"></a>
+<a id="L72" name="L72"></a>    <span class="k">for</span> <span class="n">mid</span> <span class="ow">in</span> <span class="n">ids</span><span class="p">:</span>
+<a id="L73" name="L73"></a>        <span class="k">try</span><span class="p">:</span>
+<a id="L74" name="L74"></a>            <span class="n">build_prompt</span><span class="p">(</span><span class="n">mid</span><span class="p">)</span>
+<a id="L75" name="L75"></a>        <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<a id="L76" name="L76"></a>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;[error] </span><span class="si">{</span><span class="n">mid</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L77" name="L77"></a>
+<a id="L78" name="L78"></a>
+<a id="L79" name="L79"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<a id="L80" name="L80"></a>    <span class="n">main</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

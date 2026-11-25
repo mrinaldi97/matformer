@@ -1,0 +1,201 @@
+id = "collect"
+title = "Collect activations and vectors"
+description = "One forward over a dataset: keep the activations, pool them into embeddings or prototypes, and carry the dataset's own metadata with every vector."
+category = "Data"
+order = 20
+
+[[steps]]
+id = "model"
+title = "Model and data source"
+description = "Collect from a checkpoint (its architecture and tokenizer come with it) or from config files. A forward makes no predictions, so no training is involved."
+[[steps.fields]]
+name = "model"
+kind = "path"
+label = "Checkpoint or model"
+default = ""
+prefill = "model"
+doc = "A Matformer checkpoint, a HF repo (hf://org/model) or a local folder. Leave empty to use a config that names the model."
+[[steps.fields]]
+name = "cfg"
+kind = "paths"
+label = "Config files (optional)"
+doc = "YAML files merged into the checkpoint's own configuration, for example a dataset definition."
+[[steps.fields]]
+name = "tokenizer"
+kind = "text"
+label = "Tokenizer override (optional)"
+doc = "A HF tokenizer name, when the checkpoint does not carry one."
+[[steps.fields]]
+name = "device"
+kind = "choice"
+label = "Accelerator"
+default = "auto"
+options = ["auto", "cuda", "cpu"]
+
+[[steps]]
+id = "data"
+title = "Data"
+description = "The dataset the forward reads. Metadata (labels, pair ids, sources) is kept when requested."
+generator = "config"
+preset = "collect_data"
+sections = ["data"]
+variant_by = { data = { field = "data_kind", map = { mdat = "mdat", files = "lazy" } } }
+[[steps.fields]]
+name = "data_kind"
+kind = "radio"
+label = "Source"
+default = "files"
+options = [
+  { value = "files", label = "Files", doc = "JSONL, CSV, CoNLL or HuggingFace dataset read as a stream." },
+  { value = "mdat", label = "MDAT", doc = "A pretokenized view of an MDAT container." },
+]
+[[steps.fields]]
+name = "data.data_root"
+kind = "path"
+label = "Dataset"
+default = ""
+required = true
+doc = "Path to the file, folder or MDAT view."
+[[steps.fields]]
+name = "data.keep_metadata"
+kind = "bool"
+label = "Keep metadata"
+default = true
+doc = "Carry every row's metadata with its activations, so contrastive pairs and labels are not lost."
+
+[[steps]]
+id = "collection"
+title = "Where to collect"
+[[steps.fields]]
+name = "addresses"
+kind = "text"
+label = "Sockets"
+default = "*layer_output"
+required = true
+doc = "One pattern or a comma-separated list: *layer_output, *post_attn, encoder.blocks.layers.*.layer_output..."
+[[steps.fields]]
+name = "store_file"
+kind = "path"
+label = "Activation store"
+default = ""
+required = true
+doc = "LMDB/DuckDB file that receives the activations. A new file is created."
+[[steps.fields]]
+name = "store_backend"
+kind = "choice"
+label = "Store backend"
+default = "lmdb"
+options = ["lmdb", "duckdb"]
+[[steps.fields]]
+name = "store_databank"
+kind = "text"
+label = "Databank"
+default = "activations"
+[[steps.fields]]
+name = "store_socket"
+kind = "text"
+label = "Store socket (optional)"
+doc = "Where the writer plugin is mounted; empty uses the first selected socket."
+
+[[steps]]
+id = "vectors"
+title = "Vectors (optional)"
+description = "Pool the collected activations per sequence. A contrastive dataset becomes a prototype set with its labels attached."
+[[steps.fields]]
+name = "vectorize"
+kind = "bool"
+label = "Also write vectors"
+default = true
+[[steps.fields]]
+name = "vector_file"
+kind = "path"
+label = "Vector store"
+default = ""
+when = { field = "vectorize", truthy = true }
+[[steps.fields]]
+name = "vector_databank"
+kind = "text"
+label = "Vector databank"
+default = "vectors"
+when = { field = "vectorize", truthy = true }
+[[steps.fields]]
+name = "vector_kind"
+kind = "choice"
+label = "Kind"
+default = "embedding"
+options = ["embedding", "prototype", "steering", "probe", "vector"]
+when = { field = "vectorize", truthy = true }
+[[steps.fields]]
+name = "pool"
+kind = "choice"
+label = "Pooling"
+default = "mean"
+options = ["mean", "last", "first", "max"]
+when = { field = "vectorize", truthy = true }
+[[steps.fields]]
+name = "positions"
+kind = "json"
+label = "Positions (optional)"
+doc = "Token indices to pool (mean over the ones that exist). Empty pools the whole sequence."
+when = { field = "vectorize", truthy = true }
+[[steps.fields]]
+name = "label_key"
+kind = "text"
+label = "Label key"
+default = "label"
+when = { field = "vectorize", truthy = true }
+[[steps.fields]]
+name = "name_prefix"
+kind = "text"
+label = "Name prefix"
+default = "act"
+when = { field = "vectorize", truthy = true }
+[[steps.fields]]
+name = "vector_limit"
+kind = "int"
+label = "Sequence limit"
+default = 0
+doc = "Zero vectorizes every collected sequence."
+when = { field = "vectorize", truthy = true }
+
+[action]
+kind = "collect"
+model = "${model}"
+cfg = "${cfg}"
+tokenizer = "${tokenizer}"
+device = "${device}"
+addresses = "${addresses}"
+store_socket = "${store_socket}"
+keep_metadata = "${data.keep_metadata}"
+label_key = "${label_key}"
+store = { filename = "${store_file}", backend = "${store_backend}", databank = "${store_databank}" }
+vectorize = { enabled = "${vectorize}", filename = "${vector_file}", databank = "${vector_databank}", kind = "${vector_kind}", pool = "${pool}", positions = "${positions}", label_key = "${label_key}", name_prefix = "${name_prefix}", limit = "${vector_limit}" }
+
+# ── Presets ──────────────────────────────────────────────────────────────────────────────────
+[presets.collect_data]
+sections = ["data"]
+focus = ["data.data_root", "data.file_format", "data.text_column", "data.label_column",
+         "data.batch_size", "data.max_seq_len", "data.num_workers", "data.keep_metadata"]
+required = ["data.data_root"]
+[presets.collect_data.variants]
+data = "lazy"
+[presets.collect_data.values]
+"data.data_root" = ""
+"data.batch_size" = 8
+"data.num_workers" = 2
+"data.max_seq_len" = 1024
+"data.file_format" = "jsonl"
+"data.text_column" = "text"
+"data.input_ids_column" = "input_ids"
+"data.tokenize" = true
+"data.add_bos" = true
+"data.add_eos" = false
+"data.keep_original_text" = false
+"data.keep_metadata" = true
+"data.split" = "train"
+"data.task" = "sentence-level"
+"data.label_column" = "label"
+"data.precompute_len" = true
+"data.varlen_strategy" = "unpadding"
+"data.cache_in_memory" = false
+"data.name" = "train"

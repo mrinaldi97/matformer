@@ -1,0 +1,107 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lazy dataset · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section" open><summary>Data</summary><ul><li><a href="index.html">Data</a></li><li><a href="mdat.html">MDAT</a></li><li><a href="data-module.html">Data module</a></li><li><a class="current" href="lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Data <span class="sep">/</span> Lazy dataset</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/data/lazy_dataset.py.html"><code>matformer/data/lazy_dataset.py</code></a> <a href="../file/matformer/data/matformer_data_module.py.html"><code>matformer/data/matformer_data_module.py</code></a></div>
+<h1 id="lazy-dataset">Lazy dataset<a class="headerlink" href="#lazy-dataset" title="Permanent link"></a></h1>
+<p><code>LazyIterableDataset</code> is the dataset used by the <code>lazy</code> data module. It reads a file or a HuggingFace dataset as a stream, tokenizes each item and yields the dictionary described in <a href="index.html">Data</a>. It is intended for quick experiments, benchmarks and instruction tuning. For long pretraining runs, MDAT avoids repeated tokenization.</p>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="nt">data</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">train</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lazy</span>
+<span class="w">    </span><span class="nt">data_root</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">data/train.jsonl</span>
+<span class="w">    </span><span class="nt">file_format</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">jsonl</span>
+<span class="w">    </span><span class="nt">text_column</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">text</span>
+<span class="w">    </span><span class="nt">batch_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">8</span>
+<span class="w">    </span><span class="nt">max_seq_len</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">512</span>
+<span class="w">    </span><span class="nt">task</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">lm</span>
+</code></pre></div>
+
+<p>The main fields are:</p>
+<table>
+<thead>
+<tr>
+<th>Field</th>
+<th>Meaning</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>data_root</code></td>
+<td>a file, a folder or a HuggingFace dataset name</td>
+</tr>
+<tr>
+<td><code>file_format</code></td>
+<td><code>jsonl</code>, <code>csv</code>, <code>conll</code>, <code>conllu</code>, <code>hf</code>; <code>None</code> infers it</td>
+</tr>
+<tr>
+<td><code>text_column</code></td>
+<td>the column to tokenize</td>
+</tr>
+<tr>
+<td><code>input_ids_column</code></td>
+<td>the column to use when the data is already tokenized</td>
+</tr>
+<tr>
+<td><code>tokenize</code></td>
+<td><code>False</code> when the file contains ids</td>
+</tr>
+<tr>
+<td><code>add_bos</code>, <code>add_eos</code></td>
+<td>add the special tokens</td>
+</tr>
+<tr>
+<td><code>max_seq_len</code></td>
+<td>truncation length; the data module can inherit it from the model</td>
+</tr>
+<tr>
+<td><code>split</code></td>
+<td>the HuggingFace split</td>
+</tr>
+<tr>
+<td><code>precompute_len</code></td>
+<td>read the file once to compute the length</td>
+</tr>
+</tbody>
+</table>
+<h2 id="tasks">Tasks<a class="headerlink" href="#tasks" title="Permanent link"></a></h2>
+<p><code>task</code> selects the supervision:</p>
+<ul>
+<li><code>lm</code>: the item is a token sequence. The learning signal creates the targets.</li>
+<li><code>sentence-level</code>: <code>label_column</code> contains one label per row. <code>label2id</code> maps string labels; if it is absent, the dataset infers the mapping from a full scan.</li>
+<li><code>token-level</code>: the row contains a text and a column of tags, or a tokenized <code>input_ids</code> field and one label per token. The dataset aligns labels with subwords: the first subword of a word receives the label, continuations receive <code>IGNORE_INDEX</code>.</li>
+<li><code>regression</code>: the label is a float and the loss is a regression loss.</li>
+</ul>
+<p><code>missing_label_values</code> adds strings that mean "no label". The defaults include empty, <code>null</code>, <code>none</code>, <code>nan</code>, <code>n/a</code>, <code>na</code>, <code>nil</code>. A row without a label is dropped in a supervised task and kept in a language-model task.</p>
+<h2 id="labels">Labels<a class="headerlink" href="#labels" title="Permanent link"></a></h2>
+<p>When <code>label2id</code> is configured, it is used directly. If it is absent, the dataset can scan the file to collect labels, counts and class weights. <code>scan_labels</code> controls the scan: <code>None</code> runs it when the task needs it, <code>True</code> always runs it, <code>False</code> skips it unless a consumer requires it.</p>
+<p>The data module exposes <code>get_label_maps()</code>, <code>get_label_info()</code>, <code>get_num_labels()</code>, <code>get_label_distribution()</code> and <code>get_class_weights()</code>. Tasks and the trainer read the label information from the data module, so a resumed run keeps the same label order.</p>
+<h2 id="streaming-and-resume">Streaming and resume<a class="headerlink" href="#streaming-and-resume" title="Permanent link"></a></h2>
+<p>The dataset is an <code>IterableDataset</code>. Each rank reads the global stream and keeps every <code>world_size</code>-th row. <code>skip_global</code> and <code>_global_idx</code> support a resume: <code>state_dict</code> stores the last processed row, and <code>restore_state_dict</code> skips to it. <code>partition_start</code> and <code>partition_end</code> restrict the stream to a window.</p>
+<p><code>compute_length()</code> counts the rows and caches the result. Without it, <code>__len__</code> returns <code>0</code> and the trainer disables LR scheduling.</p>
+<h2 id="limitations">Limitations<a class="headerlink" href="#limitations" title="Permanent link"></a></h2>
+<p>The lazy dataset truncates at <code>max_seq_len</code> and does not split documents into chunks. If every token of a long document is needed, use MDAT.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

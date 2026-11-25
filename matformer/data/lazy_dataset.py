@@ -5,7 +5,7 @@ from collections import Counter
 from typing import Any, Dict, Iterator, List, Optional, Tuple
 from torch.utils.data import DataLoader, IterableDataset  
 from matformer.matformer_tokenizers import MatformerTokenizer
-from matformer.dataclasses.data_dataclasses import DataConfig
+from matformer.dataclasses.data_dataclasses import DataConfig, IGNORE_INDEX
 
 
 DEFAULT_MISSING_LABEL_VALUES = frozenset({"", "null", "none", "nan", "n/a", "na", "nil"})
@@ -57,8 +57,10 @@ class LazyIterableDataset(IterableDataset):
 
     @property
     def _classification_labels(self) -> bool:
-        """True when a label column is required by the task: missing labels then drop rows."""
-        return bool(self.data_config.label_column) and self.data_config.task in ("sentence-level", "regression")
+        """True when a label is required by the task: missing labels then drop rows."""
+        return bool(self.data_config.label_column) and self.data_config.task in (
+            "sentence-level", "token-level", "regression"
+        )
 
     def _partition_start(self) -> int:
         start = getattr(self.data_config, "partition_start", None)
@@ -120,15 +122,26 @@ class LazyIterableDataset(IterableDataset):
         # the labels costs nothing extra.
         return bool(self.data_config.precompute_len)
 
+    def _row_labels(self, raw_label: Any) -> List[Any]:
+        """The individual labels carried by one row: the label itself for sentence-level and
+        regression, the whole tag list for token-level."""
+        if self.data_config.task == "token-level":
+            return list(raw_label) if isinstance(raw_label, (list, tuple)) else []
+        return [raw_label]
+
     def _resolve_labels(self) -> None:
         """
         Make ``self._label2id`` usable, inferring it from the data when the user did not provide it.
         A missing mapping can only be recovered by reading every label, so in that case a full pass
         is mandatory and is triggered even when the user asked not to do it (with a loud warning).
+        The class names belong to the model, so a dataset without its own ``label2id`` takes the
+        one of the model it feeds, and an inferred mapping is published back there.
         """
         cfg = self.data_config
-        if self._labels_resolved or not cfg.label_column or cfg.task == "token-level":
+        if self._labels_resolved or not cfg.label_column:
             return
+        if not cfg.label2id:
+            cfg.label2id = getattr(cfg.model, 'label2id', None) or cfg.label2id
         if cfg.task == "lm":
             # Labels are optional baggage for lm: honour a provided mapping, never force a pass.
             if cfg.label2id:
@@ -187,13 +200,15 @@ class LazyIterableDataset(IterableDataset):
                 break
             total += 1
             raw_label = raw_item.get(cfg.label_column) if isinstance(raw_item, dict) else None
-            if self._is_missing_label(raw_label):
+            row_labels = self._row_labels(raw_label)
+            if not row_labels:
                 missing += 1
                 continue
-            key = self._label_key(raw_label)
-            counts[key] += 1
-            if cfg.task != "regression" and self._label2id is not None and key not in self._label2id:
-                unseen.add(key)
+            for value in row_labels:
+                key = self._label_key(value)
+                counts[key] += 1
+                if cfg.task != "regression" and self._label2id is not None and key not in self._label2id:
+                    unseen.add(key)
             valid_by_index[global_idx % self.world_size] += 1
 
         if unseen:
@@ -354,7 +369,7 @@ class LazyIterableDataset(IterableDataset):
             Returns:
                 Item count assigned to this rank.
             """
-            if self.data_config.label_column and self.data_config.task != "token-level":
+            if self._classification_labels:
                 # A resolved scan already knows how many label-less rows each residue owns, which
                 # is the only length consistent with what the iterator will actually yield.
                 self._resolve_labels()
@@ -367,6 +382,12 @@ class LazyIterableDataset(IterableDataset):
                 from datasets import load_dataset
                 ds    = load_dataset(self.data_config.data_root, split=self.data_config.split)
                 total = len(ds)
+            elif self.data_config.file_format == "mdat":
+                from matformer.data.mdat.mdat import mdat_reader
+                with mdat_reader(self.data_config.data_root,
+                                 dataset=getattr(self.data_config, "mdat_dataset", None),
+                                 keys_only=True) as reader:
+                    total = len(reader)
             else:
                 total = 0
                 with open(self.data_config.data_root, "r", encoding="utf-8") as f:
@@ -424,9 +445,11 @@ class LazyIterableDataset(IterableDataset):
             yield from self._file_raw_iterator()
         elif fmt in ("conll", "conllu"):
             yield from self._conll_raw_iterator()
+        elif fmt == "mdat":
+            yield from self._mdat_raw_iterator()
         else:
             raise ValueError(
-                f"Unsupported file_format '{fmt}'. Choose one of: 'hf', 'jsonl', 'csv', 'conll', 'conllu'."
+                f"Unsupported file_format '{fmt}'. Choose one of: 'hf', 'jsonl', 'csv', 'conll', 'conllu', 'mdat'."
             )
 
     def _hf_raw_iterator(self) -> Iterator[Dict[str, Any]]:
@@ -441,6 +464,22 @@ class LazyIterableDataset(IterableDataset):
         from datasets import load_dataset
         ds = load_dataset(self.data_config.data_root, split=self.data_config.split, streaming=True)
         yield from ds
+
+    def _mdat_raw_iterator(self) -> Iterator[Dict[str, Any]]:
+        """Stream the rows of an mdat (standalone folder or container dataset).
+
+        The raw data column is exposed under ``text_column`` and every metadata
+        field is kept. ``_mdat_key`` carries the sequential source key so that
+        annotation can write results keyed by the original row.
+        """
+        from matformer.data.mdat.mdat import mdat_reader
+        with mdat_reader(self.data_config.data_root,
+                         dataset=getattr(self.data_config, "mdat_dataset", None),
+                         data_column=self.data_config.text_column,
+                         include_key=False) as reader:
+            for key, row in enumerate(reader):
+                row["_mdat_key"] = key
+                yield row
 
     def _file_raw_iterator(self) -> Iterator[Dict[str, Any]]:
         """
@@ -484,15 +523,50 @@ class LazyIterableDataset(IterableDataset):
         if tokens:
             yield {self.data_config.text_column: tokens, self.data_config.label_column: labels}                        
 
-    def _tokenize_and_align(self, words: List[str], labels: List[Any]) -> tuple:
-        input_ids: List[int] = []
-        aligned_labels: List[Any] = []
-        for word, lab in zip(words, labels):
-            word_ids = self.tokenizer.encode(word, add_bos=False, add_eos=False)["input_ids"][0]
-            input_ids.extend(word_ids)
-            aligned_labels.append(lab)
-            aligned_labels.extend([-100] * (len(word_ids) - 1))
-        return input_ids, aligned_labels
+    def _map_token_labels(self, tags: List[Any]) -> List[int]:
+        """Tag list of a sentence -> id list, with IGNORE_INDEX on the tags missing from the row
+        (a partially tagged sentence still trains on the tags it has)."""
+        self._resolve_labels()
+        mapped: List[int] = []
+        for tag in tags:
+            mapped.append(IGNORE_INDEX if self._is_missing_label(tag) else int(self._map_label(tag)))
+        return mapped
+
+    def _tokenize_and_align(self, words: List[str], labels: Optional[List[int]]) -> Tuple[List[int], List[int]]:
+        """
+        Tokenize a whole sentence in a single call and align its word-level labels to subwords.
+
+        Encoding word by word costs one tokenizer call per word and, worse, shows the BPE a context
+        it never saw at pretraining; ``is_split_into_words`` keeps the word boundaries the tokenizer
+        itself uses. Each word keeps its label on its first subword; the remaining subwords, the
+        special tokens added around the sentence and any token without a word of origin get
+        IGNORE_INDEX, which is what the token-classification learning signal masks out.
+        """
+        encoding = self.tokenizer.encode(
+            words,
+            add_bos=self.data_config.add_bos,
+            add_eos=self.data_config.add_eos,
+            is_split_into_words=True,
+            return_word_ids=True,
+        )
+        input_ids = encoding["input_ids"][0]
+        word_ids = encoding["word_ids"][0]
+        if labels is not None and len(labels) != len(words):
+            raise ValueError(
+                f"Row of '{self.data_config.data_root}': {len(labels)} values in "
+                f"'{self.data_config.label_column}' for {len(words)} words in "
+                f"'{self.data_config.text_column}' ({words})."
+            )
+
+        aligned: List[int] = []
+        previous_word: Optional[int] = None
+        for word_idx in word_ids:
+            if word_idx is None or word_idx == previous_word or labels is None:
+                aligned.append(IGNORE_INDEX)
+            else:
+                aligned.append(labels[word_idx])
+            previous_word = word_idx
+        return input_ids, aligned
 
     def _process_item(self, raw_item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
@@ -515,20 +589,24 @@ class LazyIterableDataset(IterableDataset):
         cfg = self.data_config
         label = item.get(cfg.label_column) if cfg.label_column else None
 
-        if cfg.label2id is not None and label is not None:
-            if cfg.task == "token-level":
-                label = [cfg.label2id[l] if isinstance(l, str) else l for l in label]
-        if cfg.task != "token-level" and cfg.label_column:
-            label = self._map_label(label)
-            if label is None and self._classification_labels: #Skip missing labels
-                return None
         if cfg.task == "token-level":
+            if self._is_missing_label(label):
+                if self._classification_labels:  # Skip rows without tags
+                    self._skipped_missing += 1
+                    return None
+                label = None
+            else:
+                label = self._map_token_labels(label)
             if cfg.tokenize:
                 assert self.tokenizer is not None, "A tokenizer must be provided when tokenize=True."
                 input_ids, label = self._tokenize_and_align(item[cfg.text_column], label)
             else:
                 input_ids = item.get(cfg.input_ids_column)
         else:
+            if cfg.label_column:
+                label = self._map_label(label)
+                if label is None and self._classification_labels: #Skip missing labels
+                    return None
             if cfg.tokenize:
                 assert self.tokenizer is not None, "A tokenizer must be provided when tokenize=True."
                 tok_out = self.tokenizer.encode(
@@ -541,6 +619,7 @@ class LazyIterableDataset(IterableDataset):
             return None
 
         if getattr(cfg,"max_seq_len",None) is not None:
+			#TODO: Adding clear warnings when a sequence get truncated!
             input_ids = input_ids[: cfg.max_seq_len]
             if cfg.task == "token-level" and label is not None:
                 label = label[: cfg.max_seq_len]

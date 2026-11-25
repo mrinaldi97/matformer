@@ -1,0 +1,100 @@
+id = "mdat_ingest"
+title = "Import documents into a linked dataset"
+description = "Fill a linked dataset from JSONL, CSV, LMDB, HuggingFace or Atlas, or append new documents."
+category = "Data"
+order = 30
+
+[[steps]]
+id = "dataset"
+title = "Dataset"
+description = "A linked dataset is a self-contained folder. Import writes to it directly; the container only keeps the link."
+[[steps.fields]]
+name = "dataset_path"
+kind = "path"
+label = "Dataset path"
+default = ""
+required = true
+[[steps.fields]]
+name = "mode"
+kind = "radio"
+label = "Mode"
+default = "ingest"
+options = [
+  { value = "ingest", label = "Initial import", doc = "Convert the source into the dataset." },
+  { value = "append", label = "Append", doc = "Add rows after the last document. Pretokenizations become desynced until sync." },
+]
+
+[[steps]]
+id = "source"
+title = "Source"
+[[steps.fields]]
+name = "type"
+kind = "choice"
+label = "Format"
+default = "jsonl"
+options = ["jsonl", "csv", "lmdb", "hf", "atlas"]
+required = true
+[[steps.fields]]
+name = "source"
+kind = "path"
+label = "Source"
+default = ""
+required = true
+doc = "A file or folder on the server, or a HuggingFace repository when the format is hf."
+[[steps.fields]]
+name = "data_key"
+kind = "text"
+label = "Text column"
+default = "text"
+doc = "The column that holds the raw document."
+[[steps.fields]]
+name = "resume"
+kind = "bool"
+label = "Resume an interrupted import"
+default = false
+
+[[steps]]
+id = "container"
+title = "Container repair"
+description = "After appending, views and the distributed layout must be rebuilt for the linked dataset."
+[[steps.fields]]
+name = "repair_container"
+kind = "bool"
+label = "Repair a container after import"
+default = true
+[[steps.fields]]
+name = "container"
+kind = "path"
+label = "Container"
+default = ""
+required = true
+when = { field = "repair_container", truthy = true }
+
+[action]
+kind = "mdat"
+name = "ingest"
+container = "${dataset_path}"
+open = false
+[[action.commands]]
+cmd = "open"
+args = { path = "${dataset_path}" }
+[[action.commands]]
+cmd = "ingest"
+when = { field = "mode", is = "ingest" }
+args = { type = "${type}", source = "${source}", data_key = "${data_key}", resume = "${resume}" }
+[[action.commands]]
+cmd = "append"
+when = { field = "mode", is = "append" }
+args = { type = "${type}", source = "${source}", data_key = "${data_key}", resume = "${resume}" }
+[[action.commands]]
+cmd = "close"
+[[action.commands]]
+cmd = "open"
+when = { field = "repair_container", truthy = true }
+args = { path = "${container}" }
+[[action.commands]]
+cmd = "repair"
+when = { field = "repair_container", truthy = true }
+[[action.commands]]
+cmd = "close"
+when = { field = "repair_container", truthy = true }

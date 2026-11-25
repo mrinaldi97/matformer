@@ -1,0 +1,6 @@
+# Where this checkout keeps datasets, checkpoints, configs, logs and venvs.
+# Every config may address it with $ASSETS and $<AREA>_ASSETS.
+# Override it for a single process with the MATFORMER_ASSETS environment variable.
+# mercurio (hpc4ai): beegfs is shared by the login node and every compute node, so one
+# assets folder serves the whole cluster. The laptop checkout declares its own path here.
+assets: /home/matteo/Ricerca/matformer_assets

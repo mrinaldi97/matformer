@@ -1,0 +1,28 @@
+# Defaults for the SLURM command interpreter (matformer/slurm.py).
+# $CONFIG_ASSETS/slurm.toml overrides this file, so each machine declares its own partitions,
+# venvs and communication settings without touching the checkout.
+
+[cluster]
+default_partition = ""      # empty: the first visible partition
+account = ""
+qos = ""
+
+[submit]
+time = "01:00:00"
+cpus_per_task = 8
+signal_warn = 180           # seconds before the end of the slot that SIGUSR1 arrives
+requeue = true              # survive the time limit: checkpoint, requeue, resume
+crash_restarts = 1          # restarts attempted inside the same allocation before giving up
+job_dir = "$ASSETS/logs/slurm"
+
+[venv]
+root = "$ASSETS/venvs"      # venvs live in the assets folder; one per architecture
+extra = []
+by_arch = {}                # ex. aarch64 = "torch29_aarch64"
+by_partition = {}           # ex. epito = "torch29_aarch64"
+
+[gateway]
+port = 8766                 # where a node's own server is expected to listen
+
+[env]
+# Exported into every job, overridable per partition with [partition.<name>.env]

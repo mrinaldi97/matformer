@@ -19,6 +19,7 @@ class JSONLSaverConfig(SaverConfig):
     summary_file: str = "summary.jsonl"
     mode:       str = "a"
     summary_mode: Optional[str] = None
+    _sweep_scoped: ClassVar[list] = ["filename", "summary_file"]
 
 @registry.register_dataclass("saver", "NullSaver", default=True)
 @dataclass

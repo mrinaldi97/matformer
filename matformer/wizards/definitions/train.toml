@@ -1,0 +1,368 @@
+id = "train"
+title = "Train a model"
+description = "Build a training configuration and queue it as a job."
+category = "Training"
+order = 10
+
+[[steps]]
+id = "mode"
+title = "From scratch or from an existing model"
+description = "Choose how the model starts. A fine-tune inherits the architecture and tokenizer of a checkpoint."
+[[steps.fields]]
+name = "mode"
+kind = "radio"
+label = "Approach"
+default = "scratch"
+required = true
+options = [
+  { value = "scratch", label = "Train from scratch", doc = "Initialize a new model." },
+  { value = "finetune", label = "Fine-tune", doc = "Start from an existing checkpoint or HuggingFace model." },
+]
+
+[[steps]]
+id = "kind"
+title = "Kind of model"
+description = "The kind selects the learning signal, the model variant and the default hyperparameters."
+[[steps.fields]]
+name = "model_kind"
+kind = "radio"
+label = "Model"
+default = "autoregressive"
+required = true
+options = [
+  { value = "autoregressive", label = "Autoregressive", doc = "Causal language model. Predicts the next token." },
+  { value = "masked", label = "Masked", doc = "BERT-like model. Reconstructs masked tokens." },
+  { value = "sequence_classification", label = "Sequence classification", doc = "Assigns one label to a sequence." },
+  { value = "token_classification", label = "Token classification", doc = "Assigns one label to each token." },
+  { value = "other", label = "Other", doc = "Another registered model variant." },
+]
+[[steps.fields]]
+name = "model_variant"
+kind = "text"
+label = "Registered model variant"
+doc = "The variant name from the registry, for example multiprobe."
+when = { field = "model_kind", is = "other" }
+required = true
+
+[[steps]]
+id = "model"
+title = "Model"
+description = "Essential architecture values. Advanced parameters keep the preset defaults and are expanded below."
+generator = "config"
+preset = "${mode}_${model_kind}"
+sections = ["model", "tokenizer"]
+
+[[steps]]
+id = "masking"
+title = "Masking"
+description = "How tokens are hidden from a masked model."
+when = { field = "model_kind", is = "masked" }
+generator = "config"
+preset = "${mode}_${model_kind}"
+sections = ["masking"]
+
+[[steps]]
+id = "data"
+title = "Data"
+description = "The dataset the model trains on. Choose an MDAT view or a file-backed dataset."
+generator = "config"
+preset = "${mode}_${model_kind}"
+sections = ["data"]
+variant_by = { data = { field = "data_kind", map = { mdat = "mdat", files = "lazy" } } }
+[[steps.fields]]
+name = "data_kind"
+kind = "radio"
+label = "Source"
+default = "files"
+options = [
+  { value = "files", label = "Files", doc = "JSONL, CSV, CoNLL or HuggingFace dataset read as a stream." },
+  { value = "mdat", label = "MDAT", doc = "A pretokenized view of an MDAT container." },
+]
+[[steps.fields]]
+name = "test_data_root"
+kind = "path"
+label = "Test data (optional)"
+doc = "A second dataset used by validation. Without it validation reads the training dataset."
+[[steps.fields]]
+name = "test_file_format"
+kind = "choice"
+label = "Test format"
+default = "jsonl"
+options = ["jsonl", "csv", "conll", "conllu", "hf"]
+[[steps.fields]]
+name = "test_split"
+kind = "text"
+label = "Test split"
+doc = "HuggingFace split name, used only when the test format is hf."
+
+[[steps]]
+id = "training"
+title = "Training"
+description = "Optimizer, schedule and checkpoint naming."
+generator = "config"
+preset = "${mode}_${model_kind}"
+sections = ["training"]
+
+[[steps]]
+id = "validation"
+title = "Validation"
+description = "Tasks run during training. Each row can name a configured data entry or point at a file."
+[[steps.fields]]
+name = "validation_enabled"
+kind = "bool"
+label = "Run validation"
+default = false
+[[steps.fields]]
+name = "validation_tasks"
+kind = "tasks"
+label = "Tasks"
+when = { field = "validation_enabled", truthy = true }
+columns = [
+  { name = "type", kind = "choice", label = "Task", width = 16, options = ["evaluation", "static_model_analysis", "activation_analysis", "sandbox_train"], default = "evaluation" },
+  { name = "name", kind = "text", label = "Name", width = 12, default = "" },
+  { name = "data", kind = "path", label = "Data", width = 28, default = "", doc = "Configured data name or a file path. Empty uses the test split or training split." },
+]
+default = [{ type = "evaluation", name = "evaluation", data = "" }]
+[[steps.fields]]
+name = "validation_every_n_epochs"
+kind = "int"
+label = "Every n epochs"
+default = 1
+when = { field = "validation_enabled", truthy = true }
+[[steps.fields]]
+name = "validation_every_n_steps"
+kind = "int"
+label = "Every n steps"
+default = 0
+doc = "Zero disables step-based validation."
+when = { field = "validation_enabled", truthy = true }
+[[steps.fields]]
+name = "validation_sandbox_configs"
+kind = "paths"
+label = "Sandbox configs"
+doc = "YAML files used by sandbox_train rows."
+default = []
+when = { field = "validation_enabled", truthy = true }
+
+[[steps]]
+id = "launch"
+title = "Launch"
+description = "Machine options for the queued job."
+[[steps.fields]]
+name = "device"
+kind = "choice"
+label = "Accelerator"
+default = "auto"
+options = ["auto", "cuda", "cpu", "mps", "tpu"]
+[[steps.fields]]
+name = "gpus"
+kind = "text"
+label = "Pin to GPUs"
+doc = "CUDA_VISIBLE_DEVICES for this job only, for example 2,3."
+[[steps.fields]]
+name = "save_model"
+kind = "bool"
+label = "Save the model"
+default = true
+[[steps.fields]]
+name = "save_plugins"
+kind = "bool"
+label = "Save the plugins"
+default = false
+
+[action]
+kind = "train"
+name = "${training.run_name}"
+project = "${training.project_name}"
+options = { device = "${device}", gpus = "${gpus}", save_model = "${save_model}", save_plugins = "${save_plugins}" }
+
+# ── Presets ─────────────────────────────────────────────────────────────────────────────────
+# A preset describes the sections a wizard step draws, the values a step starts from, and which
+# paths stay in front of the user. Everything else is still editable under Advanced.
+
+[presets.scratch_autoregressive]
+sections = ["model", "tokenizer", "data", "training"]
+focus = [
+  "model.hidden_size", "model.num_hidden_layers",
+  "model.default_layer.sequence_mixer_config.num_attention_heads",
+  "model.default_layer.sequence_mixer_config.num_key_value_heads",
+  "model.default_layer.sequence_mixer_config.head_dim",
+  "model.vocab_size", "model.max_position_embeddings",
+  "model.ffn_factor", "model.is_causal", "model.default_layer.normalization",
+  "model.default_layer.ffn_activation", "model.default_layer.sequence_mixer",
+  "tokenizer.pretrained_name",
+  "data.data_root", "data.batch_size", "data.max_seq_len", "data.num_workers",
+  "data.file_format", "data.text_column", "data.mdat_view", "data.mdat_strategy",
+  "training.learning_signals", "training.optimizer", "training.lr", "training.max_epochs",
+  "training.save_every_n_steps", "training.precision", "training.scheduler",
+  "training.run_name", "training.project_name", "training.checkpoint_name", "training.save_dir",
+]
+required = ["model.hidden_size", "model.num_hidden_layers",
+            "model.default_layer.sequence_mixer_config.num_attention_heads",
+            "model.default_layer.sequence_mixer_config.head_dim",
+            "model.vocab_size", "model.max_position_embeddings", "tokenizer.pretrained_name",
+            "data.data_root", "training.run_name", "training.project_name"]
+
+[presets.scratch_autoregressive.variants]
+model = "default"
+tokenizer = "huggingface"
+data = "lazy"
+training = "default"
+
+[presets.scratch_autoregressive.values]
+"model.hidden_size" = 512
+"model.num_hidden_layers" = 8
+"model.default_layer.sequence_mixer_config.num_attention_heads" = 8
+"model.default_layer.sequence_mixer_config.num_key_value_heads" = 8
+"model.default_layer.sequence_mixer_config.head_dim" = 64
+"model.default_layer.sequence_mixer_config.positional_encoding" = "rope"
+"model.default_layer.sequence_mixer_config.qkv_bias" = false
+"model.default_layer.sequence_mixer_config.attn_output_bias" = false
+"model.vocab_size" = 32000
+"model.max_position_embeddings" = 1024
+"model.ffn_factor" = 4.0
+"model.is_causal" = true
+"model.training_objective" = "clm"
+"model.rms_norm_eps" = 0.000001
+"model.bias" = false
+"model.default_layer.normalization" = "rmsnorm"
+"model.default_layer.normalization_position" = "pre"
+"model.default_layer.ffn_activation" = "swiglu"
+"model.default_layer.sequence_mixer" = "attention"
+"tokenizer.pretrained_name" = ""
+"data.data_root" = ""
+"data.batch_size" = 8
+"data.num_workers" = 2
+"data.max_seq_len" = 1024
+"data.file_format" = "jsonl"
+"data.text_column" = "text"
+"data.task" = "lm"
+"data.add_bos" = true
+"data.mdat_view" = "default"
+"training.learning_signals" = ["autoregressive"]
+"training.optimizer" = "adamw"
+"training.lr" = 0.0005
+"training.max_epochs" = 1
+"training.save_every_n_steps" = 1000
+"training.precision" = "bf16-mixed"
+"training.scheduler" = "cosine"
+"training.run_name" = "wizard-run"
+"training.project_name" = "wizard"
+"training.checkpoint_name" = "wizard-run"
+"training.save_dir" = "./checkpoints/wizard-run"
+
+[presets.finetune_autoregressive]
+extends = "scratch_autoregressive"
+focus = ["training.checkpoint", "training.what_to_reset", "training.lr", "training.max_epochs"]
+required = ["training.checkpoint"]
+[presets.finetune_autoregressive.values]
+"training.checkpoint" = ""
+"training.what_to_reset" = "optimizer,lr_scheduler"
+"training.lr" = 0.00002
+"training.max_epochs" = 3
+"training.learning_signals" = ["autoregressive"]
+
+[presets.scratch_masked]
+extends = "scratch_autoregressive"
+sections = ["model", "tokenizer", "masking", "data", "training"]
+focus = ["masking.masked_substitution_rate", "masking.cloze_probability",
+         "masking.random_probability", "masking.same_probability"]
+[presets.scratch_masked.variants]
+model = "default"
+tokenizer = "huggingface"
+data = "lazy"
+training = "default"
+masking = "default"
+[presets.scratch_masked.values]
+"model.is_causal" = false
+"model.training_objective" = "mlm"
+"training.learning_signals" = ["masked"]
+"masking.masked_substitution_rate" = 0.15
+"masking.cloze_probability" = 1.0
+"masking.random_probability" = 0.0
+"masking.same_probability" = 0.0
+
+[presets.finetune_masked]
+extends = "scratch_masked"
+focus = ["training.checkpoint", "training.what_to_reset", "training.lr", "training.max_epochs"]
+required = ["training.checkpoint"]
+[presets.finetune_masked.values]
+"training.checkpoint" = ""
+"training.what_to_reset" = "optimizer,lr_scheduler"
+"training.lr" = 0.00002
+"training.max_epochs" = 3
+"training.learning_signals" = ["masked"]
+
+[presets.scratch_sequence_classification]
+extends = "scratch_autoregressive"
+focus = ["model.num_classes", "model.pooling_type", "model.head_type",
+         "model.classifier_dropout_p", "model.additional_transformer_layers",
+         "data.label_column", "data.label2id"]
+required = ["model.num_classes", "data.label_column"]
+[presets.scratch_sequence_classification.variants]
+model = "classification"
+tokenizer = "huggingface"
+data = "lazy"
+training = "default"
+[presets.scratch_sequence_classification.values]
+"model.scope" = "sequence"
+"model.pooling_type" = "cls"
+"model.num_classes" = 2
+"model.head_type" = "linear"
+"model.additional_transformer_layers" = 1
+"model.classifier_dropout_p" = 0.1
+"model.is_causal" = true
+"data.task" = "sentence-level"
+"data.label_column" = "label"
+"training.learning_signals" = ["sequence_classification"]
+"training.lr" = 0.00005
+"training.max_epochs" = 3
+
+[presets.finetune_sequence_classification]
+extends = "scratch_sequence_classification"
+focus = ["model.base_model", "model.base_model_hf", "model.freeze_base_model",
+         "training.lr", "training.max_epochs"]
+required = ["model.base_model"]
+[presets.finetune_sequence_classification.values]
+"model.base_model" = ""
+"model.base_model_hf" = true
+"model.freeze_base_model" = false
+"training.lr" = 0.00002
+"training.max_epochs" = 3
+"training.what_to_reset" = "optimizer,lr_scheduler"
+
+[presets.scratch_token_classification]
+extends = "scratch_sequence_classification"
+focus = ["model.num_classes", "model.head_type", "model.classifier_dropout_p",
+         "data.label_column"]
+[presets.scratch_token_classification.values]
+"model.scope" = "token"
+"model.pooling_type" = "cls"
+"data.task" = "token-level"
+"data.label_column" = "labels"
+"training.learning_signals" = ["token_classification"]
+
+[presets.finetune_token_classification]
+extends = "scratch_token_classification"
+focus = ["model.base_model", "model.base_model_hf", "training.lr", "training.max_epochs"]
+required = ["model.base_model"]
+[presets.finetune_token_classification.values]
+"model.base_model" = ""
+"model.base_model_hf" = true
+"training.lr" = 0.00002
+"training.max_epochs" = 3
+"training.what_to_reset" = "optimizer,lr_scheduler"
+
+[presets.scratch_other]
+extends = "scratch_autoregressive"
+sections = ["model", "tokenizer", "data", "training"]
+
+[presets.finetune_other]
+extends = "scratch_other"
+focus = ["training.checkpoint", "training.what_to_reset", "training.lr", "training.max_epochs"]
+required = ["training.checkpoint"]
+[presets.finetune_other.values]
+"training.checkpoint" = ""
+"training.what_to_reset" = "optimizer,lr_scheduler"
+"training.lr" = 0.00002
+"training.max_epochs" = 3

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/plugins/plugin_classes.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li><li><a href="../../../tools/wizards.html">Wizards</a></li><li><a href="../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/plugins/plugin_classes.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="plugin_classes.py.html"><code>matformer/plugins/plugin_classes.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/plugins/</code></a></p><h1><code>plugin_classes.py</code></h1><p class="muted">matformer/plugins/plugin_classes.py · 51 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/plugins/plugin_classes.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L7"><code>Plugin</code></a><span class="line">L7</span> <span class="bases">(<a href="../matformer_module.py.html#L292"><code>MatformerModule</code></a>)</span><div class="mro">MRO: <code>Plugin</code> -> <a href="../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li><li class="depth-1"><a href="#L8"><code>Plugin.__init__</code></a><span class="line">L8</span></li><li class="depth-1"><a href="#L17"><code>Plugin.address</code></a><span class="line">L17</span></li><li class="depth-1"><a href="#L19"><code>Plugin.visit</code></a><span class="line">L19</span></li><li class="depth-1"><a href="#L21"><code>Plugin.layer_idx</code></a><span class="line">L21</span></li><li class="depth-1"><a href="#L23"><code>Plugin.index</code></a><span class="line">L23</span></li><li class="depth-1"><a href="#L28"><code>Plugin.save</code></a><span class="line">L28</span></li><li class="depth-1"><a href="#L39"><code>Plugin.load</code></a><span class="line">L39</span></li><li class="depth-0"><a href="#L48"><code>PluginConfig</code></a><span class="line">L48</span> <span class="bases">(<a href="../dataclasses/matformer_config.py.html#L162"><code>MatformerMultiConfig</code></a>)</span><div class="mro">MRO: <code>PluginConfig</code> -> <a href="../dataclasses/matformer_config.py.html#L162"><code>MatformerMultiConfig</code></a> -> <a href="../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a></div></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../matformer_module.py.html"><code>matformer.matformer_module</code></a> <span class="muted">MatformerModule</span></li><li><a href="../dataclasses/matformer_config.py.html"><code>matformer.dataclasses.matformer_config</code></a> <span class="muted">MatformerConfig, MatformerMultiConfig</span></li><li><a href="../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">field</span>
+<a id="L2" name="L2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span>
+<a id="L3" name="L3"></a><span class="kn">from</span><span class="w"> </span><a href="../matformer_module.py.html"><span class="nn">matformer.matformer_module</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerModule</span>
+<a id="L4" name="L4"></a><span class="kn">from</span><span class="w"> </span><a href="../dataclasses/matformer_config.py.html"><span class="nn">matformer.dataclasses.matformer_config</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerConfig</span><span class="p">,</span> <span class="n">MatformerMultiConfig</span>
+<a id="L5" name="L5"></a><span class="kn">from</span><span class="w"> </span><a href="../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L6" name="L6"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L7" name="L7"></a><span class="k">class</span><span class="w"> </span><span class="nc">Plugin</span><span class="p">(</span><a href="../matformer_module.py.html#L292"><span class="n">MatformerModule</span></a><span class="p">):</span>
+<a id="L8" name="L8"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">model_config</span><span class="p">,</span> <span class="n">cache</span><span class="p">):</span>
+<a id="L9" name="L9"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L10" name="L10"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+<a id="L11" name="L11"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">model_config</span> <span class="o">=</span> <span class="n">model_config</span>
+<a id="L12" name="L12"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">cache</span>
+<a id="L13" name="L13"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">socket</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Assigned by PluginManager at mount time</span>
+<a id="L14" name="L14"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Same as above                                  </span>
+<a id="L15" name="L15"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">kind</span> <span class="o">=</span> <span class="kc">None</span> <span class="c1"># Same as above</span>
+<a id="L16" name="L16"></a>    <span class="nd">@property</span>
+<a id="L17" name="L17"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">address</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>   <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">address</span>
+<a id="L18" name="L18"></a>    <span class="nd">@property</span>
+<a id="L19" name="L19"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">visit</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>     <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">visits</span>
+<a id="L20" name="L20"></a>    <span class="nd">@property</span>
+<a id="L21" name="L21"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">layer_idx</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span> <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">owner</span><span class="p">,</span> <span class="s2">&quot;layer_idx&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L22" name="L22"></a>    <span class="nd">@property</span>
+<a id="L23" name="L23"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">index</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L24" name="L24"></a>        <span class="c1">#Sporca per ora</span>
+<a id="L25" name="L25"></a>        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">plug</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">components</span><span class="p">):</span>
+<a id="L26" name="L26"></a>            <span class="k">if</span> <span class="n">plug</span><span class="o">==</span><span class="bp">self</span><span class="p">:</span>
+<a id="L27" name="L27"></a>                <span class="k">return</span> <span class="n">i</span>
+<a id="L28" name="L28"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">):</span>
+<a id="L29" name="L29"></a>        <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L30" name="L30"></a>        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span>
+<a id="L31" name="L31"></a>            <span class="p">{</span>
+<a id="L32" name="L32"></a>                <span class="s2">&quot;plugin_kind&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">kind</span><span class="p">,</span>
+<a id="L33" name="L33"></a>                <span class="s2">&quot;address&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">socket</span><span class="o">.</span><span class="n">address</span><span class="p">,</span>
+<a id="L34" name="L34"></a>                <span class="s2">&quot;id&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">id</span><span class="p">,</span>
+<a id="L35" name="L35"></a>                <span class="s2">&quot;state_dict&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">stable_state_dict</span><span class="p">(),</span>
+<a id="L36" name="L36"></a>                <span class="s2">&quot;index&quot;</span><span class="p">:</span><span class="mi">0</span><span class="p">,</span> <span class="c1">#Come prenderlo?</span>
+<a id="L37" name="L37"></a>                <span class="s2">&quot;plugin_config&quot;</span><span class="p">:</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span>
+<a id="L38" name="L38"></a>            <span class="p">},</span> <span class="n">path</span><span class="p">)</span>
+<a id="L39" name="L39"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">load</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">sd</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L40" name="L40"></a>        <span class="k">if</span> <span class="n">sd</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L41" name="L41"></a>            <span class="k">assert</span> <span class="n">path</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">,</span><span class="s2">&quot;Either restore from state dict or from path!&quot;</span>
+<a id="L42" name="L42"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">load_stable_state_dict</span><span class="p">(</span><span class="n">sd</span><span class="p">)</span>
+<a id="L43" name="L43"></a>        <span class="k">elif</span> <span class="n">path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L44" name="L44"></a>            <span class="n">ckpt</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">path</span><span class="p">,</span><span class="n">weights_only</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L45" name="L45"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">sd</span><span class="o">=</span><span class="n">ckpt</span><span class="p">[</span><span class="s1">&#39;state_dict&#39;</span><span class="p">])</span>
+<a id="L46" name="L46"></a>
+<a id="L47" name="L47"></a><span class="nd">@dataclass</span>
+<a id="L48" name="L48"></a><span class="k">class</span><span class="w"> </span><span class="nc">PluginConfig</span><span class="p">(</span><a href="../dataclasses/matformer_config.py.html#L162"><span class="n">MatformerMultiConfig</span></a><span class="p">):</span>
+<a id="L49" name="L49"></a>    <span class="n">targets</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="nb">list</span><span class="p">,</span><span class="nb">str</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L50" name="L50"></a>    <span class="n">only_first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>      <span class="c1"># a pattern that matches several sockets mounts one instance only</span>
+<a id="L51" name="L51"></a>    <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

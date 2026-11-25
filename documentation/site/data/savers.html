@@ -1,0 +1,103 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Savers · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="index.html">Data</a></li><li><a href="mdat.html">MDAT</a></li><li><a href="data-module.html">Data module</a></li><li><a href="lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Data <span class="sep">/</span> Savers</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/data/savers/saver.py.html"><code>matformer/data/savers/saver.py</code></a> <a href="../file/matformer/data/savers/jsonl.py.html"><code>matformer/data/savers/jsonl.py</code></a> <a href="../file/matformer/data/savers/memory.py.html"><code>matformer/data/savers/memory.py</code></a> <a href="../file/matformer/dataclasses/saver_dataclasses.py.html"><code>matformer/dataclasses/saver_dataclasses.py</code></a></div>
+<h1 id="savers">Savers<a class="headerlink" href="#savers" title="Permanent link"></a></h1>
+<p>A saver receives the output of a <a href="../tasks/index.html">task</a>. It is selected by the <code>ref_saver</code> field of the task config and registered in the <code>saver</code> category.</p>
+<div class="highlight"><pre><span></span><code><span class="nt">saver</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">results</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">jsonl</span>
+<span class="w">    </span><span class="nt">filename</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">predictions.jsonl</span>
+<span class="w">    </span><span class="nt">summary_file</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">summary.jsonl</span>
+
+<span class="nt">task</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">evaluation</span>
+<span class="w">    </span><span class="nt">ref_saver</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">results</span>
+</code></pre></div>
+
+<h2 id="interface">Interface<a class="headerlink" href="#interface" title="Permanent link"></a></h2>
+<p><code>MatformerDataSaver</code> defines three methods:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>When</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>save_batch(records, rank=0)</code></td>
+<td>after every batch, one record per item</td>
+</tr>
+<tr>
+<td><code>save_summary(summary, rank=0)</code></td>
+<td>once at the end, with the output of <code>compute()</code></td>
+</tr>
+<tr>
+<td><code>end()</code></td>
+<td>when the task is done</td>
+</tr>
+</tbody>
+</table>
+<p>All ranks call these methods; rank 0 writes. The JSONL saver gathers records with <code>torch.distributed.gather_object</code>, so the output follows rank order. A run without <code>torch.distributed</code> has one rank.</p>
+<h2 id="built-in-savers">Built-in savers<a class="headerlink" href="#built-in-savers" title="Permanent link"></a></h2>
+<ul>
+<li><code>jsonl</code>: one JSON object per line. It uses <code>orjson</code> when available and the standard library otherwise. Tensors and arrays become nested lists. <code>filename</code> and <code>summary_file</code> are independent, and <code>mode</code> and <code>summary_mode</code> control append or overwrite.</li>
+<li><code>NullSaver</code>: writes nothing.</li>
+<li><code>memory</code>: keeps records in an in-process bucket, keyed by the section name or by <code>key</code>.</li>
+</ul>
+<h2 id="record-contents">Record contents<a class="headerlink" href="#record-contents" title="Permanent link"></a></h2>
+<p><code>MatformerTask.save_batch</code> builds the record before the saver receives it. Each record has an <code>id</code>. The result fields follow the task's <code>save_*</code> flags. <code>input_ids</code> is added when <code>save_input_ids</code> is true, and <code>attributes</code> is added when <code>save_attributes</code> is true. <code>flatten_dict</code> merges a dictionary result into the record.</p>
+<p>The saver writes the fields it receives. A custom saver can change the output format without changing the task.</p>
+<h2 id="writing-a-saver">Writing a saver<a class="headerlink" href="#writing-a-saver" title="Permanent link"></a></h2>
+<p>Subclass <code>MatformerDataSaver</code>, register it, and add a dataclass if it has options:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;saver&quot;</span><span class="p">,</span> <span class="s2">&quot;MySaver&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MySaverConfig</span><span class="p">(</span><span class="n">SaverConfig</span><span class="p">):</span>
+    <span class="n">folder</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;output&quot;</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;saver&quot;</span><span class="p">,</span> <span class="s2">&quot;MySaver&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MySaver</span><span class="p">(</span><span class="n">MatformerDataSaver</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">folder</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="n">config</span><span class="o">.</span><span class="n">folder</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">folder</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">records</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">rank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">folder</span> <span class="o">/</span> <span class="s2">&quot;batch.jsonl&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">handle</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">record</span> <span class="ow">in</span> <span class="n">records</span><span class="p">:</span>
+                <span class="n">handle</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">record</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">)</span> <span class="o">+</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">save_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">summary</span><span class="p">,</span> <span class="n">rank</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">rank</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">folder</span> <span class="o">/</span> <span class="s2">&quot;summary.json&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">write_text</span><span class="p">(</span><span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">summary</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="nb">str</span><span class="p">))</span>
+</code></pre></div>
+
+<p>The <code>config</code> argument is the dataclass instance. The task checks <code>save_batch</code> and <code>save_summary</code> before it calls the saver.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

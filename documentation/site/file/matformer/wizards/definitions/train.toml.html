@@ -1,0 +1,766 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/wizards/definitions/train.toml · Matformer</title>
+<link rel="stylesheet" href="../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../index.html">Documentation</a><a class="" href="../../../../registry/index.html">Registry</a><a class="" href="../../../../configuration/index.html">Configuration</a><a class="" href="../../../../tools/commands.html">Commands</a><a class="current" href="../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../index.html">Matformer</a></li><li><a href="../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../components/cache.html">The cache</a></li><li><a href="../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../training/logger.html">Logging</a></li><li><a href="../../../../training/control.html">Control</a></li><li><a href="../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../data/index.html">Data</a></li><li><a href="../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../data/data-module.html">Data module</a></li><li><a href="../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../tools/server.html">Server</a></li><li><a href="../../../../tools/gui.html">GUI</a></li><li><a href="../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../tools/commands.html">Commands</a></li><li><a href="../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../about/repository.html">Repository</a></li><li><a href="../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../index.html">Repository</a> <span class="sep">/</span> matformer/wizards/definitions/train.toml</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="train.toml.html"><code>matformer/wizards/definitions/train.toml</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/wizards/definitions/</code></a></p><h1><code>train.toml</code></h1><p class="muted">matformer/wizards/definitions/train.toml · 368 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/wizards/definitions/train.toml">view on GitHub</a></p></div><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;train&quot;</span>
+<a id="L2" name="L2"></a><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Train a model&quot;</span>
+<a id="L3" name="L3"></a><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Build a training configuration and queue it as a job.&quot;</span>
+<a id="L4" name="L4"></a><span class="n">category</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Training&quot;</span>
+<a id="L5" name="L5"></a><span class="n">order</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">10</span>
+<a id="L6" name="L6"></a>
+<a id="L7" name="L7"></a><span class="k">[[steps]]</span>
+<a id="L8" name="L8"></a><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;mode&quot;</span>
+<a id="L9" name="L9"></a><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;From scratch or from an existing model&quot;</span>
+<a id="L10" name="L10"></a><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Choose how the model starts. A fine-tune inherits the architecture and tokenizer of a checkpoint.&quot;</span>
+<a id="L11" name="L11"></a><span class="k">[[steps.fields]]</span>
+<a id="L12" name="L12"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;mode&quot;</span>
+<a id="L13" name="L13"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;radio&quot;</span>
+<a id="L14" name="L14"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Approach&quot;</span>
+<a id="L15" name="L15"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scratch&quot;</span>
+<a id="L16" name="L16"></a><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<a id="L17" name="L17"></a><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<a id="L18" name="L18"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;scratch&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Train from scratch&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Initialize a new model.&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L19" name="L19"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;finetune&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Fine-tune&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Start from an existing checkpoint or HuggingFace model.&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L20" name="L20"></a><span class="p">]</span>
+<a id="L21" name="L21"></a>
+<a id="L22" name="L22"></a><span class="k">[[steps]]</span>
+<a id="L23" name="L23"></a><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;kind&quot;</span>
+<a id="L24" name="L24"></a><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Kind of model&quot;</span>
+<a id="L25" name="L25"></a><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;The kind selects the learning signal, the model variant and the default hyperparameters.&quot;</span>
+<a id="L26" name="L26"></a><span class="k">[[steps.fields]]</span>
+<a id="L27" name="L27"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;model_kind&quot;</span>
+<a id="L28" name="L28"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;radio&quot;</span>
+<a id="L29" name="L29"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Model&quot;</span>
+<a id="L30" name="L30"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;autoregressive&quot;</span>
+<a id="L31" name="L31"></a><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<a id="L32" name="L32"></a><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<a id="L33" name="L33"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;autoregressive&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Autoregressive&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Causal language model. Predicts the next token.&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L34" name="L34"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;masked&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Masked&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;BERT-like model. Reconstructs masked tokens.&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L35" name="L35"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;sequence_classification&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Sequence classification&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Assigns one label to a sequence.&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L36" name="L36"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;token_classification&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Token classification&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Assigns one label to each token.&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L37" name="L37"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;other&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Other&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Another registered model variant.&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L38" name="L38"></a><span class="p">]</span>
+<a id="L39" name="L39"></a><span class="k">[[steps.fields]]</span>
+<a id="L40" name="L40"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;model_variant&quot;</span>
+<a id="L41" name="L41"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;text&quot;</span>
+<a id="L42" name="L42"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Registered model variant&quot;</span>
+<a id="L43" name="L43"></a><span class="n">doc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;The variant name from the registry, for example multiprobe.&quot;</span>
+<a id="L44" name="L44"></a><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;model_kind&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;other&quot;</span><span class="w"> </span><span class="p">}</span>
+<a id="L45" name="L45"></a><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<a id="L46" name="L46"></a>
+<a id="L47" name="L47"></a><span class="k">[[steps]]</span>
+<a id="L48" name="L48"></a><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;model&quot;</span>
+<a id="L49" name="L49"></a><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Model&quot;</span>
+<a id="L50" name="L50"></a><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Essential architecture values. Advanced parameters keep the preset defaults and are expanded below.&quot;</span>
+<a id="L51" name="L51"></a><span class="n">generator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;config&quot;</span>
+<a id="L52" name="L52"></a><span class="n">preset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${mode}_${model_kind}&quot;</span>
+<a id="L53" name="L53"></a><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tokenizer&quot;</span><span class="p">]</span>
+<a id="L54" name="L54"></a>
+<a id="L55" name="L55"></a><span class="k">[[steps]]</span>
+<a id="L56" name="L56"></a><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;masking&quot;</span>
+<a id="L57" name="L57"></a><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Masking&quot;</span>
+<a id="L58" name="L58"></a><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;How tokens are hidden from a masked model.&quot;</span>
+<a id="L59" name="L59"></a><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;model_kind&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;masked&quot;</span><span class="w"> </span><span class="p">}</span>
+<a id="L60" name="L60"></a><span class="n">generator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;config&quot;</span>
+<a id="L61" name="L61"></a><span class="n">preset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${mode}_${model_kind}&quot;</span>
+<a id="L62" name="L62"></a><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;masking&quot;</span><span class="p">]</span>
+<a id="L63" name="L63"></a>
+<a id="L64" name="L64"></a><span class="k">[[steps]]</span>
+<a id="L65" name="L65"></a><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;data&quot;</span>
+<a id="L66" name="L66"></a><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Data&quot;</span>
+<a id="L67" name="L67"></a><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;The dataset the model trains on. Choose an MDAT view or a file-backed dataset.&quot;</span>
+<a id="L68" name="L68"></a><span class="n">generator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;config&quot;</span>
+<a id="L69" name="L69"></a><span class="n">preset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${mode}_${model_kind}&quot;</span>
+<a id="L70" name="L70"></a><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;data&quot;</span><span class="p">]</span>
+<a id="L71" name="L71"></a><span class="n">variant_by</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;data_kind&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">map</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">mdat</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;mdat&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">files</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;lazy&quot;</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span><span class="w"> </span><span class="p">}</span>
+<a id="L72" name="L72"></a><span class="k">[[steps.fields]]</span>
+<a id="L73" name="L73"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;data_kind&quot;</span>
+<a id="L74" name="L74"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;radio&quot;</span>
+<a id="L75" name="L75"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Source&quot;</span>
+<a id="L76" name="L76"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;files&quot;</span>
+<a id="L77" name="L77"></a><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<a id="L78" name="L78"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;files&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Files&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;JSONL, CSV, CoNLL or HuggingFace dataset read as a stream.&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L79" name="L79"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;mdat&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;MDAT&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;A pretokenized view of an MDAT container.&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L80" name="L80"></a><span class="p">]</span>
+<a id="L81" name="L81"></a><span class="k">[[steps.fields]]</span>
+<a id="L82" name="L82"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;test_data_root&quot;</span>
+<a id="L83" name="L83"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;path&quot;</span>
+<a id="L84" name="L84"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Test data (optional)&quot;</span>
+<a id="L85" name="L85"></a><span class="n">doc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;A second dataset used by validation. Without it validation reads the training dataset.&quot;</span>
+<a id="L86" name="L86"></a><span class="k">[[steps.fields]]</span>
+<a id="L87" name="L87"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;test_file_format&quot;</span>
+<a id="L88" name="L88"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;choice&quot;</span>
+<a id="L89" name="L89"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Test format&quot;</span>
+<a id="L90" name="L90"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;jsonl&quot;</span>
+<a id="L91" name="L91"></a><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;jsonl&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;csv&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;conll&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;conllu&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;hf&quot;</span><span class="p">]</span>
+<a id="L92" name="L92"></a><span class="k">[[steps.fields]]</span>
+<a id="L93" name="L93"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;test_split&quot;</span>
+<a id="L94" name="L94"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;text&quot;</span>
+<a id="L95" name="L95"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Test split&quot;</span>
+<a id="L96" name="L96"></a><span class="n">doc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;HuggingFace split name, used only when the test format is hf.&quot;</span>
+<a id="L97" name="L97"></a>
+<a id="L98" name="L98"></a><span class="k">[[steps]]</span>
+<a id="L99" name="L99"></a><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;training&quot;</span>
+<a id="L100" name="L100"></a><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Training&quot;</span>
+<a id="L101" name="L101"></a><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Optimizer, schedule and checkpoint naming.&quot;</span>
+<a id="L102" name="L102"></a><span class="n">generator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;config&quot;</span>
+<a id="L103" name="L103"></a><span class="n">preset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${mode}_${model_kind}&quot;</span>
+<a id="L104" name="L104"></a><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;training&quot;</span><span class="p">]</span>
+<a id="L105" name="L105"></a>
+<a id="L106" name="L106"></a><span class="k">[[steps]]</span>
+<a id="L107" name="L107"></a><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;validation&quot;</span>
+<a id="L108" name="L108"></a><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Validation&quot;</span>
+<a id="L109" name="L109"></a><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Tasks run during training. Each row can name a configured data entry or point at a file.&quot;</span>
+<a id="L110" name="L110"></a><span class="k">[[steps.fields]]</span>
+<a id="L111" name="L111"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;validation_enabled&quot;</span>
+<a id="L112" name="L112"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;bool&quot;</span>
+<a id="L113" name="L113"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Run validation&quot;</span>
+<a id="L114" name="L114"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<a id="L115" name="L115"></a><span class="k">[[steps.fields]]</span>
+<a id="L116" name="L116"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;validation_tasks&quot;</span>
+<a id="L117" name="L117"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;tasks&quot;</span>
+<a id="L118" name="L118"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Tasks&quot;</span>
+<a id="L119" name="L119"></a><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;validation_enabled&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">truthy</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<a id="L120" name="L120"></a><span class="n">columns</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<a id="L121" name="L121"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;type&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">kind</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;choice&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Task&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">width</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">16</span><span class="p">,</span><span class="w"> </span><span class="n">options</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;evaluation&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;static_model_analysis&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;activation_analysis&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;sandbox_train&quot;</span><span class="p">],</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;evaluation&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L122" name="L122"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">kind</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;text&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Name&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">width</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">12</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L123" name="L123"></a><span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;data&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">kind</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;path&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Data&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">width</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="mi">28</span><span class="p">,</span><span class="w"> </span><span class="n">default</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Configured data name or a file path. Empty uses the test split or training split.&quot;</span><span class="w"> </span><span class="p">},</span>
+<a id="L124" name="L124"></a><span class="p">]</span>
+<a id="L125" name="L125"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">type</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;evaluation&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">name</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;evaluation&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">data</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span><span class="w"> </span><span class="p">}]</span>
+<a id="L126" name="L126"></a><span class="k">[[steps.fields]]</span>
+<a id="L127" name="L127"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;validation_every_n_epochs&quot;</span>
+<a id="L128" name="L128"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;int&quot;</span>
+<a id="L129" name="L129"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Every n epochs&quot;</span>
+<a id="L130" name="L130"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<a id="L131" name="L131"></a><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;validation_enabled&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">truthy</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<a id="L132" name="L132"></a><span class="k">[[steps.fields]]</span>
+<a id="L133" name="L133"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;validation_every_n_steps&quot;</span>
+<a id="L134" name="L134"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;int&quot;</span>
+<a id="L135" name="L135"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Every n steps&quot;</span>
+<a id="L136" name="L136"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">0</span>
+<a id="L137" name="L137"></a><span class="n">doc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Zero disables step-based validation.&quot;</span>
+<a id="L138" name="L138"></a><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;validation_enabled&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">truthy</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<a id="L139" name="L139"></a><span class="k">[[steps.fields]]</span>
+<a id="L140" name="L140"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;validation_sandbox_configs&quot;</span>
+<a id="L141" name="L141"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;paths&quot;</span>
+<a id="L142" name="L142"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Sandbox configs&quot;</span>
+<a id="L143" name="L143"></a><span class="n">doc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;YAML files used by sandbox_train rows.&quot;</span>
+<a id="L144" name="L144"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[]</span>
+<a id="L145" name="L145"></a><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;validation_enabled&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">truthy</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<a id="L146" name="L146"></a>
+<a id="L147" name="L147"></a><span class="k">[[steps]]</span>
+<a id="L148" name="L148"></a><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;launch&quot;</span>
+<a id="L149" name="L149"></a><span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Launch&quot;</span>
+<a id="L150" name="L150"></a><span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Machine options for the queued job.&quot;</span>
+<a id="L151" name="L151"></a><span class="k">[[steps.fields]]</span>
+<a id="L152" name="L152"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;device&quot;</span>
+<a id="L153" name="L153"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;choice&quot;</span>
+<a id="L154" name="L154"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Accelerator&quot;</span>
+<a id="L155" name="L155"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;auto&quot;</span>
+<a id="L156" name="L156"></a><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cuda&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;cpu&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;mps&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tpu&quot;</span><span class="p">]</span>
+<a id="L157" name="L157"></a><span class="k">[[steps.fields]]</span>
+<a id="L158" name="L158"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;gpus&quot;</span>
+<a id="L159" name="L159"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;text&quot;</span>
+<a id="L160" name="L160"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Pin to GPUs&quot;</span>
+<a id="L161" name="L161"></a><span class="n">doc</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;CUDA_VISIBLE_DEVICES for this job only, for example 2,3.&quot;</span>
+<a id="L162" name="L162"></a><span class="k">[[steps.fields]]</span>
+<a id="L163" name="L163"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;save_model&quot;</span>
+<a id="L164" name="L164"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;bool&quot;</span>
+<a id="L165" name="L165"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Save the model&quot;</span>
+<a id="L166" name="L166"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<a id="L167" name="L167"></a><span class="k">[[steps.fields]]</span>
+<a id="L168" name="L168"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;save_plugins&quot;</span>
+<a id="L169" name="L169"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;bool&quot;</span>
+<a id="L170" name="L170"></a><span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Save the plugins&quot;</span>
+<a id="L171" name="L171"></a><span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<a id="L172" name="L172"></a>
+<a id="L173" name="L173"></a><span class="k">[action]</span>
+<a id="L174" name="L174"></a><span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;train&quot;</span>
+<a id="L175" name="L175"></a><span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${training.run_name}&quot;</span>
+<a id="L176" name="L176"></a><span class="n">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${training.project_name}&quot;</span>
+<a id="L177" name="L177"></a><span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">device</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;${device}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">gpus</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;${gpus}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">save_model</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;${save_model}&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">save_plugins</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;${save_plugins}&quot;</span><span class="w"> </span><span class="p">}</span>
+<a id="L178" name="L178"></a>
+<a id="L179" name="L179"></a><span class="c1"># ── Presets ─────────────────────────────────────────────────────────────────────────────────</span>
+<a id="L180" name="L180"></a><span class="c1"># A preset describes the sections a wizard step draws, the values a step starts from, and which</span>
+<a id="L181" name="L181"></a><span class="c1"># paths stay in front of the user. Everything else is still editable under Advanced.</span>
+<a id="L182" name="L182"></a>
+<a id="L183" name="L183"></a><span class="k">[presets.scratch_autoregressive]</span>
+<a id="L184" name="L184"></a><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training&quot;</span><span class="p">]</span>
+<a id="L185" name="L185"></a><span class="n">focus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<a id="L186" name="L186"></a><span class="w">  </span><span class="s2">&quot;model.hidden_size&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.num_hidden_layers&quot;</span><span class="p">,</span>
+<a id="L187" name="L187"></a><span class="w">  </span><span class="s2">&quot;model.default_layer.sequence_mixer_config.num_attention_heads&quot;</span><span class="p">,</span>
+<a id="L188" name="L188"></a><span class="w">  </span><span class="s2">&quot;model.default_layer.sequence_mixer_config.num_key_value_heads&quot;</span><span class="p">,</span>
+<a id="L189" name="L189"></a><span class="w">  </span><span class="s2">&quot;model.default_layer.sequence_mixer_config.head_dim&quot;</span><span class="p">,</span>
+<a id="L190" name="L190"></a><span class="w">  </span><span class="s2">&quot;model.vocab_size&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.max_position_embeddings&quot;</span><span class="p">,</span>
+<a id="L191" name="L191"></a><span class="w">  </span><span class="s2">&quot;model.ffn_factor&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.is_causal&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.default_layer.normalization&quot;</span><span class="p">,</span>
+<a id="L192" name="L192"></a><span class="w">  </span><span class="s2">&quot;model.default_layer.ffn_activation&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.default_layer.sequence_mixer&quot;</span><span class="p">,</span>
+<a id="L193" name="L193"></a><span class="w">  </span><span class="s2">&quot;tokenizer.pretrained_name&quot;</span><span class="p">,</span>
+<a id="L194" name="L194"></a><span class="w">  </span><span class="s2">&quot;data.data_root&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data.batch_size&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data.max_seq_len&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data.num_workers&quot;</span><span class="p">,</span>
+<a id="L195" name="L195"></a><span class="w">  </span><span class="s2">&quot;data.file_format&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data.text_column&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data.mdat_view&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data.mdat_strategy&quot;</span><span class="p">,</span>
+<a id="L196" name="L196"></a><span class="w">  </span><span class="s2">&quot;training.learning_signals&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.optimizer&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.lr&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.max_epochs&quot;</span><span class="p">,</span>
+<a id="L197" name="L197"></a><span class="w">  </span><span class="s2">&quot;training.save_every_n_steps&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.precision&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.scheduler&quot;</span><span class="p">,</span>
+<a id="L198" name="L198"></a><span class="w">  </span><span class="s2">&quot;training.run_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.project_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.checkpoint_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.save_dir&quot;</span><span class="p">,</span>
+<a id="L199" name="L199"></a><span class="p">]</span>
+<a id="L200" name="L200"></a><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model.hidden_size&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.num_hidden_layers&quot;</span><span class="p">,</span>
+<a id="L201" name="L201"></a><span class="w">            </span><span class="s2">&quot;model.default_layer.sequence_mixer_config.num_attention_heads&quot;</span><span class="p">,</span>
+<a id="L202" name="L202"></a><span class="w">            </span><span class="s2">&quot;model.default_layer.sequence_mixer_config.head_dim&quot;</span><span class="p">,</span>
+<a id="L203" name="L203"></a><span class="w">            </span><span class="s2">&quot;model.vocab_size&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.max_position_embeddings&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tokenizer.pretrained_name&quot;</span><span class="p">,</span>
+<a id="L204" name="L204"></a><span class="w">            </span><span class="s2">&quot;data.data_root&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.run_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.project_name&quot;</span><span class="p">]</span>
+<a id="L205" name="L205"></a>
+<a id="L206" name="L206"></a><span class="k">[presets.scratch_autoregressive.variants]</span>
+<a id="L207" name="L207"></a><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;default&quot;</span>
+<a id="L208" name="L208"></a><span class="n">tokenizer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;huggingface&quot;</span>
+<a id="L209" name="L209"></a><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;lazy&quot;</span>
+<a id="L210" name="L210"></a><span class="n">training</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;default&quot;</span>
+<a id="L211" name="L211"></a>
+<a id="L212" name="L212"></a><span class="k">[presets.scratch_autoregressive.values]</span>
+<a id="L213" name="L213"></a><span class="s2">&quot;model.hidden_size&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">512</span>
+<a id="L214" name="L214"></a><span class="s2">&quot;model.num_hidden_layers&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span>
+<a id="L215" name="L215"></a><span class="s2">&quot;model.default_layer.sequence_mixer_config.num_attention_heads&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span>
+<a id="L216" name="L216"></a><span class="s2">&quot;model.default_layer.sequence_mixer_config.num_key_value_heads&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span>
+<a id="L217" name="L217"></a><span class="s2">&quot;model.default_layer.sequence_mixer_config.head_dim&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">64</span>
+<a id="L218" name="L218"></a><span class="s2">&quot;model.default_layer.sequence_mixer_config.positional_encoding&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;rope&quot;</span>
+<a id="L219" name="L219"></a><span class="s2">&quot;model.default_layer.sequence_mixer_config.qkv_bias&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<a id="L220" name="L220"></a><span class="s2">&quot;model.default_layer.sequence_mixer_config.attn_output_bias&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<a id="L221" name="L221"></a><span class="s2">&quot;model.vocab_size&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">32000</span>
+<a id="L222" name="L222"></a><span class="s2">&quot;model.max_position_embeddings&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1024</span>
+<a id="L223" name="L223"></a><span class="s2">&quot;model.ffn_factor&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">4.0</span>
+<a id="L224" name="L224"></a><span class="s2">&quot;model.is_causal&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<a id="L225" name="L225"></a><span class="s2">&quot;model.training_objective&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;clm&quot;</span>
+<a id="L226" name="L226"></a><span class="s2">&quot;model.rms_norm_eps&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.000001</span>
+<a id="L227" name="L227"></a><span class="s2">&quot;model.bias&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<a id="L228" name="L228"></a><span class="s2">&quot;model.default_layer.normalization&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;rmsnorm&quot;</span>
+<a id="L229" name="L229"></a><span class="s2">&quot;model.default_layer.normalization_position&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pre&quot;</span>
+<a id="L230" name="L230"></a><span class="s2">&quot;model.default_layer.ffn_activation&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;swiglu&quot;</span>
+<a id="L231" name="L231"></a><span class="s2">&quot;model.default_layer.sequence_mixer&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;attention&quot;</span>
+<a id="L232" name="L232"></a><span class="s2">&quot;tokenizer.pretrained_name&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="L233" name="L233"></a><span class="s2">&quot;data.data_root&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="L234" name="L234"></a><span class="s2">&quot;data.batch_size&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span>
+<a id="L235" name="L235"></a><span class="s2">&quot;data.num_workers&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span>
+<a id="L236" name="L236"></a><span class="s2">&quot;data.max_seq_len&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1024</span>
+<a id="L237" name="L237"></a><span class="s2">&quot;data.file_format&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;jsonl&quot;</span>
+<a id="L238" name="L238"></a><span class="s2">&quot;data.text_column&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;text&quot;</span>
+<a id="L239" name="L239"></a><span class="s2">&quot;data.task&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;lm&quot;</span>
+<a id="L240" name="L240"></a><span class="s2">&quot;data.add_bos&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<a id="L241" name="L241"></a><span class="s2">&quot;data.mdat_view&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;default&quot;</span>
+<a id="L242" name="L242"></a><span class="s2">&quot;training.learning_signals&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;autoregressive&quot;</span><span class="p">]</span>
+<a id="L243" name="L243"></a><span class="s2">&quot;training.optimizer&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;adamw&quot;</span>
+<a id="L244" name="L244"></a><span class="s2">&quot;training.lr&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0005</span>
+<a id="L245" name="L245"></a><span class="s2">&quot;training.max_epochs&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<a id="L246" name="L246"></a><span class="s2">&quot;training.save_every_n_steps&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1000</span>
+<a id="L247" name="L247"></a><span class="s2">&quot;training.precision&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;bf16-mixed&quot;</span>
+<a id="L248" name="L248"></a><span class="s2">&quot;training.scheduler&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;cosine&quot;</span>
+<a id="L249" name="L249"></a><span class="s2">&quot;training.run_name&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;wizard-run&quot;</span>
+<a id="L250" name="L250"></a><span class="s2">&quot;training.project_name&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;wizard&quot;</span>
+<a id="L251" name="L251"></a><span class="s2">&quot;training.checkpoint_name&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;wizard-run&quot;</span>
+<a id="L252" name="L252"></a><span class="s2">&quot;training.save_dir&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;./checkpoints/wizard-run&quot;</span>
+<a id="L253" name="L253"></a>
+<a id="L254" name="L254"></a><span class="k">[presets.finetune_autoregressive]</span>
+<a id="L255" name="L255"></a><span class="n">extends</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scratch_autoregressive&quot;</span>
+<a id="L256" name="L256"></a><span class="n">focus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;training.checkpoint&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.what_to_reset&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.lr&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.max_epochs&quot;</span><span class="p">]</span>
+<a id="L257" name="L257"></a><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;training.checkpoint&quot;</span><span class="p">]</span>
+<a id="L258" name="L258"></a><span class="k">[presets.finetune_autoregressive.values]</span>
+<a id="L259" name="L259"></a><span class="s2">&quot;training.checkpoint&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="L260" name="L260"></a><span class="s2">&quot;training.what_to_reset&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;optimizer,lr_scheduler&quot;</span>
+<a id="L261" name="L261"></a><span class="s2">&quot;training.lr&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.00002</span>
+<a id="L262" name="L262"></a><span class="s2">&quot;training.max_epochs&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span>
+<a id="L263" name="L263"></a><span class="s2">&quot;training.learning_signals&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;autoregressive&quot;</span><span class="p">]</span>
+<a id="L264" name="L264"></a>
+<a id="L265" name="L265"></a><span class="k">[presets.scratch_masked]</span>
+<a id="L266" name="L266"></a><span class="n">extends</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scratch_autoregressive&quot;</span>
+<a id="L267" name="L267"></a><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;masking&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training&quot;</span><span class="p">]</span>
+<a id="L268" name="L268"></a><span class="n">focus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;masking.masked_substitution_rate&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;masking.cloze_probability&quot;</span><span class="p">,</span>
+<a id="L269" name="L269"></a><span class="w">         </span><span class="s2">&quot;masking.random_probability&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;masking.same_probability&quot;</span><span class="p">]</span>
+<a id="L270" name="L270"></a><span class="k">[presets.scratch_masked.variants]</span>
+<a id="L271" name="L271"></a><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;default&quot;</span>
+<a id="L272" name="L272"></a><span class="n">tokenizer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;huggingface&quot;</span>
+<a id="L273" name="L273"></a><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;lazy&quot;</span>
+<a id="L274" name="L274"></a><span class="n">training</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;default&quot;</span>
+<a id="L275" name="L275"></a><span class="n">masking</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;default&quot;</span>
+<a id="L276" name="L276"></a><span class="k">[presets.scratch_masked.values]</span>
+<a id="L277" name="L277"></a><span class="s2">&quot;model.is_causal&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<a id="L278" name="L278"></a><span class="s2">&quot;model.training_objective&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;mlm&quot;</span>
+<a id="L279" name="L279"></a><span class="s2">&quot;training.learning_signals&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;masked&quot;</span><span class="p">]</span>
+<a id="L280" name="L280"></a><span class="s2">&quot;masking.masked_substitution_rate&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.15</span>
+<a id="L281" name="L281"></a><span class="s2">&quot;masking.cloze_probability&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">1.0</span>
+<a id="L282" name="L282"></a><span class="s2">&quot;masking.random_probability&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span>
+<a id="L283" name="L283"></a><span class="s2">&quot;masking.same_probability&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.0</span>
+<a id="L284" name="L284"></a>
+<a id="L285" name="L285"></a><span class="k">[presets.finetune_masked]</span>
+<a id="L286" name="L286"></a><span class="n">extends</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scratch_masked&quot;</span>
+<a id="L287" name="L287"></a><span class="n">focus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;training.checkpoint&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.what_to_reset&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.lr&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.max_epochs&quot;</span><span class="p">]</span>
+<a id="L288" name="L288"></a><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;training.checkpoint&quot;</span><span class="p">]</span>
+<a id="L289" name="L289"></a><span class="k">[presets.finetune_masked.values]</span>
+<a id="L290" name="L290"></a><span class="s2">&quot;training.checkpoint&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="L291" name="L291"></a><span class="s2">&quot;training.what_to_reset&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;optimizer,lr_scheduler&quot;</span>
+<a id="L292" name="L292"></a><span class="s2">&quot;training.lr&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.00002</span>
+<a id="L293" name="L293"></a><span class="s2">&quot;training.max_epochs&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span>
+<a id="L294" name="L294"></a><span class="s2">&quot;training.learning_signals&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;masked&quot;</span><span class="p">]</span>
+<a id="L295" name="L295"></a>
+<a id="L296" name="L296"></a><span class="k">[presets.scratch_sequence_classification]</span>
+<a id="L297" name="L297"></a><span class="n">extends</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scratch_autoregressive&quot;</span>
+<a id="L298" name="L298"></a><span class="n">focus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model.num_classes&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.pooling_type&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.head_type&quot;</span><span class="p">,</span>
+<a id="L299" name="L299"></a><span class="w">         </span><span class="s2">&quot;model.classifier_dropout_p&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.additional_transformer_layers&quot;</span><span class="p">,</span>
+<a id="L300" name="L300"></a><span class="w">         </span><span class="s2">&quot;data.label_column&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data.label2id&quot;</span><span class="p">]</span>
+<a id="L301" name="L301"></a><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model.num_classes&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data.label_column&quot;</span><span class="p">]</span>
+<a id="L302" name="L302"></a><span class="k">[presets.scratch_sequence_classification.variants]</span>
+<a id="L303" name="L303"></a><span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;classification&quot;</span>
+<a id="L304" name="L304"></a><span class="n">tokenizer</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;huggingface&quot;</span>
+<a id="L305" name="L305"></a><span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;lazy&quot;</span>
+<a id="L306" name="L306"></a><span class="n">training</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;default&quot;</span>
+<a id="L307" name="L307"></a><span class="k">[presets.scratch_sequence_classification.values]</span>
+<a id="L308" name="L308"></a><span class="s2">&quot;model.scope&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;sequence&quot;</span>
+<a id="L309" name="L309"></a><span class="s2">&quot;model.pooling_type&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;cls&quot;</span>
+<a id="L310" name="L310"></a><span class="s2">&quot;model.num_classes&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">2</span>
+<a id="L311" name="L311"></a><span class="s2">&quot;model.head_type&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;linear&quot;</span>
+<a id="L312" name="L312"></a><span class="s2">&quot;model.additional_transformer_layers&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">1</span>
+<a id="L313" name="L313"></a><span class="s2">&quot;model.classifier_dropout_p&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.1</span>
+<a id="L314" name="L314"></a><span class="s2">&quot;model.is_causal&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<a id="L315" name="L315"></a><span class="s2">&quot;data.task&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;sentence-level&quot;</span>
+<a id="L316" name="L316"></a><span class="s2">&quot;data.label_column&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;label&quot;</span>
+<a id="L317" name="L317"></a><span class="s2">&quot;training.learning_signals&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;sequence_classification&quot;</span><span class="p">]</span>
+<a id="L318" name="L318"></a><span class="s2">&quot;training.lr&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.00005</span>
+<a id="L319" name="L319"></a><span class="s2">&quot;training.max_epochs&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span>
+<a id="L320" name="L320"></a>
+<a id="L321" name="L321"></a><span class="k">[presets.finetune_sequence_classification]</span>
+<a id="L322" name="L322"></a><span class="n">extends</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scratch_sequence_classification&quot;</span>
+<a id="L323" name="L323"></a><span class="n">focus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model.base_model&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.base_model_hf&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.freeze_base_model&quot;</span><span class="p">,</span>
+<a id="L324" name="L324"></a><span class="w">         </span><span class="s2">&quot;training.lr&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.max_epochs&quot;</span><span class="p">]</span>
+<a id="L325" name="L325"></a><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model.base_model&quot;</span><span class="p">]</span>
+<a id="L326" name="L326"></a><span class="k">[presets.finetune_sequence_classification.values]</span>
+<a id="L327" name="L327"></a><span class="s2">&quot;model.base_model&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="L328" name="L328"></a><span class="s2">&quot;model.base_model_hf&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<a id="L329" name="L329"></a><span class="s2">&quot;model.freeze_base_model&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">false</span>
+<a id="L330" name="L330"></a><span class="s2">&quot;training.lr&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.00002</span>
+<a id="L331" name="L331"></a><span class="s2">&quot;training.max_epochs&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span>
+<a id="L332" name="L332"></a><span class="s2">&quot;training.what_to_reset&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;optimizer,lr_scheduler&quot;</span>
+<a id="L333" name="L333"></a>
+<a id="L334" name="L334"></a><span class="k">[presets.scratch_token_classification]</span>
+<a id="L335" name="L335"></a><span class="n">extends</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scratch_sequence_classification&quot;</span>
+<a id="L336" name="L336"></a><span class="n">focus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model.num_classes&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.head_type&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.classifier_dropout_p&quot;</span><span class="p">,</span>
+<a id="L337" name="L337"></a><span class="w">         </span><span class="s2">&quot;data.label_column&quot;</span><span class="p">]</span>
+<a id="L338" name="L338"></a><span class="k">[presets.scratch_token_classification.values]</span>
+<a id="L339" name="L339"></a><span class="s2">&quot;model.scope&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;token&quot;</span>
+<a id="L340" name="L340"></a><span class="s2">&quot;model.pooling_type&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;cls&quot;</span>
+<a id="L341" name="L341"></a><span class="s2">&quot;data.task&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;token-level&quot;</span>
+<a id="L342" name="L342"></a><span class="s2">&quot;data.label_column&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;labels&quot;</span>
+<a id="L343" name="L343"></a><span class="s2">&quot;training.learning_signals&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;token_classification&quot;</span><span class="p">]</span>
+<a id="L344" name="L344"></a>
+<a id="L345" name="L345"></a><span class="k">[presets.finetune_token_classification]</span>
+<a id="L346" name="L346"></a><span class="n">extends</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scratch_token_classification&quot;</span>
+<a id="L347" name="L347"></a><span class="n">focus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model.base_model&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.base_model_hf&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.lr&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.max_epochs&quot;</span><span class="p">]</span>
+<a id="L348" name="L348"></a><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model.base_model&quot;</span><span class="p">]</span>
+<a id="L349" name="L349"></a><span class="k">[presets.finetune_token_classification.values]</span>
+<a id="L350" name="L350"></a><span class="s2">&quot;model.base_model&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="L351" name="L351"></a><span class="s2">&quot;model.base_model_hf&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="kc">true</span>
+<a id="L352" name="L352"></a><span class="s2">&quot;training.lr&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.00002</span>
+<a id="L353" name="L353"></a><span class="s2">&quot;training.max_epochs&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span>
+<a id="L354" name="L354"></a><span class="s2">&quot;training.what_to_reset&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;optimizer,lr_scheduler&quot;</span>
+<a id="L355" name="L355"></a>
+<a id="L356" name="L356"></a><span class="k">[presets.scratch_other]</span>
+<a id="L357" name="L357"></a><span class="n">extends</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scratch_autoregressive&quot;</span>
+<a id="L358" name="L358"></a><span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training&quot;</span><span class="p">]</span>
+<a id="L359" name="L359"></a>
+<a id="L360" name="L360"></a><span class="k">[presets.finetune_other]</span>
+<a id="L361" name="L361"></a><span class="n">extends</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;scratch_other&quot;</span>
+<a id="L362" name="L362"></a><span class="n">focus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;training.checkpoint&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.what_to_reset&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.lr&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.max_epochs&quot;</span><span class="p">]</span>
+<a id="L363" name="L363"></a><span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;training.checkpoint&quot;</span><span class="p">]</span>
+<a id="L364" name="L364"></a><span class="k">[presets.finetune_other.values]</span>
+<a id="L365" name="L365"></a><span class="s2">&quot;training.checkpoint&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;&quot;</span>
+<a id="L366" name="L366"></a><span class="s2">&quot;training.what_to_reset&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;optimizer,lr_scheduler&quot;</span>
+<a id="L367" name="L367"></a><span class="s2">&quot;training.lr&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mf">0.00002</span>
+<a id="L368" name="L368"></a><span class="s2">&quot;training.max_epochs&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">3</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/loading/adapters/huggingface/gemma3_text.yaml · Matformer</title>
+<link rel="stylesheet" href="../../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../../index.html">Documentation</a><a class="" href="../../../../../registry/index.html">Registry</a><a class="" href="../../../../../configuration/index.html">Configuration</a><a class="" href="../../../../../tools/commands.html">Commands</a><a class="current" href="../../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../../index.html">Matformer</a></li><li><a href="../../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../../components/cache.html">The cache</a></li><li><a href="../../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../../training/logger.html">Logging</a></li><li><a href="../../../../../training/control.html">Control</a></li><li><a href="../../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../../data/index.html">Data</a></li><li><a href="../../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../../data/data-module.html">Data module</a></li><li><a href="../../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../../tools/server.html">Server</a></li><li><a href="../../../../../tools/gui.html">GUI</a></li><li><a href="../../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../../tools/commands.html">Commands</a></li><li><a href="../../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../../about/repository.html">Repository</a></li><li><a href="../../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../../index.html">Repository</a> <span class="sep">/</span> matformer/loading/adapters/huggingface/gemma3_text.yaml</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="gemma3_text.yaml.html"><code>matformer/loading/adapters/huggingface/gemma3_text.yaml</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/loading/adapters/huggingface/</code></a></p><h1><code>gemma3_text.yaml</code></h1><p class="muted">matformer/loading/adapters/huggingface/gemma3_text.yaml · 108 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/loading/adapters/huggingface/gemma3_text.yaml">view on GitHub</a></p></div><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># Gemma3 (text-only, model_type gemma3_text =&gt; Gemma3ForCausalLM / Gemma3TextModel)</span>
+<a id="L2" name="L2"></a><span class="c1"># =&gt; Matformer config mapping. Covers causal Gemma3 LMs AND the embedding variant</span>
+<a id="L3" name="L3"></a><span class="c1">#    (embeddinggemma-300m: bare Gemma3TextModel, use_bidirectional_attention: true,</span>
+<a id="L4" name="L4"></a><span class="c1">#    no lm_head tensor, tied to embed_tokens).</span>
+<a id="L5" name="L5"></a><span class="c1"># NOTE: the multimodal Gemma3 (model_type &quot;gemma3&quot;) is NOT covered here.</span>
+<a id="L6" name="L6"></a><span class="c1"># NOTE: Gemma quirks handled:</span>
+<a id="L7" name="L7"></a><span class="c1">#  - embeddings scaled by sqrt(hidden_size) -&gt; derived model.embedding_scale</span>
+<a id="L8" name="L8"></a><span class="c1">#  - ALL norms are zero-centered (1+weight) RMSNorm -&gt; normalization: rmsnorm_zc</span>
+<a id="L9" name="L9"></a><span class="c1">#  - hidden_activation gelu_pytorch_tanh, gated MLP -&gt; geglu_tanh</span>
+<a id="L10" name="L10"></a><span class="c1">#  - QK-norm (zero-centered, shared across heads) -&gt; q_norm/k_norm + qk_norm_zero_centered</span>
+<a id="L11" name="L11"></a><span class="c1">#  - Sandwich norm layout (HF Gemma3 layer forward): input_layernorm (pre-attn),</span>
+<a id="L12" name="L12"></a><span class="c1">#    post_attention_layernorm (post-attn, before the residual add), pre_feedforward_</span>
+<a id="L13" name="L13"></a><span class="c1">#    layernorm (pre-mlp), post_feedforward_layernorm (post-mlp, before the residual add)</span>
+<a id="L14" name="L14"></a><span class="c1">#    -&gt; normalization_position: sandwich.</span>
+<a id="L15" name="L15"></a><span class="c1">#  - 5:1 local:global attention (_sliding_window_pattern: 6) -&gt; default layer is local</span>
+<a id="L16" name="L16"></a><span class="c1">#    (sliding window, rope theta from rope_local_base_freq=10k); every_6_offset_5 layers</span>
+<a id="L17" name="L17"></a><span class="c1">#    are global (full attention, rope_theta=1M). Matches all gemma3 sizes since the</span>
+<a id="L18" name="L18"></a><span class="c1">#    pattern is fixed at 6.</span>
+<a id="L19" name="L19"></a><span class="c1"># NOTE: query_pre_attn_scalar (256) == head_dim (256) for all gemma3 text sizes, so</span>
+<a id="L20" name="L20"></a><span class="c1">#   Matformer&#39;s 1/sqrt(head_dim) attention scale is correct.</span>
+<a id="L21" name="L21"></a><span class="c1"># NOTE: sliding-window semantics: HF masks attend to |q-k| &lt; window (the config stores</span>
+<a id="L22" name="L22"></a><span class="c1">#   the exclusive bound); the SDPA/interpretability kernels use the same `&lt;`.</span>
+<a id="L23" name="L23"></a><span class="c1">#   For bidirectional checkpoints HF additionally HALVES the window at config-load</span>
+<a id="L24" name="L24"></a><span class="c1">#   time (configuration_gemma3: sliding_window = sliding_window // 2 + 1): the</span>
+<a id="L25" name="L25"></a><span class="c1">#   effective bidirectional window is half the raw one -&gt; derived below, so causal</span>
+<a id="L26" name="L26"></a><span class="c1">#   Gemma3 keeps the raw window while embeddinggemma gets 257 (=512//2+1), i.e. a</span>
+<a id="L27" name="L27"></a><span class="c1">#   |q-k| &lt;= 256 visible band, matching HF exactly.</span>
+<a id="L28" name="L28"></a><span class="c1"># NOTE: bidirectional attention (embeddinggemma): is_causal is derived from</span>
+<a id="L29" name="L29"></a><span class="c1">#   use_bidirectional_attention with a vars() guard so causal checkpoints (which lack</span>
+<a id="L30" name="L30"></a><span class="c1">#   the key) stay is_causal: true. training_objective stays clm: the objective only</span>
+<a id="L31" name="L31"></a><span class="c1">#   selects the training learning signal, and the HF embedding model is used here for</span>
+<a id="L32" name="L32"></a><span class="c1">#   plain (unmasked) forward parity.</span>
+<a id="L33" name="L33"></a><span class="nt">source_key_aliases</span><span class="p">:</span>
+<a id="L34" name="L34"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">model.</span><span class="w">   </span><span class="c1"># embeddinggemma checkpoints ship the backbone without the &quot;model.&quot; prefix</span>
+<a id="L35" name="L35"></a>
+<a id="L36" name="L36"></a><span class="nt">defaults</span><span class="p">:</span>
+<a id="L37" name="L37"></a><span class="w">  </span><span class="nt">model</span><span class="p">:</span>
+<a id="L38" name="L38"></a><span class="w">    </span><span class="nt">model_class</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Autoregressive_Model</span>
+<a id="L39" name="L39"></a><span class="w">    </span><span class="nt">bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L40" name="L40"></a><span class="w">    </span><span class="nt">training_objective</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">clm</span>
+<a id="L41" name="L41"></a><span class="w">    </span><span class="nt">lm_head_bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L42" name="L42"></a><span class="w">    </span><span class="nt">sliding_type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">partial</span>
+<a id="L43" name="L43"></a><span class="w">    </span><span class="nt">default_layer</span><span class="p">:</span>
+<a id="L44" name="L44"></a><span class="w">      </span><span class="nt">normalization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rmsnorm_zc</span>
+<a id="L45" name="L45"></a><span class="w">      </span><span class="nt">normalization_position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sandwich</span>
+<a id="L46" name="L46"></a><span class="w">      </span><span class="nt">ffn_activation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">geglu_tanh</span>
+<a id="L47" name="L47"></a><span class="w">      </span><span class="nt">sequence_mixer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">attention</span>
+<a id="L48" name="L48"></a><span class="w">      </span><span class="nt">sequence_mixer_config</span><span class="p">:</span>
+<a id="L49" name="L49"></a><span class="w">        </span><span class="nt">positional_encoding</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rope</span>
+<a id="L50" name="L50"></a><span class="w">        </span><span class="nt">q_norm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L51" name="L51"></a><span class="w">        </span><span class="nt">k_norm</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L52" name="L52"></a><span class="w">        </span><span class="nt">qk_norm_zero_centered</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L53" name="L53"></a><span class="w">    </span><span class="nt">custom_layers</span><span class="p">:</span>
+<a id="L54" name="L54"></a><span class="w">      </span><span class="nt">every_6_offset_5</span><span class="p">:</span>
+<a id="L55" name="L55"></a><span class="w">        </span><span class="nt">sequence_mixer_config</span><span class="p">:</span>
+<a id="L56" name="L56"></a><span class="w">          </span><span class="nt">sliding_window_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span>
+<a id="L57" name="L57"></a>
+<a id="L58" name="L58"></a><span class="nt">model_mapping</span><span class="p">:</span>
+<a id="L59" name="L59"></a><span class="w">  </span><span class="nt">hidden_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hidden_size</span>
+<a id="L60" name="L60"></a><span class="w">  </span><span class="nt">num_hidden_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">num_hidden_layers</span>
+<a id="L61" name="L61"></a><span class="w">  </span><span class="nt">vocab_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vocab_size</span>
+<a id="L62" name="L62"></a><span class="w">  </span><span class="nt">rms_norm_eps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rms_norm_eps</span>
+<a id="L63" name="L63"></a><span class="w">  </span><span class="nt">max_position_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">max_position_embeddings</span>
+<a id="L64" name="L64"></a><span class="w">  </span><span class="nt">tie_word_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">tie_word_embeddings</span>
+<a id="L65" name="L65"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.num_attention_heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">num_attention_heads</span>
+<a id="L66" name="L66"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.num_key_value_heads</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">num_key_value_heads</span>
+<a id="L67" name="L67"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.head_dim</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">head_dim</span>
+<a id="L68" name="L68"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.sliding_window_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">sliding_window</span>
+<a id="L69" name="L69"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.rope_theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rope_local_base_freq</span>
+<a id="L70" name="L70"></a><span class="w">  </span><span class="nt">custom_layers.every_6_offset_5.sequence_mixer_config.rope_theta</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rope_theta</span>
+<a id="L71" name="L71"></a>
+<a id="L72" name="L72"></a><span class="nt">tokenizer_mapping</span><span class="p">:</span>
+<a id="L73" name="L73"></a><span class="w">  </span><span class="nt">vocab_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vocab_size</span>
+<a id="L74" name="L74"></a><span class="w">  </span><span class="nt">bos_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bos_token_id</span>
+<a id="L75" name="L75"></a><span class="w">  </span><span class="nt">eos_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">eos_token_id</span>
+<a id="L76" name="L76"></a><span class="w">  </span><span class="nt">pad_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pad_token_id</span>
+<a id="L77" name="L77"></a>
+<a id="L78" name="L78"></a><span class="nt">derived</span><span class="p">:</span>
+<a id="L79" name="L79"></a><span class="w">  </span><span class="nt">model.ffn_factor</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;intermediate_size</span><span class="nv"> </span><span class="s">/</span><span class="nv"> </span><span class="s">hidden_size&quot;</span>
+<a id="L80" name="L80"></a><span class="w">  </span><span class="nt">model.embedding_scale</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;hidden_size</span><span class="nv"> </span><span class="s">**</span><span class="nv"> </span><span class="s">0.5&quot;</span>
+<a id="L81" name="L81"></a><span class="w">  </span><span class="nt">model.is_causal</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;(True</span><span class="nv"> </span><span class="s">if</span><span class="nv"> </span><span class="s">&#39;use_bidirectional_attention&#39;</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">in</span><span class="nv"> </span><span class="s">vars()</span><span class="nv"> </span><span class="s">else</span><span class="nv"> </span><span class="s">not</span><span class="nv"> </span><span class="s">use_bidirectional_attention)&quot;</span>
+<a id="L82" name="L82"></a><span class="w">  </span><span class="c1"># overrides the raw `sliding_window` mapping (derived wins): HF halves the window</span>
+<a id="L83" name="L83"></a><span class="w">  </span><span class="c1"># for bidirectional checkpoints (see NOTE above); causal ones keep it as-is</span>
+<a id="L84" name="L84"></a><span class="w">  </span><span class="nt">model.default_layer.sequence_mixer_config.sliding_window_size</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;sliding_window</span><span class="nv"> </span><span class="s">//</span><span class="nv"> </span><span class="s">2</span><span class="nv"> </span><span class="s">+</span><span class="nv"> </span><span class="s">1</span><span class="nv"> </span><span class="s">if</span><span class="nv"> </span><span class="s">vars().get(&#39;use_bidirectional_attention&#39;)</span><span class="nv"> </span><span class="s">else</span><span class="nv"> </span><span class="s">sliding_window&quot;</span>
+<a id="L85" name="L85"></a>
+<a id="L86" name="L86"></a><span class="nt">weight_mapping</span><span class="p">:</span>
+<a id="L87" name="L87"></a><span class="w">  </span><span class="nt">lm_head.weight</span><span class="p">:</span><span class="w">                                    </span><span class="l l-Scalar l-Scalar-Plain">lm_head.weight</span>
+<a id="L88" name="L88"></a><span class="w">  </span><span class="nt">encoder.embed_tokens.weight</span><span class="p">:</span><span class="w">                       </span><span class="l l-Scalar l-Scalar-Plain">model.embed_tokens.weight</span>
+<a id="L89" name="L89"></a><span class="w">  </span><span class="nt">encoder.blocks.norm.weight</span><span class="p">:</span><span class="w">                        </span><span class="l l-Scalar l-Scalar-Plain">model.norm.weight</span>
+<a id="L90" name="L90"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn_norm.weight</span><span class="p">:</span><span class="w">          </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.input_layernorm.weight</span>
+<a id="L91" name="L91"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn_post_norm.weight</span><span class="p">:</span><span class="w">     </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.post_attention_layernorm.weight</span>
+<a id="L92" name="L92"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.mlp_norm.weight</span><span class="p">:</span><span class="w">           </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.pre_feedforward_layernorm.weight</span>
+<a id="L93" name="L93"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.mlp_post_norm.weight</span><span class="p">:</span><span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.post_feedforward_layernorm.weight</span>
+<a id="L94" name="L94"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.q_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.q_proj.weight</span>
+<a id="L95" name="L95"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.k_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.k_proj.weight</span>
+<a id="L96" name="L96"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.v_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.v_proj.weight</span>
+<a id="L97" name="L97"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.o_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.o_proj.weight</span>
+<a id="L98" name="L98"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.q_norm.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.q_norm.weight</span>
+<a id="L99" name="L99"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.attn.k_norm.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.k_norm.weight</span>
+<a id="L100" name="L100"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.mlp.gate_proj.weight</span><span class="p">:</span><span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.mlp.gate_proj.weight</span>
+<a id="L101" name="L101"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.mlp.up_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.mlp.up_proj.weight</span>
+<a id="L102" name="L102"></a><span class="w">  </span><span class="nt">encoder.blocks.layers.N.mlp.down_proj.weight</span><span class="p">:</span><span class="w">      </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.mlp.down_proj.weight</span>
+<a id="L103" name="L103"></a>
+<a id="L104" name="L104"></a><span class="c1"># Automated suite (tests/test_hf_adapters.py): embeddinggemma covers the bidirectional</span>
+<a id="L105" name="L105"></a><span class="c1"># (bare, tied, no lm_head tensor) variant; a causal Gemma3ForCausalLM checkpoint would</span>
+<a id="L106" name="L106"></a><span class="c1"># additionally cover the clm path if one is added.</span>
+<a id="L107" name="L107"></a><span class="nt">tests</span><span class="p">:</span>
+<a id="L108" name="L108"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">google/embeddinggemma-300m</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

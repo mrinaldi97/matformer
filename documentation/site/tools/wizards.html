@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Wizards · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section" open><summary>Tools</summary><ul><li><a href="server.html">Server</a></li><li><a href="gui.html">GUI</a></li><li><a href="remote.html">Remote client</a></li><li><a href="cluster.html">Cluster</a></li><li><a href="commands.html">Commands</a></li><li><a class="current" href="wizards.html">Wizards</a></li><li><a href="analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Tools <span class="sep">/</span> Wizards</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/wizards/engine.py.html"><code>matformer/wizards/engine.py</code></a> <a href="../file/matformer/server/wizard_cmd.py.html"><code>matformer/server/wizard_cmd.py</code></a> <a href="../file/matformer/gui/wizard.py.html"><code>matformer/gui/wizard.py</code></a></div>
+<h1 id="wizards">Wizards<a class="headerlink" href="#wizards" title="Permanent link"></a></h1>
+<p>A wizard is a TOML document that describes a multi-step interface for a long-running operation.
+The definition is renderer independent: the desktop console draws it, and a terminal, a web page or
+the documentation build can read the same steps. The server executes the action the answers
+describe, using the same job queue as every other long operation.</p>
+<p>The definitions live in <code>matformer/wizards/definitions</code>. The engine is in
+<code>matformer/wizards/engine.py</code>; the RPC layer is <code>matformer/server/wizard_cmd.py</code>.</p>
+<h2 id="document">Document<a class="headerlink" href="#document" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;train&quot;</span>
+<span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Train a model&quot;</span>
+<span class="n">description</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Build a training configuration and queue it as a job.&quot;</span>
+<span class="n">category</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Training&quot;</span>
+
+<span class="k">[[steps]]</span>
+<span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;kind&quot;</span>
+<span class="n">title</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Kind of model&quot;</span>
+<span class="k">[[steps.fields]]</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;model_kind&quot;</span>
+<span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;radio&quot;</span>
+<span class="n">label</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;Model&quot;</span>
+<span class="n">default</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;autoregressive&quot;</span>
+<span class="n">options</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;autoregressive&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Autoregressive&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Predicts the next token.&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="w">  </span><span class="p">{</span><span class="w"> </span><span class="n">value</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;masked&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">label</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Masked&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">doc</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;Reconstructs masked tokens.&quot;</span><span class="w"> </span><span class="p">},</span>
+<span class="p">]</span>
+</code></pre></div>
+
+<p>A step is shown when its <code>when</code> condition holds. A field is shown when its own <code>when</code> holds.
+Conditions are structured, not evaluated as code:</p>
+<div class="highlight"><pre><span></span><code><span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;model_kind&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;masked&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;model_kind&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">in</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;masked&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;autoregressive&quot;</span><span class="p">]</span><span class="w"> </span><span class="p">}</span>
+<span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;validation_enabled&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">truthy</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="kc">true</span><span class="w"> </span><span class="p">}</span>
+<span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">all</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="p">[{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;layout&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;container&quot;</span><span class="w"> </span><span class="p">},</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;mode&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;new&quot;</span><span class="w"> </span><span class="p">}]</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+
+<p>Field kinds are the field language used by every form in the project: <code>text</code>, <code>path</code>, <code>int</code>,
+<code>float</code>, <code>bool</code>, <code>choice</code>, <code>radio</code>, <code>multi</code>, <code>json</code>, <code>paths</code> and <code>mapping</code>. <code>advanced = true</code> moves
+a field behind one expander. <code>required = true</code> blocks the step until the field has a value.
+<code>source = "mdat.datasets"</code> fills a choice from live data; <code>depends_on</code> names the answers the source
+reads.</p>
+<h2 id="generated-configuration-steps">Generated configuration steps<a class="headerlink" href="#generated-configuration-steps" title="Permanent link"></a></h2>
+<p>A model has dozens of fields. Writing them in TOML would duplicate the dataclasses, so a step can
+generate its fields from the registry:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[[steps]]</span>
+<span class="n">id</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;model&quot;</span>
+<span class="n">generator</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;config&quot;</span>
+<span class="n">preset</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${mode}_${model_kind}&quot;</span>
+<span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tokenizer&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p>The preset names the sections, the default values, the paths that stay focused and the paths that
+are required:</p>
+<div class="highlight"><pre><span></span><code><span class="k">[presets.scratch_autoregressive]</span>
+<span class="n">sections</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training&quot;</span><span class="p">]</span>
+<span class="n">focus</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;model.hidden_size&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;model.num_hidden_layers&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;training.lr&quot;</span><span class="p">]</span>
+<span class="n">required</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;tokenizer.pretrained_name&quot;</span><span class="p">,</span><span class="w"> </span><span class="s2">&quot;data.data_root&quot;</span><span class="p">]</span>
+
+<span class="k">[presets.scratch_autoregressive.variants]</span>
+<span class="n">model</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;default&quot;</span>
+<span class="n">data</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;lazy&quot;</span>
+
+<span class="k">[presets.scratch_autoregressive.values]</span>
+<span class="s2">&quot;model.hidden_size&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">512</span>
+<span class="s2">&quot;data.batch_size&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="mi">8</span>
+<span class="s2">&quot;training.learning_signals&quot;</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">[</span><span class="s2">&quot;autoregressive&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p>Every other field of the section is still present under Advanced. <code>extends</code> merges one preset into
+another. <code>variant_by</code> selects a variant from an answer, which is how one data step covers both the
+<code>lazy</code> and <code>mdat</code> data modules.</p>
+<h2 id="actions">Actions<a class="headerlink" href="#actions" title="Permanent link"></a></h2>
+<p>The action is declarative. <code>train</code> writes the generated YAML and queues it through <code>train.start</code>.
+<code>mdat</code> queues a sequence of MDatCommands calls. <code>annotate</code> queues an annotation job.</p>
+<div class="highlight"><pre><span></span><code><span class="k">[action]</span>
+<span class="n">kind</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;train&quot;</span>
+<span class="n">name</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${training.run_name}&quot;</span>
+<span class="n">project</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;${training.project_name}&quot;</span>
+
+<span class="k">[[action.commands]]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;open&quot;</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">path</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;${container}&quot;</span><span class="w"> </span><span class="p">}</span>
+
+<span class="k">[[action.commands]]</span>
+<span class="n">cmd</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="s2">&quot;pretok_all&quot;</span>
+<span class="n">when</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">field</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;target&quot;</span><span class="p">,</span><span class="w"> </span><span class="n">is</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;all&quot;</span><span class="w"> </span><span class="p">}</span>
+<span class="n">args</span><span class="w"> </span><span class="o">=</span><span class="w"> </span><span class="p">{</span><span class="w"> </span><span class="n">strategy</span><span class="w"> </span><span class="p">=</span><span class="w"> </span><span class="s2">&quot;${strategy}&quot;</span><span class="w"> </span><span class="p">}</span>
+</code></pre></div>
+
+<p><code>${answers.NAME}</code> is substituted with an answer. A command or file with a <code>when</code> that does not hold
+is dropped. A file can be materialized for a command and addressed as <code>${files.NAME}</code>.</p>
+<h2 id="rpc">RPC<a class="headerlink" href="#rpc" title="Permanent link"></a></h2>
+<table>
+<thead>
+<tr>
+<th>Command</th>
+<th>Purpose</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>wizard.list</code></td>
+<td>Every definition with title, category and step count.</td>
+</tr>
+<tr>
+<td><code>wizard.schema</code></td>
+<td>Visible steps and fields for the answers so far.</td>
+</tr>
+<tr>
+<td><code>wizard.plan</code></td>
+<td>Validation, generated YAML and the command list. Nothing is queued.</td>
+</tr>
+<tr>
+<td><code>wizard.submit</code></td>
+<td>Execute the action and return the job id.</td>
+</tr>
+<tr>
+<td><code>wizard.context</code></td>
+<td>The model loaded on this server, for prefill.</td>
+</tr>
+</tbody>
+</table>
+<h2 id="built-in-wizards">Built-in wizards<a class="headerlink" href="#built-in-wizards" title="Permanent link"></a></h2>
+<table>
+<thead>
+<tr>
+<th>Wizard</th>
+<th>Work</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>train</code></td>
+<td>Training from scratch or a fine-tune, with data, validation and launch options.</td>
+</tr>
+<tr>
+<td><code>annotate</code></td>
+<td>Annotation of a file or an MDAT with its own model and job.</td>
+</tr>
+<tr>
+<td><code>mdat_create</code></td>
+<td>Create an MDAT container.</td>
+</tr>
+<tr>
+<td><code>mdat_dataset</code></td>
+<td>Create a linked dataset and optionally link it into a container.</td>
+</tr>
+<tr>
+<td><code>mdat_link</code></td>
+<td>Attach an existing linked dataset to a container.</td>
+</tr>
+<tr>
+<td><code>mdat_ingest</code></td>
+<td>Import or append JSONL, CSV, LMDB, HuggingFace or Atlas documents.</td>
+</tr>
+<tr>
+<td><code>mdat_pretokenize</code></td>
+<td>Register a strategy and pretokenize one dataset or every dataset.</td>
+</tr>
+<tr>
+<td><code>mdat_view</code></td>
+<td>Create a head, range or selection view and shuffle it.</td>
+</tr>
+<tr>
+<td><code>mdat_prepare</code></td>
+<td>Select a strategy and view, then precompute the distributed chunk layout.</td>
+</tr>
+</tbody>
+</table>
+<p>Every long action becomes a job in the server queue: it keeps running when the console closes, and
+its log, status and abort are the queue's usual controls.</p>
+<h2 id="generated-reference">Generated reference<a class="headerlink" href="#generated-reference" title="Permanent link"></a></h2>
+<p>The catalog below is rendered from the same TOML files the GUI loads.</p>
+<h2 id="wizard-annotate">Annotate a dataset</h2>
+<p>Run a task over every row of a file or an MDAT and write the predictions as JSONL or MDAT.</p>
+<h3>Model</h3>
+<p>The job loads its own copy of the model, so it keeps running when the console is closed.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td>path</td><td>A Matformer checkpoint, a HuggingFace repo (hf://org/model) or a local model folder.</td></tr><tr><td><code>cfg</code></td><td>path</td><td>Optional YAML merged into the model&#x27;s own configuration.</td></tr><tr><td><code>task</code></td><td>choice</td><td></td></tr><tr><td><code>device</code></td><td>choice</td><td></td></tr></tbody></table>
+<h3>Input and output</h3>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>input</code></td><td>path</td><td>A JSONL, CSV or CoNLL file, or an MDAT folder.</td></tr><tr><td><code>dataset</code></td><td>text</td><td>Dataset inside a multi-dataset container. Leave empty for a standalone dataset.</td></tr><tr><td><code>column</code></td><td>text</td><td></td></tr><tr><td><code>label</code></td><td>text</td><td>Optional gold labels, used to score the predictions.</td></tr><tr><td><code>format</code></td><td>choice</td><td></td></tr><tr><td><code>output</code></td><td>path</td><td>Empty writes &lt;input&gt;.annotated.&lt;format&gt;.</td></tr><tr><td><code>keys_only</code></td><td>bool</td><td>MDAT output without a copy of the original documents.</td></tr><tr><td><code>limit</code></td><td>int</td><td>Zero annotates every row.</td></tr><tr><td><code>batch_size</code></td><td>int</td><td></td></tr><tr><td><code>max_new_tokens</code></td><td>int</td><td></td></tr><tr><td><code>temperature</code></td><td>float</td><td></td></tr></tbody></table>
+<h2 id="wizard-collect">Collect activations and vectors</h2>
+<p>One forward over a dataset: keep the activations, pool them into embeddings or prototypes, and carry the dataset&#x27;s own metadata with every vector.</p>
+<h3>Model and data source</h3>
+<p>Collect from a checkpoint (its architecture and tokenizer come with it) or from config files. A forward makes no predictions, so no training is involved.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>model</code></td><td>path</td><td>A Matformer checkpoint, a HF repo (hf://org/model) or a local folder. Leave empty to use a config that names the model.</td></tr><tr><td><code>cfg</code></td><td>paths</td><td>YAML files merged into the checkpoint&#x27;s own configuration, for example a dataset definition.</td></tr><tr><td><code>tokenizer</code></td><td>text</td><td>A HF tokenizer name, when the checkpoint does not carry one.</td></tr><tr><td><code>device</code></td><td>choice</td><td></td></tr></tbody></table>
+<h3>Data</h3>
+<p>The dataset the forward reads. Metadata (labels, pair ids, sources) is kept when requested.</p>
+<p><em>Configuration fields generated from the registered dataclasses and the preset.</em></p>
+<h3>Where to collect</h3>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>addresses</code></td><td>text</td><td>One pattern or a comma-separated list: *layer_output, *post_attn, encoder.blocks.layers.*.layer_output...</td></tr><tr><td><code>store_file</code></td><td>path</td><td>LMDB/DuckDB file that receives the activations. A new file is created.</td></tr><tr><td><code>store_backend</code></td><td>choice</td><td></td></tr><tr><td><code>store_databank</code></td><td>text</td><td></td></tr><tr><td><code>store_socket</code></td><td>text</td><td>Where the writer plugin is mounted; empty uses the first selected socket.</td></tr></tbody></table>
+<h3>Vectors (optional)</h3>
+<p>Pool the collected activations per sequence. A contrastive dataset becomes a prototype set with its labels attached.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>vectorize</code></td><td>bool</td><td></td></tr><tr><td><code>vector_file</code></td><td>path</td><td></td></tr><tr><td><code>vector_databank</code></td><td>text</td><td></td></tr><tr><td><code>vector_kind</code></td><td>choice</td><td></td></tr><tr><td><code>pool</code></td><td>choice</td><td></td></tr><tr><td><code>positions</code></td><td>json</td><td>Token indices to pool (mean over the ones that exist). Empty pools the whole sequence.</td></tr><tr><td><code>label_key</code></td><td>text</td><td></td></tr><tr><td><code>name_prefix</code></td><td>text</td><td></td></tr><tr><td><code>vector_limit</code></td><td>int</td><td>Zero vectorizes every collected sequence.</td></tr></tbody></table>
+<h2 id="wizard-mdat_create">Create an MDAT container</h2>
+<p>Create the container that will link datasets and hold the views used for training.</p>
+<h3>Container</h3>
+<p>The container stores links to datasets, pretokenization strategies, views and the distributed layout. Documents stay in each linked dataset folder.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>container</code></td><td>path</td><td>New folder for the container.</td></tr><tr><td><code>dsmap_bits</code></td><td>choice</td><td></td></tr><tr><td><code>modalities</code></td><td>text</td><td>Comma-separated modalities stored by the container.</td></tr></tbody></table>
+<h2 id="wizard-mdat_dataset">Create a linked dataset</h2>
+<p>Create a self-contained dataset folder and optionally link it into an MDAT container.</p>
+<h3>Dataset folder</h3>
+<p>A linked dataset stores its own documents and keeps its own copy of the strategy outputs. A container can link it next to other datasets.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>dataset_path</code></td><td>path</td><td>Folder to create. It must not already exist.</td></tr><tr><td><code>dataset_name</code></td><td>text</td><td>Name used by views and strategies.</td></tr><tr><td><code>compression</code></td><td>int</td><td></td></tr></tbody></table>
+<h3>Container</h3>
+<p>Linking makes the dataset available to a container&#x27;s strategies and views.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>link</code></td><td>bool</td><td></td></tr><tr><td><code>container</code></td><td>path</td><td></td></tr></tbody></table>
+<h2 id="wizard-mdat_ingest">Import documents into a linked dataset</h2>
+<p>Fill a linked dataset from JSONL, CSV, LMDB, HuggingFace or Atlas, or append new documents.</p>
+<h3>Dataset</h3>
+<p>A linked dataset is a self-contained folder. Import writes to it directly; the container only keeps the link.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>dataset_path</code></td><td>path</td><td></td></tr><tr><td><code>mode</code></td><td>radio</td><td></td></tr></tbody></table>
+<h3>Source</h3>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>type</code></td><td>choice</td><td></td></tr><tr><td><code>source</code></td><td>path</td><td>A file or folder on the server, or a HuggingFace repository when the format is hf.</td></tr><tr><td><code>data_key</code></td><td>text</td><td>The column that holds the raw document.</td></tr><tr><td><code>resume</code></td><td>bool</td><td></td></tr></tbody></table>
+<h3>Container repair</h3>
+<p>After appending, views and the distributed layout must be rebuilt for the linked dataset.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>repair_container</code></td><td>bool</td><td></td></tr><tr><td><code>container</code></td><td>path</td><td></td></tr></tbody></table>
+<h2 id="wizard-mdat_link">Link a dataset into a container</h2>
+<p>Attach an existing linked dataset folder to a container.</p>
+<h3>Container and dataset</h3>
+<p>The container keeps the alias and the view bookkeeping. The data and strategy outputs stay in the dataset folder.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>container</code></td><td>path</td><td></td></tr><tr><td><code>dataset_path</code></td><td>path</td><td></td></tr><tr><td><code>alias</code></td><td>text</td><td>Name used by views and strategies. Empty uses the dataset&#x27;s own name.</td></tr><tr><td><code>repair</code></td><td>bool</td><td>Rebuild the pointer files so the new dataset is part of every view.</td></tr></tbody></table>
+<h2 id="wizard-mdat_prepare">Prepare an MDAT for training</h2>
+<p>Select a strategy and view, then precompute the per-worker chunk distribution.</p>
+<h3>Container</h3>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>container</code></td><td>path</td><td></td></tr></tbody></table>
+<h3>Strategy and view</h3>
+<p>Training reads one strategy and one view. The sequence length decides how chunks are joined.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>strategy</code></td><td>choice</td><td></td></tr><tr><td><code>seq_len</code></td><td>int</td><td>Must be a multiple of the strategy&#x27;s chunk size.</td></tr><tr><td><code>view</code></td><td>choice</td><td></td></tr></tbody></table>
+<h3>Distribution</h3>
+<p>The precomputed lengths let every rank know its partition before the first batch.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>num_workers</code></td><td>int</td><td></td></tr><tr><td><code>dist_len_devices</code></td><td>int</td><td>Zero skips the check. A positive number reports the distributed length.</td></tr><tr><td><code>export</code></td><td>bool</td><td></td></tr><tr><td><code>output</code></td><td>path</td><td></td></tr><tr><td><code>limit</code></td><td>int</td><td>Zero exports every document.</td></tr></tbody></table>
+<h2 id="wizard-mdat_pretokenize">Pretokenize an MDAT</h2>
+<p>Register a pretokenization strategy and cache tokens and chunks for one dataset or every dataset.</p>
+<h3>Container</h3>
+<p>The container must already hold the datasets to pretokenize.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>container</code></td><td>path</td><td></td></tr></tbody></table>
+<h3>Strategy</h3>
+<p>A strategy names a tokenizer, a splitter and a chunk size. The result is cached per dataset.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>strategy_mode</code></td><td>radio</td><td></td></tr><tr><td><code>strategy</code></td><td>choice</td><td></td></tr><tr><td><code>strategy_name</code></td><td>text</td><td></td></tr><tr><td><code>tokenizer_name</code></td><td>text</td><td>A HuggingFace tokenizer repository or a local tokenizer folder.</td></tr><tr><td><code>chunk_size</code></td><td>int</td><td>Tokens per chunk. The model sequence length must be a multiple of it.</td></tr><tr><td><code>splitter_class</code></td><td>choice</td><td></td></tr><tr><td><code>language</code></td><td>text</td><td></td></tr><tr><td><code>bos_token_id</code></td><td>int</td><td></td></tr><tr><td><code>eos_token_id</code></td><td>int</td><td></td></tr><tr><td><code>pad_token_id</code></td><td>int</td><td></td></tr><tr><td><code>mask_token_id</code></td><td>int</td><td></td></tr></tbody></table>
+<h3>Scope</h3>
+<p>Pretokenization is resumable and parallel. The log reports each dataset as it finishes.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>target</code></td><td>radio</td><td></td></tr><tr><td><code>dataset</code></td><td>choice</td><td></td></tr><tr><td><code>parallel</code></td><td>bool</td><td></td></tr><tr><td><code>processes</code></td><td>int</td><td>Zero lets the strategy choose.</td></tr><tr><td><code>batch</code></td><td>int</td><td></td></tr><tr><td><code>compression</code></td><td>int</td><td></td></tr><tr><td><code>resume</code></td><td>bool</td><td></td></tr></tbody></table>
+<h2 id="wizard-mdat_view">Create and shuffle a view</h2>
+<p>Define a selection of the container, write its pointer file and shuffle it.</p>
+<h3>Container</h3>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>container</code></td><td>path</td><td></td></tr></tbody></table>
+<h3>View</h3>
+<p>A view selects documents from every dataset. Accepted values: preserved, skipped, a document count, a fraction or a byte size.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>mode</code></td><td>radio</td><td></td></tr><tr><td><code>view_name</code></td><td>text</td><td></td></tr><tr><td><code>source_view</code></td><td>choice</td><td></td></tr><tr><td><code>n</code></td><td>int</td><td></td></tr><tr><td><code>start</code></td><td>int</td><td></td></tr><tr><td><code>end</code></td><td>int</td><td></td></tr><tr><td><code>selection</code></td><td>mapping</td><td></td></tr><tr><td><code>shuffle_source</code></td><td>bool</td><td>A head or range view is a slice of a shuffled pointer file.</td></tr><tr><td><code>shuffle</code></td><td>bool</td><td></td></tr><tr><td><code>use</code></td><td>bool</td><td></td></tr></tbody></table>
+<h2 id="wizard-train">Train a model</h2>
+<p>Build a training configuration and queue it as a job.</p>
+<h3>From scratch or from an existing model</h3>
+<p>Choose how the model starts. A fine-tune inherits the architecture and tokenizer of a checkpoint.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>mode</code></td><td>radio</td><td></td></tr></tbody></table>
+<h3>Kind of model</h3>
+<p>The kind selects the learning signal, the model variant and the default hyperparameters.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>model_kind</code></td><td>radio</td><td></td></tr><tr><td><code>model_variant</code></td><td>text</td><td>The variant name from the registry, for example multiprobe.</td></tr></tbody></table>
+<h3>Model</h3>
+<p>Essential architecture values. Advanced parameters keep the preset defaults and are expanded below.</p>
+<p><em>Configuration fields generated from the registered dataclasses and the preset.</em></p>
+<h3>Masking</h3>
+<p>How tokens are hidden from a masked model.</p>
+<p><em>Configuration fields generated from the registered dataclasses and the preset.</em></p>
+<h3>Data</h3>
+<p>The dataset the model trains on. Choose an MDAT view or a file-backed dataset.</p>
+<p><em>Configuration fields generated from the registered dataclasses and the preset.</em></p>
+<h3>Training</h3>
+<p>Optimizer, schedule and checkpoint naming.</p>
+<p><em>Configuration fields generated from the registered dataclasses and the preset.</em></p>
+<h3>Validation</h3>
+<p>Tasks run during training. Each row can name a configured data entry or point at a file.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>validation_enabled</code></td><td>bool</td><td></td></tr><tr><td><code>validation_tasks</code></td><td>tasks</td><td></td></tr><tr><td><code>validation_every_n_epochs</code></td><td>int</td><td></td></tr><tr><td><code>validation_every_n_steps</code></td><td>int</td><td>Zero disables step-based validation.</td></tr><tr><td><code>validation_sandbox_configs</code></td><td>paths</td><td>YAML files used by sandbox_train rows.</td></tr></tbody></table>
+<h3>Launch</h3>
+<p>Machine options for the queued job.</p>
+<table class="registry-table"><thead><tr><th>Field</th><th>Kind</th><th>Description</th></tr></thead><tbody><tr><td><code>device</code></td><td>choice</td><td></td></tr><tr><td><code>gpus</code></td><td>text</td><td>CUDA_VISIBLE_DEVICES for this job only, for example 2,3.</td></tr><tr><td><code>save_model</code></td><td>bool</td><td></td></tr><tr><td><code>save_plugins</code></td><td>bool</td><td></td></tr></tbody></table>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

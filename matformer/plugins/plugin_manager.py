@@ -18,6 +18,18 @@ class PluginManager:
         self.mount_configured()
         for target, plugin_cfg in getattr(self.model, 'default_plugins', lambda: [])():
             self.attach(target, plugin_cfg) #The default plugins
+        # What the model/config mounted is part of the model; anything attached later is an
+        # intervention, and a UI may warn about it.
+        self._native_plugins = set(self.plugins)
+
+    def plugin_origin(self, plugin) -> str:
+        native = getattr(self, "_native_plugins", None)
+        if native is None:
+            return "model"
+        return "model" if getattr(plugin, "id", None) in native else "runtime"
+
+    def temporary_plugins(self):
+        return [plugin for plugin in self.plugins.values() if self.plugin_origin(plugin) == "runtime"]
     def index_sockets(self):                   
         self.sockets = {}
         for path, module in self.model.named_modules():
@@ -40,7 +52,7 @@ class PluginManager:
         return_dict={}
         for p in path:
             p = Path(p)
-            if p.is_dir:
+            if p.is_dir():
                 files.extend([f for f in p.glob("*.pt")])
             else:
                 files.append(p)
@@ -98,7 +110,14 @@ class PluginManager:
                     continue #Plugin declared but not auto-mounted
                 targets=[targets] if not isinstance(targets,list) else targets
                 for target in targets:
-                    self.attach(target, plugin_cfg, name=plugin_cfg.name)
+                    if getattr(plugin_cfg, "only_first", False):
+                        sockets = self.find_socket(target)
+                        if not sockets:
+                            continue
+                        first = next(iter(sockets))
+                        self.attach(first, plugin_cfg, name=plugin_cfg.name)
+                    else:
+                        self.attach(target, plugin_cfg, name=plugin_cfg.name)
 
 
     def find_socket(self, pattern="*"):

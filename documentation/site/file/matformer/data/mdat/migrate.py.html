@@ -1,0 +1,728 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/data/mdat/migrate.py · Matformer</title>
+<link rel="stylesheet" href="../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../index.html">Documentation</a><a class="" href="../../../../registry/index.html">Registry</a><a class="" href="../../../../configuration/index.html">Configuration</a><a class="" href="../../../../tools/commands.html">Commands</a><a class="current" href="../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../index.html">Matformer</a></li><li><a href="../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../components/cache.html">The cache</a></li><li><a href="../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../training/logger.html">Logging</a></li><li><a href="../../../../training/control.html">Control</a></li><li><a href="../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../data/index.html">Data</a></li><li><a href="../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../data/data-module.html">Data module</a></li><li><a href="../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../tools/server.html">Server</a></li><li><a href="../../../../tools/gui.html">GUI</a></li><li><a href="../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../tools/commands.html">Commands</a></li><li><a href="../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../about/repository.html">Repository</a></li><li><a href="../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../index.html">Repository</a> <span class="sep">/</span> matformer/data/mdat/migrate.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="migrate.py.html"><code>matformer/data/mdat/migrate.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/data/mdat/</code></a></p><h1><code>migrate.py</code></h1><p class="muted">matformer/data/mdat/migrate.py · 349 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/data/mdat/migrate.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L56"><code>_fetch_all</code></a><span class="line">L56</span></li><li class="depth-0"><a href="#L63"><code>_old_db_path</code></a><span class="line">L63</span></li><li class="depth-0"><a href="#L72"><code>_transfer</code></a><span class="line">L72</span></li><li class="depth-0"><a href="#L84"><code>extract_dataset</code></a><span class="line">L84</span></li><li class="depth-0"><a href="#L192"><code>_relative_link</code></a><span class="line">L192</span></li><li class="depth-0"><a href="#L204"><code>build_linking_container</code></a><span class="line">L204</span></li><li class="depth-0"><a href="#L308"><code>migrate</code></a><span class="line">L308</span></li><li class="depth-0"><a href="#L332"><code>main</code></a><span class="line">L332</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="sql_database.py.html"><code>matformer.data.mdat.sql_database</code></a> <span class="muted">DatabaseManager</span></li><li><a href="container.py.html"><code>matformer.data.mdat.container</code></a> <span class="muted">MDatContainer</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="ch">#!/usr/bin/env python3</span>
+<a id="L2" name="L2"></a><span class="sd">&quot;&quot;&quot;Migration: old monolithic mdat -&gt; standalone MDat datasets + linking container.</span>
+<a id="L3" name="L3"></a>
+<a id="L4" name="L4"></a><span class="sd">Old format: one folder with a single ``mdat.db`` catalog holding everything</span>
+<a id="L5" name="L5"></a><span class="sd">(submdats, storage configs, strategies, views, shuffles) and all data under</span>
+<a id="L6" name="L6"></a><span class="sd">``datasets/&lt;name&gt;`` + ``pretok/&lt;strategy&gt;/&lt;name&gt;``.</span>
+<a id="L7" name="L7"></a>
+<a id="L8" name="L8"></a><span class="sd">New format: each internal submdat becomes a standalone dataset folder (itself</span>
+<a id="L9" name="L9"></a><span class="sd">a minimal container: catalog + datasets/ + pretok/ + functions/), and one</span>
+<a id="L10" name="L10"></a><span class="sd">container links them all via relative paths (resolved against</span>
+<a id="L11" name="L11"></a><span class="sd">``$MATFORMER_MDAT_ROOT`` first, the container folder second).</span>
+<a id="L12" name="L12"></a>
+<a id="L13" name="L13"></a><span class="sd">Usage:</span>
+<a id="L14" name="L14"></a><span class="sd">    python -m matformer.data.mdat.migrate OLD [--dest DIR] [--mode copy|move]</span>
+<a id="L15" name="L15"></a><span class="sd">        [--inplace | --container PATH] [--overwrite] [--quiet]</span>
+<a id="L16" name="L16"></a>
+<a id="L17" name="L17"></a><span class="sd">Phases:</span>
+<a id="L18" name="L18"></a><span class="sd">  1. EXTRACT (always): for each submdat of OLD, build ``&lt;dest&gt;/&lt;name&gt;/`` as a</span>
+<a id="L19" name="L19"></a><span class="sd">     standalone dataset (new ``mdat_container.db`` catalog with the dataset&#39;s</span>
+<a id="L20" name="L20"></a><span class="sd">     rows: manifest, storage dbs, strategies applied to it, stats,</span>
+<a id="L21" name="L21"></a><span class="sd">     precomputed lengths), then copy/move its ``datasets/&lt;name&gt;`` and every</span>
+<a id="L22" name="L22"></a><span class="sd">     ``pretok/&lt;strategy&gt;/&lt;name&gt;`` folder (+ the custom splitter code).</span>
+<a id="L23" name="L23"></a><span class="sd">     OLD is never modified by this phase (unless --mode move).</span>
+<a id="L24" name="L24"></a><span class="sd">  2. CONTAINER:</span>
+<a id="L25" name="L25"></a><span class="sd">     --inplace: rewrite OLD&#39;s catalog (backed up as mdat.db.pre_migration)</span>
+<a id="L26" name="L26"></a><span class="sd">       into a linking container. Submdat rows keep their ds_map_ids, so the</span>
+<a id="L27" name="L27"></a><span class="sd">       existing shuffle files stay valid byte-for-byte; mirrored config rows</span>
+<a id="L28" name="L28"></a><span class="sd">       (storage dbs, strategies, stats) are cleared and refreshed</span>
+<a id="L29" name="L29"></a><span class="sd">       automatically at the next load_dataset().</span>
+<a id="L30" name="L30"></a><span class="sd">     --container PATH: build a NEW linking container at PATH, preserving</span>
+<a id="L31" name="L31"></a><span class="sd">       ds_map ids (shuffle files copied), views and selections.</span>
+<a id="L32" name="L32"></a>
+<a id="L33" name="L33"></a><span class="sd">Idempotent per dataset: datasets whose standalone catalog already exists are</span>
+<a id="L34" name="L34"></a><span class="sd">skipped unless --overwrite.</span>
+<a id="L35" name="L35"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L36" name="L36"></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<a id="L37" name="L37"></a>
+<a id="L38" name="L38"></a><span class="kn">import</span><span class="w"> </span><span class="nn">argparse</span>
+<a id="L39" name="L39"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="L40" name="L40"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="L41" name="L41"></a><span class="kn">import</span><span class="w"> </span><span class="nn">shutil</span>
+<a id="L42" name="L42"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sqlite3</span>
+<a id="L43" name="L43"></a><span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<a id="L44" name="L44"></a><span class="kn">import</span><span class="w"> </span><span class="nn">uuid</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">uuid_lib</span>
+<a id="L45" name="L45"></a>
+<a id="L46" name="L46"></a><span class="c1"># Allow running as a plain script: python path/to/migrate.py</span>
+<a id="L47" name="L47"></a><span class="k">if</span> <span class="n">__package__</span> <span class="ow">in</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+<a id="L48" name="L48"></a>    <span class="n">repo_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span>
+<a id="L49" name="L49"></a>        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)))))</span>
+<a id="L50" name="L50"></a>    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">repo_root</span><span class="p">)</span>
+<a id="L51" name="L51"></a>
+<a id="L52" name="L52"></a><span class="kn">from</span><span class="w"> </span><a href="sql_database.py.html"><span class="nn">matformer.data.mdat.sql_database</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseManager</span>
+<a id="L53" name="L53"></a><span class="kn">from</span><span class="w"> </span><a href="container.py.html"><span class="nn">matformer.data.mdat.container</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MDatContainer</span>
+<a id="L54" name="L54"></a>
+<a id="L55" name="L55"></a>
+<a id="L56" name="L56"></a><span class="k">def</span><span class="w"> </span><span class="nf">_fetch_all</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="n">q</span><span class="p">,</span> <span class="n">params</span><span class="o">=</span><span class="p">()):</span>
+<a id="L57" name="L57"></a>    <span class="n">c</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">cursor</span><span class="p">()</span>
+<a id="L58" name="L58"></a>    <span class="n">c</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">params</span><span class="p">)</span>
+<a id="L59" name="L59"></a>    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">d</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">description</span><span class="p">]</span>
+<a id="L60" name="L60"></a>    <span class="k">return</span> <span class="p">[</span><span class="nb">dict</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">names</span><span class="p">,</span> <span class="n">r</span><span class="p">))</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">c</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()]</span>
+<a id="L61" name="L61"></a>
+<a id="L62" name="L62"></a>
+<a id="L63" name="L63"></a><span class="k">def</span><span class="w"> </span><span class="nf">_old_db_path</span><span class="p">(</span><span class="n">old_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+<a id="L64" name="L64"></a>    <span class="n">candidate</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="s1">&#39;mdat.db&#39;</span><span class="p">)</span>
+<a id="L65" name="L65"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">candidate</span><span class="p">):</span>
+<a id="L66" name="L66"></a>        <span class="n">candidate</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">DB_FILENAME</span><span class="p">)</span>
+<a id="L67" name="L67"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">candidate</span><span class="p">):</span>
+<a id="L68" name="L68"></a>        <span class="k">raise</span> <span class="ne">FileNotFoundError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No mdat catalog found at </span><span class="si">{</span><span class="n">old_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L69" name="L69"></a>    <span class="k">return</span> <span class="n">candidate</span>
+<a id="L70" name="L70"></a>
+<a id="L71" name="L71"></a>
+<a id="L72" name="L72"></a><span class="k">def</span><span class="w"> </span><span class="nf">_transfer</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">mode</span><span class="p">,</span> <span class="n">mkdir_parent</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<a id="L73" name="L73"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">src</span><span class="p">):</span>
+<a id="L74" name="L74"></a>        <span class="k">if</span> <span class="n">mkdir_parent</span><span class="p">:</span>
+<a id="L75" name="L75"></a>            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dst</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L76" name="L76"></a>        <span class="k">return</span>
+<a id="L77" name="L77"></a>    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">dst</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L78" name="L78"></a>    <span class="k">if</span> <span class="n">mode</span> <span class="o">==</span> <span class="s1">&#39;move&#39;</span><span class="p">:</span>
+<a id="L79" name="L79"></a>        <span class="n">shutil</span><span class="o">.</span><span class="n">move</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">)</span>
+<a id="L80" name="L80"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="L81" name="L81"></a>        <span class="n">shutil</span><span class="o">.</span><span class="n">copytree</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="n">dst</span><span class="p">,</span> <span class="n">dirs_exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L82" name="L82"></a>
+<a id="L83" name="L83"></a>
+<a id="L84" name="L84"></a><span class="k">def</span><span class="w"> </span><span class="nf">extract_dataset</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dest_root</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;copy&#39;</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<a id="L85" name="L85"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create the standalone dataset folder for one internal submdat of the</span>
+<a id="L86" name="L86"></a><span class="sd">    old catalog. Returns (dataset_path, uuid).&quot;&quot;&quot;</span>
+<a id="L87" name="L87"></a>    <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dest_root</span><span class="p">,</span> <span class="n">name</span><span class="p">)</span>
+<a id="L88" name="L88"></a>    <span class="n">dataset_db</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">DB_FILENAME</span><span class="p">)</span>
+<a id="L89" name="L89"></a>    <span class="n">src_db_path</span> <span class="o">=</span> <span class="n">_old_db_path</span><span class="p">(</span><span class="n">old_path</span><span class="p">)</span>
+<a id="L90" name="L90"></a>
+<a id="L91" name="L91"></a>    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">dataset_db</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">overwrite</span><span class="p">:</span>
+<a id="L92" name="L92"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">quiet</span><span class="p">:</span>
+<a id="L93" name="L93"></a>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [skip] </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: standalone catalog already exists&quot;</span><span class="p">)</span>
+<a id="L94" name="L94"></a>        <span class="n">ext</span> <span class="o">=</span> <span class="n">DatabaseManager</span><span class="p">(</span><span class="n">dataset_db</span><span class="p">)</span>
+<a id="L95" name="L95"></a>        <span class="n">ext</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<a id="L96" name="L96"></a>        <span class="n">row</span> <span class="o">=</span> <span class="n">ext</span><span class="o">.</span><span class="n">get_submdat_row</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+<a id="L97" name="L97"></a>        <span class="k">return</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="p">(</span><span class="n">row</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;uuid&#39;</span><span class="p">)</span>
+<a id="L98" name="L98"></a>
+<a id="L99" name="L99"></a>    <span class="n">src</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">src_db_path</span><span class="p">)</span>
+<a id="L100" name="L100"></a>    <span class="k">try</span><span class="p">:</span>
+<a id="L101" name="L101"></a>        <span class="n">sub_rows</span> <span class="o">=</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;SELECT * FROM submdat WHERE name=?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">name</span><span class="p">,))</span>
+<a id="L102" name="L102"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">sub_rows</span><span class="p">:</span>
+<a id="L103" name="L103"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;submdat &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; not found in </span><span class="si">{</span><span class="n">src_db_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L104" name="L104"></a>        <span class="n">sub_row</span> <span class="o">=</span> <span class="n">sub_rows</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L105" name="L105"></a>        <span class="n">old_id</span> <span class="o">=</span> <span class="n">sub_row</span><span class="p">[</span><span class="s1">&#39;ds_map_id&#39;</span><span class="p">]</span>
+<a id="L106" name="L106"></a>        <span class="n">manifest</span> <span class="o">=</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;SELECT * FROM manifest LIMIT 1&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L107" name="L107"></a>        <span class="n">storage</span> <span class="o">=</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;&quot;&quot;SELECT dr.*, sd.raw_data_bytes, sd.is_data, sd.is_meta, sd.is_extra</span>
+<a id="L108" name="L108"></a><span class="s2">                                     FROM database_ref dr JOIN submdat_database sd ON dr.id = sd.database_id</span>
+<a id="L109" name="L109"></a><span class="s2">                                     WHERE sd.submdat_id=?&quot;&quot;&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">old_id</span><span class="p">,))</span>
+<a id="L110" name="L110"></a>        <span class="n">stats_rows</span> <span class="o">=</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;SELECT * FROM pretok_strategy_submdat WHERE submdat_id=?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">old_id</span><span class="p">,))</span>
+<a id="L111" name="L111"></a>        <span class="n">strategy_payloads</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L112" name="L112"></a>        <span class="k">for</span> <span class="n">stats</span> <span class="ow">in</span> <span class="n">stats_rows</span><span class="p">:</span>
+<a id="L113" name="L113"></a>            <span class="n">strat</span> <span class="o">=</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;SELECT * FROM pretok_strategy WHERE strategy_name=?&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;strategy_name&#39;</span><span class="p">],))</span>
+<a id="L114" name="L114"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">strat</span><span class="p">:</span>
+<a id="L115" name="L115"></a>                <span class="k">continue</span>
+<a id="L116" name="L116"></a>            <span class="n">sdbs</span> <span class="o">=</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;&quot;&quot;SELECT psd.*, dr.type, dr.compression_level, dr.map_size, dr.disk_size, dr.extra_data</span>
+<a id="L117" name="L117"></a><span class="s2">                                      FROM pretok_strategy_db psd JOIN database_ref dr ON psd.db_id = dr.id</span>
+<a id="L118" name="L118"></a><span class="s2">                                      WHERE psd.strategy_name=? AND psd.submdat_id=?&quot;&quot;&quot;</span><span class="p">,</span>
+<a id="L119" name="L119"></a>                              <span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;strategy_name&#39;</span><span class="p">],</span> <span class="n">old_id</span><span class="p">))</span>
+<a id="L120" name="L120"></a>            <span class="n">precomps</span> <span class="o">=</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">src</span><span class="p">,</span> <span class="s2">&quot;&quot;&quot;SELECT * FROM pretok_strategy_submdat_precomputed_length</span>
+<a id="L121" name="L121"></a><span class="s2">                                          WHERE strategy_name=? AND submdat_id=?&quot;&quot;&quot;</span><span class="p">,</span>
+<a id="L122" name="L122"></a>                                  <span class="p">(</span><span class="n">stats</span><span class="p">[</span><span class="s1">&#39;strategy_name&#39;</span><span class="p">],</span> <span class="n">old_id</span><span class="p">))</span>
+<a id="L123" name="L123"></a>            <span class="n">strategy_payloads</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">stats</span><span class="p">,</span> <span class="n">strat</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">sdbs</span><span class="p">,</span> <span class="n">precomps</span><span class="p">))</span>
+<a id="L124" name="L124"></a>    <span class="k">finally</span><span class="p">:</span>
+<a id="L125" name="L125"></a>        <span class="n">src</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<a id="L126" name="L126"></a>
+<a id="L127" name="L127"></a>    <span class="n">dataset_uuid</span> <span class="o">=</span> <span class="n">uuid_lib</span><span class="o">.</span><span class="n">uuid4</span><span class="p">()</span><span class="o">.</span><span class="n">hex</span>
+<a id="L128" name="L128"></a>
+<a id="L129" name="L129"></a>    <span class="c1"># ---- new standalone catalog</span>
+<a id="L130" name="L130"></a>    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L131" name="L131"></a>    <span class="n">dst</span> <span class="o">=</span> <span class="n">DatabaseManager</span><span class="p">(</span><span class="n">dataset_db</span><span class="p">)</span>
+<a id="L132" name="L132"></a>    <span class="n">conn</span> <span class="o">=</span> <span class="n">dst</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<a id="L133" name="L133"></a>    <span class="n">dst</span><span class="o">.</span><span class="n">_initialize_db</span><span class="p">()</span>
+<a id="L134" name="L134"></a>    <span class="n">dst</span><span class="o">.</span><span class="n">create_manifest</span><span class="p">(</span><span class="n">manifest</span><span class="p">[</span><span class="s1">&#39;dsmap_bits&#39;</span><span class="p">],</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">manifest</span><span class="p">[</span><span class="s1">&#39;modalities&#39;</span><span class="p">]))</span>
+<a id="L135" name="L135"></a>    <span class="n">new_id</span> <span class="o">=</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<a id="L136" name="L136"></a>        <span class="s2">&quot;INSERT INTO submdat(name, data_type, document_number, modality, data_key, errors_counters,&quot;</span>
+<a id="L137" name="L137"></a>        <span class="s2">&quot; finalized_at, uuid, generation) VALUES(?,?,?,?,?,?,?,?,0)&quot;</span><span class="p">,</span>
+<a id="L138" name="L138"></a>        <span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">sub_row</span><span class="p">[</span><span class="s1">&#39;data_type&#39;</span><span class="p">],</span> <span class="n">sub_row</span><span class="p">[</span><span class="s1">&#39;document_number&#39;</span><span class="p">],</span> <span class="n">sub_row</span><span class="p">[</span><span class="s1">&#39;modality&#39;</span><span class="p">],</span>
+<a id="L139" name="L139"></a>         <span class="n">sub_row</span><span class="p">[</span><span class="s1">&#39;data_key&#39;</span><span class="p">],</span> <span class="n">sub_row</span><span class="p">[</span><span class="s1">&#39;errors_counters&#39;</span><span class="p">],</span> <span class="n">sub_row</span><span class="p">[</span><span class="s1">&#39;finalized_at&#39;</span><span class="p">],</span> <span class="n">dataset_uuid</span><span class="p">))</span><span class="o">.</span><span class="n">lastrowid</span>
+<a id="L140" name="L140"></a>    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<a id="L141" name="L141"></a>    <span class="c1"># its own minimal container part: default view holding the dataset</span>
+<a id="L142" name="L142"></a>    <span class="n">dst</span><span class="o">.</span><span class="n">add_view</span><span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">)</span>
+<a id="L143" name="L143"></a>    <span class="n">raw_bytes</span> <span class="o">=</span> <span class="nb">next</span><span class="p">((</span><span class="n">d</span><span class="p">[</span><span class="s1">&#39;raw_data_bytes&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">storage</span> <span class="k">if</span> <span class="n">d</span><span class="p">[</span><span class="s1">&#39;is_data&#39;</span><span class="p">]),</span> <span class="mi">0</span><span class="p">)</span> <span class="ow">or</span> <span class="mi">0</span>
+<a id="L144" name="L144"></a>    <span class="n">dst</span><span class="o">.</span><span class="n">link_submdat_view</span><span class="p">(</span><span class="n">new_id</span><span class="p">,</span> <span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">is_skipped</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">is_partial</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">is_preserved</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="L145" name="L145"></a>                          <span class="n">document_number</span><span class="o">=</span><span class="n">sub_row</span><span class="p">[</span><span class="s1">&#39;document_number&#39;</span><span class="p">]</span> <span class="ow">or</span> <span class="mi">0</span><span class="p">,</span> <span class="n">bytes_criteria</span><span class="o">=</span><span class="n">raw_bytes</span><span class="p">)</span>
+<a id="L146" name="L146"></a>
+<a id="L147" name="L147"></a>    <span class="k">for</span> <span class="n">dbs</span> <span class="ow">in</span> <span class="n">storage</span><span class="p">:</span>
+<a id="L148" name="L148"></a>        <span class="n">new_db_id</span> <span class="o">=</span> <span class="n">dst</span><span class="o">.</span><span class="n">add_database</span><span class="p">(</span><span class="n">_type</span><span class="o">=</span><span class="n">dbs</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">],</span> <span class="n">compression_level</span><span class="o">=</span><span class="n">dbs</span><span class="p">[</span><span class="s1">&#39;compression_level&#39;</span><span class="p">],</span>
+<a id="L149" name="L149"></a>                                     <span class="n">map_size</span><span class="o">=</span><span class="n">dbs</span><span class="p">[</span><span class="s1">&#39;map_size&#39;</span><span class="p">],</span> <span class="n">disk_size</span><span class="o">=</span><span class="n">dbs</span><span class="p">[</span><span class="s1">&#39;disk_size&#39;</span><span class="p">],</span>
+<a id="L150" name="L150"></a>                                     <span class="n">extra_data</span><span class="o">=</span><span class="n">dbs</span><span class="p">[</span><span class="s1">&#39;extra_data&#39;</span><span class="p">])</span>
+<a id="L151" name="L151"></a>        <span class="n">dst</span><span class="o">.</span><span class="n">link_submdat_database</span><span class="p">(</span><span class="n">new_id</span><span class="p">,</span> <span class="n">new_db_id</span><span class="p">,</span> <span class="n">raw_data_bytes</span><span class="o">=</span><span class="n">dbs</span><span class="p">[</span><span class="s1">&#39;raw_data_bytes&#39;</span><span class="p">],</span>
+<a id="L152" name="L152"></a>                                  <span class="n">is_data</span><span class="o">=</span><span class="n">dbs</span><span class="p">[</span><span class="s1">&#39;is_data&#39;</span><span class="p">],</span> <span class="n">is_meta</span><span class="o">=</span><span class="n">dbs</span><span class="p">[</span><span class="s1">&#39;is_meta&#39;</span><span class="p">],</span> <span class="n">is_extra</span><span class="o">=</span><span class="n">dbs</span><span class="p">[</span><span class="s1">&#39;is_extra&#39;</span><span class="p">])</span>
+<a id="L153" name="L153"></a>
+<a id="L154" name="L154"></a>    <span class="k">for</span> <span class="n">stats</span><span class="p">,</span> <span class="n">strat</span><span class="p">,</span> <span class="n">sdbs</span><span class="p">,</span> <span class="n">precomps</span> <span class="ow">in</span> <span class="n">strategy_payloads</span><span class="p">:</span>
+<a id="L155" name="L155"></a>        <span class="n">strategy_name</span> <span class="o">=</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;strategy_name&#39;</span><span class="p">]</span>
+<a id="L156" name="L156"></a>        <span class="n">dst</span><span class="o">.</span><span class="n">upsert_strategy_row</span><span class="p">(</span><span class="n">strat</span><span class="p">)</span>
+<a id="L157" name="L157"></a>        <span class="n">dst</span><span class="o">.</span><span class="n">upsert_strategy_submdat</span><span class="p">(</span><span class="n">strategy_name</span><span class="p">,</span> <span class="n">new_id</span><span class="p">,</span> <span class="n">stats</span><span class="p">)</span>
+<a id="L158" name="L158"></a>        <span class="k">for</span> <span class="n">sdb</span> <span class="ow">in</span> <span class="n">sdbs</span><span class="p">:</span>
+<a id="L159" name="L159"></a>            <span class="n">new_db_id</span> <span class="o">=</span> <span class="n">dst</span><span class="o">.</span><span class="n">add_database</span><span class="p">(</span><span class="n">_type</span><span class="o">=</span><span class="n">sdb</span><span class="p">[</span><span class="s1">&#39;type&#39;</span><span class="p">],</span> <span class="n">compression_level</span><span class="o">=</span><span class="n">sdb</span><span class="p">[</span><span class="s1">&#39;compression_level&#39;</span><span class="p">],</span>
+<a id="L160" name="L160"></a>                                         <span class="n">map_size</span><span class="o">=</span><span class="n">sdb</span><span class="p">[</span><span class="s1">&#39;map_size&#39;</span><span class="p">],</span> <span class="n">disk_size</span><span class="o">=</span><span class="n">sdb</span><span class="p">[</span><span class="s1">&#39;disk_size&#39;</span><span class="p">],</span>
+<a id="L161" name="L161"></a>                                         <span class="n">extra_data</span><span class="o">=</span><span class="n">sdb</span><span class="p">[</span><span class="s1">&#39;extra_data&#39;</span><span class="p">])</span>
+<a id="L162" name="L162"></a>            <span class="n">dst</span><span class="o">.</span><span class="n">add_strategy_db</span><span class="p">(</span><span class="n">new_db_id</span><span class="p">,</span> <span class="n">strategy_name</span><span class="p">,</span> <span class="n">new_id</span><span class="p">,</span> <span class="n">sdb</span><span class="p">[</span><span class="s1">&#39;datatype&#39;</span><span class="p">],</span>
+<a id="L163" name="L163"></a>                                <span class="n">sdb</span><span class="p">[</span><span class="s1">&#39;is_tokens&#39;</span><span class="p">],</span> <span class="n">sdb</span><span class="p">[</span><span class="s1">&#39;is_chunks&#39;</span><span class="p">],</span> <span class="n">sdb</span><span class="p">[</span><span class="s1">&#39;is_extra&#39;</span><span class="p">],</span> <span class="n">sdb</span><span class="p">[</span><span class="s1">&#39;is_complete&#39;</span><span class="p">])</span>
+<a id="L164" name="L164"></a>        <span class="k">for</span> <span class="n">precomp</span> <span class="ow">in</span> <span class="n">precomps</span><span class="p">:</span>
+<a id="L165" name="L165"></a>            <span class="n">dst</span><span class="o">.</span><span class="n">set_strategy_submdat_precomp</span><span class="p">(</span><span class="n">strategy_name</span><span class="p">,</span> <span class="n">new_id</span><span class="p">,</span> <span class="n">precomp</span><span class="p">[</span><span class="s1">&#39;multiplier&#39;</span><span class="p">],</span>
+<a id="L166" name="L166"></a>                                             <span class="n">precomp</span><span class="p">[</span><span class="s1">&#39;precomputed_length&#39;</span><span class="p">])</span>
+<a id="L167" name="L167"></a>    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<a id="L168" name="L168"></a>
+<a id="L169" name="L169"></a>    <span class="c1"># ---- data folders (raw data + pretokenized outputs)</span>
+<a id="L170" name="L170"></a>    <span class="n">_transfer</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">DATASETS_DIR</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span>
+<a id="L171" name="L171"></a>              <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">DATASETS_DIR</span><span class="p">,</span> <span class="n">name</span><span class="p">),</span> <span class="n">mode</span><span class="p">,</span> <span class="n">mkdir_parent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L172" name="L172"></a>    <span class="k">for</span> <span class="n">stats</span><span class="p">,</span> <span class="n">_strat</span><span class="p">,</span> <span class="n">_sdbs</span><span class="p">,</span> <span class="n">_precomps</span> <span class="ow">in</span> <span class="n">strategy_payloads</span><span class="p">:</span>
+<a id="L173" name="L173"></a>        <span class="n">src_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">PRETOK_DIR</span><span class="p">,</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;strategy_name&#39;</span><span class="p">],</span> <span class="n">name</span><span class="p">)</span>
+<a id="L174" name="L174"></a>        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">src_folder</span><span class="p">):</span>
+<a id="L175" name="L175"></a>            <span class="n">_transfer</span><span class="p">(</span><span class="n">src_folder</span><span class="p">,</span>
+<a id="L176" name="L176"></a>                      <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">PRETOK_DIR</span><span class="p">,</span> <span class="n">stats</span><span class="p">[</span><span class="s1">&#39;strategy_name&#39;</span><span class="p">],</span> <span class="n">name</span><span class="p">),</span> <span class="n">mode</span><span class="p">)</span>
+<a id="L177" name="L177"></a>    <span class="c1"># custom splitter code travels with the dataset</span>
+<a id="L178" name="L178"></a>    <span class="n">old_functions</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">FUNCTIONS_DIR</span><span class="p">)</span>
+<a id="L179" name="L179"></a>    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">old_functions</span><span class="p">):</span>
+<a id="L180" name="L180"></a>        <span class="n">dst_functions</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">FUNCTIONS_DIR</span><span class="p">)</span>
+<a id="L181" name="L181"></a>        <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dst_functions</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L182" name="L182"></a>        <span class="k">for</span> <span class="n">fn</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">old_functions</span><span class="p">):</span>
+<a id="L183" name="L183"></a>            <span class="k">if</span> <span class="n">fn</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s1">&#39;.py&#39;</span><span class="p">):</span>
+<a id="L184" name="L184"></a>                <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">old_functions</span><span class="p">,</span> <span class="n">fn</span><span class="p">),</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dst_functions</span><span class="p">,</span> <span class="n">fn</span><span class="p">))</span>
+<a id="L185" name="L185"></a>
+<a id="L186" name="L186"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">quiet</span><span class="p">:</span>
+<a id="L187" name="L187"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [extract] </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">sub_row</span><span class="p">[</span><span class="s1">&#39;document_number&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2"> docs, &quot;</span>
+<a id="L188" name="L188"></a>              <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">strategy_payloads</span><span class="p">)</span><span class="si">}</span><span class="s2"> strategies -&gt; </span><span class="si">{</span><span class="n">dataset_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L189" name="L189"></a>    <span class="k">return</span> <span class="n">dataset_path</span><span class="p">,</span> <span class="n">dataset_uuid</span>
+<a id="L190" name="L190"></a>
+<a id="L191" name="L191"></a>
+<a id="L192" name="L192"></a><span class="k">def</span><span class="w"> </span><span class="nf">_relative_link</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">container_root</span><span class="p">):</span>
+<a id="L193" name="L193"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Prefer a $MATFORMER_MDAT_ROOT-relative representation (portable across</span>
+<a id="L194" name="L194"></a><span class="sd">    machines), fall back to container-relative.&quot;&quot;&quot;</span>
+<a id="L195" name="L195"></a>    <span class="n">dataset_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">)</span>
+<a id="L196" name="L196"></a>    <span class="n">env_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;MATFORMER_MDAT_ROOT&#39;</span><span class="p">)</span>
+<a id="L197" name="L197"></a>    <span class="k">if</span> <span class="n">env_root</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">env_root</span><span class="p">):</span>
+<a id="L198" name="L198"></a>        <span class="n">env_root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">env_root</span><span class="p">)</span>
+<a id="L199" name="L199"></a>        <span class="k">if</span> <span class="n">dataset_path</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">env_root</span> <span class="o">+</span> <span class="n">os</span><span class="o">.</span><span class="n">sep</span><span class="p">):</span>
+<a id="L200" name="L200"></a>            <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">env_root</span><span class="p">)</span>
+<a id="L201" name="L201"></a>    <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">relpath</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">container_root</span><span class="p">))</span>
+<a id="L202" name="L202"></a>
+<a id="L203" name="L203"></a>
+<a id="L204" name="L204"></a><span class="k">def</span><span class="w"> </span><span class="nf">build_linking_container</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">extracted</span><span class="p">,</span> <span class="n">container_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<a id="L205" name="L205"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Create (or rewrite, with inplace=True) the container that links the</span>
+<a id="L206" name="L206"></a><span class="sd">    extracted standalone datasets. ds_map ids are preserved, so shuffle</span>
+<a id="L207" name="L207"></a><span class="sd">    pointer files stay valid byte-for-byte.&quot;&quot;&quot;</span>
+<a id="L208" name="L208"></a>    <span class="n">src_db_path</span> <span class="o">=</span> <span class="n">_old_db_path</span><span class="p">(</span><span class="n">old_path</span><span class="p">)</span>
+<a id="L209" name="L209"></a>
+<a id="L210" name="L210"></a>    <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+<a id="L211" name="L211"></a>        <span class="n">container_root</span> <span class="o">=</span> <span class="n">old_path</span>
+<a id="L212" name="L212"></a>        <span class="n">container_db_path</span> <span class="o">=</span> <span class="n">src_db_path</span>
+<a id="L213" name="L213"></a>        <span class="n">backup</span> <span class="o">=</span> <span class="n">container_db_path</span> <span class="o">+</span> <span class="s1">&#39;.pre_migration&#39;</span>
+<a id="L214" name="L214"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">backup</span><span class="p">):</span>
+<a id="L215" name="L215"></a>            <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">container_db_path</span><span class="p">,</span> <span class="n">backup</span><span class="p">)</span>
+<a id="L216" name="L216"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">quiet</span><span class="p">:</span>
+<a id="L217" name="L217"></a>                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Backed up catalog to </span><span class="si">{</span><span class="n">backup</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L218" name="L218"></a>        <span class="c1"># raw sqlite3 connection: FKs are off, mirror rows can be cleared freely</span>
+<a id="L219" name="L219"></a>        <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">container_db_path</span><span class="p">)</span>
+<a id="L220" name="L220"></a>        <span class="n">DatabaseManager</span><span class="p">(</span><span class="n">container_db_path</span><span class="p">)</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>  <span class="c1"># ensure linking columns exist</span>
+<a id="L221" name="L221"></a>        <span class="k">for</span> <span class="n">table</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;submdat_database&#39;</span><span class="p">,</span> <span class="s1">&#39;pretok_strategy_db&#39;</span><span class="p">,</span>
+<a id="L222" name="L222"></a>                      <span class="s1">&#39;pretok_strategy_submdat_precomputed_length&#39;</span><span class="p">,</span>
+<a id="L223" name="L223"></a>                      <span class="s1">&#39;pretok_strategy_view_submdat_precomputed_length&#39;</span><span class="p">,</span>
+<a id="L224" name="L224"></a>                      <span class="s1">&#39;pretok_strategy_view_distributed_length&#39;</span><span class="p">,</span>
+<a id="L225" name="L225"></a>                      <span class="s1">&#39;pretok_strategy_submdat&#39;</span><span class="p">,</span> <span class="s1">&#39;pretok_strategy&#39;</span><span class="p">,</span> <span class="s1">&#39;database_ref&#39;</span><span class="p">):</span>
+<a id="L226" name="L226"></a>            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;DELETE FROM </span><span class="si">{</span><span class="n">table</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L227" name="L227"></a>        <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<a id="L228" name="L228"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="L229" name="L229"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">container_path</span><span class="p">:</span>
+<a id="L230" name="L230"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;--container PATH is required when not using --inplace&quot;</span><span class="p">)</span>
+<a id="L231" name="L231"></a>        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">container_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">DB_FILENAME</span><span class="p">)):</span>
+<a id="L232" name="L232"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A container already exists at </span><span class="si">{</span><span class="n">container_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L233" name="L233"></a>        <span class="n">container_root</span> <span class="o">=</span> <span class="n">container_path</span>
+<a id="L234" name="L234"></a>        <span class="n">container_db_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">container_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">DB_FILENAME</span><span class="p">)</span>
+<a id="L235" name="L235"></a>        <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="p">(</span><span class="n">MDatContainer</span><span class="o">.</span><span class="n">DATASETS_DIR</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">SHUFFLING_DIR</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">VIEWS_DIR</span><span class="p">,</span>
+<a id="L236" name="L236"></a>                  <span class="n">MDatContainer</span><span class="o">.</span><span class="n">PRETOK_DIR</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">FUNCTIONS_DIR</span><span class="p">):</span>
+<a id="L237" name="L237"></a>            <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">container_path</span><span class="p">,</span> <span class="n">d</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L238" name="L238"></a>        <span class="n">dm</span> <span class="o">=</span> <span class="n">DatabaseManager</span><span class="p">(</span><span class="n">container_db_path</span><span class="p">)</span>
+<a id="L239" name="L239"></a>        <span class="n">dm</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<a id="L240" name="L240"></a>        <span class="n">dm</span><span class="o">.</span><span class="n">_initialize_db</span><span class="p">()</span>
+<a id="L241" name="L241"></a>        <span class="n">old_manifest</span> <span class="o">=</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">src_db_path</span><span class="p">),</span> <span class="s2">&quot;SELECT * FROM manifest LIMIT 1&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L242" name="L242"></a>        <span class="n">dm</span><span class="o">.</span><span class="n">create_manifest</span><span class="p">(</span><span class="n">old_manifest</span><span class="p">[</span><span class="s1">&#39;dsmap_bits&#39;</span><span class="p">],</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">old_manifest</span><span class="p">[</span><span class="s1">&#39;modalities&#39;</span><span class="p">]))</span>
+<a id="L243" name="L243"></a>        <span class="c1"># copy submdat rows (same ids) and views/selections from the old catalog</span>
+<a id="L244" name="L244"></a>        <span class="n">old</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">src_db_path</span><span class="p">)</span>
+<a id="L245" name="L245"></a>        <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="s2">&quot;SELECT * FROM submdat ORDER BY ds_map_id&quot;</span><span class="p">):</span>
+<a id="L246" name="L246"></a>            <span class="n">conn</span> <span class="o">=</span> <span class="n">dm</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span>
+<a id="L247" name="L247"></a>            <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<a id="L248" name="L248"></a>                <span class="s2">&quot;INSERT INTO submdat(ds_map_id, name, data_type, document_number, modality, data_key,&quot;</span>
+<a id="L249" name="L249"></a>                <span class="s2">&quot; errors_counters, finalized_at) VALUES(?,?,?,?,?,?,?,?)&quot;</span><span class="p">,</span>
+<a id="L250" name="L250"></a>                <span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s1">&#39;ds_map_id&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;data_type&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;document_number&#39;</span><span class="p">],</span>
+<a id="L251" name="L251"></a>                 <span class="n">row</span><span class="p">[</span><span class="s1">&#39;modality&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;data_key&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;errors_counters&#39;</span><span class="p">],</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;finalized_at&#39;</span><span class="p">]))</span>
+<a id="L252" name="L252"></a>        <span class="k">for</span> <span class="n">view</span> <span class="ow">in</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="s2">&quot;SELECT * FROM view&quot;</span><span class="p">):</span>
+<a id="L253" name="L253"></a>            <span class="n">dm</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;INSERT OR REPLACE INTO view(view_name, shuffle_struct_format) VALUES(?,?)&quot;</span><span class="p">,</span>
+<a id="L254" name="L254"></a>                                 <span class="p">(</span><span class="n">view</span><span class="p">[</span><span class="s1">&#39;view_name&#39;</span><span class="p">],</span> <span class="n">view</span><span class="p">[</span><span class="s1">&#39;shuffle_struct_format&#39;</span><span class="p">]))</span>
+<a id="L255" name="L255"></a>        <span class="k">for</span> <span class="n">vs</span> <span class="ow">in</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="s2">&quot;SELECT * FROM view_submdat&quot;</span><span class="p">):</span>
+<a id="L256" name="L256"></a>            <span class="n">dm</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span>
+<a id="L257" name="L257"></a>                <span class="s2">&quot;INSERT OR REPLACE INTO view_submdat(view_name,submdat_id,is_skipped,is_preserved,is_partial,document_number,bytes_criteria) VALUES(?,?,?,?,?,?,?)&quot;</span><span class="p">,</span>
+<a id="L258" name="L258"></a>                <span class="p">(</span><span class="n">vs</span><span class="p">[</span><span class="s1">&#39;view_name&#39;</span><span class="p">],</span> <span class="n">vs</span><span class="p">[</span><span class="s1">&#39;submdat_id&#39;</span><span class="p">],</span> <span class="n">vs</span><span class="p">[</span><span class="s1">&#39;is_skipped&#39;</span><span class="p">],</span> <span class="n">vs</span><span class="p">[</span><span class="s1">&#39;is_preserved&#39;</span><span class="p">],</span>
+<a id="L259" name="L259"></a>                 <span class="n">vs</span><span class="p">[</span><span class="s1">&#39;is_partial&#39;</span><span class="p">],</span> <span class="n">vs</span><span class="p">[</span><span class="s1">&#39;document_number&#39;</span><span class="p">],</span> <span class="n">vs</span><span class="p">[</span><span class="s1">&#39;bytes_criteria&#39;</span><span class="p">]))</span>
+<a id="L260" name="L260"></a>        <span class="n">has_dist</span> <span class="o">=</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">old</span><span class="p">,</span> <span class="s2">&quot;SELECT COUNT(*) AS n FROM pretok_strategy_view_distributed_length&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;n&#39;</span><span class="p">]</span>
+<a id="L261" name="L261"></a>        <span class="n">old</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<a id="L262" name="L262"></a>        <span class="k">if</span> <span class="n">has_dist</span><span class="p">:</span>
+<a id="L263" name="L263"></a>            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [note] </span><span class="si">{</span><span class="n">has_dist</span><span class="si">}</span><span class="s2"> distributed precompute rows are not migrated: rerun &quot;</span>
+<a id="L264" name="L264"></a>                  <span class="s2">&quot;precompute_chunks_distributed() after the first load of the new container&quot;</span><span class="p">)</span>
+<a id="L265" name="L265"></a>        <span class="n">dm</span><span class="o">.</span><span class="n">connect</span><span class="p">()</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<a id="L266" name="L266"></a>        <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">container_db_path</span><span class="p">)</span>
+<a id="L267" name="L267"></a>
+<a id="L268" name="L268"></a>    <span class="c1"># turn the submdat rows into links (ids preserved)</span>
+<a id="L269" name="L269"></a>    <span class="n">rows</span> <span class="o">=</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;SELECT ds_map_id, name FROM submdat ORDER BY ds_map_id&quot;</span><span class="p">)</span>
+<a id="L270" name="L270"></a>    <span class="n">linked</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L271" name="L271"></a>    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+<a id="L272" name="L272"></a>        <span class="n">name</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+<a id="L273" name="L273"></a>        <span class="k">if</span> <span class="n">name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">extracted</span><span class="p">:</span>
+<a id="L274" name="L274"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">quiet</span><span class="p">:</span>
+<a id="L275" name="L275"></a>                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  [note] &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39; missing from extraction, left unlinked&quot;</span><span class="p">)</span>
+<a id="L276" name="L276"></a>            <span class="k">continue</span>
+<a id="L277" name="L277"></a>        <span class="n">dataset_path</span><span class="p">,</span> <span class="n">dataset_uuid</span> <span class="o">=</span> <span class="n">extracted</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+<a id="L278" name="L278"></a>        <span class="n">stored_rel</span> <span class="o">=</span> <span class="n">_relative_link</span><span class="p">(</span><span class="n">dataset_path</span><span class="p">,</span> <span class="n">container_root</span><span class="p">)</span>
+<a id="L279" name="L279"></a>        <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;UPDATE submdat SET source_rel_path=?, uuid=?, generation=0 WHERE ds_map_id=?&quot;</span><span class="p">,</span>
+<a id="L280" name="L280"></a>                     <span class="p">(</span><span class="n">stored_rel</span><span class="p">,</span> <span class="n">dataset_uuid</span><span class="p">,</span> <span class="n">row</span><span class="p">[</span><span class="s1">&#39;ds_map_id&#39;</span><span class="p">]))</span>
+<a id="L281" name="L281"></a>        <span class="n">linked</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="L282" name="L282"></a>    <span class="n">conn</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+<a id="L283" name="L283"></a>
+<a id="L284" name="L284"></a>    <span class="c1"># views&#39; shuffle pointer files: ids unchanged =&gt; byte-for-byte copies</span>
+<a id="L285" name="L285"></a>    <span class="n">shuffled_views</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L286" name="L286"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">inplace</span><span class="p">:</span>
+<a id="L287" name="L287"></a>        <span class="k">for</span> <span class="n">view</span> <span class="ow">in</span> <span class="n">_fetch_all</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;SELECT view_name, shuffle_struct_format FROM view&quot;</span><span class="p">):</span>
+<a id="L288" name="L288"></a>            <span class="k">if</span> <span class="n">view</span><span class="p">[</span><span class="s1">&#39;shuffle_struct_format&#39;</span><span class="p">]:</span>
+<a id="L289" name="L289"></a>                <span class="n">src_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">SHUFFLING_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">view</span><span class="p">[</span><span class="s1">&#39;view_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.mdat&quot;</span><span class="p">)</span>
+<a id="L290" name="L290"></a>                <span class="n">dst_file</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">container_root</span><span class="p">,</span> <span class="n">MDatContainer</span><span class="o">.</span><span class="n">SHUFFLING_DIR</span><span class="p">,</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">view</span><span class="p">[</span><span class="s1">&#39;view_name&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">.mdat&quot;</span><span class="p">)</span>
+<a id="L291" name="L291"></a>                <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">src_file</span><span class="p">):</span>
+<a id="L292" name="L292"></a>                    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">dst_file</span><span class="p">),</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L293" name="L293"></a>                    <span class="n">shutil</span><span class="o">.</span><span class="n">copy2</span><span class="p">(</span><span class="n">src_file</span><span class="p">,</span> <span class="n">dst_file</span><span class="p">)</span>
+<a id="L294" name="L294"></a>                <span class="n">shuffled_views</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">view</span><span class="p">[</span><span class="s1">&#39;view_name&#39;</span><span class="p">])</span>
+<a id="L295" name="L295"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="L296" name="L296"></a>        <span class="n">shuffled_views</span> <span class="o">=</span> <span class="p">[</span><span class="n">v</span><span class="p">[</span><span class="s1">&#39;view_name&#39;</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span>
+<a id="L297" name="L297"></a>                          <span class="n">_fetch_all</span><span class="p">(</span><span class="n">conn</span><span class="p">,</span> <span class="s2">&quot;SELECT view_name FROM view WHERE shuffle_struct_format IS NOT NULL&quot;</span><span class="p">)]</span>
+<a id="L298" name="L298"></a>        <span class="c1"># mirrored rows were cleared: force a re-sync of strategy data on next load</span>
+<a id="L299" name="L299"></a>    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<a id="L300" name="L300"></a>
+<a id="L301" name="L301"></a>    <span class="k">if</span> <span class="ow">not</span> <span class="n">quiet</span><span class="p">:</span>
+<a id="L302" name="L302"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Container ready at </span><span class="si">{</span><span class="n">container_root</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">linked</span><span class="si">}</span><span class="s2"> linked datasets, &quot;</span>
+<a id="L303" name="L303"></a>              <span class="sa">f</span><span class="s2">&quot;shuffled views: </span><span class="si">{</span><span class="n">shuffled_views</span><span class="w"> </span><span class="ow">or</span><span class="w"> </span><span class="s1">&#39;none&#39;</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L304" name="L304"></a>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;On next load the container refreshes the mirrors of every linked dataset.&quot;</span><span class="p">)</span>
+<a id="L305" name="L305"></a>    <span class="k">return</span> <span class="n">container_root</span>
+<a id="L306" name="L306"></a>
+<a id="L307" name="L307"></a>
+<a id="L308" name="L308"></a><span class="k">def</span><span class="w"> </span><span class="nf">migrate</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;copy&#39;</span><span class="p">,</span> <span class="n">container</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<a id="L309" name="L309"></a>    <span class="n">old_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">old_path</span><span class="o">.</span><span class="n">rstrip</span><span class="p">(</span><span class="s1">&#39;/&#39;</span><span class="p">))</span>
+<a id="L310" name="L310"></a>    <span class="n">src_db_path</span> <span class="o">=</span> <span class="n">_old_db_path</span><span class="p">(</span><span class="n">old_path</span><span class="p">)</span>
+<a id="L311" name="L311"></a>    <span class="n">dest</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">dest</span> <span class="ow">or</span> <span class="p">(</span><span class="n">old_path</span> <span class="o">+</span> <span class="s1">&#39;.mdats&#39;</span><span class="p">))</span>
+<a id="L312" name="L312"></a>    <span class="n">os</span><span class="o">.</span><span class="n">makedirs</span><span class="p">(</span><span class="n">dest</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L313" name="L313"></a>
+<a id="L314" name="L314"></a>    <span class="n">conn</span> <span class="o">=</span> <span class="n">sqlite3</span><span class="o">.</span><span class="n">connect</span><span class="p">(</span><span class="n">src_db_path</span><span class="p">)</span>
+<a id="L315" name="L315"></a>    <span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">conn</span><span class="o">.</span><span class="n">execute</span><span class="p">(</span><span class="s2">&quot;SELECT name FROM submdat ORDER BY ds_map_id&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">fetchall</span><span class="p">()]</span>
+<a id="L316" name="L316"></a>    <span class="n">conn</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<a id="L317" name="L317"></a>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Migrating </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">names</span><span class="p">)</span><span class="si">}</span><span class="s2"> datasets from </span><span class="si">{</span><span class="n">old_path</span><span class="si">}</span><span class="s2"> -&gt; </span><span class="si">{</span><span class="n">dest</span><span class="si">}</span><span class="s2"> (mode=</span><span class="si">{</span><span class="n">mode</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span>
+<a id="L318" name="L318"></a>
+<a id="L319" name="L319"></a>    <span class="n">extracted</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L320" name="L320"></a>    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">names</span><span class="p">:</span>
+<a id="L321" name="L321"></a>        <span class="n">extracted</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">extract_dataset</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">dest</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">mode</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="n">quiet</span><span class="p">)</span>
+<a id="L322" name="L322"></a>
+<a id="L323" name="L323"></a>    <span class="k">if</span> <span class="n">inplace</span><span class="p">:</span>
+<a id="L324" name="L324"></a>        <span class="n">build_linking_container</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">extracted</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="n">quiet</span><span class="p">)</span>
+<a id="L325" name="L325"></a>    <span class="k">elif</span> <span class="n">container</span><span class="p">:</span>
+<a id="L326" name="L326"></a>        <span class="n">build_linking_container</span><span class="p">(</span><span class="n">old_path</span><span class="p">,</span> <span class="n">extracted</span><span class="p">,</span> <span class="n">container_path</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">container</span><span class="p">),</span> <span class="n">quiet</span><span class="o">=</span><span class="n">quiet</span><span class="p">)</span>
+<a id="L327" name="L327"></a>    <span class="k">else</span><span class="p">:</span>
+<a id="L328" name="L328"></a>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Extraction done. No container phase requested (use --inplace or --container PATH).&quot;</span><span class="p">)</span>
+<a id="L329" name="L329"></a>    <span class="k">return</span> <span class="n">extracted</span>
+<a id="L330" name="L330"></a>
+<a id="L331" name="L331"></a>
+<a id="L332" name="L332"></a><span class="k">def</span><span class="w"> </span><span class="nf">main</span><span class="p">(</span><span class="n">argv</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<a id="L333" name="L333"></a>    <span class="n">parser</span> <span class="o">=</span> <span class="n">argparse</span><span class="o">.</span><span class="n">ArgumentParser</span><span class="p">(</span><span class="n">description</span><span class="o">=</span><span class="s2">&quot;Migrate an old monolithic mdat to standalone datasets + linking container&quot;</span><span class="p">)</span>
+<a id="L334" name="L334"></a>    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;old_mdat&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path of the old monolithic mdat folder&quot;</span><span class="p">)</span>
+<a id="L335" name="L335"></a>    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--dest&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Root for standalone dataset folders (default: &lt;old&gt;.mdats)&quot;</span><span class="p">)</span>
+<a id="L336" name="L336"></a>    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--mode&#39;</span><span class="p">,</span> <span class="n">choices</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;copy&#39;</span><span class="p">,</span> <span class="s1">&#39;move&#39;</span><span class="p">],</span> <span class="n">default</span><span class="o">=</span><span class="s1">&#39;copy&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Copy or move the data folders&quot;</span><span class="p">)</span>
+<a id="L337" name="L337"></a>    <span class="n">group</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">add_mutually_exclusive_group</span><span class="p">()</span>
+<a id="L338" name="L338"></a>    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--inplace&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span>
+<a id="L339" name="L339"></a>                       <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Rewrite the old catalog into a linking container (a .pre_migration backup is taken)&quot;</span><span class="p">)</span>
+<a id="L340" name="L340"></a>    <span class="n">group</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--container&#39;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Path of the new linking container to build&quot;</span><span class="p">)</span>
+<a id="L341" name="L341"></a>    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--overwrite&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">,</span> <span class="n">help</span><span class="o">=</span><span class="s2">&quot;Re-extract datasets whose catalog already exists&quot;</span><span class="p">)</span>
+<a id="L342" name="L342"></a>    <span class="n">parser</span><span class="o">.</span><span class="n">add_argument</span><span class="p">(</span><span class="s1">&#39;--quiet&#39;</span><span class="p">,</span> <span class="n">action</span><span class="o">=</span><span class="s1">&#39;store_true&#39;</span><span class="p">)</span>
+<a id="L343" name="L343"></a>    <span class="n">args</span> <span class="o">=</span> <span class="n">parser</span><span class="o">.</span><span class="n">parse_args</span><span class="p">(</span><span class="n">argv</span><span class="p">)</span>
+<a id="L344" name="L344"></a>    <span class="n">migrate</span><span class="p">(</span><span class="n">args</span><span class="o">.</span><span class="n">old_mdat</span><span class="p">,</span> <span class="n">dest</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">dest</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">mode</span><span class="p">,</span> <span class="n">container</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">container</span><span class="p">,</span>
+<a id="L345" name="L345"></a>            <span class="n">inplace</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">inplace</span><span class="p">,</span> <span class="n">overwrite</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">overwrite</span><span class="p">,</span> <span class="n">quiet</span><span class="o">=</span><span class="n">args</span><span class="o">.</span><span class="n">quiet</span><span class="p">)</span>
+<a id="L346" name="L346"></a>
+<a id="L347" name="L347"></a>
+<a id="L348" name="L348"></a><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+<a id="L349" name="L349"></a>    <span class="n">main</span><span class="p">()</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

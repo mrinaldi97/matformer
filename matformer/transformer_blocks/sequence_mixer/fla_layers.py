@@ -265,8 +265,11 @@ class FLASequenceMixer(MatformerModule):
     def __init__(self, config, hidden_size, device=None, layer_idx=None, cache=None,
                  is_causal=False, is_hybrid=False):
         super().__init__()
+        self._diagnostics = False
+        self._last_logs = {}
         self.inner = self.fla_cls(**self._layer_kwargs(
             config, hidden_size=hidden_size, layer_idx=layer_idx))
+        self.config = config
         self.merge = config.bidirectional_merge_type
         self.bidirectional = config.allow_bidirectionalize and ((not is_causal) or is_hybrid)
         self.batched = False
@@ -307,9 +310,31 @@ class FLASequenceMixer(MatformerModule):
         out = mixer(hidden, attention_mask=attn_mask, cu_seqlens=cu_seqlens,
                     past_key_values=None, use_cache=False)[0]
 
+        if self._diagnostics:
+            with torch.no_grad():
+                source = hidden.detach().float()
+                produced = out.detach().float()
+                self._last_logs.update({
+                    "input_norm_mean": source.norm(dim=-1).mean().item(),
+                    "input_abs_max": source.abs().max().item(),
+                    "output_norm_mean": produced.norm(dim=-1).mean().item(),
+                    "output_abs_max": produced.abs().max().item(),
+                    "output_nonfinite": int((~torch.isfinite(produced)).sum()),
+                })
         if getattr(x, 'isUnpadded', False):
             out = out.squeeze(0)
         return replace(x, tensor=out) if hasattr(x, 'tensor') else out
+
+    def _log(self):
+        """Architecture-specific numbers of a linear/recurrent mixer and its last forward."""
+        described = {"mixer": type(self.inner).__name__, "bidirectional": self.bidirectional}
+        for name in ("mode", "num_heads", "head_dim", "state_size", "use_gate",
+                     "use_short_conv", "expand", "expand_v", "is_mimo"):
+            value = getattr(self.config, name, None)
+            if value is not None:
+                described[name] = value
+        described.update(self._last_logs)
+        return described
 
     def _run_paired(self, x):
         """Both directions in a single varlen call: [packed ; reversed packed] is one sequence,

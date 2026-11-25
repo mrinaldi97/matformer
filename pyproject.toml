@@ -31,6 +31,7 @@ dependencies = [
     "torchmetrics",
     "tqdm",
     "PyYAML",
+    "paramiko",
     "pytest",
 ]
 
@@ -48,12 +49,19 @@ huggingface = [
     "datasets",
     "huggingface_hub"
 ]
+docs = [
+    "markdown",
+    "Pygments",
+]
 
 
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["matformer*"]
+
+[tool.setuptools.package-data]
+"matformer.wizards" = ["definitions/*.toml"]
 [tool.uv.extra-build-dependencies]
 flash-attn = ["torch"]
 

@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/modules/attention_implementations/sdpa_kv.py · Matformer</title>
+<link rel="stylesheet" href="../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../index.html">Documentation</a><a class="" href="../../../../registry/index.html">Registry</a><a class="" href="../../../../configuration/index.html">Configuration</a><a class="" href="../../../../tools/commands.html">Commands</a><a class="current" href="../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../index.html">Matformer</a></li><li><a href="../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../components/cache.html">The cache</a></li><li><a href="../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../training/logger.html">Logging</a></li><li><a href="../../../../training/control.html">Control</a></li><li><a href="../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../data/index.html">Data</a></li><li><a href="../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../data/data-module.html">Data module</a></li><li><a href="../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../tools/server.html">Server</a></li><li><a href="../../../../tools/gui.html">GUI</a></li><li><a href="../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../tools/commands.html">Commands</a></li><li><a href="../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../about/repository.html">Repository</a></li><li><a href="../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../index.html">Repository</a> <span class="sep">/</span> matformer/modules/attention_implementations/sdpa_kv.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="sdpa_kv.py.html"><code>matformer/modules/attention_implementations/sdpa_kv.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/modules/attention_implementations/</code></a></p><h1><code>sdpa_kv.py</code></h1><p class="muted">matformer/modules/attention_implementations/sdpa_kv.py · 68 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/modules/attention_implementations/sdpa_kv.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L29"><code>PagedSDPAKernel</code></a><span class="line">L29</span> <span class="bases">(<code>Module</code>)</span></li><li class="depth-1"><a href="#L33"><code>PagedSDPAKernel.__init__</code></a><span class="line">L33</span></li><li class="depth-1"><a href="#L43"><code>PagedSDPAKernel.forward</code></a><span class="line">L43</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span>
+<span class="normal">35</span>
+<span class="normal">36</span>
+<span class="normal">37</span>
+<span class="normal">38</span>
+<span class="normal">39</span>
+<span class="normal">40</span>
+<span class="normal">41</span>
+<span class="normal">42</span>
+<span class="normal">43</span>
+<span class="normal">44</span>
+<span class="normal">45</span>
+<span class="normal">46</span>
+<span class="normal">47</span>
+<span class="normal">48</span>
+<span class="normal">49</span>
+<span class="normal">50</span>
+<span class="normal">51</span>
+<span class="normal">52</span>
+<span class="normal">53</span>
+<span class="normal">54</span>
+<span class="normal">55</span>
+<span class="normal">56</span>
+<span class="normal">57</span>
+<span class="normal">58</span>
+<span class="normal">59</span>
+<span class="normal">60</span>
+<span class="normal">61</span>
+<span class="normal">62</span>
+<span class="normal">63</span>
+<span class="normal">64</span>
+<span class="normal">65</span>
+<span class="normal">66</span>
+<span class="normal">67</span>
+<span class="normal">68</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="sd">&quot;&quot;&quot;Paged KV attention in plain torch: the reference implementation of the KV cache contract.</span>
+<a id="L2" name="L2"></a>
+<a id="L3" name="L3"></a><span class="sd">It writes the new keys and values into their pages and attends over the prefix gathered back from</span>
+<a id="L4" name="L4"></a><span class="sd">them, with no dependency beyond torch. That makes it two things at once: a fallback that gives</span>
+<a id="L5" name="L5"></a><span class="sd">incremental decoding to any machine (no flash-attn, no flashinfer, no CUDA kernels), and the</span>
+<a id="L6" name="L6"></a><span class="sd">reference the flash-attn and flashinfer kernels are checked against.</span>
+<a id="L7" name="L7"></a>
+<a id="L8" name="L8"></a><span class="sd">The contract every paged kernel honours: the batch carries a KVBatchState</span>
+<a id="L9" name="L9"></a><span class="sd">(matformer.utils.kv_cache) saying which pages back each sequence, how long each one now is, and at</span>
+<a id="L10" name="L10"></a><span class="sd">which absolute position the tokens of this call belong. RoPE stays outside, applied by the mixer</span>
+<a id="L11" name="L11"></a><span class="sd">with the same offset the state carries.</span>
+<a id="L12" name="L12"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L13" name="L13"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L14" name="L14"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">nn</span>
+<a id="L15" name="L15"></a>
+<a id="L16" name="L16"></a><span class="kn">from</span><span class="w"> </span><a href="../../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L17" name="L17"></a>
+<a id="L18" name="L18"></a>
+<a id="L19" name="L19"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span>
+<a id="L20" name="L20"></a>    <span class="s1">&#39;attention&#39;</span><span class="p">,</span> <span class="s1">&#39;normal&#39;</span><span class="p">,</span> <span class="s1">&#39;sdpa_kv&#39;</span><span class="p">,</span>
+<a id="L21" name="L21"></a>    <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;torch&#39;</span><span class="p">],</span>
+<a id="L22" name="L22"></a>    <span class="n">priority</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<a id="L23" name="L23"></a>    <span class="n">constraints</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;is_training&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">},</span>
+<a id="L24" name="L24"></a>    <span class="n">metadata</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;tensor_order_input&#39;</span><span class="p">:</span> <span class="s1">&#39;?SHD&#39;</span><span class="p">,</span> <span class="s1">&#39;tensor_order_output&#39;</span><span class="p">:</span> <span class="s1">&#39;?SHD&#39;</span><span class="p">,</span>
+<a id="L25" name="L25"></a>              <span class="s1">&#39;supports_unpadding&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;supports_packed_qkv&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+<a id="L26" name="L26"></a>              <span class="s1">&#39;supports_sliding_window&#39;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s1">&#39;supports_alibi&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;supports_gqa&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+<a id="L27" name="L27"></a>              <span class="s1">&#39;needs_kv_cache&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span> <span class="s1">&#39;kv_page_multiple&#39;</span><span class="p">:</span> <span class="mi">1</span><span class="p">}</span>
+<a id="L28" name="L28"></a><span class="p">)</span>
+<a id="L29" name="L29"></a><span class="k">class</span><span class="w"> </span><span class="nc">PagedSDPAKernel</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="L30" name="L30"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Reference paged attention. Quadratic in the prefix and entirely in torch: fast enough to</span>
+<a id="L31" name="L31"></a><span class="sd">    check the others, portable enough to run anywhere.&quot;&quot;&quot;</span>
+<a id="L32" name="L32"></a>
+<a id="L33" name="L33"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nheads</span><span class="p">,</span> <span class="n">head_dim</span><span class="p">,</span> <span class="n">is_causal</span><span class="p">,</span> <span class="n">sliding_window</span><span class="p">,</span> <span class="n">positional_encoding</span><span class="p">,</span> <span class="n">cache</span><span class="p">,</span>
+<a id="L34" name="L34"></a>                 <span class="n">device</span><span class="p">,</span> <span class="n">layer_idx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">num_key_value_heads</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">attn_logit_softcap</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L35" name="L35"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L36" name="L36"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">nheads</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_kv_heads</span> <span class="o">=</span> <span class="n">nheads</span><span class="p">,</span> <span class="n">num_key_value_heads</span> <span class="ow">or</span> <span class="n">nheads</span>
+<a id="L37" name="L37"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_causal</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliding_window</span> <span class="o">=</span> <span class="n">head_dim</span><span class="p">,</span> <span class="n">is_causal</span><span class="p">,</span> <span class="n">sliding_window</span>
+<a id="L38" name="L38"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">attn_logit_softcap</span> <span class="o">=</span> <span class="n">attn_logit_softcap</span>
+<a id="L39" name="L39"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">layer_idx</span> <span class="o">=</span> <span class="mi">0</span> <span class="k">if</span> <span class="n">layer_idx</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">layer_idx</span>
+<a id="L40" name="L40"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">alibi</span> <span class="o">=</span> <span class="s1">&#39;alibi&#39;</span> <span class="ow">in</span> <span class="p">(</span><span class="n">positional_encoding</span> <span class="ow">or</span> <span class="p">[])</span>
+<a id="L41" name="L41"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span> <span class="o">=</span> <span class="n">cache</span>
+<a id="L42" name="L42"></a>
+<a id="L43" name="L43"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">query_input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">key_input</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L44" name="L44"></a>        <span class="n">state</span> <span class="o">=</span> <span class="p">(</span><span class="nb">getattr</span><span class="p">(</span><span class="n">query_input</span><span class="p">,</span> <span class="s1">&#39;attributes&#39;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="ow">or</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;kv_state&#39;</span><span class="p">)</span>
+<a id="L45" name="L45"></a>        <span class="k">if</span> <span class="n">state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L46" name="L46"></a>            <span class="n">keys</span><span class="p">,</span> <span class="n">values</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">layer_idx</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span><span class="p">)</span>
+<a id="L47" name="L47"></a>            <span class="n">prefix_k</span><span class="p">,</span> <span class="n">prefix_v</span> <span class="o">=</span> <span class="n">state</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">keys</span><span class="p">),</span> <span class="n">state</span><span class="o">.</span><span class="n">gather</span><span class="p">(</span><span class="n">values</span><span class="p">)</span>
+<a id="L48" name="L48"></a>        <span class="k">else</span><span class="p">:</span>                                   <span class="c1"># no cache asked for: attend over this call only</span>
+<a id="L49" name="L49"></a>            <span class="n">prefix_k</span><span class="p">,</span> <span class="n">prefix_v</span> <span class="o">=</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span>
+<a id="L50" name="L50"></a>        <span class="n">repeat</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nheads</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_kv_heads</span>
+<a id="L51" name="L51"></a>        <span class="k">if</span> <span class="n">repeat</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+<a id="L52" name="L52"></a>            <span class="n">prefix_k</span><span class="p">,</span> <span class="n">prefix_v</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">repeat</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="p">(</span><span class="n">prefix_k</span><span class="p">,</span> <span class="n">prefix_v</span><span class="p">))</span>
+<a id="L53" name="L53"></a>        <span class="n">q</span><span class="p">,</span> <span class="n">prefix_k</span><span class="p">,</span> <span class="n">prefix_v</span> <span class="o">=</span> <span class="p">(</span><span class="n">t</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="p">(</span><span class="n">q</span><span class="p">,</span> <span class="n">prefix_k</span><span class="p">,</span> <span class="n">prefix_v</span><span class="p">))</span>
+<a id="L54" name="L54"></a>        <span class="n">scores</span> <span class="o">=</span> <span class="n">q</span> <span class="o">@</span> <span class="n">prefix_k</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">head_dim</span> <span class="o">**</span> <span class="mf">0.5</span>
+<a id="L55" name="L55"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_logit_softcap</span><span class="p">:</span>
+<a id="L56" name="L56"></a>            <span class="n">scores</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_logit_softcap</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">scores</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_logit_softcap</span><span class="p">)</span>
+<a id="L57" name="L57"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alibi</span><span class="p">:</span>
+<a id="L58" name="L58"></a>            <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">get_alibi_bias</span><span class="p">(</span>
+<a id="L59" name="L59"></a>                <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">prefix_k</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">nheads</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">device</span><span class="p">,</span> <span class="n">q</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<a id="L60" name="L60"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_causal</span><span class="p">:</span>
+<a id="L61" name="L61"></a>            <span class="n">rows</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
+<a id="L62" name="L62"></a>            <span class="n">columns</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">prefix_k</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">q</span><span class="o">.</span><span class="n">device</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+<a id="L63" name="L63"></a>            <span class="n">allowed</span> <span class="o">=</span> <span class="n">rows</span> <span class="o">+</span> <span class="n">prefix_k</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="n">columns</span>
+<a id="L64" name="L64"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliding_window</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L65" name="L65"></a>                <span class="n">allowed</span> <span class="o">&amp;=</span> <span class="p">(</span><span class="n">rows</span> <span class="o">+</span> <span class="n">prefix_k</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">q</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">])</span> <span class="o">-</span> <span class="n">columns</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">sliding_window</span>
+<a id="L66" name="L66"></a>            <span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">masked_fill</span><span class="p">(</span><span class="o">~</span><span class="n">allowed</span><span class="p">,</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;-inf&#39;</span><span class="p">))</span>
+<a id="L67" name="L67"></a>        <span class="n">out</span> <span class="o">=</span> <span class="n">scores</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">@</span> <span class="n">prefix_v</span>                   <span class="c1"># (B,H,L,D)</span>
+<a id="L68" name="L68"></a>        <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">transpose</span><span class="p">(</span><span class="o">-</span><span class="mi">3</span><span class="p">,</span> <span class="o">-</span><span class="mi">2</span><span class="p">)</span>                          <span class="c1"># (B,L,H,D), what the mixer expects</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,89 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MatformerWrapper · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section" open><summary>Training</summary><ul><li><a class="current" href="wrapper.html">MatformerWrapper</a></li><li><a href="trainer.html">MatformerTrainer</a></li><li><a href="learning-signals.html">Learning signals</a></li><li><a href="logger.html">Logging</a></li><li><a href="control.html">Control</a></li><li><a href="analysis.html">Model and activation analysis</a></li><li><a href="checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Training <span class="sep">/</span> MatformerWrapper</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/matformer_wrapper.py.html"><code>matformer/matformer_wrapper.py</code></a> <a href="../file/matformer/plugins/plugin_manager.py.html"><code>matformer/plugins/plugin_manager.py</code></a></div>
+<h1 id="matformerwrapper">MatformerWrapper<a class="headerlink" href="#matformerwrapper" title="Permanent link"></a></h1>
+<p>The ModelWrapper contains methods to load checkpoints, weights as well as everything required to train the model.
+The training procedure itself, however, is not hard-coded into the Wrapper but is handled through another class,
+called LearningSignal. The LearningSignal is the one containing the actual preparation of the inputs
+(ex. masking for Bert-like models) and the selection of targets for the loss function.
+For more complex scenario, it is possible to use a "LearningSignalSelector", another class that select the correct LearningSignal according
+to specific criteria step by step (ex. to randomly mix more LearningSignal(s) or to correctly route the data according
+to info present in the batch's metadata.)
+The LearningSignal, LearningSignalSelector and the model class are all accessed through the <a href="../components/registry.html">MatformerRegistry</a>.</p>
+<p>MatformerModelWrapper is one of the most important components of the architecture: any MatformerModel must be wrapped inside the ModelWrapper to enable frameworks' functionalities. MatformerModelWrapper inherits from <a href="../components/matformer-module.html">MatformerModule</a> and <a href="../components/plugins.html">PluginManager</a>, which means that <a href="../components/plugins.html">Plugins</a>, a fundamental feature of Matformer, are managed by the Wrapper.
+Any model executed or trained by matformer is initialized inside the wrapper, and its reference is stored as <code>self.model</code>.
+The Wrapper is also responsible for the handling of <a href="../components/virtual-models.html">VirtualModels</a>, that is, models that are not executed live but whose activations are rather retrieved from an activation store, which is a useful feature for interpretability, distillation or model's debugging. To understand VirtualModels, the activation store and how the wrapper is able to switch from "live" to "virtual" <code>runtime_mode</code>, please see the <a href="../components/virtual-models.html">VirtualModels</a> section.
+In the <code>__init__</code>, after having initialized plugins and the eventual virtualmodel, the model is created and the <a href="../components/tokenizers.html">tokenizer</a> attached. If the wrapper is initialized in training mode (the <a href="../components/configuration.html">MatformerConfigs</a> contains a "training" section), the <a href="learning-signals.html">LearningSignal</a> is initialized, and models' weight are <a href="../file/matformer/utils/initialization.py.html">initialized</a> and, if necessary, some of them may be frozen according to the "freeze" config (see: <a href="wrapper.html#freezing">Freezing</a>).
+Because any forward pass to a Matformer model will pass from the MatformerModelWrapper makes sure that any tensor passed to the forward will be wrapped in a <a href="../components/tensors.html">TensorDC</a> before getting inside the model. Thanks to this, matformer's neural network modules don't have to worry about the tensor being a TensorDC or not: plain <code>torch.Tensor</code> will never pass the barrier of the MatformerModelWrapper's forward.
+The MatformerModelWrapper is responsible for the inner part of the training step, the one called by the <a href="trainer.html">MatformerTrainer</a>.</p>
+<h2 id="training-step">Training step<a class="headerlink" href="#training-step" title="Permanent link"></a></h2>
+<ol>
+<li>Check if the batch's <a href="../components/tensors.html">TensorDC</a> has the special attribute "worker_has_finished" set to True. In this case, loss is immediately set to 0.0; this is necessary when ranks get out of sync during distributed training, for example when a GPUs exhaust the training data while other GPUs are still busy.</li>
+<li>LearningSignalSelector is asked for the list of active learning signals, and they are used to compute the loss. Check <a href="learning-signals.html">the learning signals</a> for detail!</li>
+<li>Loss is logged</li>
+<li>The wrapper now will scan the dictionary "aux_losses" contained in the <a href="../components/cache.html">CachedStuff</a>. If any additional loss is present there (ex. a Moe router loss), it is added to the loss and logged separetely.</li>
+<li>Learning rate is logged</li>
+<li>Total loss is returned.</li>
+</ol>
+<p>The whole training step is guarded by a try except block. If an Exception is found, particularly if this step got OOM, the current batch is skipped and gradients cleared. It is a dirty workaround, but it may be helpful to avoid a catasthrophic training run loss if just few batch errors out. Clearly, it must be thought as a workaround that breaks training correctness: it is duty of the user to decide how many failed training steps can be tolerated.</p>
+<p><code>strict_steps</code> disables the workaround. The trainer's memory probe enables it while measuring, so a failure reaches the probe.</p>
+<h2 id="model-loading">Model loading<a class="headerlink" href="#model-loading" title="Permanent link"></a></h2>
+<p>The wrapper is also the entry point for loading models, either for inference or for finetuning / inheriting of weights.
+The loading system is very flexible and will be explained in two steps, here and in the <a href="../loading/checkpoint-holder.html">CheckpointHolder</a> documentation page.
+the <a href="../file/matformer/matformer_wrapper.py.html#L598">load_model function</a> builds a model from scratch and returns it to the caller.</p>
+<p>This function can create a model in different ways:</p>
+<ul>
+<li>If you provide just a <a href="../components/configuration.html">MatformerConfigs</a> object, it creates a fresh model ready for training</li>
+<li>If you provide a path OR a <a href="../loading/checkpoint-holder.html">CheckpointHolder</a>, the config and models are loaded from the checkpoint (with the term 'checkpoints' we intend also published weights, such as HuggingFace repositories);</li>
+<li>If you provide BOTH (path/checkpointholder) + configs, what happens is that the config is at first initialized from the path and then overriden with the fields provided with the configs argument. This is particularly useful to train derived models, for example a classification fine-tuning starting from a pre-trained language model. The sections that are inherited from the base checkpoint can be chosen with the <code>inherit_sections</code> argument.</li>
+</ul>
+<p>After the weights are loaded or initialized, the wrapper checks for the presence of the "weights" section in the <a href="../components/configuration.html">MatformerConfigs</a>; if this section is set, it allows to load full or partial weights from arbitrary many other models. This is helpful for experimental settings, as it allows to perform model stiching.</p>
+<p><code>load_model</code> returns a dictionary:</p>
+<div class="highlight"><pre><span></span><code><span class="n">result</span> <span class="o">=</span> <span class="n">load_model</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;repo/or/file&quot;</span><span class="p">,</span> <span class="n">configs</span><span class="o">=</span><span class="n">configs</span><span class="p">,</span> <span class="n">map_location</span><span class="o">=</span><span class="s2">&quot;cpu&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;model&quot;</span><span class="p">]</span>
+<span class="n">configs</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;configs&quot;</span><span class="p">]</span>
+<span class="n">missing</span><span class="p">,</span> <span class="n">unexpected</span> <span class="o">=</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;missing&quot;</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;unexpected&quot;</span><span class="p">]</span>
+</code></pre></div>
+
+<p>The trainer uses the returned configs because a checkpoint can add sections. The missing and unexpected keys are part of the load report. <code>additional_weights_results</code> contains one entry per extra weight source.</p>
+<p><a id="freezing"></a></p>
+<h2 id="freezing">Freezing<a class="headerlink" href="#freezing" title="Permanent link"></a></h2>
+<p><code>freeze</code> and <code>unfreeze</code> in the training config resolve a target to a list of parameters, then set <code>requires_grad</code>. A target is either a string or a dict:</p>
+<ul>
+<li><code>{"layer": "&lt;pattern&gt;", "component": "&lt;name&gt;"}</code>: that component, on layers matching the pattern only. <code>component</code> is optional.</li>
+<li><code>"all"</code>: every parameter.</li>
+<li><code>"plugin_type:&lt;name&gt;"</code>: every plugin of that kind.</li>
+<li><code>"layer:&lt;pattern&gt;"</code>: every layer matching the pattern (<code>every_N</code>, <code>odd</code>, <code>even</code>, <code>S_E</code>, ...).</li>
+<li><code>"component:&lt;name&gt;"</code>: that named component on every layer.</li>
+<li>a socket address: every plugin mounted there.</li>
+<li>a bare name: tried as a plugin type, then a component, then a stable parameter/module name prefix.</li>
+</ul>
+<p>Freezing is applied after the weights are initialised and before the optimiser is built. <code>trainable_param_report()</code> prints the split; use it to check that a pattern matched the intended parameters.</p>
+<h2 id="runtime">Runtime<a class="headerlink" href="#runtime" title="Permanent link"></a></h2>
+<p><code>forward</code> converts a plain <code>torch.Tensor</code> to a <code>NormalTensor</code>, adds a batch dimension to a 1-D input, and resets the per-socket visit counters. The model is stored in <code>self._models</code> for each runtime mode. Switching between live and virtual reuses the mounted plugins.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/data/savers/memory.py · Matformer</title>
+<link rel="stylesheet" href="../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../index.html">Documentation</a><a class="" href="../../../../registry/index.html">Registry</a><a class="" href="../../../../configuration/index.html">Configuration</a><a class="" href="../../../../tools/commands.html">Commands</a><a class="current" href="../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../index.html">Matformer</a></li><li><a href="../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../components/cache.html">The cache</a></li><li><a href="../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../training/logger.html">Logging</a></li><li><a href="../../../../training/control.html">Control</a></li><li><a href="../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../data/index.html">Data</a></li><li><a href="../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../data/data-module.html">Data module</a></li><li><a href="../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../tools/server.html">Server</a></li><li><a href="../../../../tools/gui.html">GUI</a></li><li><a href="../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../tools/commands.html">Commands</a></li><li><a href="../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../about/repository.html">Repository</a></li><li><a href="../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../index.html">Repository</a> <span class="sep">/</span> matformer/data/savers/memory.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="memory.py.html"><code>matformer/data/savers/memory.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/data/savers/</code></a></p><h1><code>memory.py</code></h1><p class="muted">matformer/data/savers/memory.py · 34 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/data/savers/memory.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L10"><code>pop_summaries</code></a><span class="line">L10</span></li><li class="depth-0"><a href="#L16"><code>MemorySaver</code></a><span class="line">L16</span> <span class="bases">(<a href="saver.py.html#L4"><code>MatformerDataSaver</code></a>)</span><div class="mro">MRO: <code>MemorySaver</code> -> <a href="saver.py.html#L4"><code>MatformerDataSaver</code></a></div></li><li class="depth-1"><a href="#L21"><code>MemorySaver.__init__</code></a><span class="line">L21</span></li><li class="depth-1"><a href="#L25"><code>MemorySaver.save_batch</code></a><span class="line">L25</span></li><li class="depth-1"><a href="#L28"><code>MemorySaver.save_summary</code></a><span class="line">L28</span></li><li class="depth-1"><a href="#L33"><code>MemorySaver.end</code></a><span class="line">L33</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="__init__.py.html"><code>matformer.data.savers</code></a> <span class="muted">MatformerDataSaver</span></li><li><a href="../../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal"> 1</span>
+<span class="normal"> 2</span>
+<span class="normal"> 3</span>
+<span class="normal"> 4</span>
+<span class="normal"> 5</span>
+<span class="normal"> 6</span>
+<span class="normal"> 7</span>
+<span class="normal"> 8</span>
+<span class="normal"> 9</span>
+<span class="normal">10</span>
+<span class="normal">11</span>
+<span class="normal">12</span>
+<span class="normal">13</span>
+<span class="normal">14</span>
+<span class="normal">15</span>
+<span class="normal">16</span>
+<span class="normal">17</span>
+<span class="normal">18</span>
+<span class="normal">19</span>
+<span class="normal">20</span>
+<span class="normal">21</span>
+<span class="normal">22</span>
+<span class="normal">23</span>
+<span class="normal">24</span>
+<span class="normal">25</span>
+<span class="normal">26</span>
+<span class="normal">27</span>
+<span class="normal">28</span>
+<span class="normal">29</span>
+<span class="normal">30</span>
+<span class="normal">31</span>
+<span class="normal">32</span>
+<span class="normal">33</span>
+<span class="normal">34</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.distributed</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
+<a id="L2" name="L2"></a><span class="kn">from</span><span class="w"> </span><a href="__init__.py.html"><span class="nn">matformer.data.savers</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerDataSaver</span>
+<a id="L3" name="L3"></a><span class="kn">from</span><span class="w"> </span><a href="../../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L4" name="L4"></a>
+<a id="L5" name="L5"></a><span class="n">SUMMARIES</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L6" name="L6"></a><span class="sd">&quot;&quot;&quot;Process-global store of eval summaries: key -&gt; list of summary dicts (one per save_summary call).</span>
+<a id="L7" name="L7"></a><span class="sd">Lets programmatic drivers (experiments/) collect summaries without touching the filesystem.&quot;&quot;&quot;</span>
+<a id="L8" name="L8"></a>
+<a id="L9" name="L9"></a>
+<a id="L10" name="L10"></a><span class="k">def</span><span class="w"> </span><span class="nf">pop_summaries</span><span class="p">(</span><span class="n">key</span><span class="p">):</span>
+<a id="L11" name="L11"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Return (and forget) every summary accumulated under `key`.&quot;&quot;&quot;</span>
+<a id="L12" name="L12"></a>    <span class="k">return</span> <span class="n">SUMMARIES</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="p">[])</span>
+<a id="L13" name="L13"></a>
+<a id="L14" name="L14"></a>
+<a id="L15" name="L15"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;saver&quot;</span><span class="p">,</span> <span class="s2">&quot;memory&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<a id="L16" name="L16"></a><span class="k">class</span><span class="w"> </span><span class="nc">MemorySaver</span><span class="p">(</span><a href="saver.py.html#L4"><span class="n">MatformerDataSaver</span></a><span class="p">):</span>
+<a id="L17" name="L17"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Saver that never writes files: summaries land in the module-level SUMMARIES store</span>
+<a id="L18" name="L18"></a><span class="sd">    (keyed by config.key), batch records are dropped. Intended for in-process experiments</span>
+<a id="L19" name="L19"></a><span class="sd">    that need the metrics back as Python objects, e.g. MDL coding inside a K-sweep.&quot;&quot;&quot;</span>
+<a id="L20" name="L20"></a>
+<a id="L21" name="L21"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+<a id="L22" name="L22"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+<a id="L23" name="L23"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">key</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">key</span> <span class="ow">or</span> <span class="n">config</span><span class="o">.</span><span class="n">name</span>
+<a id="L24" name="L24"></a>
+<a id="L25" name="L25"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">save_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">records</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">rank</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L26" name="L26"></a>        <span class="k">pass</span>
+<a id="L27" name="L27"></a>
+<a id="L28" name="L28"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">save_summary</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">summary</span><span class="p">,</span> <span class="n">rank</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L29" name="L29"></a>        <span class="k">if</span> <span class="n">rank</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+<a id="L30" name="L30"></a>            <span class="k">return</span>
+<a id="L31" name="L31"></a>        <span class="n">SUMMARIES</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">dict</span><span class="p">(</span><span class="n">summary</span><span class="p">))</span>
+<a id="L32" name="L32"></a>
+<a id="L33" name="L33"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">end</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L34" name="L34"></a>        <span class="k">pass</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

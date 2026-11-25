@@ -1,0 +1,658 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/dataclasses/tensors_dataclasses.py · Matformer</title>
+<link rel="stylesheet" href="../../../assets/style.css">
+<link rel="stylesheet" href="../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../index.html">Documentation</a><a class="" href="../../../registry/index.html">Registry</a><a class="" href="../../../configuration/index.html">Configuration</a><a class="" href="../../../tools/commands.html">Commands</a><a class="current" href="../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../index.html">Matformer</a></li><li><a href="../../../intro/limitations.html">Limitations</a></li><li><a href="../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../components/configuration.html">Configuration</a></li><li><a href="../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../components/plugins.html">Plugins</a></li><li><a href="../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../components/cache.html">The cache</a></li><li><a href="../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../training/logger.html">Logging</a></li><li><a href="../../../training/control.html">Control</a></li><li><a href="../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../data/index.html">Data</a></li><li><a href="../../../data/mdat.html">MDAT</a></li><li><a href="../../../data/data-module.html">Data module</a></li><li><a href="../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../tools/server.html">Server</a></li><li><a href="../../../tools/gui.html">GUI</a></li><li><a href="../../../tools/remote.html">Remote client</a></li><li><a href="../../../tools/cluster.html">Cluster</a></li><li><a href="../../../tools/commands.html">Commands</a></li><li><a href="../../../tools/wizards.html">Wizards</a></li><li><a href="../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../about/repository.html">Repository</a></li><li><a href="../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../index.html">Repository</a> <span class="sep">/</span> matformer/dataclasses/tensors_dataclasses.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="tensors_dataclasses.py.html"><code>matformer/dataclasses/tensors_dataclasses.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/dataclasses/</code></a></p><h1><code>tensors_dataclasses.py</code></h1><p class="muted">matformer/dataclasses/tensors_dataclasses.py · 314 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/dataclasses/tensors_dataclasses.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L13"><code>TensorDC</code></a><span class="line">L13</span></li><li class="depth-1"><a href="#L21"><code>TensorDC.has</code></a><span class="line">L21</span></li><li class="depth-1"><a href="#L26"><code>TensorDC.shape</code></a><span class="line">L26</span></li><li class="depth-1"><a href="#L28"><code>TensorDC.nested</code></a><span class="line">L28</span></li><li class="depth-1"><a href="#L30"><code>TensorDC.dtype</code></a><span class="line">L30</span></li><li class="depth-1"><a href="#L32"><code>TensorDC.device</code></a><span class="line">L32</span></li><li class="depth-1"><a href="#L34"><code>TensorDC.to</code></a><span class="line">L34</span></li><li class="depth-1"><a href="#L44"><code>TensorDC.__add__</code></a><span class="line">L44</span></li><li class="depth-1"><a href="#L52"><code>TensorDC.__mul__</code></a><span class="line">L52</span></li><li class="depth-1"><a href="#L60"><code>TensorDC.apply</code></a><span class="line">L60</span></li><li class="depth-1"><a href="#L66"><code>TensorDC.unpad</code></a><span class="line">L66</span></li><li class="depth-1"><a href="#L70"><code>TensorDC.pad</code></a><span class="line">L70</span></li><li class="depth-1"><a href="#L74"><code>TensorDC.detach</code></a><span class="line">L74</span></li><li class="depth-1"><a href="#L78"><code>TensorDC.stats</code></a><span class="line">L78</span></li><li class="depth-1"><a href="#L93"><code>TensorDC.with_attr</code></a><span class="line">L93</span></li><li class="depth-1"><a href="#L96"><code>TensorDC.detach_attributes</code></a><span class="line">L96</span></li><li class="depth-0"><a href="#L99"><code>NormalTensor</code></a><span class="line">L99</span> <span class="bases">(<a href="tensors_dataclasses.py.html#L13"><code>TensorDC</code></a>)</span><div class="mro">MRO: <code>NormalTensor</code> -> <code>TensorDC</code></div></li><li class="depth-1"><a href="#L100"><code>NormalTensor.pad</code></a><span class="line">L100</span></li><li class="depth-1"><a href="#L103"><code>NormalTensor.detach</code></a><span class="line">L103</span></li><li class="depth-1"><a href="#L106"><code>NormalTensor.reverse</code></a><span class="line">L106</span></li><li class="depth-1"><a href="#L111"><code>NormalTensor.__len__</code></a><span class="line">L111</span></li><li class="depth-0"><a href="#L114"><code>PaddedTensor</code></a><span class="line">L114</span> <span class="bases">(<a href="tensors_dataclasses.py.html#L13"><code>TensorDC</code></a>)</span><div class="mro">MRO: <code>PaddedTensor</code> -> <code>TensorDC</code></div></li><li class="depth-1"><a href="#L118"><code>PaddedTensor.pad</code></a><span class="line">L118</span></li><li class="depth-1"><a href="#L121"><code>PaddedTensor.unpad</code></a><span class="line">L121</span></li><li class="depth-1"><a href="#L146"><code>PaddedTensor.__len__</code></a><span class="line">L146</span></li><li class="depth-1"><a href="#L148"><code>PaddedTensor.detach</code></a><span class="line">L148</span></li><li class="depth-1"><a href="#L152"><code>PaddedTensor.pad_right</code></a><span class="line">L152</span></li><li class="depth-1"><a href="#L168"><code>PaddedTensor.from_rows</code></a><span class="line">L168</span></li><li class="depth-0"><a href="#L181"><code>PackedLayout</code></a><span class="line">L181</span></li><li class="depth-1"><a href="#L196"><code>PackedLayout.__post_init__</code></a><span class="line">L196</span></li><li class="depth-0"><a href="#L210"><code>packed_layout</code></a><span class="line">L210</span></li><li class="depth-0"><a href="#L228"><code>cu_seqlens_on_device</code></a><span class="line">L228</span></li><li class="depth-0"><a href="#L254"><code>UnpaddedTensor</code></a><span class="line">L254</span> <span class="bases">(<a href="tensors_dataclasses.py.html#L13"><code>TensorDC</code></a>)</span><div class="mro">MRO: <code>UnpaddedTensor</code> -> <code>TensorDC</code></div></li><li class="depth-1"><a href="#L262"><code>UnpaddedTensor.unpad</code></a><span class="line">L262</span></li><li class="depth-1"><a href="#L265"><code>UnpaddedTensor.pad</code></a><span class="line">L265</span></li><li class="depth-1"><a href="#L284"><code>UnpaddedTensor.layout</code></a><span class="line">L284</span></li><li class="depth-1"><a href="#L287"><code>UnpaddedTensor.cu_seqlens_device</code></a><span class="line">L287</span></li><li class="depth-1"><a href="#L293"><code>UnpaddedTensor.reverse_index</code></a><span class="line">L293</span></li><li class="depth-1"><a href="#L296"><code>UnpaddedTensor.segment_ids</code></a><span class="line">L296</span></li><li class="depth-1"><a href="#L301"><code>UnpaddedTensor.reverse</code></a><span class="line">L301</span></li><li class="depth-1"><a href="#L307"><code>UnpaddedTensor.__len__</code></a><span class="line">L307</span></li><li class="depth-0"><a href="#L310"><code>apply_kernel</code></a><span class="line">L310</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../utils/tensor_stats.py.html"><code>matformer.utils.tensor_stats</code></a> <span class="muted">compute_tensor_stats</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1">#matformer/dataclasses/tensors_dataclasses.py</span>
+<a id="L2" name="L2"></a>
+<a id="L3" name="L3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<a id="L4" name="L4"></a><span class="kn">from</span><span class="w"> </span><span class="nn">collections</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrderedDict</span>
+<a id="L5" name="L5"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">replace</span><span class="p">,</span> <span class="n">field</span>
+<a id="L6" name="L6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">ClassVar</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span>
+<a id="L7" name="L7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L8" name="L8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<a id="L9" name="L9"></a><span class="kn">from</span><span class="w"> </span><span class="nn">einops</span><span class="w"> </span><span class="kn">import</span> <span class="n">rearrange</span>
+<a id="L10" name="L10"></a>
+<a id="L11" name="L11"></a>
+<a id="L12" name="L12"></a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L13" name="L13"></a><span class="k">class</span><span class="w"> </span><span class="nc">TensorDC</span><span class="p">:</span>
+<a id="L14" name="L14"></a>    <span class="n">tensor</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<a id="L15" name="L15"></a>    <span class="n">tensor_order</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># Useful to keep track of what is represented in the tensor (ex. heads in MHA)    </span>
+<a id="L16" name="L16"></a>    <span class="n">following_attributes</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>      <span class="c1"># same (B,S,...) leading dims as tensor; padded/unpadded together with it</span>
+<a id="L17" name="L17"></a>    <span class="n">attributes</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>  <span class="c1"># anything else: different-shaped tensors, metadata, etc. and carried unchanged</span>
+<a id="L18" name="L18"></a>    <span class="n">isUnpadded</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L19" name="L19"></a>    <span class="n">isPadded</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L20" name="L20"></a>    <span class="n">isNormal</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L21" name="L21"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">has</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
+<a id="L22" name="L22"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return True if `key` is present in either attributes dict.&quot;&quot;&quot;</span>
+<a id="L23" name="L23"></a>        <span class="k">return</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">following_attributes</span> <span class="ow">or</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span>
+<a id="L24" name="L24"></a>
+<a id="L25" name="L25"></a>    <span class="nd">@property</span>
+<a id="L26" name="L26"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">shape</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span>
+<a id="L27" name="L27"></a>    <span class="nd">@property</span>
+<a id="L28" name="L28"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">nested</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">nested</span>  <span class="c1"># NB: pre-existing; likely should be `.is_nested` — left untouched, not in scope</span>
+<a id="L29" name="L29"></a>    <span class="nd">@property</span>
+<a id="L30" name="L30"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">dtype</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">:</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">dtype</span>
+<a id="L31" name="L31"></a>    <span class="nd">@property</span>
+<a id="L32" name="L32"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">device</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">:</span> <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">device</span>
+<a id="L33" name="L33"></a>
+<a id="L34" name="L34"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TensorDC&quot;</span><span class="p">:</span>
+<a id="L35" name="L35"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Move tensor and all tensor-valued attributes to a device/dtype, in place.&quot;&quot;&quot;</span>
+<a id="L36" name="L36"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="L37" name="L37"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">following_attributes</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">following_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+<a id="L38" name="L38"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L39" name="L39"></a>            <span class="n">k</span><span class="p">:</span> <span class="p">(</span><span class="n">v</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="k">else</span> <span class="n">v</span><span class="p">)</span>
+<a id="L40" name="L40"></a>            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="o">.</span><span class="n">items</span><span class="p">()</span>
+<a id="L41" name="L41"></a>        <span class="p">}</span>
+<a id="L42" name="L42"></a>        <span class="k">return</span> <span class="bp">self</span>
+<a id="L43" name="L43"></a>
+<a id="L44" name="L44"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__add__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">addendum</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TensorDC&quot;</span><span class="p">:</span>
+<a id="L45" name="L45"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Add a tensor (or another TensorDC&#39;s tensor) to this one; attributes are untouched. Used e.g. for residual connections.&quot;&quot;&quot;</span>
+<a id="L46" name="L46"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">addendum</span><span class="p">,</span> <span class="n">TensorDC</span><span class="p">):</span>
+<a id="L47" name="L47"></a>            <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span> <span class="o">+</span> <span class="n">addendum</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span>
+<a id="L48" name="L48"></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">addendum</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+<a id="L49" name="L49"></a>            <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span> <span class="o">+</span> <span class="n">addendum</span><span class="p">)</span>
+<a id="L50" name="L50"></a>        <span class="k">return</span> <span class="bp">NotImplemented</span>
+<a id="L51" name="L51"></a>
+<a id="L52" name="L52"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__mul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">factor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TensorDC&quot;</span><span class="p">:</span>
+<a id="L53" name="L53"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Elementwise product with a tensor (or another TensorDC&#39;s tensor); attributes are untouched. Used e.g. in gated MLPs.&quot;&quot;&quot;</span>
+<a id="L54" name="L54"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">TensorDC</span><span class="p">):</span>
+<a id="L55" name="L55"></a>            <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span> <span class="o">*</span> <span class="n">factor</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span>
+<a id="L56" name="L56"></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">factor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+<a id="L57" name="L57"></a>            <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span> <span class="o">*</span> <span class="n">factor</span><span class="p">)</span>
+<a id="L58" name="L58"></a>        <span class="k">return</span> <span class="bp">NotImplemented</span>
+<a id="L59" name="L59"></a>
+<a id="L60" name="L60"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">apply</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">module</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TensorDC&quot;</span><span class="p">:</span>
+<a id="L61" name="L61"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Syntactic sugar for replace(self, tensor=module(self.tensor, *args, **kwargs)).</span>
+<a id="L62" name="L62"></a><span class="sd">        The idiomatic way to pass a TensorDC through any plain-tensor module: the wrapper</span>
+<a id="L63" name="L63"></a><span class="sd">        (padding mask, tensor_order, attributes) rides along untouched.&quot;&quot;&quot;</span>
+<a id="L64" name="L64"></a>        <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">module</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">))</span>
+<a id="L65" name="L65"></a>
+<a id="L66" name="L66"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">unpad</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;UnpaddedTensor&quot;</span><span class="p">:</span>
+<a id="L67" name="L67"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to an UnpaddedTensor. Implemented only on PaddedTensor.&quot;&quot;&quot;</span>
+<a id="L68" name="L68"></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot unpad a tensor of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L69" name="L69"></a>
+<a id="L70" name="L70"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">pad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PaddedTensor&quot;</span><span class="p">:</span>
+<a id="L71" name="L71"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert to a PaddedTensor. Implemented only on UnpaddedTensor.&quot;&quot;&quot;</span>
+<a id="L72" name="L72"></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot pad a tensor of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L73" name="L73"></a>
+<a id="L74" name="L74"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">detach</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<a id="L75" name="L75"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of per-sample tensors with padding removed.&quot;&quot;&quot;</span>
+<a id="L76" name="L76"></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot detach a tensor of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L77" name="L77"></a>
+<a id="L78" name="L78"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">stats</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">include_padding</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
+<a id="L79" name="L79"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Statistics of the tensor, padding excluded by default.</span>
+<a id="L80" name="L80"></a>
+<a id="L81" name="L81"></a><span class="sd">        Delegates to :func:`matformer.utils.tensor_stats.compute_tensor_stats`, the one definition</span>
+<a id="L82" name="L82"></a><span class="sd">        of a tensor&#39;s statistics. ``PaddedTensor`` drops its padding positions first, so every</span>
+<a id="L83" name="L83"></a><span class="sd">        per-token statistic describes real tokens only; pass ``include_padding=True`` to count</span>
+<a id="L84" name="L84"></a><span class="sd">        them too, which is useful when diagnosing the padding path itself.</span>
+<a id="L85" name="L85"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L86" name="L86"></a>        <span class="kn">from</span><span class="w"> </span><a href="../utils/tensor_stats.py.html"><span class="nn">matformer.utils.tensor_stats</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">compute_tensor_stats</span>
+<a id="L87" name="L87"></a>        <span class="n">tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span>
+<a id="L88" name="L88"></a>        <span class="n">mask</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;padding_mask&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L89" name="L89"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">include_padding</span> <span class="ow">and</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">tensor</span><span class="o">.</span><span class="n">dim</span><span class="p">()</span> <span class="o">&gt;=</span> <span class="mi">2</span><span class="p">:</span>
+<a id="L90" name="L90"></a>            <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="p">[</span><span class="o">~</span><span class="n">mask</span><span class="p">]</span>
+<a id="L91" name="L91"></a>        <span class="k">return</span> <span class="n">compute_tensor_stats</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="L92" name="L92"></a>
+<a id="L93" name="L93"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">with_attr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;TensorDC&quot;</span><span class="p">:</span>
+<a id="L94" name="L94"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a copy with one non_following_attributes entry replaced.&quot;&quot;&quot;</span>
+<a id="L95" name="L95"></a>        <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">non_following_attributes</span><span class="o">=</span><span class="p">{</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">non_following_attributes</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="n">value</span><span class="p">})</span>
+<a id="L96" name="L96"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">detach_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<a id="L97" name="L97"></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+<a id="L98" name="L98"></a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L99" name="L99"></a><span class="k">class</span><span class="w"> </span><span class="nc">NormalTensor</span><span class="p">(</span><a href="#L13"><span class="n">TensorDC</span></a><span class="p">):</span>
+<a id="L100" name="L100"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">pad</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;NormalTensor&quot;</span><span class="p">:</span>
+<a id="L101" name="L101"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;No-op: already in unpadded/unbatched semantics.&quot;&quot;&quot;</span>
+<a id="L102" name="L102"></a>        <span class="k">return</span> <span class="bp">self</span>
+<a id="L103" name="L103"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">detach</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<a id="L104" name="L104"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the wrapped tensor as a single-element list.&quot;&quot;&quot;</span>
+<a id="L105" name="L105"></a>        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="p">]</span>
+<a id="L106" name="L106"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reverse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;NormalTensor&quot;</span><span class="p">:</span>
+<a id="L107" name="L107"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot; flip the single sequence dim (dim=1, i.e. S in B,S,...).&quot;&quot;&quot;</span>
+<a id="L108" name="L108"></a>        <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+<a id="L109" name="L109"></a>        <span class="c1"># Fix if dimension includes batch or not</span>
+<a id="L110" name="L110"></a>        <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">flip</span><span class="p">(</span><span class="n">dims</span><span class="o">=</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+<a id="L111" name="L111"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L112" name="L112"></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span>
+<a id="L113" name="L113"></a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L114" name="L114"></a><span class="k">class</span><span class="w"> </span><span class="nc">PaddedTensor</span><span class="p">(</span><a href="#L13"><span class="n">TensorDC</span></a><span class="p">):</span>
+<a id="L115" name="L115"></a>    <span class="n">isPadded</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L116" name="L116"></a>    <span class="n">padding_mask</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>  <span class="c1"># True = padding position, False = real data</span>
+<a id="L117" name="L117"></a>
+<a id="L118" name="L118"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">pad</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PaddedTensor&quot;</span><span class="p">:</span>
+<a id="L119" name="L119"></a>        <span class="k">return</span> <span class="bp">self</span>
+<a id="L120" name="L120"></a>
+<a id="L121" name="L121"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">unpad</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;UnpaddedTensor&quot;</span><span class="p">:</span>
+<a id="L122" name="L122"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Strip padding, flattening (batch, seq) into a packed sequence indexed by cu_seqlens.&quot;&quot;&quot;</span>
+<a id="L123" name="L123"></a>        <span class="n">mask</span> <span class="o">=</span> <span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mask</span>
+<a id="L124" name="L124"></a>        <span class="n">indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">mask</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+<a id="L125" name="L125"></a>        <span class="n">unpadded_x</span> <span class="o">=</span> <span class="n">rearrange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="s1">&#39;b s ... -&gt; (b s) ...&#39;</span><span class="p">)[</span><span class="n">indices</span><span class="p">]</span>
+<a id="L126" name="L126"></a>
+<a id="L127" name="L127"></a>        <span class="n">seqlens</span> <span class="o">=</span> <span class="n">mask</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span>
+<a id="L128" name="L128"></a>        <span class="n">cu_seqlens</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">seqlens</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">),</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<a id="L129" name="L129"></a>        <span class="c1"># Keep max_seq_len a python int: a 0-d GPU tensor would force an implicit</span>
+<a id="L130" name="L130"></a>        <span class="c1"># GPU-&gt;CPU sync every time it is passed to flash-attn / triton kernels (per layer).</span>
+<a id="L131" name="L131"></a>        <span class="n">max_seq_len</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">seqlens</span><span class="o">.</span><span class="n">max</span><span class="p">())</span>
+<a id="L132" name="L132"></a>
+<a id="L133" name="L133"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">_unpad</span><span class="p">(</span><span class="n">v</span><span class="p">):</span>
+<a id="L134" name="L134"></a>            <span class="k">return</span> <span class="n">v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">:])[</span><span class="n">indices</span><span class="p">]</span>
+<a id="L135" name="L135"></a>
+<a id="L136" name="L136"></a>        <span class="k">return</span> <span class="n">UnpaddedTensor</span><span class="p">(</span>
+<a id="L137" name="L137"></a>            <span class="n">tensor</span><span class="o">=</span><span class="n">unpadded_x</span><span class="p">,</span>
+<a id="L138" name="L138"></a>            <span class="n">indices</span><span class="o">=</span><span class="n">indices</span><span class="p">,</span>
+<a id="L139" name="L139"></a>            <span class="n">cu_seqlens</span><span class="o">=</span><span class="n">cu_seqlens</span><span class="p">,</span>
+<a id="L140" name="L140"></a>            <span class="n">max_seq_len</span><span class="o">=</span><span class="n">max_seq_len</span><span class="p">,</span>
+<a id="L141" name="L141"></a>            <span class="n">original_seq_len</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+<a id="L142" name="L142"></a>            <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+<a id="L143" name="L143"></a>            <span class="n">following_attributes</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_unpad</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">following_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+<a id="L144" name="L144"></a>            <span class="n">attributes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span>
+<a id="L145" name="L145"></a>        <span class="p">)</span>
+<a id="L146" name="L146"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L147" name="L147"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L148" name="L148"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">detach</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">list</span><span class="p">:</span>
+<a id="L149" name="L149"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Return a list of raw tensors, one per batch element, with padding removed.&quot;&quot;&quot;</span>
+<a id="L150" name="L150"></a>        <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="p">[</span><span class="n">t</span><span class="p">][</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mask</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">==</span> <span class="kc">False</span><span class="p">]</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mask</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])]</span>
+<a id="L151" name="L151"></a>
+<a id="L152" name="L152"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">pad_right</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PaddedTensor&quot;</span><span class="p">:</span>
+<a id="L153" name="L153"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Left-pad so real tokens are right-aligned — required for autoregressive generation.</span>
+<a id="L154" name="L154"></a>
+<a id="L155" name="L155"></a><span class="sd">        Args: none. Reads real lengths from padding_mask.</span>
+<a id="L156" name="L156"></a><span class="sd">        Returns: new PaddedTensor with real tokens flush-right, pads on the left.</span>
+<a id="L157" name="L157"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L158" name="L158"></a>        <span class="n">real_lens</span> <span class="o">=</span> <span class="p">(</span><span class="o">~</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mask</span><span class="p">)</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<a id="L159" name="L159"></a>        <span class="n">B</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<a id="L160" name="L160"></a>        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">new_zeros</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">L</span><span class="p">)</span>
+<a id="L161" name="L161"></a>        <span class="n">new_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L162" name="L162"></a>        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">real_lens</span><span class="o">.</span><span class="n">tolist</span><span class="p">()):</span>
+<a id="L163" name="L163"></a>            <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
+<a id="L164" name="L164"></a>            <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">L</span><span class="o">-</span><span class="n">n</span><span class="p">:]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="n">n</span><span class="p">]</span>
+<a id="L165" name="L165"></a>            <span class="n">new_mask</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">L</span><span class="o">-</span><span class="n">n</span><span class="p">:]</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L166" name="L166"></a>        <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="n">padding_mask</span><span class="o">=</span><span class="n">new_mask</span><span class="p">)</span>
+<a id="L167" name="L167"></a>    <span class="nd">@classmethod</span>
+<a id="L168" name="L168"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">from_rows</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">rows</span><span class="p">:</span> <span class="nb">list</span><span class="p">,</span> <span class="n">pad_value</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PaddedTensor&quot;</span><span class="p">:</span>
+<a id="L169" name="L169"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Inverse of detach(): rebuild a PaddedTensor from variable-length per-sequence</span>
+<a id="L170" name="L170"></a><span class="sd">        tensors, batching to the max length among them and deriving padding_mask fresh.&quot;&quot;&quot;</span>
+<a id="L171" name="L171"></a>        <span class="n">lengths</span> <span class="o">=</span> <span class="p">[</span><span class="n">r</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">]</span>
+<a id="L172" name="L172"></a>        <span class="n">B</span><span class="p">,</span> <span class="n">L</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">rows</span><span class="p">),</span> <span class="nb">max</span><span class="p">(</span><span class="n">lengths</span><span class="p">)</span>
+<a id="L173" name="L173"></a>        <span class="n">out</span> <span class="o">=</span> <span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">new_full</span><span class="p">((</span><span class="n">B</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="o">*</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="n">pad_value</span><span class="p">)</span>
+<a id="L174" name="L174"></a>        <span class="n">mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">B</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">rows</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L175" name="L175"></a>        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">rows</span><span class="p">):</span>
+<a id="L176" name="L176"></a>            <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span> <span class="o">=</span> <span class="n">r</span>
+<a id="L177" name="L177"></a>            <span class="n">mask</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:</span><span class="nb">len</span><span class="p">(</span><span class="n">r</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L178" name="L178"></a>        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">tensor</span><span class="o">=</span><span class="n">out</span><span class="p">,</span> <span class="n">padding_mask</span><span class="o">=</span><span class="n">mask</span><span class="p">)</span>
+<a id="L179" name="L179"></a>
+<a id="L180" name="L180"></a><span class="nd">@dataclass</span>
+<a id="L181" name="L181"></a><span class="k">class</span><span class="w"> </span><span class="nc">PackedLayout</span><span class="p">:</span>
+<a id="L182" name="L182"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Index helpers for one packed layout, shared by every layer and by both directions of a</span>
+<a id="L183" name="L183"></a><span class="sd">    bidirectional mixer instead of being rebuilt on each call.</span>
+<a id="L184" name="L184"></a>
+<a id="L185" name="L185"></a><span class="sd">    Keyed by the identity of the cu_seqlens tensor (see packed_layout), so a batch pays for</span>
+<a id="L186" name="L186"></a><span class="sd">    these index vectors once per step whatever the number of layers. They also survive</span>
+<a id="L187" name="L187"></a><span class="sd">    dataclasses.replace, which is what the reverse pass needs: a mixer hands back a brand new</span>
+<a id="L188" name="L188"></a><span class="sd">    UnpaddedTensor around the same cu_seqlens, and the reversal index must not be rebuilt there.</span>
+<a id="L189" name="L189"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L190" name="L190"></a>    <span class="n">cu_seqlens</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<a id="L191" name="L191"></a>    <span class="n">n</span><span class="p">:</span> <span class="nb">int</span>
+<a id="L192" name="L192"></a>    <span class="n">segment_ids</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L193" name="L193"></a>    <span class="n">reverse_index</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L194" name="L194"></a>    <span class="n">cu_pair</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">init</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L195" name="L195"></a>
+<a id="L196" name="L196"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">__post_init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L197" name="L197"></a>        <span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">cu_seqlens</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L198" name="L198"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">segment_ids</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cu_seqlens</span><span class="p">,</span> <span class="n">pos</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+<a id="L199" name="L199"></a>        <span class="n">starts</span><span class="p">,</span> <span class="n">ends</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cu_seqlens</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">cu_seqlens</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+<a id="L200" name="L200"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">reverse_index</span> <span class="o">=</span> <span class="n">starts</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">segment_ids</span><span class="p">]</span> <span class="o">+</span> <span class="p">(</span><span class="n">ends</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">segment_ids</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">pos</span><span class="p">)</span>
+<a id="L201" name="L201"></a>        <span class="c1"># Reversing each segment in place leaves lengths and segment order untouched, so the pack</span>
+<a id="L202" name="L202"></a>        <span class="c1"># followed by its reversed twin is described by these same boundaries shifted by n.</span>
+<a id="L203" name="L203"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">cu_pair</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">cu_seqlens</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">cu_seqlens</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">n</span><span class="p">])</span>
+<a id="L204" name="L204"></a>
+<a id="L205" name="L205"></a>
+<a id="L206" name="L206"></a><span class="n">_LAYOUT_CACHE</span><span class="p">:</span> <span class="n">OrderedDict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+<a id="L207" name="L207"></a><span class="n">_LAYOUT_CACHE_SIZE</span> <span class="o">=</span> <span class="mi">16</span>
+<a id="L208" name="L208"></a>
+<a id="L209" name="L209"></a>
+<a id="L210" name="L210"></a><span class="k">def</span><span class="w"> </span><span class="nf">packed_layout</span><span class="p">(</span><span class="n">cu_seqlens</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PackedLayout</span><span class="p">:</span>
+<a id="L211" name="L211"></a>    <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">cu_seqlens</span><span class="p">),</span> <span class="n">n</span><span class="p">)</span>
+<a id="L212" name="L212"></a>    <span class="n">layout</span> <span class="o">=</span> <span class="n">_LAYOUT_CACHE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<a id="L213" name="L213"></a>    <span class="k">if</span> <span class="n">layout</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L214" name="L214"></a>        <span class="n">_LAYOUT_CACHE</span><span class="o">.</span><span class="n">move_to_end</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<a id="L215" name="L215"></a>        <span class="k">return</span> <span class="n">layout</span>
+<a id="L216" name="L216"></a>    <span class="n">layout</span> <span class="o">=</span> <span class="n">PackedLayout</span><span class="p">(</span><span class="n">cu_seqlens</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span>
+<a id="L217" name="L217"></a>    <span class="c1"># The cache holds cu_seqlens itself, so an id can never be recycled under a live entry.</span>
+<a id="L218" name="L218"></a>    <span class="n">_LAYOUT_CACHE</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">layout</span>
+<a id="L219" name="L219"></a>    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">_LAYOUT_CACHE</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_LAYOUT_CACHE_SIZE</span><span class="p">:</span>
+<a id="L220" name="L220"></a>        <span class="n">_LAYOUT_CACHE</span><span class="o">.</span><span class="n">popitem</span><span class="p">(</span><span class="n">last</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L221" name="L221"></a>    <span class="k">return</span> <span class="n">layout</span>
+<a id="L222" name="L222"></a>
+<a id="L223" name="L223"></a>
+<a id="L224" name="L224"></a><span class="n">_CU_ON_DEVICE_CACHE</span><span class="p">:</span> <span class="n">OrderedDict</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+<a id="L225" name="L225"></a><span class="n">_CU_ON_DEVICE_CACHE_SIZE</span> <span class="o">=</span> <span class="mi">16</span>
+<a id="L226" name="L226"></a>
+<a id="L227" name="L227"></a>
+<a id="L228" name="L228"></a><span class="k">def</span><span class="w"> </span><span class="nf">cu_seqlens_on_device</span><span class="p">(</span><span class="n">cu_seqlens</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<a id="L229" name="L229"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;cu_seqlens on `device`, with at most one transfer per source tensor.</span>
+<a id="L230" name="L230"></a>
+<a id="L231" name="L231"></a><span class="sd">    The dataloader builds cu_seqlens on the CPU (host-side slicing stays free there), but</span>
+<a id="L232" name="L232"></a><span class="sd">    varlen kernels (flash-attn, fla) insist on a device copy: a bare .to(device) inside a</span>
+<a id="L233" name="L233"></a><span class="sd">    kernel re-runs the H2D hop once per layer, per direction. Keyed by the identity of the</span>
+<a id="L234" name="L234"></a><span class="sd">    source tensor, exactly like packed_layout, so a batch pays the transfer once per step</span>
+<a id="L235" name="L235"></a><span class="sd">    however many layers consume it. dtype=None keeps the source dtype.</span>
+<a id="L236" name="L236"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L237" name="L237"></a>    <span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+<a id="L238" name="L238"></a>    <span class="k">if</span> <span class="n">cu_seqlens</span><span class="o">.</span><span class="n">device</span> <span class="o">==</span> <span class="n">target</span> <span class="ow">and</span> <span class="p">(</span><span class="n">dtype</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">cu_seqlens</span><span class="o">.</span><span class="n">dtype</span> <span class="o">==</span> <span class="n">dtype</span><span class="p">):</span>
+<a id="L239" name="L239"></a>        <span class="k">return</span> <span class="n">cu_seqlens</span>
+<a id="L240" name="L240"></a>    <span class="n">key</span> <span class="o">=</span> <span class="p">(</span><span class="nb">id</span><span class="p">(</span><span class="n">cu_seqlens</span><span class="p">),</span> <span class="nb">str</span><span class="p">(</span><span class="n">target</span><span class="p">),</span> <span class="n">dtype</span><span class="p">)</span>
+<a id="L241" name="L241"></a>    <span class="n">cached</span> <span class="o">=</span> <span class="n">_CU_ON_DEVICE_CACHE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<a id="L242" name="L242"></a>    <span class="k">if</span> <span class="n">cached</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L243" name="L243"></a>        <span class="n">_CU_ON_DEVICE_CACHE</span><span class="o">.</span><span class="n">move_to_end</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<a id="L244" name="L244"></a>        <span class="k">return</span> <span class="n">cached</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+<a id="L245" name="L245"></a>    <span class="n">moved</span> <span class="o">=</span> <span class="n">cu_seqlens</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">target</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+<a id="L246" name="L246"></a>    <span class="c1"># The cache holds cu_seqlens itself, so an id can never be recycled under a live entry.</span>
+<a id="L247" name="L247"></a>    <span class="n">_CU_ON_DEVICE_CACHE</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">cu_seqlens</span><span class="p">,</span> <span class="n">moved</span><span class="p">)</span>
+<a id="L248" name="L248"></a>    <span class="k">while</span> <span class="nb">len</span><span class="p">(</span><span class="n">_CU_ON_DEVICE_CACHE</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">_CU_ON_DEVICE_CACHE_SIZE</span><span class="p">:</span>
+<a id="L249" name="L249"></a>        <span class="n">_CU_ON_DEVICE_CACHE</span><span class="o">.</span><span class="n">popitem</span><span class="p">(</span><span class="n">last</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L250" name="L250"></a>    <span class="k">return</span> <span class="n">moved</span>
+<a id="L251" name="L251"></a>
+<a id="L252" name="L252"></a>
+<a id="L253" name="L253"></a><span class="nd">@dataclass</span><span class="p">(</span><span class="n">frozen</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">kw_only</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L254" name="L254"></a><span class="k">class</span><span class="w"> </span><span class="nc">UnpaddedTensor</span><span class="p">(</span><a href="#L13"><span class="n">TensorDC</span></a><span class="p">):</span>
+<a id="L255" name="L255"></a>    <span class="n">indices</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<a id="L256" name="L256"></a>    <span class="n">cu_seqlens</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span>
+<a id="L257" name="L257"></a>    <span class="n">max_seq_len</span><span class="p">:</span> <span class="nb">int</span>
+<a id="L258" name="L258"></a>    <span class="n">original_seq_len</span><span class="p">:</span> <span class="nb">int</span>
+<a id="L259" name="L259"></a>    <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span>
+<a id="L260" name="L260"></a>    <span class="n">isUnpadded</span><span class="p">:</span> <span class="n">ClassVar</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L261" name="L261"></a>
+<a id="L262" name="L262"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">unpad</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;UnpaddedTensor&quot;</span><span class="p">:</span>
+<a id="L263" name="L263"></a>        <span class="k">return</span> <span class="bp">self</span>
+<a id="L264" name="L264"></a>
+<a id="L265" name="L265"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">pad</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">seq_len</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">pad_token</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;PaddedTensor&quot;</span><span class="p">:</span>
+<a id="L266" name="L266"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Scatter packed tokens back into a (batch, seq_len) padded layout. `pad_token` fills the main tensor&#39;s pad slots; attributes are always zero-filled.&quot;&quot;&quot;</span>
+<a id="L267" name="L267"></a>        <span class="n">target_seq_len</span> <span class="o">=</span> <span class="n">seq_len</span> <span class="k">if</span> <span class="n">seq_len</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">original_seq_len</span>
+<a id="L268" name="L268"></a>        <span class="n">n</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">*</span> <span class="n">target_seq_len</span>
+<a id="L269" name="L269"></a>
+<a id="L270" name="L270"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">_scatter</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<a id="L271" name="L271"></a>            <span class="n">out</span> <span class="o">=</span> <span class="n">v</span><span class="o">.</span><span class="n">new_full</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="o">*</span><span class="n">v</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">:]),</span> <span class="n">fill</span><span class="p">)</span>
+<a id="L272" name="L272"></a>            <span class="n">out</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="n">v</span>
+<a id="L273" name="L273"></a>            <span class="k">return</span> <span class="n">rearrange</span><span class="p">(</span><span class="n">out</span><span class="p">,</span> <span class="s1">&#39;(b s) ... -&gt; b s ...&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">target_seq_len</span><span class="p">)</span>
+<a id="L274" name="L274"></a>
+<a id="L275" name="L275"></a>        <span class="n">padding_mask_flat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L276" name="L276"></a>        <span class="n">padding_mask_flat</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">indices</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L277" name="L277"></a>
+<a id="L278" name="L278"></a>        <span class="k">return</span> <span class="n">PaddedTensor</span><span class="p">(</span>
+<a id="L279" name="L279"></a>            <span class="n">tensor</span><span class="o">=</span><span class="n">_scatter</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="n">pad_token</span><span class="p">),</span>
+<a id="L280" name="L280"></a>            <span class="n">padding_mask</span><span class="o">=</span><span class="n">rearrange</span><span class="p">(</span><span class="n">padding_mask_flat</span><span class="p">,</span> <span class="s1">&#39;(b s) -&gt; b s&#39;</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">target_seq_len</span><span class="p">),</span>
+<a id="L281" name="L281"></a>            <span class="n">following_attributes</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">_scatter</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">following_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+<a id="L282" name="L282"></a>            <span class="n">attributes</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">attributes</span><span class="p">,</span>
+<a id="L283" name="L283"></a>        <span class="p">)</span>
+<a id="L284" name="L284"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">layout</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">PackedLayout</span><span class="p">:</span>
+<a id="L285" name="L285"></a>        <span class="k">return</span> <span class="n">packed_layout</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cu_seqlens</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+<a id="L286" name="L286"></a>
+<a id="L287" name="L287"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">cu_seqlens_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dtype</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">dtype</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<a id="L288" name="L288"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;cu_seqlens on the compute device (default: the one holding the tokens), transferred</span>
+<a id="L289" name="L289"></a><span class="sd">        at most once per batch — see cu_seqlens_on_device.&quot;&quot;&quot;</span>
+<a id="L290" name="L290"></a>        <span class="k">return</span> <span class="n">cu_seqlens_on_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">cu_seqlens</span><span class="p">,</span>
+<a id="L291" name="L291"></a>                                    <span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">device</span> <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="p">)</span>
+<a id="L292" name="L292"></a>
+<a id="L293" name="L293"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reverse_index</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<a id="L294" name="L294"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">reverse_index</span>
+<a id="L295" name="L295"></a>
+<a id="L296" name="L296"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">segment_ids</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
+<a id="L297" name="L297"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Which packed segment each token belongs to, for masking taps that would reach into</span>
+<a id="L298" name="L298"></a><span class="sd">        the neighbouring document.&quot;&quot;&quot;</span>
+<a id="L299" name="L299"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">segment_ids</span>
+<a id="L300" name="L300"></a>
+<a id="L301" name="L301"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">reverse</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;UnpaddedTensor&quot;</span><span class="p">:</span>
+<a id="L302" name="L302"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Flip within each packed segment; involution, and the index is shared, never rebuilt.&quot;&quot;&quot;</span>
+<a id="L303" name="L303"></a>        <span class="n">idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">reverse_index</span><span class="p">()</span>
+<a id="L304" name="L304"></a>        <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tensor</span><span class="p">[</span><span class="n">idx</span><span class="p">],</span>
+<a id="L305" name="L305"></a>                       <span class="n">following_attributes</span><span class="o">=</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">following_attributes</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+<a id="L306" name="L306"></a>
+<a id="L307" name="L307"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L308" name="L308"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span>
+<a id="L309" name="L309"></a>
+<a id="L310" name="L310"></a><span class="k">def</span><span class="w"> </span><span class="nf">apply_kernel</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L311" name="L311"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Run a kernel on `x`, which is either a TensorDC (its padding/unpadding wrapper rides along)</span>
+<a id="L312" name="L312"></a><span class="sd">    or a plain tensor. Registered kernels must accept both: nested inside another kernel - a linear</span>
+<a id="L313" name="L313"></a><span class="sd">    used by an MLP, for instance - there is no TensorDC left to carry the wrapper.&quot;&quot;&quot;</span>
+<a id="L314" name="L314"></a>    <span class="k">return</span> <span class="n">x</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">TensorDC</span><span class="p">)</span> <span class="k">else</span> <span class="n">module</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

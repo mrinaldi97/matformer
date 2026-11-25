@@ -12,7 +12,7 @@ def _to_serializable(obj):
         if isinstance(obj, np.generic):        # np.float32, np.int64, ...
             return obj.item()
         if isinstance(obj, dict):
-            return {k: str(_to_serializable(v)) for k, v in obj.items()}
+            return {str(k): _to_serializable(v) for k, v in obj.items()}
         if isinstance(obj, (list, tuple, set)):
             return [_to_serializable(v) for v in obj]
         return obj

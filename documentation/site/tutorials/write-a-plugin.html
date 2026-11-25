@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Write a plugin · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section" open><summary>Tutorials</summary><ul><li><a href="index.html">Tutorials</a></li><li><a href="registry.html">Use the registry</a></li><li><a href="add-a-task.html">Add a task</a></li><li><a href="use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a class="current" href="write-a-plugin.html">Write a plugin</a></li><li><a href="custom-tokenizer.html">Add a tokenizer</a></li><li><a href="train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Tutorials <span class="sep">/</span> Write a plugin</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/plugins/plugin_classes.py.html"><code>matformer/plugins/plugin_classes.py</code></a> <a href="../file/matformer/plugins/plugin_manager.py.html"><code>matformer/plugins/plugin_manager.py</code></a> <a href="../file/matformer/transformer_blocks/models/classification_models.py.html"><code>matformer/transformer_blocks/models/classification_models.py</code></a></div>
+<h1 id="write-a-plugin">Write a plugin<a class="headerlink" href="#write-a-plugin" title="Permanent link"></a></h1>
+<p>This example records the norm of the residual stream at every layer. It does not change the computation.</p>
+<h2 id="config">Config<a class="headerlink" href="#config" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matformer.plugins.plugin_classes</span><span class="w"> </span><span class="kn">import</span> <span class="n">PluginConfig</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;plugin&quot;</span><span class="p">,</span> <span class="s2">&quot;norm_probe&quot;</span><span class="p">)</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NormProbeConfig</span><span class="p">(</span><span class="n">PluginConfig</span><span class="p">):</span>
+    <span class="n">key</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;norms&quot;</span>
+</code></pre></div>
+
+<p><code>PluginConfig</code> provides <code>targets</code> and <code>name</code>. <code>targets</code> is the pattern used when the plugin is mounted from the config; <code>name</code> is the instance alias.</p>
+<h2 id="plugin">Plugin<a class="headerlink" href="#plugin" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matformer.plugins.plugin_classes</span><span class="w"> </span><span class="kn">import</span> <span class="n">Plugin</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;plugin&quot;</span><span class="p">,</span> <span class="s2">&quot;norm_probe&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">NormProbe</span><span class="p">(</span><span class="n">Plugin</span><span class="p">):</span>
+    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;norm_probe&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">value</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">float</span><span class="p">()</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">cache</span><span class="o">.</span><span class="n">storage</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">key</span><span class="p">,</span> <span class="p">[])</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+        <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+
+<p><code>forward</code> receives a <a href="../components/tensors.html">TensorDC</a>; <code>x.tensor</code> is the underlying tensor. Returning <code>None</code> keeps the input unchanged. Returning a new value makes the plugin active.</p>
+<h2 id="mount">Mount<a class="headerlink" href="#mount" title="Permanent link"></a></h2>
+<p>From the config:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">plugin</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">norms</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">norm_probe</span>
+<span class="w">    </span><span class="nt">targets</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;*.layers.*.post_add_mlp&quot;</span>
+<span class="w">    </span><span class="nt">key</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">residual_norms</span>
+</code></pre></div>
+
+<p>The plugin manager matches the pattern against every socket address and mounts one instance per match. At runtime:</p>
+<div class="highlight"><pre><span></span><code><span class="n">wrapper</span><span class="o">.</span><span class="n">add_end</span><span class="p">(</span><span class="s2">&quot;*.layers.*.post_add_mlp&quot;</span><span class="p">,</span> <span class="n">NormProbeConfig</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="s2">&quot;residual_norms&quot;</span><span class="p">))</span>
+</code></pre></div>
+
+<p>The pattern uses <code>fnmatch</code>; <code>*</code> crosses dots. <code>attach</code> raises when the pattern matches no socket. <code>wrapper.inspect("*.layers.*")</code> lists the current sockets.</p>
+<h2 id="read-the-data">Read the data<a class="headerlink" href="#read-the-data" title="Permanent link"></a></h2>
+<p><code>cache.storage["residual_norms"]</code> contains one entry per socket and visit. A task can read it in <code>compute()</code> and return it in the summary. <code>visit</code> distinguishes the passes of a looped model.</p>
+<h2 id="parameters">Parameters<a class="headerlink" href="#parameters" title="Permanent link"></a></h2>
+<p>A plugin that creates modules in <code>__init__</code> is an <code>nn.Module</code>. Its parameters are stored in the model state dict under <code>&lt;socket&gt;_&lt;name&gt;.*</code> and are trained with the model unless frozen. <code>freeze: ["plugin_type:norm_probe"]</code> freezes them.</p>
+<h2 id="further-examples">Further examples<a class="headerlink" href="#further-examples" title="Permanent link"></a></h2>
+<ul>
+<li><a href="../components/plugins.html">Plugins</a> documents the runtime operations, naming rules and state dict.</li>
+<li><code>ClassificationPlugin</code> is an active plugin with pooling, dropout, extra layers and a head.</li>
+<li>The activation-cache plugins in <code>matformer/plugins/plugin_modules</code> are passive plugins that write to an activation store.</li>
+</ul>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

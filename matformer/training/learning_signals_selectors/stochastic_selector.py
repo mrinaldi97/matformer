@@ -1,5 +1,5 @@
 from matformer.matformer_registry import registry
-from matformer.training.learning_signals_selectors import LearningSignalSelector
+from matformer.training import LearningSignalSelector
 import torch
 @registry.register("learning_signal_selector", "stochastic", "default")
 class StochasticSelector(LearningSignalSelector):

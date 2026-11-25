@@ -1,18 +1,37 @@
 #matformer/training/matformer_trainer.py
-import math, os, torch
+import json, math, os, time, torch
 from lightning.fabric import Fabric
 from lightning.fabric.strategies import DDPStrategy
 from matformer.matformer_registry import registry
-from matformer.matformer_wrapper import MatformerModelWrapper
+from matformer.matformer_wrapper import MatformerModelWrapper, resolve_wrapper
+from matformer.training import control
 from matformer.training.ckpt_manager import CheckpointDirectoryManager
 from matformer.matformer_wrapper import load_model
 from matformer.training.optimizers import configure_optimizers
 from matformer.training.lr_scheduler import configure_lr_schedulers
 from matformer.training.logger import MatformerLogger
+from matformer.training.sqlite_logger import run_dir_for
 from matformer.utils import env_variables
+from matformer.utils.table import Table
+from matformer.training.utils import precision_dtype, matmul_parameter_count, peak_tflops, step_flops
 from matformer.loading.utils import make_holder
 from pathlib import Path
 from tqdm import tqdm
+
+
+def _batch_tokens(batch):
+    # TODO2: where is this used? Is it still relevant or deprecated?
+    """(tokens, sequences) of a batch, read from its shape alone: no reduction, hence no device
+    synchronisation. The padded path counts its nominal width, padding included, which is what its
+    kernels really pay for."""
+    try:
+        if getattr(batch, "isUnpadded", False):
+            return int(batch.tensor.shape[0]), int(batch.batch_size)
+        return int(batch.tensor.numel()), int(batch.tensor.shape[0])
+    except (AttributeError, TypeError, IndexError):
+        return 0, 0
+
+
 class MatformerTrainer:
     def __init__(self, configs, device='auto', logger=None, fabric=None, fabric_loggers=None,
                  hooks=None):
@@ -33,8 +52,11 @@ class MatformerTrainer:
         self._restore_states()
         self._setup_logger()
         self._setup_fabric_wrapping()
+        self.control = control.channel()
+        self.control.install_signals()
 
     def _setup_fabric(self):
+        """ Setups torch.fabric for distributed training; currently hardcoded to DDP"""
         if self.fabric is None:
             self.fabric_loggers = {
                 name: fl for name in self.configs.training.logger
@@ -54,6 +76,9 @@ class MatformerTrainer:
             self.fabric.seed_everything(self.configs.training.get('seed', 27))
 
     def _setup_checkpoint(self):
+        """ Uses the CheckpointDirectoryManager to decide if to resume from a checkpoint or start from scratch
+        	Return the checkpoint_holder instance that will be used for training (either wrapping an existing checkpoint or a base model to be further trained) or None if the training starts/restarts from scratch.
+        """
         self.ckpt_manager = CheckpointDirectoryManager(
             self.configs.training.save_dir, self.configs.training.checkpoint_name, self.configs.training.version)
         self.load_path, _, reason = self.ckpt_manager.decide_checkpoint(
@@ -63,7 +88,7 @@ class MatformerTrainer:
         if self.load_path:
             self.checkpoint_holder = registry.create("checkpoint_holder", "matformer", path=self.load_path,
                                     what_to_reset=self.configs.training.what_to_reset)
-            if self.configs.model.base_model:
+            if getattr(self.configs.model, "base_model", None):
                 self.fabric.print(f"Checkpoint is loaded instead of the base model.")
         elif getattr(self.configs.model,"base_model",None):
             self.fabric.print(f"Training is inheriting weights and config from the base model: {self.configs.model.base_model}.")
@@ -72,6 +97,9 @@ class MatformerTrainer:
             self.checkpoint_holder = None
 
     def _setup_model(self):
+        # Start of AI slop 
+        # Those lines must be rewritten, they are sloppish. Ok to overwrite num_classes from the dataset configs, but this is defnitely not the idiomatically correct way to do it!!!
+        # Just check "configs.data"!!! Why "any config that has label2id inside", it's ugly, sloppish and longer than it could be. Or perhaps there are other dataclasses with num classes? I don't remember that
         # Cheap, pre-build alignment: when label2id is declared in the data section, the dataset is
         # the source of truth for num_classes (heads are about to be built from it)
         label2id = next((c.label2id for c in self.configs.instances() if getattr(c, "label2id", None)), None)
@@ -81,11 +109,12 @@ class MatformerTrainer:
                     self.fabric.print(f"WARNING: '{cfg.name}' num_classes={cfg.num_classes} overridden "
                                       f"with {len(label2id)} labels from the dataset's label2id")
                     cfg.num_classes = len(label2id)
-
+        # End of AI slop
         model_dict = load_model(
             checkpoint_holder=self.checkpoint_holder,
             configs=self.configs,
             inference=False,
+            dtype=precision_dtype(self.configs.training.precision),
             map_location=self.device
                     )
         self.configs = model_dict['configs'] # Configs are returned by the model and overwrite the original
@@ -115,6 +144,7 @@ class MatformerTrainer:
         if self.total_steps is None:
             self.fabric.print("The Datamodule is not returning the length. Thus, LR scheduling is disabled")
             self.configs.set_override("training.lr_scheduling=False")
+        # AI SLOP start
         # Hard clash check: labels are now fully resolved (a full scan ran if label2id was absent).
         # Anything still inconsistent with the dataset is a user error: stop instead of letting
         # cross_entropy crash later with an opaque CUDA device-side assert.
@@ -132,7 +162,7 @@ class MatformerTrainer:
                     raise ValueError(f"The dataset has {num_labels} labels but model num_classes is unset "
                                      f"(classification heads would silently default to 2 classes): "
                                      f"set 'num_classes: {num_labels}' in the model section.")
-
+        # AI SLOP end
     def _setup_optimization(self):
         # Configure optimizer(s)
         self.optimizers = configure_optimizers(self.model, self.configs.training) #(!) According to torch doc, it's important to initialize scheduler before optimizer to avoid losing states
@@ -258,10 +288,14 @@ class MatformerTrainer:
         `what`: 'model', 'plugins' ('plugin' accepted too) or 'both'."""
         what = {"plugin": "plugins"}.get(what, what)
         assert what in ("model", "plugins", "both"), f"Unknown save target: {what}"
+        save_path = None
         if what in ("model", "both"):
-            self.save_checkpoint(step=step, epoch=epoch, save_path=model_path)
+            save_path = self.save_checkpoint(step=step, epoch=epoch, save_path=model_path)
         if what in ("plugins", "both"):
             self.save_plugins(step=step, epoch=epoch, save_path=plugins_path)
+            if save_path is None and plugins_path is not None:
+                save_path = plugins_path
+        return save_path
 
     def save_checkpoint(self, step, epoch, save_path=None, exclude=None):
         use_manager = save_path is None
@@ -294,11 +328,16 @@ class MatformerTrainer:
 
         if use_manager and (self.fabric is None or self.fabric.is_global_zero):
             self.ckpt_manager.mark_saved(step, save_path)
+        return save_path
 
     def train(self):
         train_config = self.configs.training
         validation_group = self.configs.validation if hasattr(self.configs, 'validation') else None
         val_every = train_config.validate_every_n_steps
+        # Throughput rarely moves during a run, so it is measured over a window of steps and logged as
+        # rarely as asked: [clock when the window opened, step it opened at, tokens, sequences].
+        every = int(getattr(train_config, 'log_speed_every_n_steps', 0) or 0)
+        window = [time.perf_counter(), self.step, 0, 0]
 
         total_steps = getattr(train_config, 'total_steps', None)
         if validation_group:
@@ -308,18 +347,25 @@ class MatformerTrainer:
                         raise ValueError(f"Validation '{vname}' sets every_percent_steps={vcfg.every_percent_steps} "
                                         f"but training.total_steps is None.")
                     self.configs.set_override(f"validation.{vname}.every_n_steps={int(total_steps * vcfg.every_percent_steps)}")
-
+        # Start of the training steps
         for i, epoch in enumerate(range(train_config.max_epochs)):
+            if self.control.stop:
+                break
             print(f"Epoch {i}/{train_config.max_epochs}")
             getattr(self.model, 'on_epoch_start', lambda: None)()  
             for batch_idx, batch in enumerate(self.dataloader):
                 if batch_idx>self.total_steps:
-                    print("Total steps: {self.total_steps} reached.")
+                    print(f"Total steps: {self.total_steps} reached.", flush=True)
                     break
+                if every: #TODO2/AI SLOP: a bit ugly... different variable name? It's not immediately clear what this code does
+                    tokens, sequences = _batch_tokens(batch)
+                    window[2] += tokens
+                    window[3] += sequences
                 is_accumulating = (batch_idx + 1) % train_config.get('accumulate_grad_batches',1) != 0
 
                 with self.fabric.no_backward_sync(self.model, enabled=is_accumulating):
                     loss = self.model.training_step(batch, batch_idx)
+                    self._last_loss = loss.detach() if torch.is_tensor(loss) else loss
                     self.fabric.backward(loss / train_config.get('accumulate_grad_batches',1))
 
                 if not is_accumulating:
@@ -328,8 +374,6 @@ class MatformerTrainer:
                     for optimizer in self.optimizers: optimizer.step()
                     #if self.hooks.on_after_optimizer:  self.hooks.on_after_optimizer(self.model, self.optimizers)
                     if self.schedulers:
-                        # The LR log is now inside the loop (it used to be after it, so only the last scheduler
-                        # was logged), and the index is renamed from `i` to `s_idx` so it doesn't shadow the epoch index
                         for s_idx, scheduler in enumerate(self.schedulers):
                             scheduler.step()
                             self.logger.log(f"lr{s_idx}", scheduler.get_last_lr()[0], step=self.step, prog_bar=True, on_step=True, on_epoch=False)
@@ -337,6 +381,10 @@ class MatformerTrainer:
                     self.step += 1
                     self.step_ref[0] = self.step
                     self.logger.advance()
+                    if every and self.step - window[1] >= every:
+                        self._report_speed(time.perf_counter() - window[0], window[2], window[3],
+                                           self.step - window[1])
+                        window[:] = [time.perf_counter(), self.step, 0, 0]
                     #if self.hooks.on_step_end: self.hooks.on_step_end(self.model, self.step, loss)
                     #for every_n, fn in self.hooks.periodic.items():
                     #    if self.step % every_n == 0: fn(self.model, self.step)
@@ -353,6 +401,15 @@ class MatformerTrainer:
                     if train_config.save_every_n_steps > 0 and self.step % train_config.save_every_n_steps == 0:
                         self.save(step=self.step, epoch=self.epoch, what=train_config.save_what)
 
+                    if control.poll(self):
+                        print(f"[control] ending the loop at step {self.step}", flush=True)
+                        break
+                    if self.control.paused:
+                        self.control.wait(self)
+                        if self.control.stop:
+                            print(f"[control] ending the paused loop at step {self.step}", flush=True)
+                            break
+
             self.epoch += 1
             if train_config.save_every_n_epochs > 0 and self.epoch % train_config.save_every_n_epochs == 0:
                 self.save(step=self.step, epoch=self.epoch, what=train_config.save_what)
@@ -366,9 +423,439 @@ class MatformerTrainer:
             self.logger.reset()
         # training finished
 
+#TODO2: _report_speed, _mock_batch, _probe_step, probe_memory makes the code unpleasant to read, consider moving somewhere else (ex. in utils) and subclass/import
+
+    def _report_speed(self, seconds, tokens, sequences, steps):
+        """Throughput of the last `steps` steps in the units trainings are compared by: tokens per
+        second, sequences per second, the FLOPs actually performed, and MFU — their share of the
+        device's peak. Every number comes from counters the loop already holds plus one clock read per
+        window, so nothing is synchronised in order to measure it. Figures are per rank; the cluster
+        ones multiply by the world size, and MFU is identical either way."""
+        environment = getattr(self, "_speed_environment", None)
+        if environment is None:
+            name = ""
+            try:
+                if self.fabric.device.type == "cuda":
+                    name = torch.cuda.get_device_name(self.fabric.device)
+            except Exception:
+                name = ""
+            model = getattr(self.configs, "model", None)
+            signals = [str(one) for one in (getattr(self.configs.training, "learning_signals", None) or [])]
+            environment = {"device": name,
+                           "parameters": matmul_parameter_count(self.model),
+                           "layers": int(getattr(model, "num_hidden_layers", 0) or 0),
+                           "hidden": int(getattr(model, "hidden_size", 0) or 0),
+                           "peak": peak_tflops(name, self.configs.training.precision),
+                           # A masked objective attends in both directions: twice the quadratic term.
+                           "causal": not any("mask" in one.lower() for one in signals)}
+            self._speed_environment = environment
+        seconds, steps = max(float(seconds), 1e-9), max(int(steps), 1)
+        world = max(int(getattr(self.fabric, "world_size", 1) or 1), 1)
+        step_seconds = seconds / steps
+        per_step_tokens, per_step_sequences = tokens / steps, sequences / steps
+        rate = step_flops(per_step_tokens, environment["parameters"], environment["layers"],
+                          environment["hidden"], per_step_tokens / max(per_step_sequences, 1.0),
+                          causal=environment["causal"]) / step_seconds
+        speed = {"tokens_per_second": per_step_tokens / step_seconds,
+                 "tokens_per_second_cluster": world * per_step_tokens / step_seconds,
+                 "sequences_per_second": per_step_sequences / step_seconds,
+                 "steps_per_second": 1.0 / step_seconds,
+                 "step_ms": 1000.0 * step_seconds,
+                 "tflops": rate / 1e12,
+                 "tflops_cluster": world * rate / 1e12,
+                 "mfu_percent": (100.0 * rate / (environment["peak"] * 1e12)
+                                 if environment["peak"] else None),
+                 "peak_tflops": environment["peak"], "device": environment["device"]}
+        for key, value in speed.items():
+            if isinstance(value, (int, float)):
+                self.logger.log(f"speed/{key}", value, prog_bar=(key == "tokens_per_second"))
+        self._last_speed = speed
+        return speed
+
+    def _mock_batch(self, rows, seq_len):
+        """A batch of mock tokens, built by the dataloader's own `collate_fn`: same type, same packing,
+        same attributes, no document read, because the only thing at stake is how many tokens a step
+        carries. Every row is as long as the config allows and continues its own document, which is the
+        shape a step costs the most in."""
+        import numpy as np
+        pad = int(getattr(self.configs.tokenizer, "pad_token_id", 0) or 0)
+        vocab = max(int(getattr(self.configs.model, "vocab_size", 0) or 0), pad + 2, 2)
+        ids = np.random.randint(1, vocab, size=(rows, seq_len))
+        if pad:
+            ids[ids == pad] = 1
+        task = str(getattr(self.datamodule.config, "task", "lm") or "lm")
+        classes = next((one.num_classes for one in self.configs.instances()
+                        if getattr(one, "num_classes", None)), 2)
+        labels = (np.random.randint(0, max(int(classes), 1), size=(rows, seq_len))
+                  if task == "token-level" else
+                  np.random.randint(0, max(int(classes), 1), size=rows)
+                  if task in ("sentence-level", "regression") else None)
+        items = []
+        for row in range(rows):
+            item = {"object": ids[row].tolist(), "is_same_document": True}
+            if labels is not None:
+                item["labels"] = labels[row].tolist() if task == "token-level" else int(labels[row])
+            items.append(item)
+        return self.datamodule.collate_fn(items).to(self.fabric.device)
+
+    def _probe_step(self, rows, seq_len, optimize=False, sync_gradients=False):
+        """One mock forward and backward on the live model, and the memory it peaks at: `(fits, bytes)`.
+        Gradient reduction is off while the search runs — a rank that dies of OOM halfway through a step
+        would otherwise leave its partners waiting in a collective forever — and the reduction buffers
+        exist anyway, because the warm-up step does synchronise. Anything that is not a full GPU is
+        re-raised: a probe is no place to hide a real bug behind a shrunken batch size."""
+        cuda = self.fabric.device.type == "cuda"
+        batch, floor, allocated, reserved = None, 0, 0, 0
+        if cuda:
+            floor = torch.cuda.memory_allocated()
+            torch.cuda.reset_peak_memory_stats()
+        try:
+            batch = self._mock_batch(rows, seq_len)
+            with self.fabric.no_backward_sync(self.model, enabled=not sync_gradients):
+                loss = self.model.training_step(batch, 0)
+                self.fabric.backward(loss)
+                if optimize:
+                    self.fabric.clip_gradients(self.model, self.optimizers[0],
+                                               max_norm=self.configs.training.gradient_clip_val)
+                    for optimizer in self.optimizers:
+                        optimizer.step()
+            fits = True
+        except Exception as raised:
+            if not (isinstance(raised, torch.cuda.OutOfMemoryError)
+                    or any(word in str(raised).lower() for word in ("memory", "cublas", "nccl"))):
+                raise
+            fits = False      # keep no reference to it: an exception holds every frame of the failed
+                              # step, and with them the activations it died on — the next attempt would
+                              # inherit a full GPU and report an out-of-memory it never caused
+        # Read before the clean-up, so it is this attempt's own high-water mark. Allocated peak is what
+        # the search extrapolates on: it always comes back down between attempts, while reserved is a
+        # mark the allocator may hold on to for a while.
+        if cuda:
+            allocated, reserved = (torch.cuda.max_memory_allocated(),
+                                   torch.cuda.max_memory_reserved())
+        for optimizer in self.optimizers:
+            optimizer.zero_grad(set_to_none=True)
+        cache = getattr(self.model, "cache", None)
+        if getattr(cache, "storage", None):
+            cache.storage.clear()
+        if getattr(cache, "clear_cache", None):        # alibi/mask/rotary caches are keyed by shape:
+            cache.clear_cache()                        # without this, each new batch size in the search
+                                                       # leaves another matrix behind and ratchets the
+                                                       # floor up until everything after OOMs
+        batch = None
+        if cuda and not fits:
+            import gc
+            gc.collect()
+            torch.cuda.empty_cache()        # let the next attempt start from a clean allocator
+        return fits, floor, allocated, reserved
+
+    def probe_memory(self, fill=0.94, max_rows=0, steps=3, seq_len=None, apply=False,
+                     keep_weights=True, report_path=None):
+        """How big a batch this run really fits, and how fast it then goes.
+
+        The trainer is the one place where everything that costs memory is assembled at once —
+        parameters, gradients, the optimizer's moments, DDP buckets, mounted plugins, the layer schedule
+        with its loops — so the question is answered here, on the live model, without rebuilding anything
+        between attempts. Mock tokens stand in for the dataset: the MDAT is never read, because only the
+        token count is at stake.
+
+        The worst case is what gets measured, since that is what a long run eventually hits: every row at
+        `max_seq_len`, the masking rate pinned to the highest the config allows (predicting more positions
+        means gathering more rows out of the vocabulary), and every configured learning signal walked in
+        turn, so a run alternating CLM and MLM is bounded by its dearer objective. What no probe can
+        promise is that an arbitrary plugin never allocates on a path this walk does not take.
+
+        The search is the cheap part: two measured points are enough, because activation memory is linear
+        in tokens, so `peak = intercept + slope * rows` predicts the ceiling directly. The prediction is
+        then verified, and the answer bisected if it was wrong — five or six steps forward and back, a
+        handful of seconds.
+
+        `steps` real steps at the winning size confirm the answer is stable rather than lucky (a model
+        that keeps activations from one step to the next does not say so in a single step) and time them.
+        Returns the full report; `apply` also hands the found batch size to this trainer's dataloader, so
+        that a probe and the training that follows it can share one job. Probing takes real steps, so the
+        weights and the optimizer's state are put back afterwards unless `keep_weights=False`."""
+        training, data = self.configs.training, self.datamodule.config
+        seq_len = int(seq_len or getattr(data, "max_seq_len", None)
+                      or getattr(self.configs.model, "max_position_embeddings", 0) or 0)
+        cuda = self.fabric.device.type == "cuda"
+        total = torch.cuda.get_device_properties(self.fabric.device).total_memory if cuda else 0
+        budget, world = int(total * fill), max(int(self.fabric.world_size or 1), 1)
+        accumulate = int(getattr(training, "accumulate_grad_batches", 1) or 1)
+        # Fabric wraps the model, and the DDP strategy wraps it once more: the object whose attributes
+        # the training step actually reads is the Matformer wrapper underneath both, and that is where a
+        # probe has to install itself. Anything else would be a flag nobody looks at, and an out-of-memory
+        # would be swallowed exactly as it is during training.
+        target = resolve_wrapper(self.model)
+        if not isinstance(target, MatformerModelWrapper):
+            target = self.model
+        target.strict_steps = True        # a probe needs the failure, not the wrapper's skipped batch
+        selector = getattr(target, "learning_signal_selector", None)
+        signals = list(getattr(selector, "learning_signals", []) or [])
+        names = [type(one).__name__.replace("LearningSignal", "") for one in signals]
+        attempts, peak, fits, slope, low = [], 0, True, 0, max(int(training.batch_size or 1), 1)
+        started, tokens, sequences, done = time.perf_counter(), 0, 0, 0
+
+        def to_cpu(obj):
+            if torch.is_tensor(obj):
+                return obj.detach().to("cpu")
+            if isinstance(obj, dict):
+                return {key: to_cpu(value) for key, value in obj.items()}
+            if isinstance(obj, (list, tuple)):
+                return type(obj)(to_cpu(value) for value in obj)
+            return obj
+
+        # Worst case masking: the gather a masked loss performs over the vocabulary is sized by how many
+        # positions are predicted, so the *average* rate would undershoot the real peak.
+        rates = {}
+        for signal in signals:
+            maskerator = getattr(signal, "maskerator", None)
+            if maskerator is None:
+                continue
+            configured = getattr(getattr(self.configs, "masking", None), "masked_substitution_rate", None)
+            worst = (max(configured) if isinstance(configured, (list, tuple)) and configured
+                     else configured if isinstance(configured, (int, float)) and configured else 0.15)
+            rates[id(maskerator)] = (maskerator.substitution_rate, maskerator.substitution_rate_upper,
+                                     maskerator.external_schedule)
+            maskerator.substitution_rate, maskerator.substitution_rate_upper = float(worst), None
+            maskerator.external_schedule = False
+        # One signal at a time, each of them, so that both halves of a hybrid run get bounded. A
+        # multitask selector already sums them into one step, which is heavier still: leave it alone.
+        cycle = None
+        if selector is not None and len(signals) > 1 and \
+                "multitask" not in str(getattr(training, "learning_signal_selector", "")):
+            import itertools
+            cycle = itertools.cycle(signals)
+            selector.pick = lambda batch, batch_idx=None: [next(cycle)]
+
+        def probe(rows, optimize=False, sync_gradients=False):
+            ok, floor, measured, held = self._probe_step(rows, seq_len, optimize=optimize,
+                                                         sync_gradients=sync_gradients)
+            if world > 1:
+                ok = bool(self.fabric.all_reduce(torch.tensor([1.0 if ok else 0.0],
+                                                              device=self.fabric.device),
+                                                 reduce_op="min").item())
+            attempts.append({"rows": rows, "tokens": rows * seq_len, "fits": ok,
+                             "floor_mib": round(floor / 2 ** 20),
+                             "peak_mib": round(measured / 2 ** 20),
+                             "reserved_mib": round(held / 2 ** 20)})
+            self.fabric.print(f"[probe] {rows:>7} rows  {rows * seq_len:>10} tokens  "
+                              f"{'fits' if ok else 'OOM'}  peak {measured / 2 ** 20:>7.0f} MiB "
+                              f"(+{(measured - floor) / 2 ** 20:>6.0f})  held {held / 2 ** 20:>7.0f}",
+                              flush=True)
+            return ok, measured
+
+        try:
+            # A first complete step — reduced, clipped, applied — so that everything a steady step needs
+            # exists before anything is measured: DDP buckets, the optimizer's moments, cuDNN and
+            # flash-attention workspaces.
+            self._probe_step(1, seq_len, optimize=True, sync_gradients=True)
+            snapshot = [parameter.detach().to("cpu") for parameter in self.model.parameters()]
+            moments = [to_cpu(optimizer.state_dict()) for optimizer in self.optimizers]
+            base = max(torch.cuda.memory_reserved(), torch.cuda.memory_allocated()) if cuda else 0
+            if cuda:
+                fits, peak_one = probe(1)
+                low, points, high = (1, [(1, peak_one)], None) if fits else (0, [], 1)
+
+                def fit():
+                    """peak(rows) from the two largest measured successes. Activation memory is linear
+                    in tokens, so two points near the answer place the ceiling; whatever curvature they
+                    miss is caught by verifying the prediction instead of trusting it."""
+                    if len(points) < 2:
+                        return max(peak_one - base, 1), base
+                    (rows_1, p1), (rows_2, p2) = points[-2], points[-1]
+                    slope = max((p2 - p1) / max(rows_2 - rows_1, 1), 1.0)
+                    return slope, p2 - slope * rows_2
+
+                # Doubling ramp, then the fit. Extrapolating the ceiling from a single row is how a probe
+                # ends up throwing a 100x batch at the GPU: the fixed cost of a step hides the per-token
+                # one, and an out-of-memory, however well cleaned up, is slow and poisons what follows.
+                # So each attempt at most doubles what is known to work, until the two measured points
+                # are close enough to the ceiling for the line between them to be the answer.
+                candidate = 2
+                for _ in range(12):
+                    if max_rows:
+                        candidate = min(candidate, int(max_rows))
+                    candidate = max(int(candidate), low + 1)
+                    if candidate <= low or (high is not None and candidate >= high):
+                        break
+                    fits, peak = probe(candidate)
+                    if not fits:
+                        high = candidate
+                        candidate = (low + high) // 2
+                        continue
+                    low, peak = candidate, peak
+                    points.append((candidate, peak))
+                    slope, intercept = fit()
+                    if peak >= budget * 0.85:
+                        break           # the line is now measured next to the ceiling: good enough
+                    predicted = int((budget - intercept) / slope)
+                    candidate = min(2 * low, predicted) if len(points) < 3 else predicted
+                slope, _ = fit()
+                low = min(low, int(max_rows)) if max_rows else low
+                if peak > budget and low > 1:
+                    # The step that fit went over the requested ceiling: give back the rows the measured
+                    # line says do not belong there, so `fill` keeps meaning what it says.
+                    slope, intercept = fit()
+                    low = max(min(low, int((budget - intercept) / slope)), 1)
+                self.fabric.print(f"[probe] ceiling {budget / 2 ** 20:.0f} MiB of "
+                                  f"{total / 2 ** 20:.0f} MiB, {slope / max(seq_len, 1) / 2 ** 10:.0f}"
+                                  f" KiB per token, {low} rows/rank verified", flush=True)
+            # Confirm with consecutive steps (and time them); halve if the steady state turns out to be
+            # hungrier than a single step looked like.
+            for _ in range(3):
+                if low < 1:
+                    break
+                started, tokens, sequences, done = time.perf_counter(), 0, 0, 0
+                for _ in range(max(int(steps), 0)):
+                    fits, peak = probe(low, optimize=True)
+                    if not fits:
+                        break
+                    tokens, sequences, done = tokens + low * seq_len, sequences + low, done + 1
+                if fits:
+                    break
+                low = max(low // 2, 1)
+            speed = self._report_speed(time.perf_counter() - started, tokens, sequences, done) \
+                if done else {}
+            if keep_weights:
+                with torch.no_grad():
+                    for parameter, saved in zip(self.model.parameters(), snapshot):
+                        parameter.copy_(saved.to(parameter.device))
+                    for optimizer, state in zip(self.optimizers, moments):
+                        optimizer.load_state_dict(state)
+            snapshot = moments = None
+            if cuda:
+                torch.cuda.empty_cache()
+        finally:
+            target.strict_steps = False
+            if cycle is not None:
+                del selector.pick
+            for signal in signals:
+                maskerator = getattr(signal, "maskerator", None)
+                saved = rates.get(id(maskerator)) if maskerator is not None else None
+                if saved is not None:
+                    (maskerator.substitution_rate, maskerator.substitution_rate_upper,
+                     maskerator.external_schedule) = saved
+
+        environment = getattr(self, "_speed_environment", None) or {}
+        report = {"at": time.strftime("%Y-%m-%dT%H:%M:%S"),
+                  "gpu": environment.get("device", ""), "precision": training.precision,
+                  "world_size": world, "accumulate_grad_batches": accumulate,
+                  "max_seq_len": seq_len, "fill": fill,
+                  "vram_mib": round(total / 2 ** 20), "base_mib": round(base / 2 ** 20),
+                  "budget_mib": round(budget / 2 ** 20),
+                  "rows_per_rank": low, "tokens_per_rank": low * seq_len,
+                  "rows_per_optimizer_step": low * world * accumulate,
+                  "token_per_batch": low * seq_len * accumulate,
+                  "token_per_batch_global": low * seq_len * world * accumulate,
+                  "peak_mib": round(peak / 2 ** 20),
+                  "headroom_mib": round((budget - peak) / 2 ** 20),
+                  "bytes_per_token": round(slope / seq_len) if (slope and seq_len) else 0,
+                  "bytes_per_row": round(slope), "signals_tested": names,
+                  "probes": attempts, "fits": bool(fits and low >= 1),
+                  "recommendation": f"training.batch_size={low}"}
+        report.update({f"speed_{key}": value for key, value in speed.items() if value is not None})
+        for key in ("rows_per_rank", "tokens_per_rank", "token_per_batch", "peak_mib",
+                    "headroom_mib", "bytes_per_token"):
+            self.logger.log(f"probe/{key}", report[key])
+        self.fabric.print("\n[probe] search trace\n" + str(
+            Table(["rows", "tokens", "floor MiB", "peak MiB", "held MiB", "fits"],
+                  [{"rows": one["rows"], "tokens": one["tokens"], "floor MiB": one.get("floor_mib"),
+                    "peak MiB": one["peak_mib"], "held MiB": one.get("reserved_mib"),
+                    "fits": "yes" if one["fits"] else "no"} for one in attempts])))
+        self.fabric.print(f"[probe] safe batch {low} rows/rank = {low * seq_len} tokens/rank · "
+                          f"{report['token_per_batch_global']} tokens per optimizer step · "
+                          f"peak {report['peak_mib']}/{report['vram_mib']} MiB "
+                          f"(headroom {report['headroom_mib']}) · "
+                          f"{report.get('speed_tokens_per_second', 0):,.0f} tokens/s/rank · "
+                          f"{report.get('speed_tflops', 0):.1f} TFLOP/s · "
+                          f"MFU {report.get('speed_mfu_percent') or 0:.1f}%", flush=True)
+        if apply and low >= 1:
+            training.batch_size = data.batch_size = low
+            self.configs.set_override(f"training.batch_size={low}")
+            self.configs.set_override(f"training.token_per_batch={low * seq_len * accumulate}")
+            self.dataloader = self.fabric.setup_dataloaders(self.datamodule.train_dataloader())
+            self.fabric.print(f"[probe] batch size applied: {low} rows per rank", flush=True)
+        if self.fabric.is_global_zero:
+            # Loose run artifacts (the memory probe) live next to the checkpoints: each point of a
+            # sweep already carries its own run_name, so each report is its own too.
+            path = Path(report_path) if report_path else run_dir_for(training)
+            report.setdefault("run", training.run_name)
+            if getattr(self.configs, "active_sweep", None) is not None:
+                report["sweep"] = self.configs.active_sweep.asdict()
+            path.mkdir(parents=True, exist_ok=True)
+            (path / "memory_probe.json").write_text(json.dumps(report, indent=1, default=str))
+        return report
+
+    def run_task(self, spec: dict):
+        """Run a task that was not declared in the configs, at the current training step.
+
+        This is the live counterpart of ``validation``: monitoring decides a metric deserves a
+        closer look, and asks for one more evaluation or activation analysis without restarting
+        the run. ``spec`` is a plain dict:
+
+            {"type": "activation_analysis", "name": "extra", "fields": {...}}
+            {"name": "test"}                      # a task already declared in the configs
+
+        A configured task is copied, not mutated; an ad-hoc one is built on a detached copy of the
+        configs, so the training loop and later validations keep their own task set. The task uses
+        the same logger and trainer, hence opens one more ``task_runs`` row at the current step.
+        """
+        from matformer.matformer_configs import MatformerConfigs
+        from matformer.matformer_registry import registry
+
+        fields = dict(spec.get("fields") or {})
+        fields.update(spec.get("config") or {})
+        name = spec.get("name") or spec.get("task") or spec.get("type") or "analysis"
+        task_type = spec.get("type")
+        configured = getattr(getattr(self.configs, "task", None), "objects", [])
+        if task_type is None and name in configured:
+            alive = getattr(self.configs.task, name)
+            task_type = alive._matformer_variant
+            copy = MatformerConfigs.create_configs(stdin=self.configs.asdict(include_defaults=False))
+            for key, value in fields.items():
+                copy.set_override(f"task.{name}.{key}={value}")
+            copy.resolve_references()
+            task_config = getattr(copy.task, name)
+        else:
+            task_type = task_type or name
+            copy = MatformerConfigs.create_configs(stdin=self.configs.asdict(include_defaults=False))
+            data_group = getattr(copy, "data", None)
+            if "ref_data" not in fields and data_group is not None and \
+                    data_group.objects and "ref_data" in getattr(
+                        registry.get_definition("task", task_type), "__dataclass_fields__", {}):
+                fields["ref_data"] = ("test" if "test" in data_group.objects
+                                      else data_group.default)
+            entry = {"name": name, "type": task_type, **fields}
+            copy.import_config({"task": [entry]})
+            copy.resolve_references()
+            task_config = getattr(copy.task, name)
+        task = registry.create("task", task_type, config=task_config, model=self.model,
+                               logger=self.logger, trainer=self)
+        print(f"[control] running task '{name}' ({task_type}) at step {self.step}", flush=True)
+        try:
+            summary = task.run()
+        finally:
+            getattr(self.logger, "drain", self.logger.flush)()
+        return summary
+
+    def _write_memory_report(self):
+        """Per-rank CUDA high-water mark, only when a benchmark asks for it."""
+        path = os.environ.get("MATFORMER_MEMORY_REPORT")
+        if not path or not torch.cuda.is_available():
+            return
+        rank = int(getattr(self.fabric, "global_rank", 0) or 0)
+        payload = {"rank": rank,
+                   "peak_allocated_mib": round(torch.cuda.max_memory_allocated() / 2 ** 20, 1),
+                   "peak_reserved_mib": round(torch.cuda.max_memory_reserved() / 2 ** 20, 1),
+                   "device": torch.cuda.get_device_name(self.fabric.device)}
+        Path(f"{path}.rank{rank}.json").write_text(json.dumps(payload))
+
     def run(self, save_at_end=True, save_model=True, save_plugins=False, force_model_save_dir=None, force_plugins_save_dir=None):
         self.train()
-        if save_at_end:
+        self._write_memory_report()
+        # A stop requested through the control channel already wrote its checkpoint in the loop.
+        if save_at_end and not self.control.stop:
             print("Training completed. Saving model.")
             what = "both" if save_model and save_plugins else "plugins" if save_plugins else "model" if save_model else None
             if what:

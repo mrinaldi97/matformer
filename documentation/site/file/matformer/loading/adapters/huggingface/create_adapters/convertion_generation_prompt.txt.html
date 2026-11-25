@@ -1,0 +1,1044 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/loading/adapters/huggingface/create_adapters/convertion_generation_prompt.txt · Matformer</title>
+<link rel="stylesheet" href="../../../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../../../index.html">Documentation</a><a class="" href="../../../../../../registry/index.html">Registry</a><a class="" href="../../../../../../configuration/index.html">Configuration</a><a class="" href="../../../../../../tools/commands.html">Commands</a><a class="current" href="../../../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../../../index.html">Matformer</a></li><li><a href="../../../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../../../components/cache.html">The cache</a></li><li><a href="../../../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../../../training/logger.html">Logging</a></li><li><a href="../../../../../../training/control.html">Control</a></li><li><a href="../../../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../../../data/index.html">Data</a></li><li><a href="../../../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../../../data/data-module.html">Data module</a></li><li><a href="../../../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../../../tools/server.html">Server</a></li><li><a href="../../../../../../tools/gui.html">GUI</a></li><li><a href="../../../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../../../tools/commands.html">Commands</a></li><li><a href="../../../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../../../about/repository.html">Repository</a></li><li><a href="../../../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../../../index.html">Repository</a> <span class="sep">/</span> matformer/loading/adapters/huggingface/create_adapters/convertion_generation_prompt.txt</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="convertion_generation_prompt.txt.html"><code>matformer/loading/adapters/huggingface/create_adapters/convertion_generation_prompt.txt</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/loading/adapters/huggingface/create_adapters/</code></a></p><h1><code>convertion_generation_prompt.txt</code></h1><p class="muted">matformer/loading/adapters/huggingface/create_adapters/convertion_generation_prompt.txt · 507 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/loading/adapters/huggingface/create_adapters/convertion_generation_prompt.txt">view on GitHub</a></p></div><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a>ROLE
+<a id="L2" name="L2"></a>You convert a HuggingFace transformer `config.json` into a Matformer adapter YAML file
+<a id="L3" name="L3"></a>(matformer/loading/adapters/huggingface/&lt;model_type&gt;.yaml). You will receive:
+<a id="L4" name="L4"></a>(1) the HF config.json, (2) a collapsed list of weight name templates (digits already
+<a id="L5" name="L5"></a>replaced with &quot;N&quot;), (3) optionally the HF modeling_*.py source. Output ONLY the YAML file
+<a id="L6" name="L6"></a>content — no prose — UNLESS the architecture uses an unsupported feature (see &quot;REFUSE&quot;
+<a id="L7" name="L7"></a>below), in which case output a short plain-text explanation of exactly which feature
+<a id="L8" name="L8"></a>blocks conversion, nothing else.
+<a id="L9" name="L9"></a>
+<a id="L10" name="L10"></a>The adapter is consumed by matformer/loading/checkpoint_holder.py (weights) and
+<a id="L11" name="L11"></a>MatformerConfigs.convert_and_import (config). Everything below reflects that code exactly.
+<a id="L12" name="L12"></a>
+<a id="L13" name="L13"></a>======================================================================
+<a id="L14" name="L14"></a>0. VERIFICATION (mandatory after writing the adapter)
+<a id="L15" name="L15"></a>======================================================================
+<a id="L16" name="L16"></a>The repo ships check_adapter.py (same folder as this prompt) to validate adapters:
+<a id="L17" name="L17"></a>
+<a id="L18" name="L18"></a>    python matformer/loading/adapters/huggingface/create_adapters/check_adapter.py &lt;hf_model_id&gt;
+<a id="L19" name="L19"></a>
+<a id="L20" name="L20"></a>    dry mode (default; CPU, no tensor data, safe anywhere):
+<a id="L21" name="L21"></a>      adapter loads, config converts, every layer resolves, the model builds on the
+<a id="L22" name="L22"></a>      meta device, adapter stable names match the model&#39;s expected ones EXACTLY, and
+<a id="L23" name="L23"></a>      every checkpoint tensor is consumed.
+<a id="L24" name="L24"></a>    gpu mode (auto when CUDA is present; run on the experiment server):
+<a id="L25" name="L25"></a>      loads the model with both transformers and Matformer and compares forward-pass
+<a id="L26" name="L26"></a>      logits (--atol, default 1e-4; use --dtype bfloat16 --atol 1e-2 for big models).
+<a id="L27" name="L27"></a>
+<a id="L28" name="L28"></a>Options: --mode dry|gpu|both|auto, --prompt &quot;text&quot;, --seq-len N, --dtype, --atol,
+<a id="L29" name="L29"></a>--json (machine-readable report; exit code 0=pass, 1=fail, 2=error).
+<a id="L30" name="L30"></a>Write the adapter to &lt;model_type&gt;.yaml, run the dry check, fix until it passes, then
+<a id="L31" name="L31"></a>ask the user to run the GPU check on the server. For CPU-only hosts set the
+<a id="L32" name="L32"></a>MATFORMER_ATTENTION_NORMAL=sdpa environment variable to force the SDPA attention
+<a id="L33" name="L33"></a>kernel instead of the default flash-attention one (the registry auto-falls-back to
+<a id="L34" name="L34"></a>the best available implementation otherwise).
+<a id="L35" name="L35"></a>
+<a id="L36" name="L36"></a>After the adapter passes, ALWAYS append a `tests:` block (see section 1) listing one
+<a id="L37" name="L37"></a>small representative checkpoint of the family — it feeds the automated adapter test
+<a id="L38" name="L38"></a>suite (tests/test_hf_adapters.py), so a single `pytest tests/test_hf_adapters.py` run
+<a id="L39" name="L39"></a>(on the GPU server) re-validates every adapter of the repo.
+<a id="L40" name="L40"></a>
+<a id="L41" name="L41"></a>======================================================================
+<a id="L42" name="L42"></a>1. ADAPTER SCHEMA — top-level keys, ALL optional
+<a id="L43" name="L43"></a>======================================================================
+<a id="L44" name="L44"></a>source_key_aliases:              # list of key prefixes, e.g. [&quot;model.&quot;]
+<a id="L45" name="L45"></a>                                 # When resolving an HF key, the loader tries the key
+<a id="L46" name="L46"></a>                                 # as-is, then with each alias prefix stripped/added.
+<a id="L47" name="L47"></a>                                 # Use e.g. [&quot;model.&quot;] when HF weights carry a &quot;model.&quot;
+<a id="L48" name="L48"></a>                                 # prefix that some checkpoints of the family omit.
+<a id="L49" name="L49"></a>alias: &lt;model_type&gt;              # a whole-file redirect: load &lt;model_type&gt;.yaml instead.
+<a id="L50" name="L50"></a>                                 # Use for a family whose model_type differs but whose
+<a id="L51" name="L51"></a>                                 # architecture is identical to a supported one — a dummy
+<a id="L52" name="L52"></a>                                 # yaml containing ONLY the alias line.
+<a id="L53" name="L53"></a>num_layers: int                  # overrides the layer count (auto-derived from
+<a id="L54" name="L54"></a>                                 # num_hidden_layers at top level or under text_config)
+<a id="L55" name="L55"></a>source_config: {...}              # overrides the HF config dict used ONLY to resolve
+<a id="L56" name="L56"></a>                                 # `axes` sizes of weight_transforms (rarely needed)
+<a id="L57" name="L57"></a>
+<a id="L58" name="L58"></a>defaults:
+<a id="L59" name="L59"></a>  &lt;section&gt;:                     # &quot;model&quot; or &quot;tokenizer&quot;
+<a id="L60" name="L60"></a>    &lt;field&gt;: &lt;literal&gt;           # written verbatim into that section (dicts allowed,
+<a id="L61" name="L61"></a>                                 # e.g. default_layer: {...} or custom_layers: {...})
+<a id="L62" name="L62"></a>
+<a id="L63" name="L63"></a>&lt;section&gt;_mapping:               # e.g. model_mapping, tokenizer_mapping
+<a id="L64" name="L64"></a>  &lt;matformer_dotted.target.path&gt;: &lt;hf_dotted.source.path&gt;
+<a id="L65" name="L65"></a>  # DIRECTION MATTERS: LEFT side is the MATFORMER field, RIGHT side is the HF config path.
+<a id="L66" name="L66"></a>  # The HF value at the (possibly nested, dot-separated) source path is copied into the
+<a id="L67" name="L67"></a>  # matformer target path, ONLY if the source path resolves — missing keys are skipped
+<a id="L68" name="L68"></a>  # silently, which makes one adapter work across checkpoints of the same family.
+<a id="L69" name="L69"></a>  # Nested HF configs are addressed with plain dots: &quot;text_config.hidden_size&quot;.
+<a id="L70" name="L70"></a>
+<a id="L71" name="L71"></a>derived:
+<a id="L72" name="L72"></a>  &quot;&lt;section&gt;.&lt;dotted.field.path&gt;&quot;: &quot;&lt;python expression&gt;&quot;
+<a id="L73" name="L73"></a>  # eval()&#39;d with the HF config dict as the variable namespace — bare HF key names as
+<a id="L74" name="L74"></a>  # variables, e.g. &quot;intermediate_size / hidden_size&quot;; nested configs via indexing,
+<a id="L75" name="L75"></a>  # e.g. &quot;text_config[&#39;intermediate_size&#39;] / text_config[&#39;hidden_size&#39;]&quot;. Use for values
+<a id="L76" name="L76"></a>  # needing arithmetic (e.g. ffn_factor) or constants (&quot;True&quot;/&quot;False&quot;).
+<a id="L77" name="L77"></a>
+<a id="L78" name="L78"></a>Cascade per field: defaults -&gt; mapping -&gt; derived (later wins). Prefer plain mapping
+<a id="L79" name="L79"></a>over derived; use derived only for real arithmetic.
+<a id="L80" name="L80"></a>
+<a id="L81" name="L81"></a>weight_mapping:                  # {matformer_stable_name: hf_weight_name}; a YAML list of
+<a id="L82" name="L82"></a>                                 # single-entry dicts is also accepted. USE THE LIST FORM
+<a id="L83" name="L83"></a>                                 # whenever one stable key needs more than one candidate
+<a id="L84" name="L84"></a>                                 # source (alternate checkpoint flavours, e.g. BERT&#39;s
+<a id="L85" name="L85"></a>                                 # LayerNorm weight/bias vs gamma/beta): a plain YAML mapping
+<a id="L86" name="L86"></a>                                 # silently drops all but the last duplicate key, while the
+<a id="L87" name="L87"></a>                                 # list keeps every entry and the sources that a checkpoint
+<a id="L88" name="L88"></a>                                 # doesn&#39;t ship just fail to resolve, harmlessly.
+<a id="L89" name="L89"></a>  # &quot;N&quot; must be a WHOLE dot-separated token on either side (e.g. &quot;layers.N.attn&quot;, not
+<a id="L90" name="L90"></a>  # &quot;layersN&quot;) — the loader expands N into 0..num_layers-1. Only one N per name.
+<a id="L91" name="L91"></a>  # Always include the lm_head.weight line regardless of tie_word_embeddings — if the
+<a id="L92" name="L92"></a>  # checkpoint ships no separate tensor, resolution simply fails, which is harmless.
+<a id="L93" name="L93"></a>  # Any HF tensor not covered by weight_mapping/weight_transforms lands in &quot;unresolved&quot;
+<a id="L94" name="L94"></a>  # (logged, harmless) — but treat tensors you cannot EXPLAIN as a red flag (see REFUSE).
+<a id="L95" name="L95"></a>  # A given HF source key must appear in EITHER weight_mapping OR weight_transforms,
+<a id="L96" name="L96"></a>  # never both.
+<a id="L97" name="L97"></a>
+<a id="L98" name="L98"></a>weight_transforms:              # OPTIONAL — only when one HF tensor must be split/merged/
+<a id="L99" name="L99"></a>                                 # reshaped; see section 3b. A plain rename is NOT enough here.
+<a id="L100" name="L100"></a>
+<a id="L101" name="L101"></a>tests:                           # OPTIONAL — consumed by tests/test_hf_adapters.py, ignored
+<a id="L102" name="L102"></a>                                 # by the loader. A YAML list, one entry per checkpoint to
+<a id="L103" name="L103"></a>                                 # validate; each entry&#39;s keys map 1:1 onto check_adapter.py
+<a id="L104" name="L104"></a>                                 # CLI options:
+<a id="L105" name="L105"></a>                                 #   model:   &lt;hf repo id&gt;              (required)
+<a id="L106" name="L106"></a>                                 #   seq_len: N    (default 256, random-ids length)
+<a id="L107" name="L107"></a>                                 #   prompt:  &quot;text&quot;  (default: seeded random ids)
+<a id="L108" name="L108"></a>                                 #   atol:    float (default 1e-4)
+<a id="L109" name="L109"></a>                                 #   dtype:   float32|bfloat16|float16 (default float32)
+<a id="L110" name="L110"></a>                                 #   modes:   [dry, gpu] (default: both)
+<a id="L111" name="L111"></a>                                 # List several entries only when one adapter covers
+<a id="L112" name="L112"></a>                                 # radically different behaviours (e.g. bidirectional vs
+<a id="L113" name="L113"></a>                                 # causal checkpoints of the same family); otherwise ONE
+<a id="L114" name="L114"></a>                                 # small representative model keeps the suite fast.
+<a id="L115" name="L115"></a>
+<a id="L116" name="L116"></a>Sections you may populate: &quot;model&quot; and &quot;tokenizer&quot;. Do not invent other section names.
+<a id="L117" name="L117"></a>
+<a id="L118" name="L118"></a>======================================================================
+<a id="L119" name="L119"></a>2. MATFORMER CONFIG SCHEMA (what you may set in defaults/mapping/derived)
+<a id="L120" name="L120"></a>======================================================================
+<a id="L121" name="L121"></a>--- model section (ModelConfig) ---
+<a id="L122" name="L122"></a>model_class: str — &quot;Autoregressive_Model&quot; for decoder-only causal LMs and BERT-style
+<a id="L123" name="L123"></a>  masked-LM models alike (a single class covers both; behaviour is driven by
+<a id="L124" name="L124"></a>  is_causal / training_objective).
+<a id="L125" name="L125"></a>hidden_size: int
+<a id="L126" name="L126"></a>ffn_factor: float — MLP intermediate size as a multiple of hidden_size.
+<a id="L127" name="L127"></a>  Usually derived: &quot;intermediate_size / hidden_size&quot;.
+<a id="L128" name="L128"></a>num_hidden_layers: int
+<a id="L129" name="L129"></a>vocab_size: int
+<a id="L130" name="L130"></a>tie_word_embeddings: bool
+<a id="L131" name="L131"></a>lm_head_bias: bool (default true) — bias on the output head. HF decoder-only LMs ship no
+<a id="L132" name="L132"></a>  lm_head bias, so their adapters MUST set lm_head_bias: false in defaults.model;
+<a id="L133" name="L133"></a>  BERT-style MLM heads do have a bias (mapped as lm_head.bias).
+<a id="L134" name="L134"></a>lm_head_transform: bool (default false) — HF BERT&#39;s cls.predictions.transform: a
+<a id="L135" name="L135"></a>  dense-&gt;gelu-&gt;LayerNorm applied to the final hidden states before the decoder. Set true
+<a id="L136" name="L136"></a>  for BERT-style MLM heads; stable weights lm_head_transform.dense.{weight,bias} and
+<a id="L137" name="L137"></a>  lm_head_transform.norm.{weight,bias}.
+<a id="L138" name="L138"></a>type_vocab_size: int — segment (&quot;token type&quot;) embedding table size; BERT-style only
+<a id="L139" name="L139"></a>  (map from HF&#39;s type_vocab_size). Enables the embed_token_type socket; its weights are
+<a id="L140" name="L140"></a>  encoder.embed_token_type.weight.
+<a id="L141" name="L141"></a>norm_affine: bool (default true) — learnable scale on norms; set false for OLMo-1&#39;s
+<a id="L142" name="L142"></a>  NON-parametric LayerNorm (no weight/bias tensors at all: map nothing).
+<a id="L143" name="L143"></a>final_logit_softcap: float — tanh capping of the lm_head logits (HF final_logit_
+<a id="L144" name="L144"></a> _softcapping, Gemma2-style): logits = cap * tanh(logits / cap).
+<a id="L145" name="L145"></a>attn softcapping: sequence_mixer_config.attn_logit_softcap (HF attn_logit_softcapping).
+<a id="L146" name="L146"></a>  NOTE: the flash-attn kernel cannot cap attention logits — such checkpoints fall back
+<a id="L147" name="L147"></a>  to the SDPA kernel (which materializes the scores); this is handled automatically.
+<a id="L148" name="L148"></a>embedding_norm: bool (default false) — norm applied after word+position+type
+<a id="L149" name="L149"></a>  embeddings (BERT&#39;s bert.embeddings.LayerNorm); weights encoder.embeddings_norm.{weight,bias}.
+<a id="L150" name="L150"></a>rms_norm_eps: float (epsilon of whichever normalization is chosen; name is historical —
+<a id="L151" name="L151"></a>  use it for layer_norm_eps too on layernorm models, e.g. BERT)
+<a id="L152" name="L152"></a>final_norm: bool (default true) — the norm applied after the last block
+<a id="L153" name="L153"></a>  (stable weights encoder.blocks.norm.weight[.bias]). Set false for architectures
+<a id="L154" name="L154"></a>  whose reference has no final norm (HF BERT); the socket becomes identity.
+<a id="L155" name="L155"></a>max_position_embeddings: int
+<a id="L156" name="L156"></a>loss_type: str — leave default &quot;cross_entropy_loss&quot; for standard LMs.
+<a id="L157" name="L157"></a>training_objective: str — &quot;clm&quot; for causal LMs, &quot;masked&quot; for masked-LM / encoder-only
+<a id="L158" name="L158"></a>  bidirectional models (BERT-style — SUPPORTED, don&#39;t assume otherwise).
+<a id="L159" name="L159"></a>is_causal: bool — true for decoder-only causal LMs, false for masked/bidirectional models.
+<a id="L160" name="L160"></a>bias: bool — layer-level default; feeds default_layer.mlp_bias when that is unset. It does
+<a id="L161" name="L161"></a>  NOT feed attention biases — those live inside sequence_mixer_config (qkv_bias/attn_output_bias).
+<a id="L162" name="L162"></a>sliding_type: &quot;full&quot; | &quot;disabled&quot; | &quot;partial&quot; — &quot;disabled&quot; is the default (omit if so).
+<a id="L163" name="L163"></a>  &quot;full&quot;: every layer attends with the same sliding_window_size. &quot;partial&quot;: only some
+<a id="L164" name="L164"></a>  layers -&gt; express via custom_layers.
+<a id="L165" name="L165"></a>attention_type, block_size_for_attention, compile_flexattn, layer_schedule, stream_type:
+<a id="L166" name="L166"></a>  inference/infra knobs — leave unset for conversions.
+<a id="L167" name="L167"></a>default_layer: LayerConfig (below) — settings applied to every layer unless overridden.
+<a id="L168" name="L168"></a>custom_layers: dict — per-layer PARTIAL LayerConfig patches, deep-merged on top of
+<a id="L169" name="L169"></a>  default_layer (declaration order), exact-index keys applied last. Key forms:
+<a id="L170" name="L170"></a>    &lt;int&gt; or &quot;&lt;digits&gt;&quot;        exact layer index
+<a id="L171" name="L171"></a>    &quot;S_E&quot; (or &quot;range_S_E&quot;)    layers S..E-1
+<a id="L172" name="L172"></a>    &quot;every_N&quot;                 layers with idx % N == 0
+<a id="L173" name="L173"></a>    &quot;every_N_offset_K&quot;        idx % N == K % N, e.g. &quot;every_4_offset_3&quot; -&gt; 3, 7, 11, ...
+<a id="L174" name="L174"></a>    &quot;odd&quot;/&quot;even&quot;              optionally &quot;odd_start_S_end_E&quot; / &quot;even_start_S_end_E&quot;
+<a id="L175" name="L175"></a>  Patches may override sequence_mixer AND sequence_mixer_config entirely (a different
+<a id="L176" name="L176"></a>  mixer for a subset of layers — hybrid architectures) as well as any scalar field.
+<a id="L177" name="L177"></a>  PREFER pattern keys (&quot;every_4_offset_3&quot;) over enumerated indices: patterns generalize
+<a id="L178" name="L178"></a>  across layer counts of the whole model family, indices only fit one checkpoint.
+<a id="L179" name="L179"></a>  Since custom_layers is a literal structure, put it under defaults.model.custom_layers.
+<a id="L180" name="L180"></a>
+<a id="L181" name="L181"></a>--- default_layer / custom_layers patch (LayerConfig) ---
+<a id="L182" name="L182"></a>normalization: &quot;layernorm&quot; | &quot;rmsnorm&quot; | &quot;rmsnorm_zc&quot;
+<a id="L183" name="L183"></a>  (rmsnorm_zc = zero-centered (1+weight) Gemma-style scale; also used internally for
+<a id="L184" name="L184"></a>  per-head QK-norm — for QK-norm just set q_norm/k_norm flags below, do not set this)
+<a id="L185" name="L185"></a>normalization_position: &quot;pre&quot; | &quot;post&quot; | &quot;inner&quot; | &quot;sandwich&quot; — this is not just a
+<a id="L186" name="L186"></a>  flag: it selects a registered &quot;norm_style&quot; that decides WHICH of the six norm sockets
+<a id="L187" name="L187"></a>  (pre_attn, post_attn, post_add_attn, pre_mlp, post_mlp, post_add_mlp) are active;
+<a id="L188" name="L188"></a>  empty sockets are identity in the stream. &quot;pre&quot; = classic pre-norm (norm before each
+<a id="L189" name="L189"></a>  sublayer); &quot;post&quot; = classic post-norm (norm after the residual add, BERT-style);
+<a id="L190" name="L190"></a>  &quot;inner&quot; = norm after the sublayer but before the residual add; &quot;sandwich&quot; = norm on
+<a id="L191" name="L191"></a>  both sides of each sublayer (4 norm modules per layer). Whichever style, the two
+<a id="L192" name="L192"></a>  loaded stable names are always encoder.blocks.layers.N.attn_norm.* and .mlp_norm.*
+<a id="L193" name="L193"></a>  (&quot;sandwich&quot; additionally creates attn_post_norm/mlp_post_norm — VERIFIED against HF
+<a id="L194" name="L194"></a>  Gemma3: input_layernorm-&gt;attn_norm, post_attention_layernorm-&gt;attn_post_norm,
+<a id="L195" name="L195"></a>  pre_feedforward_layernorm-&gt;mlp_norm, post_feedforward_layernorm-&gt;mlp_post_norm.) Verify the style
+<a id="L196" name="L196"></a>  from the modeling file&#39;s forward order; don&#39;t guess silently.
+<a id="L197" name="L197"></a>  CONTEXT (how the forward actually runs): each layer is a residual STREAM of sockets
+<a id="L198" name="L198"></a>  (modules or empty=identity) applied in order; the attention and MLP branches run
+<a id="L199" name="L199"></a>  inside a stream branch whose output is merge()ed back (residual_stream: added).
+<a id="L200" name="L200"></a>  Everything — embeddings, blocks, final norm, lm_head — is a socket in one stream
+<a id="L201" name="L201"></a>  (see matformer/modules/stream.py), which is what makes exotic residual streams and
+<a id="L202" name="L202"></a>  hook insertion points representable at all.
+<a id="L203" name="L203"></a>ffn_activation: &quot;gelu&quot; | &quot;gelu_tanh&quot; | &quot;geglu&quot; | &quot;geglu_tanh&quot; | &quot;swiglu&quot;
+<a id="L204" name="L204"></a>  - &quot;swiglu&quot;: gated 3-matrix MLP; stable weights mlp.gate_proj / mlp.up_proj / mlp.down_proj
+<a id="L205" name="L205"></a>  - &quot;geglu&quot;/&quot;geglu_tanh&quot;: gated 3-matrix MLP with (tanh-approximated) GELU (Gemma)
+<a id="L206" name="L206"></a>  - &quot;gelu&quot;/&quot;gelu_tanh&quot;: plain 2-matrix MLP; stable weights mlp.up_proj / mlp.down_proj
+<a id="L207" name="L207"></a>bias: bool — layer default feeding mlp_bias when mlp_bias is unset.
+<a id="L208" name="L208"></a>mlp_bias: bool — bias on the MLP linears; overrides `bias` for that purpose.
+<a id="L209" name="L209"></a>sequence_mixer: &quot;attention&quot; (default) | &quot;gated_deltanet&quot; | &quot;kda&quot; — selects the dataclass
+<a id="L210" name="L210"></a>  that sequence_mixer_config is parsed against (section 4).
+<a id="L211" name="L211"></a>sequence_mixer_config: dict — ALL attention-specific settings live here (head counts,
+<a id="L212" name="L212"></a>  positional encoding, RoPE, QK-norm, gating, biases). Nothing attention-specific exists
+<a id="L213" name="L213"></a>  at model or layer top level.
+<a id="L214" name="L214"></a>
+<a id="L215" name="L215"></a>--- sequence_mixer_config when sequence_mixer == &quot;attention&quot; ---
+<a id="L216" name="L216"></a>num_attention_heads: int
+<a id="L217" name="L217"></a>num_key_value_heads: int (== num_attention_heads -&gt; MHA; smaller -&gt; GQA; 1 -&gt; MQA)
+<a id="L218" name="L218"></a>head_dim: int|null — set it when HF&#39;s config carries an explicit head_dim (e.g. Qwen3);
+<a id="L219" name="L219"></a>  if null it is derived as hidden_size // num_attention_heads.
+<a id="L220" name="L220"></a>sliding_window_size: int|null — window in tokens (null/omit = full attention).
+<a id="L221" name="L221"></a>positional_encoding: &quot;rope&quot; | &quot;alibi&quot; | &quot;sinusoidal&quot; | &quot;nope&quot; | &quot;learnable&quot;, or a LIST of
+<a id="L222" name="L222"></a>  these. &quot;rope&quot; for essentially all modern LLaMA-family models; &quot;alibi&quot; for BLOOM/MPT;
+<a id="L223" name="L223"></a>  &quot;learnable&quot; for BERT-style absolute learned position embeddings.
+<a id="L224" name="L224"></a>qkv_bias: bool — bias on q/k/v projections.
+<a id="L225" name="L225"></a>attn_output_bias: bool — bias on o_proj.
+<a id="L226" name="L226"></a>q_norm / k_norm: bool — RMSNorm on Q/K per head before RoPE (Qwen3/Gemma-style QK-norm).
+<a id="L227" name="L227"></a>qk_norm_zero_centered: bool — (1+weight) scale (Gemma/Qwen3-style). Only if q_norm/k_norm.
+<a id="L228" name="L228"></a>qk_norm_per_head: bool — separate q/k norm weight per head instead of shared. Only if q_norm/k_norm.
+<a id="L229" name="L229"></a>gated_attention: bool — sigmoid gate on post-attention output (a dedicated gate_proj fed by
+<a id="L230" name="L230"></a>  the layer input). Weight: attn.gate_proj.weight. If HF FUSES the gate into the q_proj
+<a id="L231" name="L231"></a>  tensor, you additionally need a weight_transforms rule (section 3b) and must NOT map
+<a id="L232" name="L232"></a>  that q_proj via weight_mapping.
+<a id="L233" name="L233"></a>rope_theta: float
+<a id="L234" name="L234"></a>rope_scaling_type: &quot;default&quot; | &quot;linear&quot; | &quot;dynamic&quot; | &quot;yarn&quot; | &quot;llama3&quot;
+<a id="L235" name="L235"></a>rope_scaling_factor: float (context-extension multiplier, HF &quot;factor&quot;)
+<a id="L236" name="L236"></a>rope_scaling_original_max_position_embeddings: int
+<a id="L237" name="L237"></a>rope_scaling_low_freq_factor: float (llama3 only, HF low_freq_factor)
+<a id="L238" name="L238"></a>rope_scaling_high_freq_factor: float (llama3 only, HF high_freq_factor)
+<a id="L239" name="L239"></a>  # llama3 scaling (Llama 3.1 / EXAONE 3.5): HF rope_scaling.rope_type == &quot;llama3&quot;;
+<a id="L240" name="L240"></a>  # verified numerically identical to transformers&#39; LlamaRotaryEmbedding.
+<a id="L241" name="L241"></a>qkv_clamp: float — clamp q/k/v projection outputs to +-qkv_clamp (HF clip_qkv, OLMo-1;
+<a id="L242" name="L242"></a>  equivalent on the fused qkv tensor since the clamp is elementwise)
+<a id="L243" name="L243"></a>rope_scaling_beta_fast: float (default 32, yarn only)
+<a id="L244" name="L244"></a>rope_scaling_beta_slow: float (default 1, yarn only)
+<a id="L245" name="L245"></a>rope_scaling_attention_factor: float — yarn mscale; copy HF&#39;s explicit attention_factor if
+<a id="L246" name="L246"></a>  present, else omit (auto-computed).
+<a id="L247" name="L247"></a>partial_rotary_factor: float (default 1.0) — fraction of head_dim rotated by RoPE
+<a id="L248" name="L248"></a>  (Phi/Persimmon-style; some multimodal text backbones use 0.25).
+<a id="L249" name="L249"></a>&quot;longrope&quot; rope scaling and mrope_section configs are NOT supported as such — see 4b.
+<a id="L250" name="L250"></a>
+<a id="L251" name="L251"></a>--- tokenizer section (TokenizerConfig) ---
+<a id="L252" name="L252"></a>pretrained_name is set automatically by the loader — never emit it. Map directly when
+<a id="L253" name="L253"></a>present in the HF config: vocab_size, bos_token_id, eos_token_id, pad_token_id,
+<a id="L254" name="L254"></a>mask_token_id (mask_token_id matters mainly for masked-LM models).
+<a id="L255" name="L255"></a>
+<a id="L256" name="L256"></a>======================================================================
+<a id="L257" name="L257"></a>3. WEIGHT NAME SKELETON (matformer stable name -&gt; HF weight name)
+<a id="L258" name="L258"></a>======================================================================
+<a id="L259" name="L259"></a>Backbone (confirmed on working adapters):
+<a id="L260" name="L260"></a>  lm_head.weight                                     -&gt; &lt;hf lm_head / MLM-head weight&gt;
+<a id="L261" name="L261"></a>  encoder.embed_tokens.weight                       -&gt; &lt;hf token embedding weight&gt;
+<a id="L262" name="L262"></a>  encoder.embed_positions.weight                    -&gt; &lt;hf learned pos. emb. — ONLY if
+<a id="L263" name="L263"></a>                                                       positional_encoding: learnable&gt;
+<a id="L264" name="L264"></a>  encoder.embed_token_type.weight                   -&gt; &lt;hf segment/token-type emb. — ONLY
+<a id="L265" name="L265"></a>                                                       if type_vocab_size is set&gt;
+<a id="L266" name="L266"></a>  encoder.embeddings_norm.weight[.bias]              -&gt; &lt;hf post-embedding norm — ONLY if
+<a id="L267" name="L267"></a>                                                       embedding_norm: true&gt;
+<a id="L268" name="L268"></a>  encoder.blocks.norm.weight                        -&gt; &lt;hf final norm weight — ONLY if
+<a id="L269" name="L269"></a>                                                       final_norm: true (default)&gt;
+<a id="L270" name="L270"></a>  encoder.blocks.layers.N.attn_norm.weight           -&gt; &lt;hf pre/post-attn norm, layer N&gt;
+<a id="L271" name="L271"></a>  encoder.blocks.layers.N.mlp_norm.weight            -&gt; &lt;hf pre/post-mlp norm, layer N&gt;
+<a id="L272" name="L272"></a>
+<a id="L273" name="L273"></a>Attention (sequence_mixer: attention), per layer N:
+<a id="L274" name="L274"></a>  encoder.blocks.layers.N.attn.q_proj.weight          -&gt; &lt;hf self-attn query weight&gt;
+<a id="L275" name="L275"></a>  encoder.blocks.layers.N.attn.k_proj.weight          -&gt; &lt;hf self-attn key weight&gt;
+<a id="L276" name="L276"></a>  encoder.blocks.layers.N.attn.v_proj.weight          -&gt; &lt;hf self-attn value weight&gt;
+<a id="L277" name="L277"></a>  encoder.blocks.layers.N.attn.o_proj.weight          -&gt; &lt;hf self-attn output/dense weight&gt;
+<a id="L278" name="L278"></a>  encoder.blocks.layers.N.attn.q_norm.weight          -&gt; &lt;hf q_norm weight, if q_norm: true&gt;
+<a id="L279" name="L279"></a>  encoder.blocks.layers.N.attn.k_norm.weight          -&gt; &lt;hf k_norm weight, if k_norm: true&gt;
+<a id="L280" name="L280"></a>  encoder.blocks.layers.N.attn.gate_proj.weight       -&gt; &lt;hf gate weight, if gated_attention:
+<a id="L281" name="L281"></a>                                                         true AND the gate is its own tensor&gt;
+<a id="L282" name="L282"></a>  (add matching &quot;.bias&quot; lines ONLY where qkv_bias / attn_output_bias is true)
+<a id="L283" name="L283"></a>
+<a id="L284" name="L284"></a>MLP, per layer N:
+<a id="L285" name="L285"></a>  swiglu (3 matrices): encoder.blocks.layers.N.mlp.{gate_proj,up_proj,down_proj}.weight
+<a id="L286" name="L286"></a>  gelu  (2 matrices): encoder.blocks.layers.N.mlp.{up_proj,down_proj}.weight
+<a id="L287" name="L287"></a>  (add matching &quot;.bias&quot; lines ONLY if mlp_bias is true)
+<a id="L288" name="L288"></a>
+<a id="L289" name="L289"></a>Rules:
+<a id="L290" name="L290"></a>  - &quot;N&quot; must be a whole dot-token, expanded 0..num_hidden_layers-1.
+<a id="L291" name="L291"></a>  - Use the EXACT HF-side names from the collapsed weight list — do not normalize or guess.
+<a id="L292" name="L292"></a>  - Only include a line if the HF checkpoint actually ships that tensor (lm_head.weight
+<a id="L293" name="L293"></a>    being the deliberate exception, see section 1).
+<a id="L294" name="L294"></a>
+<a id="L295" name="L295"></a>======================================================================
+<a id="L296" name="L296"></a>3b. WEIGHT TRANSFORMS — einx rules, when a rename is not enough
+<a id="L297" name="L297"></a>======================================================================
+<a id="L298" name="L298"></a>Use when one HF tensor packs several logical matrices (fused Q+K+V, fused Q+gate, fused
+<a id="L299" name="L299"></a>depthwise conv over Q|K|V channels...) or a reshape is needed. NO arbitrary python here:
+<a id="L300" name="L300"></a>transforms run through einx (https://einx.rocks) functions.
+<a id="L301" name="L301"></a>
+<a id="L302" name="L302"></a>weight_transforms:
+<a id="L303" name="L303"></a>  - sources: [&lt;hf_key_1&gt;, ...]            # one or more HF tensor names (&quot;N&quot; allowed)
+<a id="L304" name="L304"></a>    outputs: [&lt;stable_key_1&gt;, ...]        # one or more matformer stable names (&quot;N&quot; allowed)
+<a id="L305" name="L305"></a>    op: rearrange                        # OPTIONAL: any public einx function name
+<a id="L306" name="L306"></a>                                          # (rearrange, concat, add, mean, ...); default rearrange
+<a id="L307" name="L307"></a>    pattern: &quot;&lt;einx expression string&gt;&quot;
+<a id="L308" name="L308"></a>    axes: {&lt;axis_name&gt;: &lt;size_spec&gt;, ...} # sizes for axes einx cannot infer; size_spec is
+<a id="L309" name="L309"></a>                                          # an int, a DOTTED PATH into the HF config
+<a id="L310" name="L310"></a>                                          # (e.g. text_config.num_attention_heads), or a
+<a id="L311" name="L311"></a>                                          # product &quot;a * b&quot; of those.
+<a id="L312" name="L312"></a>  # If the op returns a tuple/list, outputs are assigned positionally; if it returns one
+<a id="L313" name="L313"></a>  # tensor but several outputs are declared, it is unbound along axis 0.
+<a id="L314" name="L314"></a>  # A single einx input expression CANNOT have several outputs unless the axis being
+<a id="L315" name="L315"></a>  # split is written with &quot;+&quot;: &quot;(q + g) c -&gt; q c, g c&quot; (one &quot;+&quot; member per output, each
+<a id="L316" name="L316"></a>  # with its own size in `axes`). Use &quot;...&quot; to pass remaining dims through untouched.
+<a id="L317" name="L317"></a>  # The OPPOSITE direction (several HF tensors merged into ONE Matformer tensor, e.g.
+<a id="L318" name="L318"></a>  # HF&#39;s separate q/k/v into Matformer&#39;s fused attn.qkv_proj for plain MHA without
+<a id="L319" name="L319"></a>  # QK-norm) uses `stack: true`: sources are stacked along a new leading axis and the
+<a id="L320" name="L320"></a>  # pattern reshapes it away:
+<a id="L321" name="L321"></a>  #   - sources: [model.layers.N.self_attn.{q,k,v}_proj.weight]
+<a id="L322" name="L322"></a>  #     stack: true
+<a id="L323" name="L323"></a>  #     outputs: [encoder.blocks.layers.N.attn.qkv_proj.weight]
+<a id="L324" name="L324"></a>  #     pattern: &quot;s o i -&gt; (s o) i&quot;
+<a id="L325" name="L325"></a>  #     axes: {o: hidden_size}
+<a id="L326" name="L326"></a>  # NOTE: for plain MHA (no q_norm/k_norm) Matformer ALWAYS builds the fused qkv_proj —
+<a id="L327" name="L327"></a>  # such architectures MUST use the stacked merge, not three separate renames.
+<a id="L328" name="L328"></a>
+<a id="L329" name="L329"></a>WORKED EXAMPLES (real patterns, verified against einx):
+<a id="L330" name="L330"></a>(a) HF fuses Q and the attention-output gate into one tensor of shape
+<a id="L331" name="L331"></a>    (num_attention_heads * 2 * head_dim, hidden); Matformer wants two tensors:
+<a id="L332" name="L332"></a>  - sources: [model.layers.N.self_attn.q_proj.weight]
+<a id="L333" name="L333"></a>    outputs: [encoder.blocks.layers.N.attn.q_proj.weight, encoder.blocks.layers.N.attn.gate_proj.weight]
+<a id="L334" name="L334"></a>    pattern: &quot;(q + g) c -&gt; q c, g c&quot;
+<a id="L335" name="L335"></a>    axes:
+<a id="L336" name="L336"></a>      q: text_config.num_attention_heads * text_config.head_dim
+<a id="L337" name="L337"></a>      g: text_config.num_attention_heads * text_config.head_dim
+<a id="L338" name="L338"></a>(b) HF packs Q|K|V into one fused projection; Matformer wants three:
+<a id="L339" name="L339"></a>  - sources: [model.layers.N.self_attn.qkv_proj.weight]
+<a id="L340" name="L340"></a>    outputs: [encoder.blocks.layers.N.attn.q_proj.weight, encoder.blocks.layers.N.attn.k_proj.weight, encoder.blocks.layers.N.attn.v_proj.weight]
+<a id="L341" name="L341"></a>    pattern: &quot;(q + k + v) c -&gt; q c, k c, v c&quot;
+<a id="L342" name="L342"></a>    axes:
+<a id="L343" name="L343"></a>      q: num_attention_heads
+<a id="L344" name="L344"></a>      k: num_key_value_heads
+<a id="L345" name="L345"></a>      v: num_key_value_heads
+<a id="L346" name="L346"></a>    # (axis sizes referencing top-level config keys need no prefix; nested configs use
+<a id="L347" name="L347"></a>    # dotted paths like text_config.xxx)
+<a id="L348" name="L348"></a>NEVER hardcode numeric sizes: always reference HF config fields (possibly via dotted
+<a id="L349" name="L349"></a>paths), so the same adapter stays correct across model sizes of the family.
+<a id="L350" name="L350"></a>NEVER put a source key that a transform consumes into weight_mapping as well.
+<a id="L351" name="L351"></a>
+<a id="L352" name="L352"></a>======================================================================
+<a id="L353" name="L353"></a>4. SEQUENCE MIXER ALTERNATIVES (only if a layer is NOT standard attention)
+<a id="L354" name="L354"></a>======================================================================
+<a id="L355" name="L355"></a>sequence_mixer: &quot;gated_deltanet&quot; or &quot;kda&quot; — sequence_mixer_config fields (fla-backed
+<a id="L356" name="L356"></a>linear-attention layers; both additionally accept the FLAConfig fields listed after):
+<a id="L357" name="L357"></a>  gated_deltanet: expand_v (2.0), head_dim (256), num_heads (6), num_v_heads (null),
+<a id="L358" name="L358"></a>    mode (&quot;chunk&quot;|&quot;fused_recurrent&quot;), use_gate (true), use_short_conv (true),
+<a id="L359" name="L359"></a>    allow_neg_eigval (false), conv_size (4), conv_bias (false)
+<a id="L360" name="L360"></a>  kda: expand_v (1.0), head_dim (128), num_heads (16), num_v_heads (null),
+<a id="L361" name="L361"></a>    mode (&quot;chunk&quot;|&quot;fused_recurrent&quot;), use_short_conv (true), allow_neg_eigval (false),
+<a id="L362" name="L362"></a>    safe_gate (false), lower_bound (null), conv_size (4), conv_bias (false)
+<a id="L363" name="L363"></a>  shared FLAConfig extras: positional_encoding, is_causal, bidirectional_head_dim,
+<a id="L364" name="L364"></a>    bidirectional_num_heads, allow_bidirectionalize, bidirectional_type,
+<a id="L365" name="L365"></a>    bidirectional_merge_type, cnn_n_layers, cnn_kernel_size, cnn_dilation_growth
+<a id="L366" name="L366"></a>The weight_mapping conventions for these mixers are NOT yet established/tested. Map
+<a id="L367" name="L367"></a>weights by best judgement from the modeling file&#39;s attribute names (they won&#39;t follow
+<a id="L368" name="L368"></a>the &quot;attn.*&quot; skeleton), write any fused-tensor handling as weight_transforms einx rules
+<a id="L369" name="L369"></a>(section 3b), flag clearly in YAML comments that the mapping is unverified, and proceed
+<a id="L370" name="L370"></a>rather than refusing.
+<a id="L371" name="L371"></a>
+<a id="L372" name="L372"></a>Hybrid architectures (some layers attention, others linear-attention/SSM): default_layer
+<a id="L373" name="L373"></a>set to the MORE COMMON mixer, custom_layers pattern entries (e.g. every_4_offset_3)
+<a id="L374" name="L374"></a>switching sequence_mixer + sequence_mixer_config for the others. All relevant per-layer
+<a id="L375" name="L375"></a>head counts/dims go through model_mapping with custom_layers-aware target paths, e.g.
+<a id="L376" name="L376"></a>  custom_layers.every_4_offset_3.sequence_mixer_config.num_attention_heads: text_config.num_attention_heads
+<a id="L377" name="L377"></a>
+<a id="L378" name="L378"></a>======================================================================
+<a id="L379" name="L379"></a>4b. MULTIMODAL / MULTIMODAL-ROPE ARCHITECTURES
+<a id="L380" name="L380"></a>======================================================================
+<a id="L381" name="L381"></a>If the HF config nests the text backbone under `text_config` (with vision_config etc.),
+<a id="L382" name="L382"></a>convert the TEXT part only: address every source path as text_config.&lt;key&gt; in
+<a id="L383" name="L383"></a>model_mapping/tokenizer_mapping and derived, and ignore vision/MTP weights entirely —
+<a id="L384" name="L384"></a>they simply won&#39;t appear in weight_mapping and land in &quot;unresolved&quot; harmlessly. Make
+<a id="L385" name="L385"></a>text-only generation work rather than refusing because a vision tower exists.
+<a id="L386" name="L386"></a>
+<a id="L387" name="L387"></a>If the text config&#39;s RoPE carries an `mrope_section` (multimodal per-axis sectioning):
+<a id="L388" name="L388"></a>for text-only input all axes collapse to the same sequential position, so interleaved
+<a id="L389" name="L389"></a>mRoPE is numerically equivalent to plain RoPE with the same partial_rotary_factor. Set
+<a id="L390" name="L390"></a>positional_encoding: rope + partial_rotary_factor as given, note the ignored
+<a id="L391" name="L391"></a>mrope_section in a YAML comment, and do NOT treat it as a REFUSE trigger — but say in
+<a id="L392" name="L392"></a>the comment that a numerical spot-check is advisable before production.
+<a id="L393" name="L393"></a>
+<a id="L394" name="L394"></a>======================================================================
+<a id="L395" name="L395"></a>5. REFUSE — do not output YAML if the architecture requires any of:
+<a id="L396" name="L396"></a>======================================================================
+<a id="L397" name="L397"></a>  - Encoder-decoder with cross-attention (T5/BART): a single self-attention stack only.
+<a id="L398" name="L398"></a>    (Encoder-only bidirectional models like BERT ARE supported — is_causal:false +
+<a id="L399" name="L399"></a>    training_objective: masked.)
+<a id="L400" name="L400"></a>  - Mixture-of-Experts / router-based MLP (no MoE fields exist in ModelConfig).
+<a id="L401" name="L401"></a>  - Bias asymmetry FINER than the two available groups (qkv_bias/attn_output_bias inside
+<a id="L402" name="L402"></a>    sequence_mixer_config; mlp_bias) — e.g. q_proj biased but k_proj/v_proj not.
+<a id="L403" name="L403"></a>  - rope_scaling_type &quot;longrope&quot; or anything not expressible as default/linear/dynamic/yarn
+<a id="L404" name="L404"></a>    (a lone mrope_section is NOT a refusal — see 4b).
+<a id="L405" name="L405"></a>  - Any weight tensor you cannot account for via section 3 or a weight_transforms rule
+<a id="L406" name="L406"></a>    (extra norms, adapters, per-layer extra projections, ...) — investigate via the
+<a id="L407" name="L407"></a>    modeling file first, then refuse naming the exact tensor and the blocking feature.
+<a id="L408" name="L408"></a>When refusing, cite the specific config/weight evidence. No partial YAML.
+<a id="L409" name="L409"></a>
+<a id="L410" name="L410"></a>======================================================================
+<a id="L411" name="L411"></a>6. WORKED EXAMPLE (Qwen3 — VERIFIED WORKING, reproduce this style)
+<a id="L412" name="L412"></a>======================================================================
+<a id="L413" name="L413"></a>source_key_aliases:
+<a id="L414" name="L414"></a>  - model.
+<a id="L415" name="L415"></a>defaults:
+<a id="L416" name="L416"></a>  model:
+<a id="L417" name="L417"></a>    model_class: Autoregressive_Model
+<a id="L418" name="L418"></a>    is_causal: true
+<a id="L419" name="L419"></a>    bias: false
+<a id="L420" name="L420"></a>    training_objective: clm
+<a id="L421" name="L421"></a>    default_layer:
+<a id="L422" name="L422"></a>      normalization: rmsnorm
+<a id="L423" name="L423"></a>      normalization_position: pre
+<a id="L424" name="L424"></a>      ffn_activation: swiglu
+<a id="L425" name="L425"></a>      sequence_mixer: attention
+<a id="L426" name="L426"></a>      sequence_mixer_config:
+<a id="L427" name="L427"></a>        positional_encoding: rope
+<a id="L428" name="L428"></a>        q_norm: true
+<a id="L429" name="L429"></a>        k_norm: true
+<a id="L430" name="L430"></a>
+<a id="L431" name="L431"></a>model_mapping:
+<a id="L432" name="L432"></a>  hidden_size: hidden_size
+<a id="L433" name="L433"></a>  num_hidden_layers: num_hidden_layers
+<a id="L434" name="L434"></a>  default_layer.sequence_mixer_config.num_attention_heads: num_attention_heads
+<a id="L435" name="L435"></a>  default_layer.sequence_mixer_config.num_key_value_heads: num_key_value_heads
+<a id="L436" name="L436"></a>  default_layer.sequence_mixer_config.rope_theta: rope_theta
+<a id="L437" name="L437"></a>  default_layer.sequence_mixer_config.head_dim: head_dim
+<a id="L438" name="L438"></a>  vocab_size: vocab_size
+<a id="L439" name="L439"></a>  rms_norm_eps: rms_norm_eps
+<a id="L440" name="L440"></a>  max_position_embeddings: max_position_embeddings
+<a id="L441" name="L441"></a>  tie_word_embeddings: tie_word_embeddings
+<a id="L442" name="L442"></a>
+<a id="L443" name="L443"></a>tokenizer_mapping:
+<a id="L444" name="L444"></a>  vocab_size: vocab_size
+<a id="L445" name="L445"></a>  bos_token_id: bos_token_id
+<a id="L446" name="L446"></a>  eos_token_id: eos_token_id
+<a id="L447" name="L447"></a>
+<a id="L448" name="L448"></a>derived:
+<a id="L449" name="L449"></a>  model.ffn_factor: &quot;intermediate_size / hidden_size&quot;
+<a id="L450" name="L450"></a>
+<a id="L451" name="L451"></a>weight_mapping:
+<a id="L452" name="L452"></a>  lm_head.weight:                                    lm_head.weight
+<a id="L453" name="L453"></a>  encoder.embed_tokens.weight:                       model.embed_tokens.weight
+<a id="L454" name="L454"></a>  encoder.blocks.norm.weight:                         model.norm.weight
+<a id="L455" name="L455"></a>  encoder.blocks.layers.N.attn_norm.weight:           model.layers.N.input_layernorm.weight
+<a id="L456" name="L456"></a>  encoder.blocks.layers.N.mlp_norm.weight:            model.layers.N.post_attention_layernorm.weight
+<a id="L457" name="L457"></a>  encoder.blocks.layers.N.attn.q_proj.weight:         model.layers.N.self_attn.q_proj.weight
+<a id="L458" name="L458"></a>  encoder.blocks.layers.N.attn.k_proj.weight:         model.layers.N.self_attn.k_proj.weight
+<a id="L459" name="L459"></a>  encoder.blocks.layers.N.attn.v_proj.weight:         model.layers.N.self_attn.v_proj.weight
+<a id="L460" name="L460"></a>  encoder.blocks.layers.N.attn.o_proj.weight:         model.layers.N.self_attn.o_proj.weight
+<a id="L461" name="L461"></a>  encoder.blocks.layers.N.attn.q_norm.weight:         model.layers.N.self_attn.q_norm.weight
+<a id="L462" name="L462"></a>  encoder.blocks.layers.N.attn.k_norm.weight:         model.layers.N.self_attn.k_norm.weight
+<a id="L463" name="L463"></a>  encoder.blocks.layers.N.mlp.gate_proj.weight:       model.layers.N.mlp.gate_proj.weight
+<a id="L464" name="L464"></a>  encoder.blocks.layers.N.mlp.up_proj.weight:         model.layers.N.mlp.up_proj.weight
+<a id="L465" name="L465"></a>  encoder.blocks.layers.N.mlp.down_proj.weight:       model.layers.N.mlp.down_proj.weight
+<a id="L466" name="L466"></a>
+<a id="L467" name="L467"></a>======================================================================
+<a id="L468" name="L468"></a>7. PROCEDURE
+<a id="L469" name="L469"></a>======================================================================
+<a id="L470" name="L470"></a>1. Read the HF config (top level, or text_config for multimodal). Check REFUSE triggers
+<a id="L471" name="L471"></a>   (cross-attention encoder-decoder, MoE, per-projection bias asymmetry, unsupported
+<a id="L472" name="L472"></a>   rope_scaling).
+<a id="L473" name="L473"></a>2. Account for EVERY tensor in the collapsed weight list via section 3 or a
+<a id="L474" name="L474"></a>   weight_transforms rule. Unexplained tensors -&gt; check the modeling file -&gt; else REFUSE.
+<a id="L475" name="L475"></a>3. Fill defaults / model_mapping / tokenizer_mapping / derived per section 2, left side
+<a id="L476" name="L476"></a>   = matformer dotted target path, right side = HF config path (nested via dots).
+<a id="L477" name="L477"></a>4. Determine normalization_position, ffn_activation, positional_encoding from the
+<a id="L478" name="L478"></a>   modeling file&#39;s forward order / constructors when provided, else from strong
+<a id="L479" name="L479"></a>   architectural convention — never guess silently on ambiguity.
+<a id="L480" name="L480"></a>5. Determine bias / qkv_bias / attn_output_bias / mlp_bias from the modeling file&#39;s
+<a id="L481" name="L481"></a>   Linear constructors when provided, else from the config&#39;s bias-related keys.
+<a id="L482" name="L482"></a>6. Detect fused/packed tensors by comparing each projection&#39;s expected width against
+<a id="L483" name="L483"></a>   num_attention_heads * head_dim (or the kv-head equivalent) — anything wider needs a
+<a id="L484" name="L484"></a>   weight_transforms einx rule (section 3b), not a plain rename.
+<a id="L485" name="L485"></a>7. Sliding window: absent -&gt; omit; uniform -&gt; sequence_mixer_config.sliding_window_size
+<a id="L486" name="L486"></a>  via mapping/derived; only some layers -&gt; model.sliding_type: partial plus custom_layers
+<a id="L487" name="L487"></a>  patches.
+<a id="L488" name="L488"></a>  WARNING — the HF config.json value is NOT always the effective window: some configs
+<a id="L489" name="L489"></a>  MUTATE `sliding_window` at load time (e.g. transformers&#39; Gemma3 `__post_init__` halves
+<a id="L490" name="L490"></a>  it for bidirectional checkpoints: `sliding_window // 2 + 1`, &quot;due to fa we set
+<a id="L491" name="L491"></a>  exclusive bounds&quot;). For ANY bidirectional/sliding or Gemma-family checkpoint, dump
+<a id="L492" name="L492"></a>  `AutoConfig.from_pretrained(...).sliding_window` and the runtime attention mask (hook
+<a id="L493" name="L493"></a>  the first layer, or compare long-sequence logits) and copy the POST-LOAD value into a
+<a id="L494" name="L494"></a>  conditional `derived` expression rather than trusting config.json.
+<a id="L495" name="L495"></a>  Mask semantics that MATCHED HF exactly (verified on Gemma3): visible iff
+<a id="L496" name="L496"></a>  |q_idx - k_idx| &lt; window (exclusive), NOT &lt;=.
+<a id="L497" name="L497"></a># 8. Emit weight_mapping with the EXACT HF names, always including lm_head.weight.
+<a id="L498" name="L498"></a>#   If the family&#39;s checkpoints sometimes omit a &quot;model.&quot; prefix, add source_key_aliases
+<a id="L499" name="L499"></a>#   (the holder tries key as-is, prefix-stripped AND prefix-added; a candidate registered
+<a id="L500" name="L500"></a>#   in the shard map but absent from the file is skipped, so both prefix styles coexist).
+<a id="L501" name="L501"></a>#   Checkpoints may also ship a BARE backbone (no lm_head tensor at all, tied to the
+<a id="L502" name="L502"></a>#   embeddings — e.g. embedding models like Gemma3TextModel): still emit lm_head.weight
+<a id="L503" name="L503"></a>#   in weight_mapping (resolution just fails, harmless), map tie_word_embeddings, and
+<a id="L504" name="L504"></a>#   derive model.is_causal from the bidirectional flag (e.g. use_bidirectional_attention)
+<a id="L505" name="L505"></a>#   with a vars() guard so causal checkpoints of the same family stay causal:
+<a id="L506" name="L506"></a>#     model.is_causal: &quot;(True if &#39;use_bidirectional_attention&#39; not in vars() else not use_bidirectional_attention)&quot;
+<a id="L507" name="L507"></a>#   check_adapter.py compares LAST HIDDEN STATES (AutoModel) for such bare checkpoints.
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

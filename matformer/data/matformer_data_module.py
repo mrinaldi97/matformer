@@ -2,7 +2,7 @@
 #import pytorch_lightning as pl
 from torch.utils.data import DataLoader
 from matformer.dataclasses.model_dataclasses import ModelConfig
-from matformer.dataclasses.data_dataclasses import DataConfig 
+from matformer.dataclasses.data_dataclasses import DataConfig, IGNORE_INDEX
 import os
 from matformer.data.mdat.container import MDatContainer
 from matformer.data.mdat.mdat_common import MDatIsReadOnly, MDatNotFound, MDatNotShuffled
@@ -46,7 +46,11 @@ class MatformerDataModule:
         super().__init__()
         self.config:             DataConfig = config
         self.num_devices = num_devices
-        if getattr(config,"model",None) is not None and getattr(config.model,"max_position_embeddings",None):
+        # The data section may deliberately cap sequences below the model window (256 tokens on a
+        # 32k model is a legitimate training choice); inherit only when it says nothing.
+        if getattr(config, "max_seq_len", None) is None \
+                and getattr(config,"model",None) is not None \
+                and getattr(config.model,"max_position_embeddings",None):
             self.config.max_seq_len = config.model.max_position_embeddings
             print(f"Datamodule: Inheriting {self.config.max_seq_len} from the loaded model as maximum sequence length")
         if getattr(config,"training",None) is not None:
@@ -57,6 +61,15 @@ class MatformerDataModule:
             print(f"Datamodule initialized in training mode. Inheriting {self.num_devices} as device count and {self.config.varlen_strategy} as varlen strategy and {self.config.batch_size} as batch size.")
 
         self.distributed_initialized: bool       = False
+
+    def _assertions(self, module_name: str, required_keys: list) -> None:
+        """Fail on a DataConfig that lacks a field this data module cannot work without.
+        Called by subclasses in __init__, before the dataset is built."""
+        missing = [key for key in required_keys if getattr(self.config, key, None) is None]
+        if missing:
+            raise ValueError(
+                f"Data module '{module_name}' needs the field(s) {', '.join(missing)} in its data section"
+            )
 
     def setup(self, stage: Optional[str] = None) -> None:
         """
@@ -106,6 +119,25 @@ class MatformerDataModule:
         if is_dist:
             dist.barrier()
 
+
+    def _token_labels(self, label_values: List[Any], token_sequences: List[List[int]],
+                      pad_to: Optional[int] = None) -> torch.Tensor:
+        """One label per token position, laid out exactly like the tokens it belongs to: flattened
+        when the batch is packed ('unpadding'), right-padded with IGNORE_INDEX to `pad_to` otherwise.
+        A length mismatch means the alignment broke upstream (the dataset is the one responsible for
+        writing a label, or IGNORE_INDEX, on every token), so it is a hard error rather than a loss
+        computed on shifted labels."""
+        for sequence, labels in zip(token_sequences, label_values):
+            if labels is None or len(sequence) != len(labels):
+                raise ValueError(
+                    f"Token/label misalignment in a token-level batch: {len(sequence)} tokens for "
+                    f"{0 if labels is None else len(labels)} labels. Every sample needs one label "
+                    f"(or {IGNORE_INDEX}) per token."
+                )
+        if pad_to is None:
+            return torch.tensor([label for labels in label_values for label in labels], dtype=torch.long)
+        padded = [list(labels) + [IGNORE_INDEX] * (pad_to - len(labels)) for labels in label_values]
+        return torch.tensor(padded, dtype=torch.long)
 
     def collate_fn(self, batch: List[Any]) -> Dict[str, Any]:
         """
@@ -199,15 +231,15 @@ class MatformerDataModule:
         following_attributes = {}
         if any_worker_finished:
             attributes['worker_has_finished']=True
-        if any(l is not None for l in label_values):
-            if getattr(self.config, 'task', None) == 'token-level':
-                if self.config.varlen_strategy == "unpadding":
-                    following_attributes['labels'] = torch.tensor(
-                        [l for seq in label_values for l in seq], dtype=torch.long
-                    )
-                else:
-                    padded = [l + [-100] * (self.config.max_seq_len - len(l)) for l in label_values]
-                    following_attributes['labels'] = torch.tensor(padded, dtype=torch.long)
+        token_level = getattr(self.config, 'task', None) == 'token-level'
+        any_labels = any(l is not None for l in label_values)
+        if any_labels:
+            if token_level:
+                # Token labels ride as following_attributes: same leading dims as the tokens, so
+                # they get padded/unpadded (and reversed) together with the sequence itself.
+                if len(label_values) != len(token_sequences) or not all(l is not None for l in label_values):
+                    raise ValueError("A token-level batch mixes labelled and unlabelled samples: "
+                                     "either every sample or no sample must carry its tags.")
             else:
                 label_dtype = torch.float32 if getattr(self.config, 'task', None) == 'regression' else torch.long
                 attributes['labels'] = torch.tensor(label_values, dtype=label_dtype)
@@ -235,6 +267,8 @@ class MatformerDataModule:
             indices_tensor = torch.tensor(indices, dtype=torch.long)
 
             max_seq_len_value = seqlens.max().item() if len(seqlens) > 0 else 0
+            if token_level and any_labels:
+                following_attributes['labels'] = self._token_labels(label_values, token_sequences)
 
             sequence: TensorDC = UnpaddedTensor(
                 tensor=unpadded_tensor,
@@ -243,6 +277,7 @@ class MatformerDataModule:
                 max_seq_len=max_seq_len_value,
                 original_seq_len=self.config.max_seq_len,
                 batch_size=len(token_sequences),
+                following_attributes=following_attributes,
                 attributes=attributes,
             )
         else:
@@ -252,9 +287,14 @@ class MatformerDataModule:
                 padded_ids.append(padded)
             tensors = torch.tensor(padded_ids, dtype=torch.long)
             padding_masks = (tensors == self.config.tokenizer.pad_token_id)
+            if token_level and any_labels:
+                following_attributes['labels'] = self._token_labels(
+                    label_values, token_sequences, pad_to=self.config.max_seq_len
+                )
             sequence = PaddedTensor(
                 tensor=tensors,
                 padding_mask=padding_masks,
+                following_attributes=following_attributes,
                 attributes=attributes,
             )
         return sequence
@@ -298,7 +338,6 @@ class LazyDataModule(MatformerDataModule):
         self.lazy_dataset: Optional[LazyIterableDataset] = None
         self._detached_dataset: Optional[LazyIterableDataset] = None
         self._length:      Optional[int]                  = None
-        print("DEBUG DEBUG HO INIZIATO IL DATAMODULE")
     
     def setup(self, stage: Optional[str] = None) -> None:
         super().setup(stage)
@@ -457,6 +496,17 @@ class MDATDataModule(MatformerDataModule):
                     f"No dataset of view '{view}' is pretokenized with strategy "
                     f"'{self.config.mdat_strategy}'. Pretokenize first (mdat shell: `pretok-all --strategy "
                     f"{self.config.mdat_strategy}`) or pick another strategy/view.")
+            # Documents appended after pretokenization leave the strategy with
+            # gaps. Training must not start on a partially pretokenized view.
+            gaps = self.mdat.desynced_strategies()
+            if gaps:
+                self.mdat.close()
+                self.mdat = None
+                detail = ", ".join(f"{name}[{start}:{end}]" for name, _, start, end in gaps)
+                raise ValueError(
+                    f"Strategy '{self.config.mdat_strategy}' is DESYNCED with the appended documents "
+                    f"({detail}). Repair it first (mdat shell: `sync --strategy "
+                    f"{self.config.mdat_strategy}`), then reshuffle the view.")
         modality = self.config.iteration_modality or 'document'
         if modality in ('chunked_tokens', 'chunked_for_recurrence') and self.mdat.current_strategy is None:
             self.mdat.close()

@@ -12,7 +12,7 @@ training:
 
 data:
   - name: train
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/POSTWITA/train.jsonl"
+    data_root: "$DATA_ASSETS/POSTWITA/train.jsonl"
     label2id:
       NOUN: 0
       PUNCT: 1
@@ -31,7 +31,7 @@ data:
       INTJ: 14
       X: 15
   - name: test
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/POSTWITA/test.jsonl"
+    data_root: "$DATA_ASSETS/POSTWITA/test.jsonl"
     label2id:
       NOUN: 0
       PUNCT: 1

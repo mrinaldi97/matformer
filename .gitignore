@@ -1,7 +1,9 @@
 .gitignore
 .aid
 .crush
+.crush_backup
 .ipynb_checkpoints
+.matformer_server
 .pytest_cache
 checkpoints*
 wandb*

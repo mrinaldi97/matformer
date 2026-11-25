@@ -12,12 +12,12 @@ training:
 
 data:
   - name: train
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/SAONEG/train.jsonl"
+    data_root: "$DATA_ASSETS/SAONEG/train.jsonl"
     label2id:
       0: 0
       1: 1
   - name: test
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/SAONEG/test.jsonl"
+    data_root: "$DATA_ASSETS/SAONEG/test.jsonl"
     label2id:
       0: 0
       1: 1

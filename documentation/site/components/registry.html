@@ -1,0 +1,178 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Matformer Registry · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section" open><summary>Core</summary><ul><li><a class="current" href="registry.html">The Matformer Registry</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="transformer.html">Transformer architecture</a></li><li><a href="sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="plugins.html">Plugins</a></li><li><a href="virtual-models.html">Virtual models and activation stores</a></li><li><a href="matformer-module.html">MatformerModule</a></li><li><a href="tensors.html">TensorsDC</a></li><li><a href="cache.html">The cache</a></li><li><a href="maskerator.html">The Maskerator</a></li><li><a href="tokenizers.html">Tokenizers</a></li><li><a href="source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Core <span class="sep">/</span> The Matformer Registry</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/utils/matformer_registry_implementation.py.html"><code>matformer/utils/matformer_registry_implementation.py</code></a> <a href="../file/matformer/matformer_registry.py.html"><code>matformer/matformer_registry.py</code></a></div>
+<h1 id="the-matformer-registry">The Matformer Registry<a class="headerlink" href="#the-matformer-registry" title="Permanent link"></a></h1>
+<p>The Matformer architecture tries to avoid every direct instantiation of hard-coded classes of neural network components.
+Instead, every implementation of the core components is managed by the MatformerRegistry. This means that it is possible
+to define modules for every component of the model, such as MLP, attention implementations, layer normalizations...
+In this way the model is not bound to specific implementation (such as vanilla pyTorch) but it is immediately possible
+to adopt different kernels without touching a single line of the core transformer implementation
+This gives extreme flexibility to the developer: just by putting python files in the repo's folders (or specific additional folders) and decorating 
+the class with a decorator it is possible to substitute every module of the network as well as add new components to the framework, such as new <a href="../tasks/index.html">tasks</a>.
+By using the registry it is also possible to import customized experimental modules that can be mounted on many different entry points of
+the model, and, if necessary, they can be trained together with the rest of the network!
+Adding custom components to a transformer model has never been so easy.</p>
+<p>The registry data also feeds the documentation. Every category, every variant and every implementation has a page, and the page is generated from the same data used by <code>registry.create(...)</code>. Start from the <a href="registry.html">registry reference</a>; each variant page links to its configuration dataclass and to the Python class.</p>
+<p>The registry has the following hierarchy:</p>
+<div class="highlight"><pre><span></span><code>_registry (dict)
+└── category (dict)        example: &quot;attention&quot;, &quot;norm&quot;, &quot;linear&quot;, &quot;embedding&quot;, &quot;mlp&quot;, &quot;loss&quot;
+    └── variant (dict)     example: &quot;geglu&quot;, &quot;swiglu&quot;, &quot;rmsnorm&quot;, &quot;flash&quot;, &quot;gated_deltanet&quot;, &quot;mamba&quot;
+        └── name (dict)    example: &quot;torch&quot;, &quot;liger&quot;, &quot;nvidia-transformer-engine&quot;
+            ├── requires      list of required libraries, used for fallback
+            ├── priority      order of the variant, e.g. torch 0, liger 1, nvidia 2
+            ├── constraints   contexts in which the implementation can be used, e.g. [&quot;is_training&quot;]
+            ├── metadata      free dictionary
+            └── params_names  stable parameter names, used to load checkpoints across implementations
+</code></pre></div>
+
+<h2 id="how-to-explore-the-registry">How to explore the registry<a class="headerlink" href="#how-to-explore-the-registry" title="Permanent link"></a></h2>
+<p>From the console:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+
+<span class="n">registry</span><span class="o">.</span><span class="n">list_categories</span><span class="p">()</span>                 <span class="c1"># everything that can appear in a YAML file</span>
+<span class="n">registry</span><span class="o">.</span><span class="n">print_registry</span><span class="p">()</span>                  <span class="c1"># the whole tree, with files and priorities</span>
+<span class="n">registry</span><span class="o">.</span><span class="n">print_registry</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="s2">&quot;attention&quot;</span><span class="p">)</span>
+<span class="n">registry</span><span class="o">.</span><span class="n">get_registry_info</span><span class="p">(</span><span class="n">category</span><span class="o">=</span><span class="s2">&quot;model&quot;</span><span class="p">,</span> <span class="n">as_json</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The generated pages are built from <code>registry.get_registry_info()</code>, so they show exactly what this process sees: the variants, their dataclasses, the implementations, the priority, the required libraries, the constraints and the file each class lives in.</p>
+<table class="registry-table"><thead><tr><th>Category</th><th>Variants</th><th>Dataclasses</th><th>Implementations</th><th>Default</th></tr></thead><tbody><tr><td><a href="../registry/model.html"><code>model</code></a></td><td>4</td><td>3</td><td>3</td><td><code>default</code></td></tr><tr><td><a href="../registry/layer.html"><code>layer</code></a></td><td>1</td><td>1</td><td>0</td><td><code>default</code></td></tr><tr><td><a href="../registry/sequence-mixer.html"><code>sequence_mixer</code></a></td><td>10</td><td>10</td><td>10</td><td><code>attention</code></td></tr><tr><td><a href="../registry/attention.html"><code>attention</code></a></td><td>1</td><td>0</td><td>6</td><td><code>-</code></td></tr><tr><td><a href="../registry/mlp.html"><code>mlp</code></a></td><td>5</td><td>0</td><td>7</td><td><code>-</code></td></tr><tr><td><a href="../registry/norm.html"><code>norm</code></a></td><td>4</td><td>0</td><td>8</td><td><code>-</code></td></tr><tr><td><a href="../registry/norm-style.html"><code>norm_style</code></a></td><td>5</td><td>0</td><td>5</td><td><code>-</code></td></tr><tr><td><a href="../registry/embedding.html"><code>embedding</code></a></td><td>1</td><td>0</td><td>1</td><td><code>-</code></td></tr><tr><td><a href="../registry/linear.html"><code>linear</code></a></td><td>1</td><td>0</td><td>2</td><td><code>-</code></td></tr><tr><td><a href="../registry/dropout.html"><code>dropout</code></a></td><td>1</td><td>0</td><td>1</td><td><code>-</code></td></tr><tr><td><a href="../registry/positional-encoding.html"><code>positional_encoding</code></a></td><td>1</td><td>0</td><td>2</td><td><code>-</code></td></tr><tr><td><a href="../registry/loss.html"><code>loss</code></a></td><td>2</td><td>0</td><td>3</td><td><code>-</code></td></tr><tr><td><a href="../registry/loss-fn.html"><code>loss_fn</code></a></td><td>5</td><td>0</td><td>5</td><td><code>-</code></td></tr><tr><td><a href="../registry/learning-signal.html"><code>learning_signal</code></a></td><td>5</td><td>0</td><td>5</td><td><code>-</code></td></tr><tr><td><a href="../registry/learning-signal-selector.html"><code>learning_signal_selector</code></a></td><td>3</td><td>0</td><td>3</td><td><code>-</code></td></tr><tr><td><a href="../registry/stream.html"><code>stream</code></a></td><td>1</td><td>0</td><td>1</td><td><code>-</code></td></tr><tr><td><a href="../registry/plugin.html"><code>plugin</code></a></td><td>9</td><td>9</td><td>9</td><td><code>classification</code></td></tr><tr><td><a href="../registry/tokenizer.html"><code>tokenizer</code></a></td><td>1</td><td>1</td><td>2</td><td><code>huggingface</code></td></tr><tr><td><a href="../registry/task.html"><code>task</code></a></td><td>7</td><td>7</td><td>7</td><td><code>generation</code></td></tr><tr><td><a href="../registry/data.html"><code>data</code></a></td><td>2</td><td>2</td><td>2</td><td><code>lazy</code></td></tr><tr><td><a href="../registry/logger.html"><code>logger</code></a></td><td>5</td><td>0</td><td>5</td><td><code>-</code></td></tr><tr><td><a href="../registry/checkpoint.html"><code>checkpoint</code></a></td><td>1</td><td>1</td><td>0</td><td><code>matformer</code></td></tr><tr><td><a href="../registry/checkpoint-holder.html"><code>checkpoint_holder</code></a></td><td>3</td><td>0</td><td>3</td><td><code>-</code></td></tr><tr><td><a href="../registry/weights.html"><code>weights</code></a></td><td>3</td><td>3</td><td>3</td><td><code>torch</code></td></tr><tr><td><a href="../registry/training.html"><code>training</code></a></td><td>1</td><td>1</td><td>0</td><td><code>default</code></td></tr><tr><td><a href="../registry/validation.html"><code>validation</code></a></td><td>1</td><td>1</td><td>0</td><td><code>default</code></td></tr><tr><td><a href="../registry/masking.html"><code>masking</code></a></td><td>1</td><td>1</td><td>0</td><td><code>default</code></td></tr><tr><td><a href="../registry/virtual-model.html"><code>virtual_model</code></a></td><td>1</td><td>1</td><td>0</td><td><code>default</code></td></tr><tr><td><a href="../registry/activation-store.html"><code>activation_store</code></a></td><td>2</td><td>2</td><td>2</td><td><code>duckdb</code></td></tr><tr><td><a href="../registry/saver.html"><code>saver</code></a></td><td>3</td><td>3</td><td>2</td><td><code>NullSaver</code></td></tr></tbody></table>
+
+<h2 id="add-a-custom-implementation">Add a custom implementation<a class="headerlink" href="#add-a-custom-implementation" title="Permanent link"></a></h2>
+<p>Put your script in repo's folders, or, to keep it out of the repo, in
+<code>MATFORMER_ASSETS/extra_plugins</code> (see <a href="../intro/env-vars.html#matformer-assets">the environment variables</a>): the registry
+scans both.</p>
+<p>Then, you don't have to do anything by hand, as the registration is handled by an easy to use decorator, example:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="s2">&quot;swiglu&quot;</span><span class="p">,</span> <span class="s2">&quot;a_name_for_your_swiglu_kernel&quot;</span><span class="p">,</span>
+       <span class="n">params_names</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;w13.weight&#39;</span><span class="p">:</span> <span class="s1">&#39;gate_proj.weight&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;w2.weight&#39;</span><span class="p">:</span> <span class="s1">&#39;down_proj.weight&#39;</span><span class="p">},</span>
+       <span class="n">priority</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;torch&quot;</span><span class="p">,</span> <span class="s2">&quot;my_custom_library&quot;</span><span class="p">])</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MySwigluImplementation</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="c1"># (your code here)</span>
+
+    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_test</span><span class="p">():</span>
+        <span class="c1"># Return True (or simply don&#39;t raise) if this kernel really works on this machine</span>
+        <span class="o">...</span>
+</code></pre></div>
+
+<p>It's very simple to define a module and let Matformer handle the picking of correct implementation for you:</p>
+<div class="highlight"><pre><span></span><code><span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="s2">&quot;swiglu&quot;</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="mi">768</span><span class="p">,</span> <span class="n">ffn_factor</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+</code></pre></div>
+
+<p>These are the only requirements to seamless integrate different custom implementation of basic modules into a Matformer model! Just be careful to
+match conventions for param_names if you want that your model correctly loads also with other implementation.</p>
+<h2 id="adding-modules-to-the-model">Adding modules to the model<a class="headerlink" href="#adding-modules-to-the-model" title="Permanent link"></a></h2>
+<p>Modules that are not one of the registered components are mounted as <a href="plugins.html">plugins</a>. A plugin is registered in the <code>plugin</code> category and addressed by a socket pattern. The main transformer block exposes these sockets:</p>
+<ul>
+<li><code>pre_attn</code></li>
+<li><code>self_attn</code></li>
+<li><code>post_attn</code></li>
+<li><code>post_add_attn</code></li>
+<li><code>pre_mlp</code></li>
+<li><code>mlp</code></li>
+<li><code>post_mlp</code></li>
+<li><code>post_add_mlp</code></li>
+</ul>
+<p>A plugin is declared in the config with a target pattern and a type:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">plugin</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_probe</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">my_probe</span>
+<span class="w">    </span><span class="nt">targets</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;*.layers.*.pre_mlp&quot;</span>
+</code></pre></div>
+
+<p>The plugin class is registered with the usual decorator:</p>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">matformer.plugins.plugin_classes</span><span class="w"> </span><span class="kn">import</span> <span class="n">Plugin</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;plugin&quot;</span><span class="p">,</span> <span class="s2">&quot;my_probe&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyProbe</span><span class="p">(</span><span class="n">Plugin</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="c1"># read x, optionally return a new value</span>
+        <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div>
+
+<p>A plugin with parameters is added to the model's state dict and is trained with the model. The complete interface is in <a href="plugins.html">Plugins</a>.</p>
+<h2 id="preferences-availability-tests-and-constraints">Preferences, availability tests and constraints<a class="headerlink" href="#preferences-availability-tests-and-constraints" title="Permanent link"></a></h2>
+<p>Implementation choice can be steered without touching code: the environment variable
+MATFORMER_<CATEGORY>_<VARIANT> (ex. MATFORMER_ATTENTION_NORMAL=sdpa) forces a specific
+implementation, and create(..., preferred='liger') does the same programmatically. Otherwise the
+priority queue decides. Once an implementation is chosen it is instantiated; if it cannot be
+built, the registry simply tries the next one.</p>
+<p>Availability tests: an implementation may define a class-level <code>_test()</code> static method, a few
+lines that really exercise the kernel (import it and run the smallest possible call). It is run
+by the registry at instantiation time - never during the AST discovery, which stays completely
+lazy - and its outcome is stored globally, so a whole model pays the cost only once and a
+failing kernel (ex. flash-attn installed but useless on a CPU-only machine, or compiled for
+another CUDA version) is skipped forever after without repeating the test. Any raised exception
+or a False return means "don't use me here".</p>
+<p>Constraints describe what an implementation can be used for. A hypothetical FlashInfer kernel usable for inference but not for training is declared as:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;attention&quot;</span><span class="p">,</span> <span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="s2">&quot;flashinfer&quot;</span><span class="p">,</span> <span class="n">priority</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">constraints</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;is_inference&quot;</span><span class="p">])</span>
+</code></pre></div>
+
+<p><code>registry.create("attention", "normal", constraints=["is_training"], ...)</code> skips it even if it has the highest priority. <code>registry.set_default_constraints(["is_training"])</code> applies the constraint to every subsequent <code>create()</code> call. An implementation without constraints is accepted everywhere. A kernel can also declare the constraints it does not support, e.g. <code>constraints={"is_training": False}</code>.</p>
+<h2 id="requires-constraints-and-metadata">requires, constraints and metadata<a class="headerlink" href="#requires-constraints-and-metadata" title="Permanent link"></a></h2>
+<p>They are easy to mix up, so the rule of thumb is:</p>
+<ul>
+<li><code>requires</code>: external libraries the implementation needs to exist at all (e.g. <code>["flash_attn"]</code>). If a library cannot be imported, the implementation is not a candidate.</li>
+<li><code>constraints</code>: whether the implementation can be selected in the current context (e.g. <code>is_training</code>, <code>softcap</code>). If a constraint is not satisfied, the implementation is skipped and the next candidate is tried.</li>
+<li><code>metadata</code>: how to call an implementation that has already been selected (tensor order, packed-qkv support, and so on). It is attached to the instance as <code>_matformer_metadata</code> and does not affect the choice.
+A capability whose absence forces a fallback (e.g. flash-attn not doing tanh softcapping) is a constraint. If it is declared as metadata, the caller discovers at forward time that the chosen kernel cannot do the job.</li>
+</ul>
+<h2 id="errors">Errors<a class="headerlink" href="#errors" title="Permanent link"></a></h2>
+<p>Every error raised by the registry is a RegistryError subclass: ImplementationNotAvailable
+(missing dependency or failed _test), ImplementationInitError (the constructor of the chosen
+implementation raised; the original traceback is preserved, so it points at the user's module and
+not at the registry) and NoImplementationAvailable (every candidate failed: the message lists the
+reason of each attempt). A failing implementation never silently ends the search and never
+returns an object that isn't the requested module.</p>
+<p>There is exactly one registry per process. matformer/matformer_registry.py builds it once at import time; every
+<code>from matformer.matformer_registry import registry</code> elsewhere in the codebase (or in your own modules) gets that
+same instance, already populated. Never call MatformerRegistry() directly.</p>
+<h2 id="linking-config-dataclasses">Linking config dataclasses<a class="headerlink" href="#linking-config-dataclasses" title="Permanent link"></a></h2>
+<p>A dataclass can be bound to a registered implementation with <code>register_dataclass</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;logger&quot;</span><span class="p">,</span> <span class="s2">&quot;sqlite&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SQLiteLogger</span><span class="p">:</span>
+    <span class="o">...</span>
+
+<span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;logger&quot;</span><span class="p">,</span> <span class="s2">&quot;sqlite&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@dataclass</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">SQLiteLoggerConfig</span><span class="p">(</span><span class="n">LoggerConfig</span><span class="p">):</span>
+    <span class="n">log_db</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;matformer.db&quot;</span>
+</code></pre></div>
+
+<p>Every YAML section is keyed by category and picks its variant with a <code>type</code> field (<code>logger: {type: sqlite, ...}</code>). A section without <code>type</code> uses the variant registered with <code>default=True</code>. <code>load_config.instantiate()</code> resolves the config through the registry.</p>
+<h2 id="documentation-helpers">Documentation helpers<a class="headerlink" href="#documentation-helpers" title="Permanent link"></a></h2>
+<p><code>get_registry_info()</code> returns a nested dictionary with the default variant of every category and, for every variant, its dataclass and implementations. Each entry contains the file path and the line range of the class. The generated pages use this data for the source links.</p>
+<p><code>_get_filepath(pkgname)</code> resolves a package name to its file. <code>test_status(impl)</code> reports the result of an availability test. <code>list_categories(defined_only=False)</code> includes categories that have implementations but no dataclass.</p>
+<p>A variant can have a hand-written page. A Markdown page with <code>registry_docs: [category.variant]</code> in its front matter is linked from the variant's registry page. The Python source page remains available.</p>
+<h2 id="attaching-pages-to-variants">Attaching pages to variants<a class="headerlink" href="#attaching-pages-to-variants" title="Permanent link"></a></h2>
+<p>The documentation build reads the registry, so a page stays attached to a variant when the class moves to another module. The page metadata is hand-written; the class, its fields, its variants and its implementations are read from the registry and from the dataclasses.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

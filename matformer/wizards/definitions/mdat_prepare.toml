@@ -1,0 +1,104 @@
+id = "mdat_prepare"
+title = "Prepare an MDAT for training"
+description = "Select a strategy and view, then precompute the per-worker chunk distribution."
+category = "Data"
+order = 70
+
+[[steps]]
+id = "container"
+title = "Container"
+[[steps.fields]]
+name = "container"
+kind = "path"
+label = "Container"
+default = ""
+required = true
+
+[[steps]]
+id = "selection"
+title = "Strategy and view"
+description = "Training reads one strategy and one view. The sequence length decides how chunks are joined."
+[[steps.fields]]
+name = "strategy"
+kind = "choice"
+label = "Strategy"
+default = ""
+source = "mdat.strategies"
+depends_on = ["container"]
+required = true
+[[steps.fields]]
+name = "seq_len"
+kind = "int"
+label = "Sequence length"
+default = 1024
+doc = "Must be a multiple of the strategy's chunk size."
+[[steps.fields]]
+name = "view"
+kind = "choice"
+label = "View"
+default = "default"
+source = "mdat.views"
+depends_on = ["container"]
+required = true
+
+[[steps]]
+id = "distribution"
+title = "Distribution"
+description = "The precomputed lengths let every rank know its partition before the first batch."
+[[steps.fields]]
+name = "num_workers"
+kind = "int"
+label = "DataLoader workers"
+default = 8
+required = true
+[[steps.fields]]
+name = "dist_len_devices"
+kind = "int"
+label = "Check for n devices"
+default = 0
+doc = "Zero skips the check. A positive number reports the distributed length."
+[[steps.fields]]
+name = "export"
+kind = "bool"
+label = "Export the view to JSONL"
+default = false
+[[steps.fields]]
+name = "output"
+kind = "path"
+label = "Export path"
+default = ""
+when = { field = "export", truthy = true }
+[[steps.fields]]
+name = "limit"
+kind = "int"
+label = "Export limit"
+default = 0
+doc = "Zero exports every document."
+when = { field = "export", truthy = true }
+
+[action]
+kind = "mdat"
+name = "prepare"
+container = "${container}"
+[[action.commands]]
+cmd = "open"
+args = { path = "${container}" }
+[[action.commands]]
+cmd = "set_strategy"
+args = { name = "${strategy}", seq_len = "${seq_len}" }
+[[action.commands]]
+cmd = "use"
+args = { view = "${view}" }
+[[action.commands]]
+cmd = "precompute_dist"
+args = { num_workers = "${num_workers}" }
+[[action.commands]]
+cmd = "dist_len"
+when = { field = "dist_len_devices", truthy = true }
+args = { num_devices = "${dist_len_devices}" }
+[[action.commands]]
+cmd = "export"
+when = { field = "export", truthy = true }
+args = { view = "${view}", output = "${output}", limit = "${limit}" }
+[[action.commands]]
+cmd = "close"

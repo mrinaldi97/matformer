@@ -1,13 +1,12 @@
 model:
-  type: "token_classification"
-  model_class: "token_classification"
-  base_model: ""
+  type: "classification"
+  scope: "token"
+  base_model: null
   base_model_hf: false
   freeze_base_model: false
   head_type: "linear"
   classifier_dropout_p: 0.1
   classifier_dropout_inplace: false
-  layers_to_remove: 0
   pre_head: null
 
 training:
@@ -37,7 +36,3 @@ tokenizer:
 validation:
   every_n_epochs: 1
 
-saver:
-  type: jsonl
-  filename: "predictions.jsonl"
-  mode: "a"

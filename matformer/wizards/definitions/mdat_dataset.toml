@@ -1,0 +1,69 @@
+id = "mdat_dataset"
+title = "Create a linked dataset"
+description = "Create a self-contained dataset folder and optionally link it into an MDAT container."
+category = "Data"
+order = 20
+
+[[steps]]
+id = "dataset"
+title = "Dataset folder"
+description = "A linked dataset stores its own documents and keeps its own copy of the strategy outputs. A container can link it next to other datasets."
+[[steps.fields]]
+name = "dataset_path"
+kind = "path"
+label = "Dataset path"
+default = ""
+required = true
+doc = "Folder to create. It must not already exist."
+[[steps.fields]]
+name = "dataset_name"
+kind = "text"
+label = "Dataset name"
+default = "dataset"
+required = true
+doc = "Name used by views and strategies."
+[[steps.fields]]
+name = "compression"
+kind = "int"
+label = "Compression level"
+default = 0
+
+[[steps]]
+id = "link"
+title = "Container"
+description = "Linking makes the dataset available to a container's strategies and views."
+[[steps.fields]]
+name = "link"
+kind = "bool"
+label = "Link into a container"
+default = true
+[[steps.fields]]
+name = "container"
+kind = "path"
+label = "Container"
+default = ""
+required = true
+when = { field = "link", truthy = true }
+
+[action]
+kind = "mdat"
+name = "dataset"
+container = "${dataset_path}"
+open = false
+[[action.commands]]
+cmd = "new_dataset"
+args = { path = "${dataset_path}", compression = "${compression}" }
+[[action.commands]]
+cmd = "open"
+when = { field = "link", truthy = true }
+args = { path = "${container}" }
+[[action.commands]]
+cmd = "link"
+when = { field = "link", truthy = true }
+args = { path = "${dataset_path}", alias = "${dataset_name}" }
+[[action.commands]]
+cmd = "repair"
+when = { field = "link", truthy = true }
+[[action.commands]]
+cmd = "close"
+when = { field = "link", truthy = true }

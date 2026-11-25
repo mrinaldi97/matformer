@@ -1,0 +1,7 @@
+title = "Model"
+page  = "chat"        # shown only on this page
+order = 1
+fields = [
+  { name = "source", label = "Model", type = "path", root = "/models", hint = "hf://org/name  or  browse a checkpoint…", tip = "Local checkpoint folder/file on the server, or a hub id" },
+]
+commands = [ { label = "Load / swap model", call = "models.load" } ]   # sends this form's values to the backend

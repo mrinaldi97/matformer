@@ -12,12 +12,12 @@ training:
 
 data:
   - name: train
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/ITACOLA/train.jsonl"
+    data_root: "$DATA_ASSETS/ITACOLA/train.jsonl"
     label2id:
       0: 0
       1: 1
   - name: test
-    data_root: "/home/matteo/Albertone/benchmark-bert/data/ITACOLA/test.jsonl"
+    data_root: "$DATA_ASSETS/ITACOLA/test.jsonl"
     label2id:
       0: 0
       1: 1

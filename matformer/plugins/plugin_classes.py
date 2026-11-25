@@ -47,4 +47,5 @@ class Plugin(MatformerModule):
 @dataclass
 class PluginConfig(MatformerMultiConfig):
     targets: Optional[Union[list,str]] = None
+    only_first: bool = False      # a pattern that matches several sockets mounts one instance only
     name: str = None

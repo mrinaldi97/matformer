@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentation system · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section" open><summary>About</summary><ul><li><a href="repository.html">Repository</a></li><li><a class="current" href="documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> About <span class="sep">/</span> Documentation system</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/documentation/scripts/build.py.html"><code>documentation/scripts/build.py</code></a> <a href="../file/documentation/scripts/import_manual.py.html"><code>documentation/scripts/import_manual.py</code></a> <a href="../file/documentation/templates/header.html.html"><code>documentation/templates/header.html</code></a> <a href="../file/documentation/templates/footer.html.html"><code>documentation/templates/footer.html</code></a> <a href="../file/documentation/nav.yaml.html"><code>documentation/nav.yaml</code></a> <a href="../file/documentation/links.yaml.html"><code>documentation/links.yaml</code></a> <a href="../file/documentation/repo.yaml.html"><code>documentation/repo.yaml</code></a></div>
+<h1 id="documentation-system">Documentation system<a class="headerlink" href="#documentation-system" title="Permanent link"></a></h1>
+<p>The documentation is a static site generated from Markdown and from the code. The output uses one stylesheet and one Pygments stylesheet.</p>
+<h2 id="build">Build<a class="headerlink" href="#build" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code>.venv/bin/python<span class="w"> </span>documentation/scripts/build.py
+.venv/bin/python<span class="w"> </span>documentation/scripts/build.py<span class="w"> </span>--clean
+</code></pre></div>
+
+<p>The script finds the repository root, sets <code>MATFORMER_SERVER=0</code> before importing the registry and writes the site to <code>documentation/site</code>. The <code>docs</code> optional dependency group contains <code>markdown</code> and <code>Pygments</code>.</p>
+<h2 id="sources">Sources<a class="headerlink" href="#sources" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code>documentation/
+  src/                      Markdown pages by section
+  templates/                header.html, footer.html, style.css
+  nav.yaml                  sections and pages
+  links.yaml                short names for the [[...]] linker
+  repo.yaml                 GitHub URL and branch
+  scripts/build.py          generator
+  scripts/import_manual.py  migration of the original manual
+  backup/                   original documents
+  site/                     generated site
+</code></pre></div>
+
+<p>A page has optional front matter:</p>
+<div class="highlight"><pre><span></span><code><span class="nn">---</span>
+<span class="nt">title</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Registry</span>
+<span class="nt">sources</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">matformer/matformer_registry.py</span>
+<span class="nt">registry_docs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">plugin.classification</span>
+<span class="nt">category_docs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">plugin</span>
+<span class="nn">---</span>
+</code></pre></div>
+
+<p><code>sources</code> becomes the Python source row. <code>registry_docs</code> attaches the page to a registry variant. <code>category_docs</code> attaches it to a category. <code>readme: true</code> makes the homepage read <code>readme.md</code> at build time.</p>
+<h2 id="links">Links<a class="headerlink" href="#links" title="Permanent link"></a></h2>
+<p>The custom syntax is <code>[[target | text]]</code>.</p>
+<table>
+<thead>
+<tr>
+<th>Target</th>
+<th>Destination</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>page:components/registry</code></td>
+<td>a Markdown page</td>
+</tr>
+<tr>
+<td><code>components/registry</code></td>
+<td>the same page, by key</td>
+</tr>
+<tr>
+<td><code>tutorial:add-a-task</code></td>
+<td>a page under <code>tutorials/</code></td>
+</tr>
+<tr>
+<td><code>file:matformer/wrapper.py</code></td>
+<td>the source page of a file</td>
+</tr>
+<tr>
+<td><code>file:matformer/wrapper.py:Class.method</code></td>
+<td>the source page at a line</td>
+</tr>
+<tr>
+<td><code>dir:matformer/transformer_blocks</code></td>
+<td>a folder listing</td>
+</tr>
+<tr>
+<td><code>registry</code></td>
+<td>the registry index</td>
+</tr>
+<tr>
+<td><code>registry:model.classification</code></td>
+<td>a registry variant</td>
+</tr>
+<tr>
+<td><code>registry_category:task</code></td>
+<td>a registry category</td>
+</tr>
+<tr>
+<td><code>dataclass:model.default</code></td>
+<td>a configuration page</td>
+</tr>
+<tr>
+<td><code>configuration:task.generation</code></td>
+<td>the same page</td>
+</tr>
+<tr>
+<td><code>env_vars:MATFORMER_ASSETS</code></td>
+<td>an entry in the environment variable table</td>
+</tr>
+<tr>
+<td><code>https://...</code></td>
+<td>an external link</td>
+</tr>
+</tbody>
+</table>
+<p>A bare name is resolved through <code>links.yaml</code> and then through the page titles. An unresolved target is rendered as a broken link and reported by the build.</p>
+<h2 id="generated-pages">Generated pages<a class="headerlink" href="#generated-pages" title="Permanent link"></a></h2>
+<ul>
+<li><strong>Registry</strong>: index, category pages and variant pages. A variant page shows its dataclass, implementations, priority, <code>requires</code>, constraints, metadata and source class.</li>
+<li><strong>Configuration</strong>: index, category pages and variant pages. The pages use <code>registry.get_definition()</code> and <code>matformer.utils.schema</code>. <code>fields_schema</code> provides name, type and default; <code>field_docs</code> provides the inline comment; <code>field_sections</code> provides the section comment above a field group.</li>
+<li><strong>Files and folders</strong>: every text file the documentation references is rendered with Pygments. The page contains an index of classes and functions, their bases and MRO, the internal imports, and a GitHub link.</li>
+<li><strong>Environment variables</strong>: the table is generated from the comments in <code>matformer/utils/env_variables.py</code> and from every environment variable read in the code.</li>
+<li><strong>Commands</strong>: the tables in <a href="../tools/commands.html">Commands</a> are generated from the server RPC registry, the <code>argparse</code> parsers, the MDAT shell and <code>SlurmCommands</code>.</li>
+</ul>
+<h2 id="maintenance">Maintenance<a class="headerlink" href="#maintenance" title="Permanent link"></a></h2>
+<p>The registry provides the categories, variants and implementations. The dataclasses provide the fields and their documentation. The build script combines these sources, so a new field or a new registered class appears without a second list to update.</p>
+<p>The <code>backup/</code> folder contains the original manual and the old README. The pages under <code>src/</code> preserve the hand-written text; generated pages are rebuilt on every run.</p>
+<h2 id="adding-a-page">Adding a page<a class="headerlink" href="#adding-a-page" title="Permanent link"></a></h2>
+<ol>
+<li>Create <code>documentation/src/&lt;section&gt;/&lt;name&gt;.md</code> with a <code>title</code> and, when relevant, <code>sources</code>.</li>
+<li>Add the page key to <code>nav.yaml</code>.</li>
+<li>Add <code>registry_docs: category.variant</code> or <code>category_docs: category</code> when the page describes a registry entry.</li>
+<li>Run the build and fix the warnings.</li>
+</ol>
+<p>The sidebar, breadcrumbs, top navigation and source links are derived from the front matter and the page location.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

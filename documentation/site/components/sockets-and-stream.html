@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sockets, plugins and the stream · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section" open><summary>Core</summary><ul><li><a href="registry.html">The Matformer Registry</a></li><li><a href="configuration.html">Configuration</a></li><li><a href="transformer.html">Transformer architecture</a></li><li><a class="current" href="sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="plugins.html">Plugins</a></li><li><a href="virtual-models.html">Virtual models and activation stores</a></li><li><a href="matformer-module.html">MatformerModule</a></li><li><a href="tensors.html">TensorsDC</a></li><li><a href="cache.html">The cache</a></li><li><a href="maskerator.html">The Maskerator</a></li><li><a href="tokenizers.html">Tokenizers</a></li><li><a href="source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Core <span class="sep">/</span> Sockets, plugins and the stream</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/plugins/socket_mixin.py.html"><code>matformer/plugins/socket_mixin.py</code></a> <a href="../file/matformer/modules/stream.py.html"><code>matformer/modules/stream.py</code></a></div>
+<h1 id="sockets-plugins-and-the-stream">Sockets, plugins and the stream<a class="headerlink" href="#sockets-plugins-and-the-stream" title="Permanent link"></a></h1>
+<p>In Matformer, any neural network can be defined with having one or more "Socket" where components ("Plugins") are "mounted" and integrated in the computational graph. This is particularly handy for several reasons: it allows for being very DRY when extending the implementation to support very different model families, it permit to insert extra components into the computational graph natively, as if they were hard-coded into the architecture, and allow for inspection and intervention at any stage of the computation, which is a very useful feature for Interpretability experimentation. Finally, the Socket/Plugin system allows for the easy replacement of any components, for development or experimental purposes.
+While this system may seem confusign at a first glance, it is actually very simple.
+Each <a href="matformer-module.html">MatformerModule</a>, for example the <a href="../file/matformer/transformer_blocks/transformer.py.html#L120">default modules of transformer models</a> inherit from <a href="../file/matformer/plugins/socket_mixin.py.html#L50">SocketMixin</a> and, at initialization time, should call "init_sockets" with a specific stream type (default to residual stream, but potentially could be AttnRes, mHC or whatever else). Any useful position in the network's computational graph should be added as a socket, for example "attention" or "normalization" or "mlp". Adding sockets is inexpensive, because if unpopulated they default to identity. For this reason, it is suggested to add sockets to any position that can be useful not only for default components to sit, but also where inspection or additional plugins could be mounted, wheter in training or during inference. <a href="../file/matformer/plugins/socket_mixin.py.html#L4">Socket</a>, indeed, contain inside an ordered list of components, which can be empty, that can be reordered, inspected and where components can be easily removed, inserted or replaced.</p>
+<h2 id="the-socket-object">The Socket object<a class="headerlink" href="#the-socket-object" title="Permanent link"></a></h2>
+<p>A <code>Socket</code> has the following methods:</p>
+<table>
+<thead>
+<tr>
+<th>Method</th>
+<th>Effect</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>add(component, index=None)</code></td>
+<td>insert a component, at the end by default</td>
+</tr>
+<tr>
+<td><code>add_first(component)</code> / <code>add_end(component)</code></td>
+<td>insert at position 0 / at the end</td>
+</tr>
+<tr>
+<td><code>get(ref=0)</code> / <code>remove(ref=0)</code> / <code>replace(component, ref=0)</code></td>
+<td>access, remove or replace by index or by name</td>
+</tr>
+<tr>
+<td><code>swap(a, b)</code> / <code>reorder(order)</code></td>
+<td>change the order</td>
+</tr>
+<tr>
+<td><code>inspect()</code></td>
+<td>a one-line rendering of the chain</td>
+</tr>
+<tr>
+<td><code>__call__(x, **kw)</code></td>
+<td>run every component in order</td>
+</tr>
+</tbody>
+</table>
+<p>Each component receives the output of the previous one. A component that returns <code>None</code> leaves the value unchanged; an empty socket is the identity. A probe can therefore be mounted without changing the computation, and a component that returns a new value is an active plugin.</p>
+<h2 id="the-stream-object">The Stream object<a class="headerlink" href="#the-stream-object" title="Permanent link"></a></h2>
+<p>A <code>Stream</code> owns the value that is flowing and the sockets it applies to. The API is four methods:</p>
+<div class="highlight"><pre><span></span><code><span class="n">stream</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>                 <span class="c1"># start a forward: current value is x</span>
+<span class="n">stream</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="s2">&quot;pre_attn&quot;</span><span class="p">)</span>       <span class="c1"># run the socket on the current value</span>
+<span class="k">with</span> <span class="n">stream</span><span class="o">.</span><span class="n">branch</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>     <span class="c1"># open a child stream</span>
+    <span class="n">s</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="s2">&quot;self_attn&quot;</span><span class="p">)</span>       <span class="c1"># work on a copy</span>
+<span class="n">stream</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="s2">&quot;post_add_attn&quot;</span><span class="p">)</span>  <span class="c1"># back on the trunk</span>
+<span class="n">stream</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>                  <span class="c1"># return the current value</span>
+</code></pre></div>
+
+<p><code>branch()</code> is a context manager. It creates a child of the same stream class, binds it to the same sockets, initialises it with the current value, yields it, and on exit calls <code>merge(child)</code>. The default <code>ResidualStream.merge</code> adds the child's value to the parent's:</p>
+<div class="highlight"><pre><span></span><code><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;stream&quot;</span><span class="p">,</span> <span class="s2">&quot;residual_stream&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">ResidualStream</span><span class="p">(</span><span class="n">Stream</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">branch</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x</span> <span class="o">+</span> <span class="n">branch</span><span class="o">.</span><span class="n">x</span>
+</code></pre></div>
+
+<p>The residual connection is the merge. A different stream type can subtract, gate, concatenate or route; the block code does not change.</p>
+<p><code>stream.visits</code> counts how many times each socket was applied in the current forward. Plugins read it as <code>self.visit</code>, which is how a probe in a looped model distinguishes the first pass from the third.</p>
+<h2 id="example-block">Example block<a class="headerlink" href="#example-block" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="k">class</span><span class="w"> </span><span class="nc">MyBlock</span><span class="p">(</span><span class="n">MatformerModule</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">init_sockets</span><span class="p">(</span><span class="n">stream_type</span><span class="o">=</span><span class="s2">&quot;residual_stream&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_socket</span><span class="p">(</span><span class="s2">&quot;pre_attn&quot;</span><span class="p">,</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;norm&quot;</span><span class="p">,</span> <span class="s2">&quot;rmsnorm&quot;</span><span class="p">,</span> <span class="n">normalized_shape</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_socket</span><span class="p">(</span><span class="s2">&quot;self_attn&quot;</span><span class="p">,</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;attention&quot;</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="n">config</span><span class="o">.</span><span class="n">hidden_size</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_socket</span><span class="p">(</span><span class="s2">&quot;post_attn&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">add_socket</span><span class="p">(</span><span class="s2">&quot;post_add_attn&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">init</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">branch</span><span class="p">()</span> <span class="k">as</span> <span class="n">s</span><span class="p">:</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="s2">&quot;pre_attn&quot;</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="s2">&quot;self_attn&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+            <span class="n">s</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="s2">&quot;post_attn&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">apply</span><span class="p">(</span><span class="s2">&quot;post_add_attn&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">stream</span><span class="o">.</span><span class="n">exit</span><span class="p">()</span>
+</code></pre></div>
+
+<p><code>register_socket(name, component, attr=None)</code> also sets the component as an attribute when <code>attr</code> is given, which is what makes it appear in the state dict and under the stable name declared by the class annotation. <code>add_socket(name)</code> creates an empty socket that is the identity until something is mounted in it.</p>
+<h2 id="the-plugin-layer">The plugin layer<a class="headerlink" href="#the-plugin-layer" title="Permanent link"></a></h2>
+<p>Sockets hold components; <a href="plugins.html">plugins</a> are the components mounted from the configuration or at runtime. The <code>PluginManager</code> indexes sockets by their dotted address, matches patterns with <code>fnmatch</code>, and provides <code>add_first</code>, <code>add_end</code>, <code>attach</code>, <code>replace</code>, <code>swap</code>, <code>reorder</code>, <code>detach</code>, <code>inspect</code> and <code>plugins</code>.</p>
+<p>A plugin receives and returns the same kind of object the socket carries: a <a href="tensors.html">TensorDC</a> in the tensor sockets, and the type documented by the socket's owner elsewhere.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

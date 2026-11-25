@@ -42,7 +42,7 @@ try:
 except:
     orjson = None
 
-from .lmdb import LMDBDataset
+from .lmdb_store import LMDBDataset
 from .mdat_common import (
     MDatIsReadOnly,
     RandomPermutator,
@@ -51,7 +51,7 @@ from .mdat_common import (
     SubmDatNotFound,
     sanify_name,
 )
-from .preprocessing import AtlasIterator, HuggingFaceIterator, JSONIterator, LMDBIterator
+from .preprocessing import AtlasIterator, CSVIterator, HuggingFaceIterator, JSONIterator, LMDBIterator
 from .strategy import PretokenizationStrategy, process_documents_batch
 
 # Strategy attachment defaults
@@ -107,6 +107,9 @@ class MDat:
             strategy_stats = self.config_db.get_strategy_submdats(self.current_strategy.strategy_name, self.config_id)
             if strategy_stats:
                 info += f" Tokens: {strategy_stats['total_tokens']} Chunks: {strategy_stats['total_chunks']}"
+        gaps = self.desynced_strategies() if isinstance(getattr(self, 'config_id', None), int) else []
+        if gaps:
+            info += f" DESYNCED: {gaps} (run sync_strategy)"
         return info
 
     # NOTE: load_submdat/create_submdat serve BOTH the standalone datasets
@@ -125,7 +128,14 @@ class MDat:
         if instance.submdat_name not in instance.container.list_submdat():
             raise SubmDatNotFound(f"Dataset '{submdat_name}' is not registered in the container")
         if not os.path.isdir(instance.submdat_path):
-            raise FileNotFoundError(f"{instance.submdat_name} is registered but its folder is missing at {instance.submdat_path}.")
+            # A container pretokenized on faster storage often keeps only `pretok/` where it is trained:
+            # the raw folders are gone, and nothing needs them once a strategy serves the documents. That
+            # is a legal state, not a broken one -- with neither raw nor pretokenized bytes, it is.
+            if not instance.pretokenized_strategies():
+                raise FileNotFoundError(f"{instance.submdat_name} is registered but its folder is missing at {instance.submdat_path}.")
+            instance.raw_missing = True
+        else:
+            instance.raw_missing = False
         instance.row = instance.config_db.get_submdat_row(submdat_name)
         instance.submdat_id = instance.config_db.get_dsmap(key='name', value=submdat_name)
         instance.config_id = instance.submdat_id
@@ -189,6 +199,11 @@ class MDat:
             if ext is not None:
                 self.container._mirror_linked_dataset(self.submdat_id, ext, self.external_name)
         self.container._update_default_view(self.submdat_id)
+        # Appended rows lengthened the default view: any shuffle file and any
+        # distributed precompute that includes this dataset is now stale.
+        on_change = getattr(self.container, '_on_dataset_changed', None)
+        if on_change is not None:
+            on_change(self.submdat_id)
 
     # ----------------------------------------------------------- storage dbs
     def _check_writable(self):
@@ -208,17 +223,42 @@ class MDat:
 
     def _load_map_size(self, db_info):
         """Stored dbs are opened with a map size 20% larger than their current
-        disk size (falls back to the default for empty/unknown ones)."""
-        disk_size = self.config_db.get_storage_db_info(db_info['id'])['disk_size']
+        disk size (falls back to the default for empty/unknown ones). During an
+        ingestion a larger, input-sized map can be forced."""
+        info = self.config_db.get_storage_db_info(db_info['id'])
+        disk_size = info.get('disk_size')
+        declared = int(info.get('map_size') or 0)
         if not isinstance(disk_size, int) or disk_size <= 1:
-            return self.default_map_size
-        return disk_size * 1.2
+            size = self.default_map_size
+        else:
+            size = disk_size * 1.2
+        # Never shrink below the map size the database was created with: the
+        # on-disk file size is smaller than it (pages are added lazily), and an
+        # append/pretokenization must still fit.
+        size = max(size, declared)
+        forced = getattr(self, '_forced_map_size', None)
+        return max(size, forced) if forced else size
+
+    def pretokenized_strategies(self) -> list:
+        """Strategies that hold a pretokenized copy of this dataset on disk."""
+        base = self.pretok_base_path
+        if not os.path.isdir(base):
+            return []
+        return [one for one in sorted(os.listdir(base))
+                if os.path.isdir(os.path.join(base, one, self.folder_name))]
 
     def _load_storage_dbs(self, batch_size=None):
-        """Open all the storage databases ('data', 'meta', extras) of this dataset."""
+        """Open all the storage databases ('data', 'meta', extras) of this dataset. Ones that are not on
+        disk are skipped rather than fatal: a dataset served by a pretokenization strategy has no use
+        for the raw bytes it was tokenized from."""
         for dbs in self.config_db.get_submdat_databases(self.config_id):
             db_type = _role_of(dbs)
             db_path = os.path.join(self.submdat_path, db_type) + '.dat'
+            # LMDB stores can be a file or a directory depending on how they were
+            # created (subdir=os.path.isdir at open time), so test existence, not dir-ness.
+            if not os.path.exists(db_path):
+                self.missing_storage = getattr(self, 'missing_storage', []) + [db_type]
+                continue
             self.storage_db[db_type] = self._open_lmdb(db_path, dbs['compression_level'],
                                                        self._load_map_size(dbs), b_size=batch_size)
 
@@ -437,7 +477,8 @@ class MDat:
                                                   add_special_tokens=add_special_tokens))
         return composed
 
-    def get_generator(self, progress_bar=False, wanted_from_dbs='full', wanted_from_strategy=None, raw=False, randomize=False, seed=27):
+    def get_generator(self, progress_bar=False, wanted_from_dbs='full', wanted_from_strategy=None, raw=False,
+                      randomize=False, seed=27, start=0, end=None):
         """
         Generator over the elements of this dataset.
         Args:
@@ -445,12 +486,16 @@ class MDat:
             wanted_from_dbs / wanted_from_strategy / raw: composition of each item
                 (same semantics as set_default_wanted)
             randomize: iterate in randomized order (deterministic per seed)
+            start / end: optional half-open key range (used to pretokenize only
+                the rows an append added)
         """
-        permutator = RandomPermutator(max_len=self.len, seed=seed) if randomize else None
-        iterator = tqdm(range(self.len)) if progress_bar else range(self.len)
+        end = self.len if end is None else min(int(end), self.len)
+        start = max(int(start), 0)
+        permutator = RandomPermutator(max_len=end - start, seed=seed) if randomize else None
+        iterator = tqdm(range(start, end)) if progress_bar else range(start, end)
         for key in iterator:
             if permutator is not None:
-                key = permutator(key)
+                key = start + permutator(key - start)
             yield self._compose_return(key=key, wanted_from_dbs=wanted_from_dbs,
                                        wanted_from_strategy=wanted_from_strategy, raw=raw)
 
@@ -463,6 +508,183 @@ class MDat:
 
     def get_current_strategy(self):
         return self.current_strategy
+
+    # ----------------------------------------------------- direct row editing
+    def _storage_role_file(self, role: str) -> str:
+        return os.path.join(self.submdat_path, role) + '.dat'
+
+    def _persist_storage_state(self, data_delta: int = 0, meta_delta: int = 0) -> None:
+        """Refresh disk sizes and the recorded uncompressed byte counts after a
+        write/edit/delete. Deltas are accumulated by the caller so that a
+        streaming writer pays for one catalog update, not one per row."""
+        deltas = {'data': int(data_delta), 'meta': int(meta_delta)}
+        for dbs in self.config_db.get_submdat_databases(self.config_id):
+            role = _role_of(dbs)
+            update = {}
+            path = self._storage_role_file(role)
+            if os.path.exists(path):
+                update['disk_size'] = os.path.getsize(path)
+            if role in deltas:
+                update['raw_data_bytes'] = max(0, int(dbs.get('raw_data_bytes') or 0) + deltas[role])
+            if update:
+                self.config_db.update_submdat_database(
+                    submdat_id=self.config_id, database_id=dbs['id'], data=update)
+
+    def _invalidate_pretokenization(self) -> None:
+        """Edits and deletions change what every stored key means, so every
+        strategy must be pretokenized again. Clearing coverage (and the stats
+        it is inferred from) makes desynced_strategies() report the full range;
+        pretokenize_submdat() rewrites the rows of the new document set."""
+        for strategy_name in self.config_db.list_strategies():
+            if not self.config_db.get_strategy_submdats(strategy_name, self.config_id):
+                continue
+            self.config_db.set_strategy_coverage(strategy_name, self.config_id, [])
+            self.config_db.clear_strategy_submdat_precomp(strategy_name, self.config_id)
+            self.config_db.update_strategy_submdat(strategy_name, self.config_id, {
+                'total_tokens': 0, 'max_tokens_per_doc': 0, 'total_chunks': 0,
+                'max_chunks_per_doc': 0, 'processed_docs': 0,
+            })
+
+    def _encode_record(self, record, data_column):
+        """Split one record into (data bytes or None, metadata dict, serialized metadata)."""
+        if not isinstance(record, dict):
+            raise TypeError(f"An mdat row must be a dict, got {type(record)}")
+        payload = dict(record)
+        data = None
+        if 'data' in self.storage_db and data_column is not None and data_column in payload:
+            data = payload.pop(data_column)
+            if isinstance(data, str):
+                data = data.encode('utf-8')
+            if not isinstance(data, bytes):
+                raise TypeError(f"Column '{data_column}' must be str or bytes to be stored as raw data, "
+                                f"got {type(data)}")
+        try:
+            serialized = orjson.dumps(payload) if orjson else json.dumps(payload).encode()
+        except Exception as exc:
+            raise TypeError(f"Metadata for an mdat row is not JSON serializable: {exc}") from exc
+        return data, payload, serialized
+
+    def _write_one(self, record, data_column='text', key=None):
+        """Write one row without touching the catalog. Returns
+        (key, data_delta, meta_delta, is_new) where the deltas are the change in
+        uncompressed bytes with respect to the row that was there before."""
+        self._check_writable()
+        is_new = key is None or int(key) >= self.len
+        key = int(self.len) if key is None else int(key)
+        if key < 0:
+            raise ValueError("Row keys must be non-negative")
+        has_data_db = 'data' in self.storage_db
+        has_meta_db = 'meta' in self.storage_db
+        if not has_data_db and not has_meta_db:
+            raise RuntimeError(f"Dataset '{self.submdat_name}' has no writable storage databases")
+        if has_data_db and data_column is not None and data_column not in record and is_new:
+            raise ValueError(f"Column '{data_column}' is missing from the new row "
+                             f"(keys: {sorted(record)})")
+        data, payload, serialized = self._encode_record(record, data_column)
+        old_data_len = 0
+        old_meta_len = 0
+        if not is_new:
+            if has_data_db:
+                try:
+                    old_data_len = len(self.storage_db['data'][key])
+                except IndexError:
+                    old_data_len = 0
+            if has_meta_db:
+                try:
+                    old_meta_len = len(self.storage_db['meta'][key])
+                except IndexError:
+                    old_meta_len = 0
+        if has_data_db and data is not None:
+            self.storage_db['data'].write(data, key=key)
+        if has_meta_db:
+            if payload or has_data_db:
+                self.storage_db['meta'].write(serialized, key=key)
+        self.len = max(self.len, key + 1)
+        return key, (len(data) if data is not None else 0) - old_data_len, \
+            (len(serialized) if (payload or has_data_db) else 0) - old_meta_len, is_new
+
+    def commit_storage_changes(self, data_delta: int = 0, meta_delta: int = 0,
+                               invalidate_pretokenization: bool = False) -> None:
+        """Flush the storage databases and persist length, sizes and (optionally)
+        the invalidation that any edit/delete requires."""
+        for db in self.storage_db.values():
+            db.sync_length()
+        self.config_db.update_submdat_row(self.config_id, {'document_number': int(self.len)})
+        self._persist_storage_state(data_delta, meta_delta)
+        if invalidate_pretokenization:
+            self._invalidate_pretokenization()
+        self._after_data_change()
+        refresh = getattr(self.container, '_refresh_active_view', None)
+        if refresh is not None:
+            refresh()
+
+    def write_document(self, record, data_column='text', key=None):
+        """Write (append or overwrite) one row and persist it immediately.
+
+        Passing a key inside ``[0, len)`` overwrites that document, which breaks
+        any pretokenization of this dataset; keys at or beyond ``len`` append.
+        Use an MDatWriter for a streaming loop: it batches these catalog writes.
+        """
+        key, data_delta, meta_delta, is_new = self._write_one(record, data_column, key)
+        self.commit_storage_changes(data_delta, meta_delta, invalidate_pretokenization=not is_new)
+        return key
+
+    def update_document(self, key, record, data_column='text'):
+        """Overwrite a single existing row (breaks pretokenization)."""
+        if int(key) >= self.len:
+            raise IndexError(f"Row {key} does not exist (len={self.len}); use write_document to append")
+        return self.write_document(record, data_column=data_column, key=key)
+
+    def update_rows(self, rows, data_column='text'):
+        """Overwrite several rows in one catalog update.
+
+        ``rows`` is a mapping ``{key: record}`` or an iterable of
+        ``(key, record)`` pairs. Every key must already exist. Any edit breaks
+        pretokenization, so all strategies are invalidated afterwards.
+        """
+        items = rows.items() if isinstance(rows, dict) else rows
+        data_delta = 0
+        meta_delta = 0
+        keys = []
+        for key, record in items:
+            key = int(key)
+            if key < 0 or key >= self.len:
+                raise IndexError(f"Row {key} does not exist (len={self.len})")
+            key, row_data_delta, row_meta_delta, _ = self._write_one(record, data_column, key=key)
+            data_delta += row_data_delta
+            meta_delta += row_meta_delta
+            keys.append(key)
+        if keys:
+            self.commit_storage_changes(data_delta, meta_delta, invalidate_pretokenization=True)
+        return keys
+
+    def delete_documents(self, keys, compact=True) -> int:
+        """Delete rows and keep keys sequential by default.
+
+        Keys are sequential numbers, so a hole would break iteration. With
+        ``compact=True`` every surviving row is shifted down to fill the gap
+        (O(n) over the dataset, but no decompression/recompression). Deletion
+        always breaks pretokenization: coverages and strategy stats are reset.
+        """
+        if not compact:
+            raise NotImplementedError("Only compact deletion is supported: mdat keys are sequential")
+        self._check_writable()
+        old_len = int(self.len)
+        selected = sorted({int(key) for key in keys})
+        selected = [key for key in selected if 0 <= key < old_len]
+        if not selected:
+            return 0
+        data_delta = 0
+        meta_delta = 0
+        if 'data' in self.storage_db:
+            data_delta = -sum(len(self.storage_db['data'][key]) for key in selected)
+        if 'meta' in self.storage_db:
+            meta_delta = -sum(len(self.storage_db['meta'][key]) for key in selected)
+        for db in self.storage_db.values():
+            db.delete_many(selected, compact=True)
+        self.len = old_len - len(selected)
+        self.commit_storage_changes(data_delta, meta_delta, invalidate_pretokenization=True)
+        return len(selected)
 
     # ------------------------------------------------------------- strategies
     def _attach_strategy(self, strategy_name: str, add: bool = False, compression_level: int = 0,
@@ -512,19 +734,7 @@ class MDat:
         self._check_writable()
         for db in self.pretok_db.values():
             db.close()
-
-        self.config_db.update_strategy_submdat(strategy_name, self.config_id, {
-            'finalized_at': datetime.utcnow().isoformat(),
-            'total_tokens': stats.get('total_tokens', 0),
-            'max_tokens_per_doc': stats.get('max_tokens_per_doc', 0),
-            'total_chunks': stats.get('total_chunks', 0),
-            'max_chunks_per_doc': stats.get('max_chunks_per_doc', 0),
-            'processed_docs': stats.get('processed_docs', 0)
-        })
-
-        for multiplier, precomp_len in enumerate(stats.get('precomputed_lengths', [])):
-            if precomp_len > 0:
-                self.config_db.set_strategy_submdat_precomp(strategy_name, self.config_id, multiplier, precomp_len)
+        self._persist_strategy_stats(strategy_name, stats, finalize=True)
 
         # Record each output database's disk size
         pretok_folder = os.path.join(self.pretok_base_path, strategy_name, self.folder_name)
@@ -542,10 +752,92 @@ class MDat:
             if ext is not None:
                 self.container._mirror_linked_dataset(self.submdat_id, ext, self.external_name)
 
+    def _persist_strategy_stats(self, strategy_name, stats, finalize=False):
+        data = {
+            'total_tokens': stats.get('total_tokens', 0),
+            'max_tokens_per_doc': stats.get('max_tokens_per_doc', 0),
+            'total_chunks': stats.get('total_chunks', 0),
+            'max_chunks_per_doc': stats.get('max_chunks_per_doc', 0),
+            'processed_docs': stats.get('processed_docs', 0),
+        }
+        if finalize:
+            data['finalized_at'] = datetime.utcnow().isoformat()
+        self.config_db.update_strategy_submdat(strategy_name, self.config_id, data)
+        for multiplier, precomp_len in enumerate(stats.get('precomputed_lengths', [])):
+            if precomp_len > 0:
+                self.config_db.set_strategy_submdat_precomp(
+                    strategy_name, self.config_id, multiplier, precomp_len)
+
+    def _flush_pretok_dbs(self):
+        for db in self.pretok_db.values():
+            db.sync_length()
+
+    # ------------------------------------------------------------ coverage
+    @staticmethod
+    def _merge_ranges(ranges):
+        """Canonical (sorted, non-overlapping, adjacent-merged) half-open ranges."""
+        out = []
+        for start, end in sorted((int(s), int(e)) for s, e in ranges if int(e) > int(s)):
+            if out and start <= out[-1][1]:
+                out[-1] = (out[-1][0], max(out[-1][1], end))
+            else:
+                out.append((start, end))
+        return out
+
+    def _coverage_ranges(self, strategy_name, materialize=False):
+        """Rows this strategy has durably pretokenized. Old datasets that predate
+        coverage rows are inferred from their finalized stats; materialize=True
+        writes that inference to the catalog (needed before extending it)."""
+        rows = self.config_db.get_strategy_coverage(strategy_name, self.config_id)
+        if rows:
+            return self._merge_ranges([(r['start'], r['end']) for r in rows])
+        stats = self.config_db.get_strategy_submdats(strategy_name, self.config_id)
+        processed = int((stats or {}).get('processed_docs') or 0)
+        if processed > 0:
+            inferred = [(0, processed)]
+            if materialize:
+                self.config_db.set_strategy_coverage(strategy_name, self.config_id, inferred)
+            return inferred
+        return []
+
+    def _missing_ranges(self, strategy_name, total=None, materialize=False):
+        total = int(self.len if total is None else total)
+        missing, cursor = [], 0
+        for start, end in self._coverage_ranges(strategy_name, materialize=materialize):
+            if start > cursor:
+                missing.append((cursor, min(start, total)))
+            cursor = max(cursor, end)
+            if cursor >= total:
+                break
+        if cursor < total:
+            missing.append((cursor, total))
+        return [(s, e) for s, e in missing if e > s]
+
+    def _add_coverage(self, strategy_name, start, end):
+        if end <= start:
+            return
+        ranges = self._coverage_ranges(strategy_name, materialize=True)
+        ranges.append((start, end))
+        self.config_db.set_strategy_coverage(strategy_name, self.config_id,
+                                             self._merge_ranges(ranges))
+
+    def desynced_strategies(self):
+        """Pretokenization gaps introduced by appends: one (strategy, start, end)
+        tuple per missing range. Empty when every strategy covers every row."""
+        total = int((self.config_db.get_submdat_row(self.config_id) or {}).get('document_number') or 0)
+        out = []
+        for strategy_name in self.config_db.list_strategies():
+            if not self.config_db.get_strategy_submdats(strategy_name, self.config_id):
+                continue
+            for start, end in self._missing_ranges(strategy_name, total):
+                out.append((strategy_name, start, end))
+        return out
+
     # ---------------------------------------------------------- pretokenization
     def pretokenize_submdat(self, strategy_name, progress_bar=True, compression_level=0,
                             chunking_strict_checks=False, parallel=True, num_processes=None,
-                            batch_size=256, map_size=1 << 40, disk_size_multiplier=4):
+                            batch_size=256, map_size=1 << 40, disk_size_multiplier=4,
+                            checkpoint_every=100_000, resume=False):
         """
         Pretokenize this dataset with a registered strategy: runs the
         strategy's splitter over every document (optionally in parallel) and
@@ -561,35 +853,112 @@ class MDat:
                the smallest width fitting the max chunk length.
             3) "extra": stored as-is (bytes; strings utf-8; else orjson).
         """
+        if resume:
+            # Repair/resume the ranges that were not durably finished instead
+            # of starting over (checkpointed every `checkpoint_every` rows).
+            return self.sync_strategy(
+                strategy_name, progress_bar=progress_bar, compression_level=compression_level,
+                chunking_strict_checks=chunking_strict_checks, parallel=parallel,
+                num_processes=num_processes, batch_size=batch_size,
+                disk_size_multiplier=disk_size_multiplier, checkpoint_every=checkpoint_every)
+        total = int((self.config_db.get_submdat_row(self.config_id) or {}).get('document_number') or 0)
+        return self._pretokenize_ranges(
+            strategy_name, ranges=[(0, total)], merge_stats=False,
+            progress_bar=progress_bar, compression_level=compression_level,
+            chunking_strict_checks=chunking_strict_checks, parallel=parallel,
+            num_processes=num_processes, batch_size=batch_size, map_size=map_size,
+            disk_size_multiplier=disk_size_multiplier, checkpoint_every=checkpoint_every)
+
+    def sync_strategy(self, strategy_name, progress_bar=True, compression_level=0,
+                      chunking_strict_checks=False, parallel=True, num_processes=None,
+                      batch_size=256, disk_size_multiplier=4, checkpoint_every=100_000):
+        """Pretokenize only the rows added since `strategy_name` last ran.
+
+        This is the repair for a desynced dataset: it reuses exactly the normal
+        pretokenization pipeline, but walks only the missing ranges and merges
+        its statistics with the existing ones. Interrupted runs resume from the
+        last durable checkpoint, because coverage is recorded as they progress.
+        """
+        self._check_writable()
+        if not self.config_db.get_strategy_submdats(strategy_name, self.config_id):
+            raise SubMdatMissesStrategy(
+                f"Dataset '{self.submdat_name}' has no pretokenization '{strategy_name}'")
+        total = int((self.config_db.get_submdat_row(self.config_id) or {}).get('document_number') or 0)
+        self.len = total
+        missing = self._missing_ranges(strategy_name, total, materialize=True)
+        if not missing:
+            return {'strategy': strategy_name, 'ranges': [], 'processed_docs': 0}
+        print(f"Syncing '{strategy_name}' on '{self.submdat_name}': {missing}")
+        result = self._pretokenize_ranges(
+            strategy_name, ranges=missing, merge_stats=True,
+            progress_bar=progress_bar, compression_level=compression_level,
+            chunking_strict_checks=chunking_strict_checks, parallel=parallel,
+            num_processes=num_processes, batch_size=batch_size, map_size=None,
+            disk_size_multiplier=disk_size_multiplier, checkpoint_every=checkpoint_every)
+        result['ranges'] = missing
+        return result
+
+    def _pretokenize_ranges(self, strategy_name, ranges, merge_stats,
+                            progress_bar=True, compression_level=0,
+                            chunking_strict_checks=False, parallel=True, num_processes=None,
+                            batch_size=256, map_size=1 << 40, disk_size_multiplier=4,
+                            checkpoint_every=100_000):
         self._check_writable()
         max_multiplier = MAX_PRECOMPUTED_MULTIPLIER
-        # Map size for the output dbs: raw data size x multiplier (tunable)
         data_disk_size = self.config_db.get_submdat_info(submdat_id=self.config_id)['raw_data_bytes'] or 0
         inferred_map_size = data_disk_size * disk_size_multiplier if data_disk_size else map_size
-        print(f"Original data size is {data_disk_size}. A multiplier of {disk_size_multiplier} is used to initialize the pretokenization storage dataset(s). If this value ({inferred_map_size}) is too large, you'll get memory errors; if too small, pretokenization will not fit the database. Adjust disk_size_multiplier in case of problems.")
-        self._attach_strategy(strategy_name, add=True, compression_level=compression_level, map_size=inferred_map_size)
+        if inferred_map_size:
+            # LMDB needs room for its pages/overhead even for tiny datasets.
+            inferred_map_size = max(inferred_map_size, 1 << 30)
+        if inferred_map_size:
+            print(f"Original data size is {data_disk_size}. A multiplier of {disk_size_multiplier} is used to initialize the pretokenization storage dataset(s). If this value ({inferred_map_size}) is too large, you'll get memory errors; if too small, pretokenization will not fit the database. Adjust disk_size_multiplier in case of problems.")
+        self._attach_strategy(strategy_name, add=True, compression_level=compression_level,
+                              map_size=inferred_map_size or (1 << 40))
         strategy = self.current_strategy
+
         stats = {
-            'total_tokens': 0,
-            'max_tokens_per_doc': 0,
-            'total_chunks': 0,
-            'max_chunks_per_doc': 0,
+            'total_tokens': 0, 'max_tokens_per_doc': 0,
+            'total_chunks': 0, 'max_chunks_per_doc': 0,
             'processed_docs': 0,
             'precomputed_lengths': [0] * (max_multiplier + 1),
         }
-        # What does the splitter want from the dataset's databases? (default: raw data)
+        if merge_stats:
+            existing = self.config_db.get_strategy_submdats(strategy_name, self.config_id) or {}
+            for field in ('total_tokens', 'max_tokens_per_doc', 'total_chunks',
+                          'max_chunks_per_doc', 'processed_docs'):
+                stats[field] = int(existing.get(field) or 0)
+            for precomp in self.config_db.get_strategy_precomp(
+                    strategy_name=strategy_name, submdat_id=self.config_id):
+                multiplier = int(precomp['multiplier'])
+                if 0 <= multiplier <= max_multiplier:
+                    stats['precomputed_lengths'][multiplier] = int(precomp['precomputed_length'] or 0)
+        else:
+            self.config_db.set_strategy_coverage(strategy_name, self.config_id, [])
+            self.config_db.clear_strategy_submdat_precomp(strategy_name, self.config_id)
+        if merge_stats:
+            self._coverage_ranges(strategy_name, materialize=True)
+
         progress_bar_generator = progress_bar if not parallel else False
-        generator = self.get_generator(
-            progress_bar=progress_bar_generator,
-            wanted_from_dbs=strategy.wants_from_db,
-            raw=strategy.wants_raw
-        )
+        progress_start = None
+
+        def checkpoint(upto):
+            nonlocal progress_start
+            if progress_start is not None and upto > progress_start:
+                self._flush_pretok_dbs()
+                self._persist_strategy_stats(strategy_name, stats, finalize=False)
+                self._add_coverage(strategy_name, progress_start, upto)
+            progress_start = upto
+
+        def make_generator(start, end):
+            return self.get_generator(
+                progress_bar=progress_bar_generator,
+                wanted_from_dbs=strategy.wants_from_db,
+                raw=strategy.wants_raw, start=start, end=end)
 
         if not parallel:
-            def process_batch(batch, stats):
+            def process_batch(batch):
                 keys, docs = zip(*batch)
                 batch_results = strategy.pretokenize_batch(list(docs))
-
                 for k, split_result in zip(keys, batch_results):
                     for db_name in strategy.returns:
                         if db_name not in split_result:
@@ -606,8 +975,7 @@ class MDat:
                                 split_result['chunks'],
                                 max_tokens_per_chunk=strategy.chunk_size,
                                 tokens_length=tokens_length,
-                                strict_checks=chunking_strict_checks
-                            )
+                                strict_checks=chunking_strict_checks)
                             chunk_count = len(split_result['chunks'])
                             stats['total_chunks'] += chunk_count
                             stats['max_chunks_per_doc'] = max(stats['max_chunks_per_doc'], chunk_count)
@@ -617,33 +985,40 @@ class MDat:
                         else:
                             obj_bytes = strategy.prepare_extra_data_for_storage(split_result[db_name])
                             self.pretok_db[db_name].write(obj=obj_bytes, key=k)
-
                     stats['processed_docs'] += 1
 
-            batch = []
-            for key, doc in enumerate(generator):
-                batch.append((key, doc))
-                if len(batch) >= batch_size:
-                    process_batch(batch, stats)
-                    batch = []
-            if batch:
-                process_batch(batch, stats)
+            for range_start, range_end in ranges:
+                progress_start = range_start
+                processed_since_checkpoint = 0
+                batch = []
+                upto = range_start
+                for offset, doc in enumerate(make_generator(range_start, range_end)):
+                    key = range_start + offset
+                    batch.append((key, doc))
+                    if len(batch) >= batch_size:
+                        process_batch(batch)
+                        processed_since_checkpoint += len(batch)
+                        upto = batch[-1][0] + 1
+                        batch = []
+                        if checkpoint_every and processed_since_checkpoint >= checkpoint_every:
+                            checkpoint(upto)
+                            processed_since_checkpoint = 0
+                if batch:
+                    process_batch(batch)
+                    upto = batch[-1][0] + 1
+                checkpoint(upto)
         else:
             if num_processes is None:
                 num_processes = mp.cpu_count()
-            self.current_strategy._initialize_components()
+            strategy._initialize_components()
 
-            def process_batch_and_write(batch_data, stats):
-                """Process a batch across workers and write the merged results."""
+            def process_batch_and_write(batch_data):
                 sub_batches = [batch_data[i:i + batch_size] for i in range(0, len(batch_data), batch_size)]
-
                 results = pool.starmap(process_documents_batch, [
-                    (sub_batch, self.current_strategy.manifest, self.pretok_base_path,
+                    (sub_batch, strategy.manifest, self.pretok_base_path,
                      self.container.functions_path, strategy_name,
                      chunking_strict_checks, strategy.chunk_size, strategy.returns, max_multiplier)
-                    for sub_batch in sub_batches
-                ])
-
+                    for sub_batch in sub_batches])
                 db_batches = {db_name: [] for db_name in strategy.returns}
                 for worker_db_data, worker_stats in results:
                     stats['total_tokens'] += worker_stats['total_tokens']
@@ -656,42 +1031,46 @@ class MDat:
                     for db_name in strategy.returns:
                         if db_name in worker_db_data:
                             db_batches[db_name].extend(worker_db_data[db_name])
-
                 for db_name, key_data_pairs in db_batches.items():
                     if key_data_pairs:
                         self.pretok_db[db_name].write_batch_with_keys(key_data_pairs)
-                return stats
 
             with mp.Pool(processes=num_processes) as pool:
-                batch = []
-                total_docs = len(self)
-                pbar = tqdm(total=total_docs, desc="Pretokenizing", disable=not progress_bar)
-
-                for key, doc in enumerate(generator):
-                    batch.append((key, doc))
-                    if len(batch) >= batch_size * num_processes:
-                        stats = process_batch_and_write(batch, stats)
+                for range_start, range_end in ranges:
+                    progress_start = range_start
+                    processed_since_checkpoint = 0
+                    batch = []
+                    upto = range_start
+                    total_docs = max(range_end - range_start, 0)
+                    pbar = tqdm(total=total_docs, desc="Pretokenizing", disable=not progress_bar)
+                    for offset, doc in enumerate(make_generator(range_start, range_end)):
+                        key = range_start + offset
+                        batch.append((key, doc))
+                        if len(batch) >= batch_size * num_processes:
+                            process_batch_and_write(batch)
+                            processed_since_checkpoint += len(batch)
+                            upto = batch[-1][0] + 1
+                            pbar.update(len(batch))
+                            batch = []
+                            if checkpoint_every and processed_since_checkpoint >= checkpoint_every:
+                                checkpoint(upto)
+                                processed_since_checkpoint = 0
+                    if batch:
+                        process_batch_and_write(batch)
+                        upto = batch[-1][0] + 1
                         pbar.update(len(batch))
-                        batch = []
+                    pbar.close()
+                    checkpoint(upto)
 
-                if batch:
-                    stats = process_batch_and_write(batch, stats)
-                    pbar.update(len(batch))
-                pbar.close()
-
-        # Close the databases and persist the stats
         self.add_strategy_end(strategy_name=strategy_name, stats=stats)
+        return {'strategy': strategy_name, 'processed_docs': stats['processed_docs'],
+                'total_tokens': stats['total_tokens'], 'total_chunks': stats['total_chunks']}
 
     # ------------------------------------------------------------------ ingest
-    def convert_to_submdat(self, dataset_type, dataset_path, dataset_args={}, data_key='text',
-                           modality='text', logger=False, progress_bar=True, do_transform=False,
-                           do_filtering=False, dataset_config=''):
-        """
-        Populate this dataset's databases from an external format.
-        dataset_type: 'jsonl' | 'lmdb' | 'hf' | 'atlas' (see preprocessing.py).
-        Returns the partial manifest written (document_number, errors_counters).
-        """
-        self._check_writable()
+    @staticmethod
+    def _ingest_logger(logger):
+        if logger:
+            return logger
 
         class PrintLogger:
             def warning(self, message):
@@ -703,47 +1082,54 @@ class MDat:
             def info(self, message):
                 print("Info: ", message)
 
-        logger_fn = logger if logger else PrintLogger()
+        return PrintLogger()
 
-        if not self.storage_db:
-            logger_fn.error(f"Databases are not loaded for dataset {self.submdat_name}")
-            return None
-
-        # Instantiate the generator for the requested input format
-        # dataset_args example: json_batch_read=False, files_recurse_in_folder=True,
-        #                       files_metadata_type='multiple_json', csv_has_header=False,
-        #                       csv_data_field=0, hf_split='train', hf_subdataset=None
+    def _build_iterator(self, dataset_type, dataset_path, dataset_args, dataset_config,
+                        progress_bar, logger_fn, skip=0):
+        """Instantiate the input iterator for a source format. Returns
+        (generator, inferred_map_size); append and ingestion share it."""
         inferred_map_size = None
         if dataset_type == 'jsonl':
             generator_fn = JSONIterator(json_path=dataset_path, dataset_args=dataset_args,
-                                        progress_bar=progress_bar, logger=logger_fn)
+                                        progress_bar=progress_bar, logger=logger_fn, skip=skip)
+            file_size = os.path.getsize(dataset_path)
+            inferred_map_size = max(1 << 30, file_size * 5)
+        elif dataset_type == 'csv':
+            generator_fn = CSVIterator(dataset_path, dataset_args=dataset_args,
+                                       progress_bar=progress_bar, logger=logger_fn, skip=skip)
             file_size = os.path.getsize(dataset_path)
             inferred_map_size = max(1 << 30, file_size * 5)
         elif dataset_type == 'lmdb':
             generator_fn = LMDBIterator(dataset_path, dataset_args=dataset_args,
-                                        progress_bar=progress_bar, logger=logger_fn)
+                                        progress_bar=progress_bar, logger=logger_fn, skip=skip)
         elif dataset_type == 'hf':
             generator_fn = HuggingFaceIterator(dataset_path=dataset_path, logger=logger_fn,
                                                dataset_args=dataset_args, dataset_config=dataset_config,
-                                               dataset_split='train', progress_bar=True)
+                                               dataset_split='train', progress_bar=True, skip=skip)
         elif dataset_type == 'atlas':
             generator_fn = AtlasIterator(path=dataset_path, dataset_args=dataset_args,
-                                         progress_bar=progress_bar, logger=logger_fn)
-        elif dataset_type in ('sqlite', 'csv', 'files'):
-            logger_fn.error(f"Dataset type '{dataset_type}' is not implemented")
-            return None
+                                         progress_bar=progress_bar, logger=logger_fn, skip=skip)
+        elif dataset_type in ('sqlite', 'files'):
+            raise NotImplementedError(f"Dataset type '{dataset_type}' is not implemented")
         else:
-            error = f"Unsupported dataset type: {dataset_type}"
-            logger_fn.error(error)
-            return error
+            raise ValueError(f"Unsupported dataset type: {dataset_type}")
+        return generator_fn, inferred_map_size
 
-        # Re-open the storage dbs with a map size sized for the input, if known
-        if inferred_map_size:
-            print(f"Inferred size of the input file: {inferred_map_size}. Reloading the DB with the appropriate size.")
-            self.default_map_size = inferred_map_size
-            self._close_storage_dbs(_type='storage')
-            self._load_storage_dbs()
+    def _raw_bytes_by_role(self):
+        """Currently recorded raw byte counts per storage role ('data', 'meta')."""
+        out = {'data': 0, 'meta': 0}
+        for dbs in self.config_db.get_submdat_databases(self.config_id):
+            role = _role_of(dbs)
+            if role in out:
+                out[role] = int(dbs.get('raw_data_bytes') or 0)
+        return out
 
+    def _write_documents(self, generator_fn, data_key, logger_fn, start_key,
+                         do_transform=False, do_filtering=False, checkpoint_every=None,
+                         on_checkpoint=None):
+        """Write the documents yielded by `generator_fn` under consecutive keys
+        starting at `start_key`. This is the single ingestion loop shared by
+        fresh ingestion and appends."""
         errors_counters = {
             'hasDataError': 0,
             'generatorReturnedNone': 0,
@@ -752,23 +1138,21 @@ class MDat:
         }
         raw_data_bytes = 0
         raw_meta_bytes = 0
-
-        for i, item in enumerate(generator_fn):
+        written = 0
+        consumed = 0
+        for local_i, item in enumerate(generator_fn):
+            consumed = local_i + 1
             if item is None:
                 errors_counters['generatorReturnedNone'] += 1
                 continue
-            # An optional transformer could be plugged here (not implemented)
             if do_transform:
                 pass
-
-            # Extract the document body; 'raw_content' is a compatibility
-            # fallback for redpajama-style records.
             if data_key in item:
                 data = item[data_key]
             elif 'raw_content' in item:
                 data = item['raw_content']
             else:
-                logger_fn.warning(f"Data key '{data_key}' not found in item {i}. Item has keys {item.keys()}")
+                logger_fn.warning(f"Data key '{data_key}' not found in item {local_i}. Item has keys {item.keys()}")
                 errors_counters['missingDataKey'] += 1
                 continue
 
@@ -785,58 +1169,440 @@ class MDat:
 
             item.pop(data_key, None)
             item.pop('raw_content', None)
-
-            # Optional filtering (language id, quality metrics...) not implemented
             if do_filtering:
                 logger_fn.warning("Filter functions not implemented")
 
+            key = start_key + written
             try:
-                self.storage_db['data'].write(data, key=i)
+                self.storage_db['data'].write(data, key=key)
             except Exception as e:
-                logger_fn.error(f"Error writing data item {i}: {e}")
+                logger_fn.error(f"Error writing data item {key}: {e}")
                 errors_counters['hasDataError'] += 1
             try:
                 serialized = orjson.dumps(item) if orjson else json.dumps(item).encode()
             except Exception as e:
-                logger_fn.error(f'Serialization of metadata for item {i} failed: {e}')
+                logger_fn.error(f'Serialization of metadata for item {key} failed: {e}')
                 errors_counters['hasDataError'] += 1
                 continue
-
             try:
-                self.storage_db['meta'].write(serialized, key=i)
+                self.storage_db['meta'].write(serialized, key=key)
             except Exception as e:
-                logger_fn.error(f"Error writing metadata item {i}: {e}")
+                logger_fn.error(f"Error writing metadata item {key}: {e}")
                 errors_counters['hasDataError'] += 1
 
             raw_data_bytes += len(data)
             raw_meta_bytes += len(serialized)
+            written += 1
+            if checkpoint_every and on_checkpoint and written % checkpoint_every == 0:
+                # Flush the buffers and persist the durable length before the
+                # checkpoint claims those documents are done.
+                for db in self.storage_db.values():
+                    db.sync_length()
+                on_checkpoint(written, raw_data_bytes, raw_meta_bytes, errors_counters, consumed)
+        return written, raw_data_bytes, raw_meta_bytes, errors_counters, consumed
 
-        # Close the storage databases and record sizes
-        documents_number = len(self.storage_db['data'])
-        self.storage_db['data'].close()
-        self.storage_db['meta'].close()
-        db_data_bytes = os.path.getsize(os.path.join(self.submdat_path, 'data.dat'))
-        db_meta_bytes = os.path.getsize(os.path.join(self.submdat_path, 'meta.dat'))
+    def convert_to_submdat(self, dataset_type, dataset_path, dataset_args={}, data_key='text',
+                           modality='text', logger=False, progress_bar=True, do_transform=False,
+                           do_filtering=False, dataset_config='', append=False, resume=False,
+                           checkpoint_every=100_000):
+        """
+        Populate this dataset's databases from an external format.
+        dataset_type: 'jsonl' | 'lmdb' | 'hf' | 'atlas' (see preprocessing.py).
+        Returns the partial manifest written (document_number, errors_counters).
 
-        for dbs in self.config_db.get_submdat_databases(self.config_id):
-            if dbs['is_data']:
-                self.config_db.update_submdat_database(submdat_id=self.config_id, database_id=dbs['id'],
-                                                       data={'raw_data_bytes': raw_data_bytes, 'disk_size': db_data_bytes})
-            elif dbs['is_meta']:
-                self.config_db.update_submdat_database(submdat_id=self.config_id, database_id=dbs['id'],
-                                                       data={'raw_data_bytes': raw_meta_bytes, 'disk_size': db_meta_bytes})
+        With append=True the new documents are written after the last existing
+        one instead of overwriting from key 0. With resume=True an interrupted
+        ingestion of the same source resumes from its last checkpoint.
+        """
+        self._check_writable()
+        logger_fn = self._ingest_logger(logger)
+
+        if not self.storage_db:
+            logger_fn.error(f"Databases are not loaded for dataset {self.submdat_name}")
+            return None
+        if 'data' not in self.storage_db or 'meta' not in self.storage_db:
+            raise RuntimeError("Appending/ingesting documents requires both the 'data' and 'meta' storage databases.")
+
+        row = self.config_db.get_submdat_row(self.config_id)
+        old_docs = int(row.get('document_number') or 0)
+        start_key = old_docs if append else 0
+        source_skip = 0
+        log_id = None
+        resumed_rows = 0
+        resumed_consumed = 0
+        operation = 'append' if append else 'ingest'
+        if resume:
+            pending = self.config_db.get_resumable_ingestion(self.config_id, dataset_path)
+            if pending:
+                start_key = int(pending['start_key']) + int(pending['rows_inserted'])
+                resumed_rows = int(pending['rows_inserted'])
+                # The source is re-read from its beginning: skip exactly the
+                # source records this operation already consumed (its
+                # checkpoint), not the dataset rows that existed before it.
+                source_skip = int(pending.get('source_consumed') or pending['rows_inserted'])
+                resumed_consumed = source_skip
+                log_id = pending['id']
+                operation = pending['operation']
+                print(f"Resuming {operation} of {dataset_path} at row {start_key} "
+                      f"({source_skip} source documents skipped).")
             else:
-                raise NotImplementedError("Extra databases are not supported by convert_to_submdat")
+                print(f"No interrupted ingestion found for {dataset_path}; starting from the beginning.")
 
-        partial_manifest = {
-            'document_number': documents_number,
-            'errors_counters': json.dumps(errors_counters)
-        }
-        self.config_db.update_submdat_row(self.config_id, partial_manifest)
+        if not append and not resume:
+            old_docs = 0
+        base_raw = self._raw_bytes_by_role() if (append or resume) else {'data': 0, 'meta': 0}
+        try:
+            base_errors = json.loads(row.get('errors_counters') or '{}') if (append or resume) else {}
+        except (TypeError, ValueError):
+            base_errors = {}
+        base_errors = {k: int(v or 0) for k, v in base_errors.items()}
+
+        try:
+            generator_fn, inferred_map_size = self._build_iterator(
+                dataset_type, dataset_path, dataset_args, dataset_config,
+                progress_bar, logger_fn, skip=source_skip)
+        except Exception as e:
+            logger_fn.error(str(e))
+            return None
+
+        # Re-open the storage dbs with a map size that fits the input. For an
+        # append never shrink the existing map: the old rows must stay there.
+        if inferred_map_size:
+            map_size = inferred_map_size
+            if append or resume:
+                existing_disk = sum(
+                    (self.config_db.get_storage_db_info(d['id']) or {}).get('disk_size') or 0
+                    for d in self.config_db.get_submdat_databases(self.config_id)
+                    if d.get('disk_size'))
+                map_size = max(inferred_map_size, int(existing_disk * 1.2))
+            print(f"Inferred size of the input file: {inferred_map_size}. Reloading the DB with the appropriate size.")
+            self._forced_map_size = map_size
+            self._close_storage_dbs(_type='storage')
+            self._load_storage_dbs()
+            self._forced_map_size = None
+
+        if log_id is None:
+            log_id = self.config_db.add_ingestion_log(
+                self.config_id, operation, dataset_path, start_key, 0, status='running')
+
+        def persist_progress(written, raw_data_bytes, raw_meta_bytes, errors, consumed, final=False):
+            documents_number = start_key + written
+            self.len = documents_number
+            merged_errors = dict(base_errors)
+            for key, value in errors.items():
+                merged_errors[key] = merged_errors.get(key, 0) + int(value or 0)
+            self.config_db.update_submdat_row(self.config_id, {
+                'document_number': documents_number,
+                'errors_counters': json.dumps(merged_errors)})
+            disk_sizes = {
+                'data': os.path.getsize(os.path.join(self.submdat_path, 'data.dat')),
+                'meta': os.path.getsize(os.path.join(self.submdat_path, 'meta.dat')),
+            }
+            for dbs in self.config_db.get_submdat_databases(self.config_id):
+                role = _role_of(dbs)
+                if role not in disk_sizes:
+                    raise NotImplementedError("Extra databases are not supported by convert_to_submdat")
+                update = {'disk_size': disk_sizes[role]}
+                if role == 'data':
+                    update['raw_data_bytes'] = base_raw['data'] + raw_data_bytes
+                elif role == 'meta':
+                    update['raw_data_bytes'] = base_raw['meta'] + raw_meta_bytes
+                self.config_db.update_submdat_database(
+                    submdat_id=self.config_id, database_id=dbs['id'], data=update)
+            self.config_db.update_ingestion_log(
+                log_id, {'rows_inserted': resumed_rows + written,
+                         'source_consumed': resumed_consumed + consumed,
+                         'status': 'complete' if final else 'running'})
+
+        written, raw_data_bytes, raw_meta_bytes, errors_counters, consumed = self._write_documents(
+            generator_fn, data_key, logger_fn, start_key=start_key,
+            do_transform=do_transform, do_filtering=do_filtering,
+            checkpoint_every=checkpoint_every,
+            on_checkpoint=persist_progress)
+
+        persist_progress(written, raw_data_bytes, raw_meta_bytes, errors_counters, consumed, final=True)
+        documents_number = start_key + written
         self.len = documents_number
-        # Refresh the default view, the generation counter and any container mirror
+
+        # Persist the durable length and leave the dataset usable in this
+        # process: the handles were already opened with an input-sized map.
+        for db in self.storage_db.values():
+            db.sync_length()
+        # Refresh the default view, the generation counter and any container mirror.
         self._after_data_change()
-        return partial_manifest
+        return {
+            'document_number': documents_number,
+            'rows_inserted': written,
+            'errors_counters': json.dumps(errors_counters),
+        }
+
+    def append_to_submdat(self, dataset_type, dataset_path, dataset_args={}, data_key=None,
+                          logger=False, progress_bar=True, do_transform=False,
+                          do_filtering=False, dataset_config='', resume=False,
+                          checkpoint_every=100_000):
+        """Append the documents of an external source after the last row.
+
+        This is convert_to_submdat(append=True): same iterators, same validation,
+        same statistics and history, same resumable checkpoints.
+        """
+        if getattr(self, 'raw_missing', False):
+            raise RuntimeError("The raw storage of this dataset is not available here; append where it lives.")
+        data_key = data_key or (self.config_db.get_submdat_row(self.config_id).get('data_key')
+                                or 'text')
+        return self.convert_to_submdat(dataset_type, dataset_path, dataset_args=dataset_args,
+                                       data_key=data_key, logger=logger,
+                                       progress_bar=progress_bar, do_transform=do_transform,
+                                       do_filtering=do_filtering, dataset_config=dataset_config,
+                                       append=True, resume=resume,
+                                       checkpoint_every=checkpoint_every)
+
+    def ingestion_history(self, limit=100):
+        """The append/ingestion log of this dataset (newest first)."""
+        return self.config_db.get_ingestion_log(self.config_id, limit=limit)
+
+
+def _is_mdat_catalog_folder(path: str) -> bool:
+    return (os.path.isfile(os.path.join(path, 'mdat_container.db'))
+            or os.path.isfile(os.path.join(path, 'mdat.db')))
+
+
+class MDatWriter:
+    """Small streaming writer for the data/meta databases of an mdat.
+    It is the mdat analogue of ``open("file.jsonl", "a")``: the common case is
+    a path pointing at a standalone dataset (created on first write), a data
+    column (default ``text``) and a loop::
+
+        with mdat_writer("corpus.mdat", data_column="text") as md:
+            for document in documents:
+                md.write(document)
+
+    The data column goes to the raw ``data`` database, every other field to
+    ``meta``. If the path is a multi-dataset container, pass ``dataset=NAME``;
+    a missing dataset is created when ``create=True``.
+
+    ``keys_only=True`` (or ``data_column=None``) stores only metadata, creating
+    no data database: this is what the annotation "keys only" output uses.
+    ``write(record, key=N)`` overwrites an existing row and invalidates every
+    pretokenization strategy; ``delete(keys)`` compacts the databases so keys
+    remain sequential.
+    """
+
+    def __init__(self, path, data_column='text', dataset=None, create=True,
+                 compression_levels=None, map_sizes=None, keys_only=False,
+                 modality='text', name=None):
+        self.path = path
+        self.dataset = dataset
+        self.create = create
+        self.keys_only = bool(keys_only) or data_column is None
+        self.data_column = None if self.keys_only else data_column
+        self.compression_levels = compression_levels or {}
+        self.map_sizes = map_sizes or {}
+        self.modality = modality
+        self.name = name
+        self.container = None
+        self.mdat = None
+        self._data_delta = 0
+        self._meta_delta = 0
+        self._invalidate = False
+        self._written = 0
+        self._closed = False
+        self._open_target()
+
+    def _open_target(self):
+        from .container import MDatContainer
+        path = os.path.abspath(self.path)
+        if self.dataset is not None:
+            if os.path.isdir(path) and _is_mdat_catalog_folder(path):
+                self.container = MDatContainer.load_dataset(path, readonly=False)
+            elif self.create:
+                self.container = MDatContainer.create_new(path)
+            else:
+                raise FileNotFoundError(f"No mdat container at {path}")
+            if self.dataset in self.container.list_submdat():
+                self.mdat = self.container[ self.dataset ] if self.dataset in self.container.loaded_submdats \
+                    else self.container._ensure_loaded(self.dataset)
+            elif self.create:
+                db_types = ['meta'] if self.keys_only else ['meta', 'data']
+                self.mdat = self.container.add_submdat(
+                    self.dataset,
+                    compression_levels=self.compression_levels,
+                    map_sizes=self.map_sizes,
+                    db_types=db_types,
+                    data_key=self.data_column or 'text',
+                    modality=self.modality)
+            else:
+                raise SubmDatNotFound(f"Dataset '{self.dataset}' is not in {path}")
+        else:
+            if os.path.isdir(path) and _is_mdat_catalog_folder(path):
+                self.mdat = MDat.open_standalone(path, readonly=False)
+                self.container = self.mdat.container
+            elif self.create:
+                db_types = ['meta'] if self.keys_only else ['meta', 'data']
+                self.mdat = MDat.create_standalone(
+                    path, name=self.name,
+                    compression_levels=self.compression_levels,
+                    map_sizes=self.map_sizes,
+                    db_types=db_types,
+                    data_key=self.data_column or 'text',
+                    modality=self.modality)
+                self.container = self.mdat.container
+            else:
+                raise FileNotFoundError(f"No standalone mdat at {path}")
+
+    def write(self, record, key=None) -> int:
+        """Write one record and return its key. A key inside the dataset
+        overwrites that row; a missing/out-of-range key appends."""
+        if self._closed:
+            raise RuntimeError("MDatWriter is closed")
+        key, data_delta, meta_delta, is_new = self.mdat._write_one(
+            record, data_column=self.data_column, key=key)
+        self._data_delta += data_delta
+        self._meta_delta += meta_delta
+        if not is_new:
+            self._invalidate = True
+        self._written += 1
+        return key
+
+    def update(self, key, record) -> int:
+        """Overwrite an existing row (breaks pretokenization)."""
+        if int(key) >= self.mdat.len:
+            raise IndexError(f"Row {key} does not exist (len={self.mdat.len})")
+        self._invalidate = True
+        return self.write(record, key=key)
+
+    def edit(self, rows) -> int:
+        """Overwrite several rows: a ``{key: record}`` mapping or key/record pairs."""
+        items = rows.items() if isinstance(rows, dict) else rows
+        count = 0
+        for key, record in items:
+            self.update(key, record)
+            count += 1
+        return count
+
+    def delete(self, keys, compact=True) -> int:
+        """Delete rows (compacting keys) and break pretokenization."""
+        count = self.mdat.delete_documents(keys, compact=compact)
+        self._written += count
+        return count
+
+    def flush(self) -> None:
+        """Persist buffered rows, length, sizes and invalidation to the catalog."""
+        if self._closed:
+            return
+        self.mdat.commit_storage_changes(
+            self._data_delta, self._meta_delta,
+            invalidate_pretokenization=self._invalidate)
+        self._data_delta = 0
+        self._meta_delta = 0
+        self._invalidate = False
+
+    def close(self) -> None:
+        if self._closed:
+            return
+        self.flush()
+        self._closed = True
+        if self.container is not None:
+            self.container.close()
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+        return False
+
+
+class MDatReader:
+    """Iterate the rows of an mdat without loading it into memory.
+
+    Reading a normal dataset yields its metadata fields plus the data column::
+
+        with mdat_reader("corpus.mdat") as md:
+            for row in md:
+                print(row)
+
+    ``keys_only=True`` yields only metadata (no raw data is read). ``include_key``
+    adds the sequential row key to each record, which is what annotation needs
+    to write results keyed by the source row.
+    """
+
+    def __init__(self, path, dataset=None, data_column=None, keys_only=False,
+                 include_key=False, readonly=True):
+        from .container import MDatContainer
+        self.path = path
+        self.dataset = dataset
+        self.keys_only = keys_only
+        self.include_key = include_key
+        self.readonly = readonly
+        self.container = None
+        self.mdat = None
+        self._open_target()
+        row = self.mdat.get_row() or {}
+        self.data_column = data_column or row.get('data_key') or 'text'
+        self.has_data = 'data' in self.mdat.storage_db and not keys_only
+        self._index = 0
+        self._length = int(self.mdat.len)
+        self._decode = orjson.loads if orjson else lambda value: json.loads(value.decode())
+
+    def _open_target(self):
+        from .container import MDatContainer
+        path = os.path.abspath(self.path)
+        if self.dataset is not None:
+            self.container = MDatContainer.load_dataset(path, readonly=self.readonly)
+            self.mdat = self.container[self.dataset] if self.dataset in self.container.loaded_submdats \
+                else self.container._ensure_loaded(self.dataset)
+        else:
+            self.mdat = MDat.open_standalone(path, readonly=self.readonly)
+            self.container = self.mdat.container
+
+    def __iter__(self):
+        return self
+
+    def __len__(self):
+        return self._length
+
+    def __next__(self):
+        if self._index >= self._length:
+            raise StopIteration
+        key = self._index
+        self._index += 1
+        row = {}
+        meta_db = self.mdat.storage_db.get('meta')
+        if meta_db is not None:
+            row.update(self._decode(meta_db[key]))
+        if self.has_data:
+            data = self.mdat.storage_db['data'][key]
+            try:
+                row[self.data_column] = data.decode('utf-8')
+            except UnicodeDecodeError:
+                row[self.data_column] = data
+        if self.include_key:
+            row['key'] = key
+        return row
+
+    def close(self) -> None:
+        if self.container is not None:
+            self.container.close()
+            self.container = None
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc, tb):
+        self.close()
+        return False
+
+
+def mdat_writer(path, data_column='text', dataset=None, create=True, **kwargs) -> MDatWriter:
+    """Open an mdat for streaming writes (see MDatWriter)."""
+    return MDatWriter(path, data_column=data_column, dataset=dataset, create=create, **kwargs)
+
+
+def mdat_reader(path, dataset=None, data_column=None, keys_only=False,
+                include_key=False, readonly=True) -> MDatReader:
+    """Open an mdat for streaming reads (see MDatReader)."""
+    return MDatReader(path, dataset=dataset, data_column=data_column, keys_only=keys_only,
+                      include_key=include_key, readonly=readonly)
 
 
 def _role_of(dbs_row) -> str:
@@ -871,7 +1637,7 @@ SubMdat = MDat
 _LAZY_CONTAINER_NAMES = ('MDatContainer', 'MatformerDataset')
 _LAZY_MODULE_NAMES = {
     'DatabaseManager': '.sql_database',
-    'LMDBDataset': '.lmdb',
+    'LMDBDataset': '.lmdb_store',
     'PretokenizationStrategy': '.strategy',
     'process_documents_batch': '.strategy',
     'JSONIterator': '.preprocessing',

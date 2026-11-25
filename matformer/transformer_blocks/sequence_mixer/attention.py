@@ -1,6 +1,9 @@
 """
 File: matformer/transformer_blocks/attention.py
 """
+
+#TODO2: Move all the interpretability related stuff (forward, view over weights...) to a different file, registered as a different implementation of "attention" respecting the registry's constraint "is_interpretable": True, while this becomes is_interpretable:False
+#TODO2: Add, wherever is relevant, the new Socket/Stream system, to allow for the insertion of plugins and inspection (particularly useful for the interpretability branch, but useful even if more limited, also in the normal branch)
 #Torch
 import torch
 import torch.nn as nn
@@ -84,6 +87,8 @@ class MultiHeadAttention(MatformerModule):
     ):
         super().__init__()
         self.config = config
+        self._diagnostics = False
+        self._last_logs = {}
         if isinstance(self.config.positional_encoding, str):
             self.config.positional_encoding = [self.config.positional_encoding]
         # Assertions
@@ -150,7 +155,8 @@ class MultiHeadAttention(MatformerModule):
                 positional_encoding=self.config.positional_encoding,
                 attn_logit_softcap=self.config.attn_logit_softcap,
                 cache=cache,
-                device=device
+                device=device,
+                layer_idx=self.layer_idx,
             )
             kernel_constraints = {'softcap': self.config.attn_logit_softcap is not None} # Kernels unable to softcap (flash) are not candidates
             if is_hybrid: #Initialize two kernels
@@ -160,11 +166,15 @@ class MultiHeadAttention(MatformerModule):
                                                             constraints=kernel_constraints, **kernel_kwargs)
                 self.causal_kernel_meta=self.attn_kernel_causal._matformer_metadata
                 self.noncausal_kernel_meta=self.attn_kernel_noncausal._matformer_metadata
+                cache.register_kv_layer(self.layer_idx, self.config.num_key_value_heads,
+                                        self.head_dim, *(self.causal_kernel_meta, self.noncausal_kernel_meta))
             else: #Normal branch
                 self.attn_kernel = registry.create('attention', 'normal', is_causal=is_causal,
                                                    constraints=kernel_constraints, **kernel_kwargs)
                 # Get kernel metadata
                 self.kernel_meta = self.attn_kernel._matformer_metadata
+                cache.register_kv_layer(self.layer_idx, self.config.num_key_value_heads,
+                                        self.head_dim, self.kernel_meta)
 
         if not self.force_separed_qkv and (not self.config.is_cross_attention or self.qkv_samedim) and self.n_groups == 1: # Packed qkv projection for efficiency
             self.packed_proj=registry.create('linear','linear',in_features=self.config.q_dim, out_features=3*self.q_inner_dim,bias=self.config.qkv_bias)
@@ -195,7 +205,54 @@ class MultiHeadAttention(MatformerModule):
         if self.gate_proj is None:
             return attn_out
         gate = torch.sigmoid(self.gate_proj(NormalTensor(tensor=query_tensor)).tensor).unflatten(-1, attn_out.shape[-2:])
+        if self._diagnostics:
+            detached = gate.detach().float()
+            self._last_logs["gate_mean"] = detached.mean().item()
+            self._last_logs["gate_abs_max"] = detached.abs().max().item()
         return attn_out * gate
+
+    @staticmethod
+    def _tensor_summary(tensor, name, logs):
+        detached = tensor.detach().float()
+        logs[f"{name}_mean"] = detached.mean().item()
+        logs[f"{name}_std"] = detached.std(unbiased=False).item()
+        logs[f"{name}_abs_max"] = detached.abs().max().item()
+        if detached.dim() >= 2:
+            logs[f"{name}_vector_norm"] = detached.norm(dim=-1).mean().item()
+
+    def _record_qkv_diagnostics(self, qkv_projected, q, k, v, clamp):
+        """Architecture-specific numbers of this mixer, only while diagnostics are enabled."""
+        with torch.no_grad():
+            if qkv_projected is not None:
+                pieces = qkv_projected.tensor.detach().unbind(dim=-3)
+                q, k, v = (NormalTensor(tensor=piece) for piece in pieces)
+            logs = {}
+            for name, tensor in (("q", q), ("k", k), ("v", v)):
+                if tensor is not None:
+                    self._tensor_summary(tensor.tensor, name, logs)
+            if clamp:
+                for name, tensor in (("q", q), ("k", k), ("v", v)):
+                    if tensor is not None:
+                        logs[f"{name}_clamp_fraction"] = (
+                            tensor.tensor.detach().abs() >= clamp).float().mean().item()
+            self._last_logs.update(logs)
+
+    def _log(self):
+        """What is worth knowing about this attention implementation and its last forward."""
+        described = {
+            "num_heads": self.config.num_attention_heads,
+            "num_kv_heads": self.config.num_key_value_heads,
+            "head_dim": self.head_dim,
+            "sliding_window": self.config.sliding_window_size,
+            "positional_encoding": ",".join(self.config.positional_encoding or []),
+            "qk_norm": bool(self.config.q_norm or self.config.k_norm),
+            "gated": bool(self.config.gated_attention),
+            "logit_softcap": self.config.attn_logit_softcap,
+            "qkv_clamp": self.config.qkv_clamp,
+        }
+        described.update(self._last_logs)
+        return described
+
     @staticmethod
     def _pack_qkv(q, k, v):
         normalize = lambda s: s.translate(str.maketrans('', '', '?B'))
@@ -521,6 +578,8 @@ class MultiHeadAttention(MatformerModule):
             v = replace(v, tensor=v.tensor.unflatten(-1, [self.config.num_key_value_heads, self.head_dim]),tensor_order='?SHD')
             q_t, k_t = self._qk_norm(q.tensor, k.tensor)
             q, k = replace(q, tensor=q_t), replace(k, tensor=k_t)
+        if self._diagnostics:
+            self._record_qkv_diagnostics(qkv_projected, q, k, v, clamp)
         # 3b. (facultative) Apply RoPe
         if 'rope' in self.config.positional_encoding:
             repack_after_rope = False
@@ -535,7 +594,10 @@ class MultiHeadAttention(MatformerModule):
                 q = self._transpose_for_kernel(q, self.rotary_embedding_meta['tensor_order_input'])
                 k = self._transpose_for_kernel(k, self.rotary_embedding_meta['tensor_order_input'])
 
-            # 1. Get sin and cos from cache
+            # 1. Get sin and cos from cache. A cached decode step feeds one token per sequence at
+            # its own absolute position, which the batch carries: the table is built long enough to
+            # contain it and the rotation is told where inside it this call starts.
+            offset = int((getattr(query_input, 'attributes', None) or {}).get('seqlen_offsets', 0))
             rope_kwargs = dict(
                 theta=self.config.rope_theta,
                 partial_rotary_factor=self.config.partial_rotary_factor,
@@ -549,7 +611,7 @@ class MultiHeadAttention(MatformerModule):
                 attention_factor=self.config.rope_scaling_attention_factor,
             )
             cos, sin = self.cache.get_rotary_cos_sin(
-                max_seq_len, self.head_dim, query_input.device, query_input.dtype, **rope_kwargs
+                max_seq_len + offset, self.head_dim, query_input.device, query_input.dtype, **rope_kwargs
             )
             # 2. Rotate query and keys
             # cu_seqlens refers to the packed layout; if the sequence was repadded
@@ -563,7 +625,8 @@ class MultiHeadAttention(MatformerModule):
                     k=k.tensor if k is not None else None,
                     cos=cos, sin=sin,
                     cu_seqlens=rope_cu_seqlens,
-                    max_seq_len=None if repadded else max_seq_len
+                    max_seq_len=None if repadded else max_seq_len,
+                    seqlen_offsets=offset,
                 )
             else:
                 # Cross-attention: keys sit on their own grid (own length, own segment

@@ -1,0 +1,574 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/data/mdat/lmdb_store.py · Matformer</title>
+<link rel="stylesheet" href="../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../index.html">Documentation</a><a class="" href="../../../../registry/index.html">Registry</a><a class="" href="../../../../configuration/index.html">Configuration</a><a class="" href="../../../../tools/commands.html">Commands</a><a class="current" href="../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../index.html">Matformer</a></li><li><a href="../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../components/cache.html">The cache</a></li><li><a href="../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../training/logger.html">Logging</a></li><li><a href="../../../../training/control.html">Control</a></li><li><a href="../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../data/index.html">Data</a></li><li><a href="../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../data/data-module.html">Data module</a></li><li><a href="../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../tools/server.html">Server</a></li><li><a href="../../../../tools/gui.html">GUI</a></li><li><a href="../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../tools/commands.html">Commands</a></li><li><a href="../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../about/repository.html">Repository</a></li><li><a href="../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../index.html">Repository</a> <span class="sep">/</span> matformer/data/mdat/lmdb_store.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="lmdb_store.py.html"><code>matformer/data/mdat/lmdb_store.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/data/mdat/</code></a></p><h1><code>lmdb_store.py</code></h1><p class="muted">matformer/data/mdat/lmdb_store.py · 272 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/data/mdat/lmdb_store.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L41"><code>LMDBDataset</code></a><span class="line">L41</span></li><li class="depth-1"><a href="#L54"><code>LMDBDataset.open</code></a><span class="line">L54</span></li><li class="depth-1"><a href="#L75"><code>LMDBDataset.__init__</code></a><span class="line">L75</span></li><li class="depth-1"><a href="#L103"><code>LMDBDataset.set_batch_size</code></a><span class="line">L103</span></li><li class="depth-1"><a href="#L106"><code>LMDBDataset.__len__</code></a><span class="line">L106</span></li><li class="depth-1"><a href="#L109"><code>LMDBDataset.write</code></a><span class="line">L109</span></li><li class="depth-1"><a href="#L140"><code>LMDBDataset.write_batch_with_keys</code></a><span class="line">L140</span></li><li class="depth-1"><a href="#L159"><code>LMDBDataset._flush_batch</code></a><span class="line">L159</span></li><li class="depth-1"><a href="#L167"><code>LMDBDataset.delete_many</code></a><span class="line">L167</span></li><li class="depth-1"><a href="#L207"><code>LMDBDataset.sync_length</code></a><span class="line">L207</span></li><li class="depth-1"><a href="#L221"><code>LMDBDataset.close</code></a><span class="line">L221</span></li><li class="depth-1"><a href="#L235"><code>LMDBDataset.__getitem__</code></a><span class="line">L235</span></li><li class="depth-1"><a href="#L248"><code>LMDBDataset._decompress_with_retries</code></a><span class="line">L248</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="sd">&quot;&quot;&quot;LMDB-backed key/value storage used by mdats (datasets) and pretokenization caches.</span>
+<a id="L2" name="L2"></a>
+<a id="L3" name="L3"></a><span class="sd">Compression backend is chosen via the USE_ZLIB environment variable</span>
+<a id="L4" name="L4"></a><span class="sd">(zstandard by default). Keys are stored as decimal strings; ``length`` tracks</span>
+<a id="L5" name="L5"></a><span class="sd">one past the largest key ever written and is persisted under ``__len__``.</span>
+<a id="L6" name="L6"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L7" name="L7"></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<a id="L8" name="L8"></a>
+<a id="L9" name="L9"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="L10" name="L10"></a><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<a id="L11" name="L11"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Dict</span>
+<a id="L12" name="L12"></a>
+<a id="L13" name="L13"></a><span class="kn">import</span><span class="w"> </span><span class="nn">lmdb</span>
+<a id="L14" name="L14"></a><span class="kn">import</span><span class="w"> </span><span class="nn">orjson</span>
+<a id="L15" name="L15"></a>
+<a id="L16" name="L16"></a><span class="n">USE_ZLIB</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;USE_ZLIB&#39;</span><span class="p">,</span> <span class="s1">&#39;false&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;true&#39;</span>
+<a id="L17" name="L17"></a>
+<a id="L18" name="L18"></a><span class="k">if</span> <span class="n">USE_ZLIB</span><span class="p">:</span>
+<a id="L19" name="L19"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">zlib</span>
+<a id="L20" name="L20"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">compress_func</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+<a id="L21" name="L21"></a>        <span class="k">return</span> <span class="n">zlib</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">level</span><span class="p">)</span>
+<a id="L22" name="L22"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">decompress_func</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<a id="L23" name="L23"></a>        <span class="k">return</span> <span class="n">zlib</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<a id="L24" name="L24"></a>    <span class="n">COMPRESSION_BACKEND</span> <span class="o">=</span> <span class="s2">&quot;zlib&quot;</span>
+<a id="L25" name="L25"></a><span class="k">else</span><span class="p">:</span>
+<a id="L26" name="L26"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">zstandard</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">zstd</span>
+<a id="L27" name="L27"></a>    <span class="n">_zstd_compressors</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L28" name="L28"></a>    <span class="n">_zstd_decompressor</span> <span class="o">=</span> <span class="n">zstd</span><span class="o">.</span><span class="n">ZstdDecompressor</span><span class="p">()</span>
+<a id="L29" name="L29"></a>
+<a id="L30" name="L30"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">compress_func</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">level</span><span class="p">):</span>
+<a id="L31" name="L31"></a>        <span class="k">if</span> <span class="n">level</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_zstd_compressors</span><span class="p">:</span>
+<a id="L32" name="L32"></a>            <span class="n">_zstd_compressors</span><span class="p">[</span><span class="n">level</span><span class="p">]</span> <span class="o">=</span> <span class="n">zstd</span><span class="o">.</span><span class="n">ZstdCompressor</span><span class="p">(</span><span class="n">level</span><span class="o">=</span><span class="n">level</span><span class="p">)</span>
+<a id="L33" name="L33"></a>        <span class="k">return</span> <span class="n">_zstd_compressors</span><span class="p">[</span><span class="n">level</span><span class="p">]</span><span class="o">.</span><span class="n">compress</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<a id="L34" name="L34"></a>
+<a id="L35" name="L35"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">decompress_func</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+<a id="L36" name="L36"></a>        <span class="k">return</span> <span class="n">_zstd_decompressor</span><span class="o">.</span><span class="n">decompress</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<a id="L37" name="L37"></a>
+<a id="L38" name="L38"></a>    <span class="n">COMPRESSION_BACKEND</span> <span class="o">=</span> <span class="s2">&quot;zstd&quot;</span>
+<a id="L39" name="L39"></a>
+<a id="L40" name="L40"></a>
+<a id="L41" name="L41"></a><span class="k">class</span><span class="w"> </span><span class="nc">LMDBDataset</span><span class="p">:</span>
+<a id="L42" name="L42"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;LMDB key/value store wrapper.</span>
+<a id="L43" name="L43"></a>
+<a id="L44" name="L44"></a><span class="sd">    Use the ``open()`` factory (not the constructor) when the same file may be</span>
+<a id="L45" name="L45"></a><span class="sd">    opened more than once in a process (e.g. two containers linking the same</span>
+<a id="L46" name="L46"></a><span class="sd">    dataset, or the host container and a linked view): compatible handles are</span>
+<a id="L47" name="L47"></a><span class="sd">    shared through a reference-counted registry, and the environment is only</span>
+<a id="L48" name="L48"></a><span class="sd">    really closed when the last holder calls close().</span>
+<a id="L49" name="L49"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L50" name="L50"></a>
+<a id="L51" name="L51"></a>    <span class="n">_registry</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="s1">&#39;LMDBDataset&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L52" name="L52"></a>
+<a id="L53" name="L53"></a>    <span class="nd">@classmethod</span>
+<a id="L54" name="L54"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">open</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lock</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compressed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compression_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+<a id="L55" name="L55"></a>             <span class="n">map_size</span><span class="o">=</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">44</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">50000</span><span class="p">):</span>
+<a id="L56" name="L56"></a>        <span class="n">key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">path</span><span class="p">)</span>
+<a id="L57" name="L57"></a>        <span class="n">existing</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+<a id="L58" name="L58"></a>        <span class="k">if</span> <span class="n">existing</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L59" name="L59"></a>            <span class="k">if</span> <span class="n">existing</span><span class="o">.</span><span class="n">compressed</span> <span class="o">!=</span> <span class="n">compressed</span> <span class="ow">or</span> <span class="n">existing</span><span class="o">.</span><span class="n">compression_level</span> <span class="o">!=</span> <span class="n">compression_level</span><span class="p">:</span>
+<a id="L60" name="L60"></a>                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: already opened in this process with different &quot;</span>
+<a id="L61" name="L61"></a>                                   <span class="s2">&quot;compression settings.&quot;</span><span class="p">)</span>
+<a id="L62" name="L62"></a>            <span class="k">if</span> <span class="n">existing</span><span class="o">.</span><span class="n">readonly</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">readonly</span><span class="p">:</span>
+<a id="L63" name="L63"></a>                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">path</span><span class="si">}</span><span class="s2">: already opened read-only in this process; &quot;</span>
+<a id="L64" name="L64"></a>                                   <span class="s2">&quot;cannot open it for writing. Close the reader first.&quot;</span><span class="p">)</span>
+<a id="L65" name="L65"></a>            <span class="c1"># A read request can share an existing handle (writable or not):</span>
+<a id="L66" name="L66"></a>            <span class="c1"># lmdb forbids a second environment on the same path anyway.</span>
+<a id="L67" name="L67"></a>            <span class="n">existing</span><span class="o">.</span><span class="n">_refcount</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="L68" name="L68"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">readonly</span> <span class="ow">and</span> <span class="n">map_size</span> <span class="o">&gt;</span> <span class="n">existing</span><span class="o">.</span><span class="n">map_size</span><span class="p">:</span>
+<a id="L69" name="L69"></a>                <span class="n">existing</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">set_mapsize</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">map_size</span><span class="p">))</span>
+<a id="L70" name="L70"></a>                <span class="n">existing</span><span class="o">.</span><span class="n">map_size</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">map_size</span><span class="p">)</span>
+<a id="L71" name="L71"></a>            <span class="k">return</span> <span class="n">existing</span>
+<a id="L72" name="L72"></a>        <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="n">readonly</span><span class="p">,</span> <span class="n">lock</span><span class="o">=</span><span class="n">lock</span><span class="p">,</span> <span class="n">compressed</span><span class="o">=</span><span class="n">compressed</span><span class="p">,</span>
+<a id="L73" name="L73"></a>                   <span class="n">compression_level</span><span class="o">=</span><span class="n">compression_level</span><span class="p">,</span> <span class="n">map_size</span><span class="o">=</span><span class="n">map_size</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+<a id="L74" name="L74"></a>
+<a id="L75" name="L75"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">path</span><span class="p">,</span> <span class="n">readonly</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">lock</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compressed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">compression_level</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">map_size</span><span class="o">=</span><span class="mi">1</span> <span class="o">&lt;&lt;</span> <span class="mi">44</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">50000</span><span class="p">):</span>
+<a id="L76" name="L76"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">env</span> <span class="o">=</span> <span class="n">lmdb</span><span class="o">.</span><span class="n">open</span><span class="p">(</span>
+<a id="L77" name="L77"></a>            <span class="n">path</span><span class="p">,</span>
+<a id="L78" name="L78"></a>            <span class="n">subdir</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">path</span><span class="p">),</span>
+<a id="L79" name="L79"></a>            <span class="n">readonly</span><span class="o">=</span><span class="n">readonly</span><span class="p">,</span>
+<a id="L80" name="L80"></a>            <span class="n">lock</span><span class="o">=</span><span class="n">lock</span><span class="p">,</span>
+<a id="L81" name="L81"></a>            <span class="n">readahead</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<a id="L82" name="L82"></a>            <span class="n">meminit</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="L83" name="L83"></a>            <span class="n">max_readers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<a id="L84" name="L84"></a>            <span class="n">map_size</span><span class="o">=</span><span class="n">map_size</span>
+<a id="L85" name="L85"></a>        <span class="p">)</span>
+<a id="L86" name="L86"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">map_size</span> <span class="o">=</span> <span class="n">map_size</span>
+<a id="L87" name="L87"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">path</span> <span class="o">=</span> <span class="n">path</span>
+<a id="L88" name="L88"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">readonly</span> <span class="o">=</span> <span class="n">readonly</span>
+<a id="L89" name="L89"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">compressed</span> <span class="o">=</span> <span class="n">compressed</span>
+<a id="L90" name="L90"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">compression_level</span> <span class="o">=</span> <span class="n">compression_level</span>
+<a id="L91" name="L91"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+<a id="L92" name="L92"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">batch_buffer</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L93" name="L93"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">compression_attempts</span> <span class="o">=</span> <span class="mi">100</span>  <span class="c1"># Transient zstd/zlib failures are retried before giving up</span>
+<a id="L94" name="L94"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">compression_backend</span> <span class="o">=</span> <span class="n">COMPRESSION_BACKEND</span>
+<a id="L95" name="L95"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_refcount</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="L96" name="L96"></a>        <span class="n">LMDBDataset</span><span class="o">.</span><span class="n">_registry</span><span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="n">path</span><span class="p">)]</span> <span class="o">=</span> <span class="bp">self</span>
+<a id="L97" name="L97"></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+<a id="L98" name="L98"></a>            <span class="k">try</span><span class="p">:</span>
+<a id="L99" name="L99"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">txn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;__len__&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">decode</span><span class="p">())</span>
+<a id="L100" name="L100"></a>            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+<a id="L101" name="L101"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L102" name="L102"></a>
+<a id="L103" name="L103"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_batch_size</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+<a id="L104" name="L104"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span> <span class="o">=</span> <span class="n">batch_size</span>
+<a id="L105" name="L105"></a>
+<a id="L106" name="L106"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L107" name="L107"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span>
+<a id="L108" name="L108"></a>
+<a id="L109" name="L109"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">write</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">batched</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<a id="L110" name="L110"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L111" name="L111"></a><span class="sd">        &quot;Obj&quot; can be:</span>
+<a id="L112" name="L112"></a><span class="sd">            * A byte object, inserted directly</span>
+<a id="L113" name="L113"></a><span class="sd">            * Any other type, orjson serialized (e.g. python dictionaries)</span>
+<a id="L114" name="L114"></a><span class="sd">        If batched==True, obj is a list and its items are written in order.</span>
+<a id="L115" name="L115"></a>
+<a id="L116" name="L116"></a><span class="sd">        &quot;key&quot; is honored: data is written at str(key) and length advances</span>
+<a id="L117" name="L117"></a><span class="sd">        accordingly. Without a key, items are appended after the current</span>
+<a id="L118" name="L118"></a><span class="sd">        length. Errors (e.g. full map) raise.</span>
+<a id="L119" name="L119"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L120" name="L120"></a>        <span class="k">if</span> <span class="n">batched</span> <span class="ow">and</span> <span class="n">key</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L121" name="L121"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;LMDBDataset.write: a key must not be provided when data is batched&quot;</span><span class="p">)</span>
+<a id="L122" name="L122"></a>
+<a id="L123" name="L123"></a>        <span class="n">batch</span> <span class="o">=</span> <span class="n">obj</span> <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">else</span> <span class="p">[</span><span class="n">obj</span><span class="p">]</span>
+<a id="L124" name="L124"></a>        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">:</span>
+<a id="L125" name="L125"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Batch size </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="si">}</span><span class="s2"> exceeds maximum </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L126" name="L126"></a>
+<a id="L127" name="L127"></a>        <span class="k">for</span> <span class="n">offset</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">batch</span><span class="p">):</span>
+<a id="L128" name="L128"></a>            <span class="n">item_key</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">+</span> <span class="n">offset</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">int</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="o">+</span> <span class="n">offset</span>
+<a id="L129" name="L129"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+<a id="L130" name="L130"></a>                <span class="n">data</span> <span class="o">=</span> <span class="n">orjson</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<a id="L131" name="L131"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compressed</span><span class="p">:</span>
+<a id="L132" name="L132"></a>                <span class="n">data</span> <span class="o">=</span> <span class="n">compress_func</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_level</span><span class="p">)</span>
+<a id="L133" name="L133"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">batch_buffer</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">str</span><span class="p">(</span><span class="n">item_key</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">data</span><span class="p">))</span>
+<a id="L134" name="L134"></a>            <span class="k">if</span> <span class="n">item_key</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">:</span>
+<a id="L135" name="L135"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">item_key</span> <span class="o">+</span> <span class="mi">1</span>
+<a id="L136" name="L136"></a>
+<a id="L137" name="L137"></a>            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_buffer</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">:</span>
+<a id="L138" name="L138"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_flush_batch</span><span class="p">()</span>
+<a id="L139" name="L139"></a>
+<a id="L140" name="L140"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">write_batch_with_keys</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key_data_pairs</span><span class="p">):</span>
+<a id="L141" name="L141"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L142" name="L142"></a><span class="sd">        Write multiple (key, data) pairs using the existing batch buffer</span>
+<a id="L143" name="L143"></a><span class="sd">        mechanism (auto-flushing on batch_size). The tracked length is kept</span>
+<a id="L144" name="L144"></a><span class="sd">        consistent so that close() persists a correct __len__.</span>
+<a id="L145" name="L145"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L146" name="L146"></a>        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="n">key_data_pairs</span><span class="p">:</span>
+<a id="L147" name="L147"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+<a id="L148" name="L148"></a>                <span class="n">data</span> <span class="o">=</span> <span class="n">orjson</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<a id="L149" name="L149"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">compressed</span><span class="p">:</span>
+<a id="L150" name="L150"></a>                <span class="n">data</span> <span class="o">=</span> <span class="n">compress_func</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_level</span><span class="p">)</span>
+<a id="L151" name="L151"></a>
+<a id="L152" name="L152"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">batch_buffer</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">data</span><span class="p">))</span>
+<a id="L153" name="L153"></a>            <span class="k">if</span> <span class="n">key</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">:</span>
+<a id="L154" name="L154"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">key</span> <span class="o">+</span> <span class="mi">1</span>
+<a id="L155" name="L155"></a>
+<a id="L156" name="L156"></a>            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_buffer</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">:</span>
+<a id="L157" name="L157"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_flush_batch</span><span class="p">()</span>
+<a id="L158" name="L158"></a>
+<a id="L159" name="L159"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_flush_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L160" name="L160"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_buffer</span><span class="p">:</span>
+<a id="L161" name="L161"></a>            <span class="k">return</span>
+<a id="L162" name="L162"></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+<a id="L163" name="L163"></a>            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">data</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_buffer</span><span class="p">:</span>
+<a id="L164" name="L164"></a>                <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<a id="L165" name="L165"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">batch_buffer</span><span class="o">.</span><span class="n">clear</span><span class="p">()</span>
+<a id="L166" name="L166"></a>
+<a id="L167" name="L167"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">delete_many</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">,</span> <span class="n">compact</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<a id="L168" name="L168"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Delete the given keys.</span>
+<a id="L169" name="L169"></a>
+<a id="L170" name="L170"></a><span class="sd">        With ``compact=True`` (the default) every surviving row is shifted down</span>
+<a id="L171" name="L171"></a><span class="sd">        so that keys stay sequential and ``length`` shrinks accordingly. Stored</span>
+<a id="L172" name="L172"></a><span class="sd">        bytes are copied verbatim inside the LMDB transaction, so compression is</span>
+<a id="L173" name="L173"></a><span class="sd">        preserved and no decompression/recompression is needed. With</span>
+<a id="L174" name="L174"></a><span class="sd">        ``compact=False`` the keys are simply removed and trailing missing rows</span>
+<a id="L175" name="L175"></a><span class="sd">        are trimmed from ``length``; holes then break sequential iteration.</span>
+<a id="L176" name="L176"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L177" name="L177"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">readonly</span><span class="p">:</span>
+<a id="L178" name="L178"></a>            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot delete from a read-only LMDB dataset: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L179" name="L179"></a>        <span class="n">selected</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">({</span><span class="nb">int</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">})</span>
+<a id="L180" name="L180"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">selected</span><span class="p">:</span>
+<a id="L181" name="L181"></a>            <span class="k">return</span> <span class="mi">0</span>
+<a id="L182" name="L182"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_flush_batch</span><span class="p">()</span>
+<a id="L183" name="L183"></a>        <span class="n">deleted</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">selected</span> <span class="k">if</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">key</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">]</span>
+<a id="L184" name="L184"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">deleted</span><span class="p">:</span>
+<a id="L185" name="L185"></a>            <span class="k">return</span> <span class="mi">0</span>
+<a id="L186" name="L186"></a>        <span class="n">deleted_set</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">deleted</span><span class="p">)</span>
+<a id="L187" name="L187"></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+<a id="L188" name="L188"></a>            <span class="k">if</span> <span class="n">compact</span><span class="p">:</span>
+<a id="L189" name="L189"></a>                <span class="n">write_key</span> <span class="o">=</span> <span class="mi">0</span>
+<a id="L190" name="L190"></a>                <span class="k">for</span> <span class="n">read_key</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">):</span>
+<a id="L191" name="L191"></a>                    <span class="k">if</span> <span class="n">read_key</span> <span class="ow">in</span> <span class="n">deleted_set</span><span class="p">:</span>
+<a id="L192" name="L192"></a>                        <span class="k">continue</span>
+<a id="L193" name="L193"></a>                    <span class="n">data</span> <span class="o">=</span> <span class="n">txn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">read_key</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+<a id="L194" name="L194"></a>                    <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L195" name="L195"></a>                        <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">write_key</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(),</span> <span class="n">data</span><span class="p">)</span>
+<a id="L196" name="L196"></a>                        <span class="n">write_key</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="L197" name="L197"></a>                <span class="k">for</span> <span class="n">stale</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">write_key</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">):</span>
+<a id="L198" name="L198"></a>                    <span class="n">txn</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">stale</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+<a id="L199" name="L199"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">=</span> <span class="n">write_key</span>
+<a id="L200" name="L200"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L201" name="L201"></a>                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">deleted</span><span class="p">:</span>
+<a id="L202" name="L202"></a>                    <span class="n">txn</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+<a id="L203" name="L203"></a>                <span class="k">while</span> <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">txn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L204" name="L204"></a>                    <span class="bp">self</span><span class="o">.</span><span class="n">length</span> <span class="o">-=</span> <span class="mi">1</span>
+<a id="L205" name="L205"></a>        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">deleted</span><span class="p">)</span>
+<a id="L206" name="L206"></a>
+<a id="L207" name="L207"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">sync_length</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L208" name="L208"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Flush buffered writes and persist the current length immediately.</span>
+<a id="L209" name="L209"></a>
+<a id="L210" name="L210"></a><span class="sd">        Normal close() does this too, but an interrupted ingestion/pretokenization</span>
+<a id="L211" name="L211"></a><span class="sd">        (SIGTERM, crash) never reaches close(): a periodic sync is what makes the</span>
+<a id="L212" name="L212"></a><span class="sd">        durable state truthful so the operation can be resumed from it.</span>
+<a id="L213" name="L213"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L214" name="L214"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_flush_batch</span><span class="p">()</span>
+<a id="L215" name="L215"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">readonly</span><span class="p">:</span>
+<a id="L216" name="L216"></a>            <span class="k">return</span>
+<a id="L217" name="L217"></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+<a id="L218" name="L218"></a>            <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;__len__&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>
+<a id="L219" name="L219"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+<a id="L220" name="L220"></a>
+<a id="L221" name="L221"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">close</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L222" name="L222"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_flush_batch</span><span class="p">()</span>  <span class="c1"># Flush remaining items</span>
+<a id="L223" name="L223"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_refcount</span> <span class="o">-=</span> <span class="mi">1</span>
+<a id="L224" name="L224"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_refcount</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+<a id="L225" name="L225"></a>            <span class="k">return</span>  <span class="c1"># still in use by another holder in this process</span>
+<a id="L226" name="L226"></a>        <span class="n">key</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+<a id="L227" name="L227"></a>        <span class="k">if</span> <span class="n">LMDBDataset</span><span class="o">.</span><span class="n">_registry</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">is</span> <span class="bp">self</span><span class="p">:</span>
+<a id="L228" name="L228"></a>            <span class="k">del</span> <span class="n">LMDBDataset</span><span class="o">.</span><span class="n">_registry</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+<a id="L229" name="L229"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">readonly</span><span class="p">:</span>
+<a id="L230" name="L230"></a>            <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+<a id="L231" name="L231"></a>                <span class="n">txn</span><span class="o">.</span><span class="n">put</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;__len__&quot;</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">length</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">())</span>  <span class="c1"># Synchronizing correct length</span>
+<a id="L232" name="L232"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">sync</span><span class="p">()</span>
+<a id="L233" name="L233"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+<a id="L234" name="L234"></a>
+<a id="L235" name="L235"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">):</span>
+<a id="L236" name="L236"></a>        <span class="n">raw_key</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">()</span>
+<a id="L237" name="L237"></a>        <span class="k">with</span> <span class="bp">self</span><span class="o">.</span><span class="n">env</span><span class="o">.</span><span class="n">begin</span><span class="p">(</span><span class="n">write</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span> <span class="k">as</span> <span class="n">txn</span><span class="p">:</span>
+<a id="L238" name="L238"></a>            <span class="n">data</span> <span class="o">=</span> <span class="n">txn</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">raw_key</span><span class="p">)</span>
+<a id="L239" name="L239"></a>            <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L240" name="L240"></a>                <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Index </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2"> not found in LMDB dataset.&quot;</span><span class="p">)</span>
+<a id="L241" name="L241"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">compressed</span><span class="p">:</span>
+<a id="L242" name="L242"></a>                <span class="k">return</span> <span class="n">data</span>
+<a id="L243" name="L243"></a>            <span class="k">try</span><span class="p">:</span>
+<a id="L244" name="L244"></a>                <span class="k">return</span> <span class="n">decompress_func</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<a id="L245" name="L245"></a>            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+<a id="L246" name="L246"></a>                <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_decompress_with_retries</span><span class="p">(</span><span class="n">raw_key</span><span class="p">,</span> <span class="n">data</span><span class="p">)</span>
+<a id="L247" name="L247"></a>
+<a id="L248" name="L248"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_decompress_with_retries</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">raw_key</span><span class="p">,</span> <span class="n">data</span><span class="p">):</span>
+<a id="L249" name="L249"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Guard against the known rare transient zstd/zlib decompression bug.</span>
+<a id="L250" name="L250"></a>
+<a id="L251" name="L251"></a><span class="sd">        Retries the decompression a fixed number of times; if it never</span>
+<a id="L252" name="L252"></a><span class="sd">        succeeds, returns None so that training is not broken (the event is</span>
+<a id="L253" name="L253"></a><span class="sd">        logged to a local file).</span>
+<a id="L254" name="L254"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L255" name="L255"></a>        <span class="n">safe_path</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">c</span> <span class="k">if</span> <span class="n">c</span><span class="o">.</span><span class="n">isalnum</span><span class="p">()</span> <span class="ow">or</span> <span class="n">c</span> <span class="ow">in</span> <span class="s1">&#39;_-&#39;</span> <span class="k">else</span> <span class="s1">&#39;_&#39;</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+<a id="L256" name="L256"></a>        <span class="n">log_file</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;compression_error_logs_</span><span class="si">{</span><span class="n">safe_path</span><span class="si">}</span><span class="s2">.txt&quot;</span>
+<a id="L257" name="L257"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;LMDBDataset </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">path</span><span class="si">}</span><span class="s2"> WARNING: error loading data at index </span><span class="si">{</span><span class="n">raw_key</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+<a id="L258" name="L258"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;It seems there is a bug with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compression_backend</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+<a id="L259" name="L259"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;First, let&#39;s try to load the data again </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compression_attempts</span><span class="si">}</span><span class="s2"> times.&quot;</span><span class="p">)</span>
+<a id="L260" name="L260"></a>        <span class="k">for</span> <span class="n">attempt</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">compression_attempts</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+<a id="L261" name="L261"></a>            <span class="k">try</span><span class="p">:</span>
+<a id="L262" name="L262"></a>                <span class="n">recovered</span> <span class="o">=</span> <span class="n">decompress_func</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+<a id="L263" name="L263"></a>                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;It worked at attempt: </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L264" name="L264"></a>                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">l</span><span class="p">:</span>
+<a id="L265" name="L265"></a>                    <span class="n">l</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compression_backend</span><span class="si">}</span><span class="s2"> error at </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">. Recovered after </span><span class="si">{</span><span class="n">attempt</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compression_attempts</span><span class="si">}</span><span class="s2"> attempts.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L266" name="L266"></a>                <span class="k">return</span> <span class="n">recovered</span>
+<a id="L267" name="L267"></a>            <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+<a id="L268" name="L268"></a>                <span class="k">pass</span>
+<a id="L269" name="L269"></a>        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;It didn&#39;t work after </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compression_attempts</span><span class="si">}</span><span class="s2"> attempts. Returning None to avoid breaking training. Event logged in ./</span><span class="si">{</span><span class="n">log_file</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L270" name="L270"></a>        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">log_file</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">l</span><span class="p">:</span>
+<a id="L271" name="L271"></a>            <span class="n">l</span><span class="o">.</span><span class="n">write</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compression_backend</span><span class="si">}</span><span class="s2"> error at </span><span class="si">{</span><span class="n">raw_key</span><span class="si">}</span><span class="s2">. Not recovered after </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">compression_attempts</span><span class="si">}</span><span class="s2"> attempts.</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L272" name="L272"></a>        <span class="k">return</span> <span class="kc">None</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

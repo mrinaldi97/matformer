@@ -192,9 +192,11 @@ class ParameterEditor:
 
     @staticmethod
     def _basis(p, direction):
-        d = torch.as_tensor(direction, device=p.device, dtype=p.dtype)
+        # QR on bf16/fp16 is not implemented on CUDA: decompose in fp32, then hand the basis back
+        # in the parameter's own dtype so the following matmuls keep working.
+        d = torch.as_tensor(direction, device=p.device, dtype=torch.float32)
         d = d.unsqueeze(0) if d.dim() == 1 else d
-        return torch.linalg.qr(d.T).Q.T                   # (k, D), orthonormal
+        return torch.linalg.qr(d.T).Q.T.to(p.dtype)       # (k, D), orthonormal
 
     def freeze(self, name, train=None):
         """Zero the gradient everywhere except where `train` is True (None = freeze all). Values untouched.
@@ -264,16 +266,14 @@ class ParameterEditor:
         p = self._p(name)
         self._hook(name, lambda g, p=p: g + lam * p.detach().sign())
 
-    def stats(self, name):
-        """Mean/std/abs_mean; for 2D also top singular value and effective rank (exp of spectral entropy)."""
-        p = self._p(name).detach().float()
-        out = {"mean": p.mean().item(), "std": p.std().item(), "abs_mean": p.abs().mean().item()}
-        if p.dim() == 2:
-            S = torch.linalg.svdvals(p)
-            q = S / S.sum()
-            out.update(top_sv=S[0].item(),
-                       eff_rank=torch.exp(-(q * q.clamp_min(1e-12).log()).sum()).item())
-        return out
+    def stats(self, name, **kwargs):
+        """Every statistic of one parameter, from the framework-wide tensor statistics.
+
+        This is the same dictionary ``TensorDC.stats`` and the analysis tasks produce; weights
+        are the only difference. Pass ``spectral=...`` to control the singular-value decomposition.
+        """
+        from matformer.utils.tensor_stats import compute_tensor_stats
+        return compute_tensor_stats(self._p(name).detach(), **kwargs)
 
     def restore(self, name=None):
         """Undo edits and remove gradient hooks; `name=None` restores everything."""

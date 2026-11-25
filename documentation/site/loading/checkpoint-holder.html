@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CheckpointHolder · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section" open><summary>Models</summary><ul><li><a class="current" href="checkpoint-holder.html">CheckpointHolder</a></li><li><a href="huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Models <span class="sep">/</span> CheckpointHolder</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/loading/checkpoint_holder.py.html"><code>matformer/loading/checkpoint_holder.py</code></a> <a href="../file/matformer/loading/matformer_holder.py.html"><code>matformer/loading/matformer_holder.py</code></a> <a href="../file/matformer/loading/huggingface_holder.py.html"><code>matformer/loading/huggingface_holder.py</code></a> <a href="../file/matformer/loading/utils.py.html"><code>matformer/loading/utils.py</code></a></div>
+<h1 id="checkpointholder">CheckpointHolder<a class="headerlink" href="#checkpointholder" title="Permanent link"></a></h1>
+<p>A <code>CheckpointHolder</code> reads one external checkpoint format. The wrapper, the trainer and <code>load_model</code> use the holder interface, so a Matformer checkpoint, a HuggingFace folder and a raw safetensors file are loaded through the same path.</p>
+<p>The base class implements renaming, <code>N</code>-templated layer keys, weight transforms, lazy streaming and the missing/unexpected report. A subclass implements the format-specific parts:</p>
+<ul>
+<li><code>_DEFS</code>: the folder with its adapter definitions (YAML);</li>
+<li><code>__init__</code>: sets <code>source_config</code>, <code>definition</code> and <code>num_layers</code>;</li>
+<li><code>_raw_weights</code>: returns a dict-like view of the raw source tensors;</li>
+<li><code>get_configs</code>: converts the native config into <code>MatformerConfigs</code>.</li>
+</ul>
+<h2 id="choosing-a-holder">Choosing a holder<a class="headerlink" href="#choosing-a-holder" title="Permanent link"></a></h2>
+<p><code>make_holder(path, **kwargs)</code> splits a <code>scheme://path</code> string and asks the registry for the holder type:</p>
+<div class="highlight"><pre><span></span><code><span class="n">make_holder</span><span class="p">(</span><span class="s2">&quot;checkpoints/run.ckpt&quot;</span><span class="p">)</span>        <span class="c1"># scheme absent -&gt; matformer</span>
+<span class="n">make_holder</span><span class="p">(</span><span class="s2">&quot;hf://meta-llama/Llama-3-8B&quot;</span><span class="p">)</span>  <span class="c1"># HuggingFace (local folder or hub id)</span>
+<span class="n">make_holder</span><span class="p">(</span><span class="s2">&quot;modelscope://org/model&quot;</span><span class="p">)</span>      <span class="c1"># ModelScope</span>
+<span class="n">make_holder</span><span class="p">(</span><span class="s2">&quot;gguf://path/to/model.gguf&quot;</span><span class="p">)</span>   <span class="c1"># GGUF</span>
+</code></pre></div>
+
+<p>The <code>checkpoint_holder</code> registry category is where a new format is added. The base class is <code>CheckpointHolder</code>; the built-ins are <code>matformer</code>, <code>hf</code>, <code>modelscope</code> and <code>gguf</code>.</p>
+<h2 id="the-lazy-weight-view">The lazy weight view<a class="headerlink" href="#the-lazy-weight-view" title="Permanent link"></a></h2>
+<p><code>get_weights(definition=None, wanted=None, discard=None)</code> returns a <code>StableWeights</code> object. The tensors are materialised when the wrapper iterates it, so a large checkpoint is read one tensor at a time and unwanted tensors are not fetched.</p>
+<p><code>wanted</code> and <code>discard</code> are mutually exclusive. Each is a stable key, an fnmatch pattern, or a list of them:</p>
+<div class="highlight"><pre><span></span><code><span class="n">holder</span><span class="o">.</span><span class="n">get_weights</span><span class="p">(</span><span class="n">wanted</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;encoder.*&quot;</span><span class="p">,</span> <span class="s2">&quot;lm_head.*&quot;</span><span class="p">])</span>
+<span class="n">holder</span><span class="o">.</span><span class="n">get_weights</span><span class="p">(</span><span class="n">discard</span><span class="o">=</span><span class="s2">&quot;*.bias&quot;</span><span class="p">)</span>
+</code></pre></div>
+
+<p>The selection applies to the plain renames and to the transform rules. A rule whose outputs are all discarded is skipped before the op runs, which is how loading only the LM head from a donor avoids materialising the backbone.</p>
+<p><code>holder.unresolved</code> is filled during the stream with the source keys that could not be placed. The wrapper adds it to the unexpected list, so a key that exists in the source but has no stable name is reported rather than silently dropped.</p>
+<h2 id="the-adapter-definition">The adapter definition<a class="headerlink" href="#the-adapter-definition" title="Permanent link"></a></h2>
+<p>An adapter is a YAML file in <code>_DEFS/&lt;model_type&gt;.yaml</code>. Its schema is the same for the built-in adapters and for a user override:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">alias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">mistral</span><span class="w">                 </span><span class="c1"># another &lt;model_type&gt;.yaml to use instead</span>
+<span class="nt">num_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">32</span><span class="w">                 </span><span class="c1"># optional, overrides the holder&#39;s own</span>
+<span class="nt">source_config</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nv">...</span><span class="p p-Indicator">}</span><span class="w">           </span><span class="c1"># optional, overrides the holder&#39;s own (for axis sizes)</span>
+<span class="nt">weight_mapping</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="s">&quot;model.layers.N.self_attn.q_proj.weight&quot;</span><span class="p p-Indicator">:</span><span class="w"> </span><span class="s">&quot;encoder.blocks.layers.N.attn.q_proj.weight&quot;</span>
+<span class="nt">weight_transforms</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">sources</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">q_proj</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">k_proj</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="nv">v_proj</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">outputs</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="nv">qkv_proj</span><span class="p p-Indicator">]</span>
+<span class="w">    </span><span class="nt">op</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">stack</span>
+<span class="w">    </span><span class="nt">pattern</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;s</span><span class="nv"> </span><span class="s">...</span><span class="nv"> </span><span class="s">-&gt;</span><span class="nv"> </span><span class="s">...&quot;</span>
+<span class="w">    </span><span class="nt">axes</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">{</span><span class="nt">q</span><span class="p">:</span><span class="w"> </span><span class="nv">32</span><span class="p p-Indicator">,</span><span class="nt"> k</span><span class="p">:</span><span class="w"> </span><span class="nv">8</span><span class="p p-Indicator">,</span><span class="nt"> v</span><span class="p">:</span><span class="w"> </span><span class="nv">8</span><span class="p p-Indicator">}</span>
+<span class="nt">source_key_aliases</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;model.&quot;</span><span class="p p-Indicator">,</span><span class="w"> </span><span class="s">&quot;transformer.&quot;</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+
+<p>The <code>N</code> token is replaced by the layer index only when it is a whole dot-separated segment, so <code>LayerNorm</code> is not touched. <code>weight_transforms</code> uses <code>einx</code>: the <code>axes</code> values may be literals, dotted paths into <code>source_config</code>, or products of them. A rule that returns one tensor for several outputs is unbound along axis 0.</p>
+<p>A definition that is only a pointer (<code>alias: mistral</code>) loads another adapter, with cycle detection. This is how a new architecture that is identical to a supported family needs no mapping at all.</p>
+<h2 id="matformercheckpointholder">MatformerCheckpointHolder<a class="headerlink" href="#matformercheckpointholder" title="Permanent link"></a></h2>
+<p>This is the native holder. It accepts:</p>
+<ul>
+<li>a <code>.ckpt</code> file: weights, configs and states from a Matformer checkpoint;</li>
+<li>a raw weights file (<code>.pt</code> or <code>.safetensors</code>): weights only, no configs;</li>
+<li>a folder: all the YAML files as configs plus exactly one weight file.</li>
+</ul>
+<p><code>get_configs()</code> returns the checkpoint's <code>MatformerConfigs</code>, or reconstructs them from a legacy Lightning <code>hyper_parameters</code> block with a warning. <code>get_states()</code> returns the optimizer, scheduler, datamodule, step and epoch, unless <code>what_to_reset</code> excludes them. A raw weights file has no config and no states.</p>
+<h2 id="huggingfacecheckpointholder">HuggingFaceCheckpointHolder<a class="headerlink" href="#huggingfacecheckpointholder" title="Permanent link"></a></h2>
+<p>The HF holder adds the two HF-specific things: reading <code>config.json</code> and downloading a hub repo. <code>model_type</code> selects the adapter; <code>num_hidden_layers</code>, <code>n_layer</code>, <code>num_layers</code> and <code>n_layers</code> are all accepted, at the top level or under <code>text_config</code>. The sharded index (<code>*.index.json</code>) is used when present; otherwise the single <code>.safetensors</code> or <code>.bin</code> is read directly. <code>get_configs(configs=None)</code> converts the HF config into Matformer configs and, if a configs object is passed, merges into it.</p>
+<p><code>ModelScopeCheckpointHolder</code> overrides only <code>_resolve_source</code>. <code>GGUFFCheckpointHolder</code> is the GGUF path.</p>
+<h2 id="additional-weights">Additional weights<a class="headerlink" href="#additional-weights" title="Permanent link"></a></h2>
+<p>The <code>weights</code> section of a config mounts extra sources on top of the primary checkpoint. Each entry is a <code>WeightConfig</code>:</p>
+<div class="highlight"><pre><span></span><code><span class="nt">weights</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">donor</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">safetensors</span>
+<span class="w">    </span><span class="nt">path</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">donors/head.safetensors</span>
+<span class="w">    </span><span class="nt">wanted</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">[</span><span class="s">&quot;lm_head.*&quot;</span><span class="p p-Indicator">]</span>
+</code></pre></div>
+
+<p><code>definition</code> overrides the adapter for that source. <code>wanted</code> and <code>discard</code> select what to inherit, as in <code>get_weights</code>. <code>load_additional_weights()</code> reports missing and unexpected keys for each source. The wrapper's use of additional weights is described in <a href="../training/wrapper.html">MatformerWrapper</a>.</p>
+<h2 id="releasing">Releasing<a class="headerlink" href="#releasing" title="Permanent link"></a></h2>
+<p><code>release()</code> drops the references to the loaded tensors. <code>load_model</code> calls it after the weights have been copied into the model.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

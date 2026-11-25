@@ -1,0 +1,173 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Model and activation analysis · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section" open><summary>Training</summary><ul><li><a href="wrapper.html">MatformerWrapper</a></li><li><a href="trainer.html">MatformerTrainer</a></li><li><a href="learning-signals.html">Learning signals</a></li><li><a href="logger.html">Logging</a></li><li><a href="control.html">Control</a></li><li><a class="current" href="analysis.html">Model and activation analysis</a></li><li><a href="checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Training <span class="sep">/</span> Model and activation analysis</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/tasks/analysis.py.html"><code>matformer/tasks/analysis.py</code></a> <a href="../file/matformer/utils/tensor_stats.py.html"><code>matformer/utils/tensor_stats.py</code></a> <a href="../file/matformer/utils/profiling.py.html"><code>matformer/utils/profiling.py</code></a></div>
+<h1 id="model-and-activation-analysis">Model and activation analysis<a class="headerlink" href="#model-and-activation-analysis" title="Permanent link"></a></h1>
+<p>Two analysis tasks describe a model without changing the training loop. They are ordinary
+<a href="../tasks/index.html">tasks</a>: their summaries go to the run database, their scalar values become
+metrics, and they can run standalone, inside <code>validation</code>, or on demand through the
+<a href="control.html">control channel</a>.</p>
+<h2 id="one-definition-of-tensor-statistics">One definition of tensor statistics<a class="headerlink" href="#one-definition-of-tensor-statistics" title="Permanent link"></a></h2>
+<p><code>matformer.utils.tensor_stats.compute_tensor_stats(tensor)</code> is the single implementation. The
+same dictionary is returned by <code>TensorDC.stats()</code>, by <code>ParameterEditor.stats(name)</code>, and by both
+analysis tasks.</p>
+<table>
+<thead>
+<tr>
+<th>Group</th>
+<th>Fields</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>distribution</td>
+<td><code>mean</code>, <code>var</code>, <code>std</code>, <code>skewness</code>, <code>kurtosis</code>, <code>min</code>, <code>max</code>, quantiles</td>
+</tr>
+<tr>
+<td>magnitude</td>
+<td><code>abs_mean</code>, <code>abs_max</code>, <code>rms</code>, <code>l1_norm</code>, <code>l2_norm</code></td>
+</tr>
+<tr>
+<td>sparsity</td>
+<td><code>zero_fraction</code>, <code>sparsity_1e-6</code>, <code>sparsity_1e-3</code></td>
+</tr>
+<tr>
+<td>outliers</td>
+<td><code>outlier_threshold</code>, <code>outlier_fraction</code>, <code>max_abs_z</code>, <code>outlier_vectors</code></td>
+</tr>
+<tr>
+<td>per-token geometry</td>
+<td><code>vector_norm_mean/std/min/max</code>, <code>vector_norm_p50/p90/p99</code>, <code>vector_max_abs_mean/max</code>, <code>top1/top2/top5/top10_share</code></td>
+</tr>
+<tr>
+<td>spectrum (2-D)</td>
+<td><code>frobenius</code>, <code>nuclear_norm</code>, <code>spectral_norm</code>, <code>stable_rank</code>, <code>effective_rank</code>, <code>effective_rank_centered</code>, <code>condition_number</code></td>
+</tr>
+<tr>
+<td>health</td>
+<td><code>shape</code>, <code>numel</code>, <code>nonfinite</code>, <code>nonfinite_fraction</code></td>
+</tr>
+</tbody>
+</table>
+<p>Spectral statistics run only when asked: <code>spectral="auto"</code> allows them below four million
+elements, <code>"always"</code> and <code>"never"</code> are explicit. Activations and gradients normally pass
+<code>spectral="never"</code>.</p>
+<p><code>TensorDC.stats()</code> excludes padding by default, because a pad token is not a measurement of the
+model. Pass <code>include_padding=True</code> when the padding path itself is the suspect.</p>
+<p><code>RunningStats</code> combines per-batch dictionaries into a dataset summary: weighted means, combined
+standard deviations, exact minima/maxima, and no memory of the batches.</p>
+<h2 id="static_model_analysis">static_model_analysis<a class="headerlink" href="#static_model_analysis" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="nt">task</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">weights</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">static_model_analysis</span>
+<span class="w">    </span><span class="nt">per_parameter</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">gradients</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">       </span><span class="c1"># include parameter.grad when it exists</span>
+<span class="w">    </span><span class="nt">spectral</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">auto</span>
+</code></pre></div>
+
+<p>For every stable parameter it logs the full statistics, its layer, family (<code>attention</code>, <code>mlp</code>,
+<code>norm</code>, <code>embedding</code>, <code>head</code>, <code>other</code>), dtype, shape and whether it is trainable. The summary also
+contains model, family and layer totals in elements and bytes, trainable/frozen counts, plus
+aggregate statistics per family, per layer and for the whole model. <code>gradients: true</code> adds the same description of the gradients currently
+attached to the parameters, which is how a validation step can see gradient flow without keeping
+a gradient history.</p>
+<p>The task needs no dataset (<code>requires_data = False</code>), so it can be the first entry of a validation
+group even when the model has no test set.</p>
+<h2 id="activation_analysis">activation_analysis<a class="headerlink" href="#activation_analysis" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="nt">task</span><span class="p">:</span>
+<span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">name</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">activations</span>
+<span class="w">    </span><span class="nt">type</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">activation_analysis</span>
+<span class="w">    </span><span class="nt">ref_data</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">test</span>
+<span class="w">    </span><span class="nt">learning_signal</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">null</span><span class="w">     </span><span class="c1"># null mirrors the model&#39;s own selector</span>
+<span class="w">    </span><span class="nt">gradients</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">outlier_sigma</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">6.0</span>
+<span class="w">    </span><span class="nt">spectral</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">never</span>
+<span class="w">    </span><span class="nt">module_logs</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<span class="w">    </span><span class="nt">profile</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span><span class="w">             </span><span class="c1"># component timing</span>
+</code></pre></div>
+
+<p>For every module that emits a <code>TensorDC</code> (the embedding head, every transformer block, and any
+specialised socket-bearing module) the task records the same statistics of the output, padding
+excluded. Per-token geometry is therefore present without storing a row per token: vector norms,
+their quantiles, outlier counts and energy concentration.</p>
+<p><code>record_outliers: true</code> adds the most extreme tokens (per module) to the summary under
+<code>outliers</code>, with the flat token index, the decoded text, the vector norm and the maximum absolute
+activation. This is the quickest RPC answer to "which token in this dataset blows up?", and it
+works without a logger because the list is part of the returned summary.</p>
+<p>When <code>gradients</code> is true the task builds the learning-signal loss on its own batch and calls
+<code>torch.autograd.grad</code>, which returns gradients <em>without touching the training gradients</em>. A
+mid-training trigger can therefore never corrupt an accumulation window. Aggregate and
+per-parameter gradient statistics are logged under <code>gradients/...</code>.</p>
+<p>On a <code>VirtualModel</code> the task consumes the replayed activations directly: no hooks and no
+gradients are needed, and every databank address becomes an activation name.</p>
+<h3 id="module-specific-diagnostics">Module-specific diagnostics<a class="headerlink" href="#module-specific-diagnostics" title="Permanent link"></a></h3>
+<p>A module can implement <code>_log()</code> and return the numbers that only make sense for its
+architecture. <code>MultiHeadAttention</code> reports head geometry, sliding window, ALiBi/RoPE choice,
+QKV/clamp saturation and gate statistics; the FLA mixers report their recurrent architecture and
+input/output magnitudes. <code>MatformerModelWrapper</code> remembers every such module once
+(<code>refresh_diagnostics</code>) and <code>collect_module_diagnostics()</code> asks them all, so the task never loops
+over the module tree and a new mixer only has to add <code>_log()</code>.</p>
+<h3 id="component-profiling">Component profiling<a class="headerlink" href="#component-profiling" title="Permanent link"></a></h3>
+<p>With <code>profile: true</code>, <code>ComponentProfiler</code> attaches forward hooks for the duration of the task and
+groups calls by component: embedding, attention, MLP, norm, head, block. The summary reports
+calls, seconds, fraction of the run, mean/max milliseconds and, on CUDA, allocator deltas.
+The summary also contains the task-level allocator start/end/peak and the peak growth, which is
+the quick check for "is anything eating memory during this task?". No <code>timeit</code> is placed in model
+code, and an ordinary training pass pays nothing because the hooks exist only while a profiler is
+running.</p>
+<h2 id="batch-size-probe-from-rpc">Batch-size probe from RPC<a class="headerlink" href="#batch-size-probe-from-rpc" title="Permanent link"></a></h2>
+<p>The trainer's memory probe is reachable without opening a shell:</p>
+<div class="highlight"><pre><span></span><code>train.probeOptions                                  # the knobs and their defaults
+train.probe {&quot;config&quot;: [&quot;run.yaml&quot;], &quot;probe&quot;: {&quot;fill&quot;: 0.9, &quot;steps&quot;: 3}}
+memory.reports {&quot;root&quot;: &quot;/tmp/my_run&quot;}              # all reports under one folder
+memory.report {&quot;path&quot;: &quot;/tmp/my_run/logs/run_v1/memory_probe.json&quot;}
+</code></pre></div>
+
+<p><code>train.probe</code> queues the same job <code>train.start</code> would, but with <code>probe</code> set and no training.
+The report contains every attempted row count and its peak, the safe batch size and the measured
+tokens/s/MFU. <code>apply: true</code> trains at the measured size in the same job.</p>
+<h2 id="reading-the-result">Reading the result<a class="headerlink" href="#reading-the-result" title="Permanent link"></a></h2>
+<p>The summary is stored in <code>task_summaries</code> and every scalar is also a row in <code>metrics</code>, so the
+same numbers are available as a table, as a plot, and through RPC:</p>
+<div class="highlight"><pre><span></span><code>runs.tasks    {&quot;run&quot;: &quot;project/run&quot;}                  # executions and their summaries
+runs.metrics  {&quot;run&quot;: &quot;project/run&quot;, &quot;keys&quot;: [&quot;activation_analysis/activations/.../mean&quot;]}
+
+For a run whose database is outside the server&#39;s configured roots (for example a test in /tmp),
+pass the file explicitly: `runs.list {&quot;db&quot;: &quot;/tmp/run.db&quot;}`, `runs.get {&quot;run&quot;: &quot;p/r&quot;,
+&quot;db&quot;: &quot;/tmp/run.db&quot;}`. `memory.reports {&quot;root&quot;: &quot;/tmp/run&quot;}` works the same way for probes.
+</code></pre></div>
+
+<h2 id="triggering-an-analysis-mid-training">Triggering an analysis mid-training<a class="headerlink" href="#triggering-an-analysis-mid-training" title="Permanent link"></a></h2>
+<p>No restart is needed. The control channel accepts a task that was never declared:</p>
+<div class="highlight"><pre><span></span><code>train.task  {&quot;id&quot;: &quot;&lt;job&gt;&quot;, &quot;type&quot;: &quot;activation_analysis&quot;, &quot;name&quot;: &quot;extra&quot;,
+             &quot;fields&quot;: {&quot;ref_data&quot;: &quot;test&quot;, &quot;profile&quot;: true}}
+</code></pre></div>
+
+<p>The task opens its own <code>task_runs</code> row at the current step, writes into the same database, and
+the training continues. If the ad-hoc task raises, the trainer logs the failure in
+<code>control_result.json</code> and keeps training.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

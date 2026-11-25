@@ -1,0 +1,187 @@
+id = "mdat_pretokenize"
+title = "Pretokenize an MDAT"
+description = "Register a pretokenization strategy and cache tokens and chunks for one dataset or every dataset."
+category = "Data"
+order = 50
+
+[[steps]]
+id = "container"
+title = "Container"
+description = "The container must already hold the datasets to pretokenize."
+[[steps.fields]]
+name = "container"
+kind = "path"
+label = "Container"
+default = ""
+required = true
+
+[[steps]]
+id = "strategy"
+title = "Strategy"
+description = "A strategy names a tokenizer, a splitter and a chunk size. The result is cached per dataset."
+[[steps.fields]]
+name = "strategy_mode"
+kind = "radio"
+label = "Strategy"
+default = "existing"
+options = [
+  { value = "existing", label = "Use a registered strategy" },
+  { value = "new", label = "Define a new strategy" },
+]
+[[steps.fields]]
+name = "strategy"
+kind = "choice"
+label = "Registered strategy"
+default = ""
+source = "mdat.strategies"
+depends_on = ["container"]
+required = true
+when = { field = "strategy_mode", is = "existing" }
+[[steps.fields]]
+name = "strategy_name"
+kind = "text"
+label = "Strategy name"
+default = "pretok"
+required = true
+when = { field = "strategy_mode", is = "new" }
+[[steps.fields]]
+name = "tokenizer_name"
+kind = "text"
+label = "Tokenizer"
+default = ""
+required = true
+doc = "A HuggingFace tokenizer repository or a local tokenizer folder."
+when = { field = "strategy_mode", is = "new" }
+[[steps.fields]]
+name = "chunk_size"
+kind = "int"
+label = "Chunk size"
+default = 1024
+required = true
+doc = "Tokens per chunk. The model sequence length must be a multiple of it."
+when = { field = "strategy_mode", is = "new" }
+[[steps.fields]]
+name = "splitter_class"
+kind = "choice"
+label = "Splitter"
+default = "split_and_tokenize_by_nltk_sentences_aligned"
+options = [
+  { value = "split_and_tokenize_by_nltk_sentences_aligned", label = "NLTK sentences, aligned" },
+  { value = "split_and_tokenize_by_nltk_sentences", label = "NLTK sentences" },
+  { value = "SmallSplitter", label = "Small splitter" },
+]
+when = { field = "strategy_mode", is = "new" }
+[[steps.fields]]
+name = "language"
+kind = "text"
+label = "Language"
+default = "italian"
+when = { all = [{ field = "strategy_mode", is = "new" }, { field = "splitter_class", not_in = ["SmallSplitter"] }] }
+[[steps.fields]]
+name = "bos_token_id"
+kind = "int"
+label = "BOS token id"
+default = 1
+when = { field = "strategy_mode", is = "new" }
+[[steps.fields]]
+name = "eos_token_id"
+kind = "int"
+label = "EOS token id"
+default = 2
+when = { field = "strategy_mode", is = "new" }
+[[steps.fields]]
+name = "pad_token_id"
+kind = "int"
+label = "PAD token id"
+default = 0
+when = { field = "strategy_mode", is = "new" }
+[[steps.fields]]
+name = "mask_token_id"
+kind = "int"
+label = "MASK token id"
+default = 0
+when = { field = "strategy_mode", is = "new" }
+
+[[steps]]
+id = "scope"
+title = "Scope"
+description = "Pretokenization is resumable and parallel. The log reports each dataset as it finishes."
+[[steps.fields]]
+name = "target"
+kind = "radio"
+label = "Datasets"
+default = "all"
+options = [
+  { value = "all", label = "Every dataset" },
+  { value = "one", label = "One dataset" },
+]
+[[steps.fields]]
+name = "dataset"
+kind = "choice"
+label = "Dataset"
+default = ""
+source = "mdat.datasets"
+depends_on = ["container"]
+required = true
+when = { field = "target", is = "one" }
+[[steps.fields]]
+name = "parallel"
+kind = "bool"
+label = "Parallel workers"
+default = true
+[[steps.fields]]
+name = "processes"
+kind = "int"
+label = "Worker processes"
+default = 4
+doc = "Zero lets the strategy choose."
+[[steps.fields]]
+name = "batch"
+kind = "int"
+label = "Batch size"
+default = 256
+[[steps.fields]]
+name = "compression"
+kind = "int"
+label = "Compression level"
+default = 0
+[[steps.fields]]
+name = "resume"
+kind = "bool"
+label = "Resume an interrupted run"
+default = true
+
+[action]
+kind = "mdat"
+name = "pretokenize"
+container = "${container}"
+[[action.files]]
+id = "strategy"
+suffix = "json"
+when = { field = "strategy_mode", is = "new" }
+content = { strategy_name = "${strategy_name}", tokenizer_type = "huggingface", tokenizer_name = "${tokenizer_name}", splitter_class = "${splitter_class}", splitter_init = { language = "${language}" }, modality = "text", chunk_size = "${chunk_size}", bos_token_id = "${bos_token_id}", eos_token_id = "${eos_token_id}", pad_token_id = "${pad_token_id}", mask_token_id = "${mask_token_id}", wants_from_db = ["data"], wants_raw = true, returns = ["tokens", "chunks"], required_databases = ["tokens", "chunks"] }
+[[action.commands]]
+cmd = "open"
+args = { path = "${container}" }
+[[action.commands]]
+cmd = "strat_add"
+when = { field = "strategy_mode", is = "new" }
+args = { name = "${strategy_name}", json_path = "${files.strategy}" }
+[[action.commands]]
+cmd = "pretok_all"
+when = { all = [{ field = "target", is = "all" }, { field = "strategy_mode", is = "existing" }] }
+args = { strategy = "${strategy}", parallel = "${parallel}", processes = "${processes}", batch = "${batch}", compression = "${compression}", resume = "${resume}" }
+[[action.commands]]
+cmd = "pretok_all"
+when = { all = [{ field = "target", is = "all" }, { field = "strategy_mode", is = "new" }] }
+args = { strategy = "${strategy_name}", parallel = "${parallel}", processes = "${processes}", batch = "${batch}", compression = "${compression}", resume = "${resume}" }
+[[action.commands]]
+cmd = "pretok"
+when = { all = [{ field = "target", is = "one" }, { field = "strategy_mode", is = "existing" }] }
+args = { dataset = "${dataset}", strategy = "${strategy}", parallel = "${parallel}", processes = "${processes}", batch = "${batch}", compression = "${compression}", resume = "${resume}" }
+[[action.commands]]
+cmd = "pretok"
+when = { all = [{ field = "target", is = "one" }, { field = "strategy_mode", is = "new" }] }
+args = { dataset = "${dataset}", strategy = "${strategy_name}", parallel = "${parallel}", processes = "${processes}", batch = "${batch}", compression = "${compression}", resume = "${resume}" }
+[[action.commands]]
+cmd = "close"

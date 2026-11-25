@@ -20,6 +20,7 @@ Outputs (written by the plugin, one JSON line per batch + a final summary):
 
 import json
 from dataclasses import dataclass
+from typing import ClassVar
 
 import torch
 
@@ -37,6 +38,7 @@ class DlaStatsConfig(PluginConfig):
     pre_norm_address: str = None      # cache entry holding the residual right before the final norm
     rms_norm: bool = True             # exact per-token 1/rms correction (final norm is RMSNorm)
     eps: float = 1e-6
+    _sweep_scoped: ClassVar[list] = ["output_file", "summary_file"]
 
 
 def _segments(tdc):

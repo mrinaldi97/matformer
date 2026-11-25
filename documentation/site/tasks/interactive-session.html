@@ -1,0 +1,63 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Interactive console · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../data/index.html">Data</a></li><li><a href="../data/mdat.html">MDAT</a></li><li><a href="../data/data-module.html">Data module</a></li><li><a href="../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section" open><summary>Tasks</summary><ul><li><a href="index.html">MatformerTask</a></li><li><a href="built-in-tasks.html">Built-in tasks</a></li><li><a class="current" href="interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Tasks <span class="sep">/</span> Interactive console</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/tasks/session.py.html"><code>matformer/tasks/session.py</code></a> <a href="../file/run_task.py.html"><code>run_task.py</code></a></div>
+<h1 id="interactive-console">Interactive console<a class="headerlink" href="#interactive-console" title="Permanent link"></a></h1>
+<p><code>run_task.py</code> opens a <code>cmd2</code> shell around a loaded model. The shell is <code>TaskConsole</code> from <code>matformer/tasks/session.py</code>; it uses <code>TaskSession</code> to feed one batch at a time and keeps run statistics.</p>
+<p>Example:</p>
+<div class="highlight"><pre><span></span><code>task test
+run
+show test
+set temperature 0.7
+ask &quot;The capital of Italy is&quot;
+stats
+quit
+</code></pre></div>
+
+<h2 id="commands">Commands<a class="headerlink" href="#commands" title="Permanent link"></a></h2>
+<ul>
+<li><code>task &lt;name&gt;</code> selects a configured task. <code>describe</code> shows its fields and <code>set</code> changes them.</li>
+<li><code>run</code> executes the task over its dataset.</li>
+<li><code>ask</code> or a raw batch drives the task interactively when no dataset is configured.</li>
+<li><code>show</code> renders rows through the task's <code>present</code> method.</li>
+<li><code>stats</code> reports input and output tokens, time, speed and memory.</li>
+<li><code>clear</code> drops the generation context and the KV cache.</li>
+<li><code>annotate &lt;file|mdat&gt;</code> writes one record per item plus <code>&lt;output&gt;.summary.jsonl</code>. The output is JSONL for file inputs and an mdat for mdat inputs; <code>--format jsonl|mdat</code> overrides it, <code>--keys-only</code> writes a metadata-only mdat with just the source key and predictions, and <code>--dataset NAME</code> selects a dataset inside an mdat container.</li>
+</ul>
+<h2 id="drivers">Drivers<a class="headerlink" href="#drivers" title="Permanent link"></a></h2>
+<p>A task receives one batch and returns one result. <code>run()</code> contains the dataset loop, and the console calls the task one batch at a time. Scripts and the GUI use the same task interface.</p>
+<p>The session stores the generation context and the KV cache. It never opens the run database: interactive use stays ephemeral, and the user can annotate a file explicitly. The formatting helpers (<code>render</code>, <code>format_summary</code>, <code>format_rows</code>) only affect the console output.</p>
+<h2 id="from-python">From Python<a class="headerlink" href="#from-python" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="kn">from</span><span class="w"> </span><span class="nn">matformer.matformer_registry</span><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+
+<span class="n">task_config</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get_definition</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;evaluation&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span><span class="s2">&quot;ref_data&quot;</span><span class="p">:</span> <span class="s2">&quot;test&quot;</span><span class="p">})</span>
+<span class="n">task</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span><span class="s2">&quot;task&quot;</span><span class="p">,</span> <span class="s2">&quot;evaluation&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">=</span><span class="n">task_config</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">)</span>
+<span class="n">summary</span> <span class="o">=</span> <span class="n">task</span><span class="p">()</span>
+</code></pre></div>
+
+<p><code>run_task.py</code> builds the model and opens the console. A script can build the same task directly.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

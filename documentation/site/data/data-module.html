@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Data module · Matformer</title>
+<link rel="stylesheet" href="../assets/style.css">
+<link rel="stylesheet" href="../assets/pygments.css">
+</head>
+<body class="doc-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../index.html">Documentation</a><a class="" href="../registry/index.html">Registry</a><a class="" href="../configuration/index.html">Configuration</a><a class="" href="../tools/commands.html">Commands</a><a class="" href="../file/index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../index.html">Matformer</a></li><li><a href="../intro/limitations.html">Limitations</a></li><li><a href="../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../components/registry.html">The Matformer Registry</a></li><li><a href="../components/configuration.html">Configuration</a></li><li><a href="../components/transformer.html">Transformer architecture</a></li><li><a href="../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../components/plugins.html">Plugins</a></li><li><a href="../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../components/matformer-module.html">MatformerModule</a></li><li><a href="../components/tensors.html">TensorsDC</a></li><li><a href="../components/cache.html">The cache</a></li><li><a href="../components/maskerator.html">The Maskerator</a></li><li><a href="../components/tokenizers.html">Tokenizers</a></li><li><a href="../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../training/wrapper.html">MatformerWrapper</a></li><li><a href="../training/trainer.html">MatformerTrainer</a></li><li><a href="../training/learning-signals.html">Learning signals</a></li><li><a href="../training/logger.html">Logging</a></li><li><a href="../training/control.html">Control</a></li><li><a href="../training/analysis.html">Model and activation analysis</a></li><li><a href="../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section" open><summary>Data</summary><ul><li><a href="index.html">Data</a></li><li><a href="mdat.html">MDAT</a></li><li><a class="current" href="data-module.html">Data module</a></li><li><a href="lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../tasks/index.html">MatformerTask</a></li><li><a href="../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../tools/server.html">Server</a></li><li><a href="../tools/gui.html">GUI</a></li><li><a href="../tools/remote.html">Remote client</a></li><li><a href="../tools/cluster.html">Cluster</a></li><li><a href="../tools/commands.html">Commands</a></li><li><a href="../tools/wizards.html">Wizards</a></li><li><a href="../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../tutorials/index.html">Tutorials</a></li><li><a href="../tutorials/registry.html">Use the registry</a></li><li><a href="../tutorials/add-a-task.html">Add a task</a></li><li><a href="../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../about/repository.html">Repository</a></li><li><a href="../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../index.html">Docs</a> <span class="sep">/</span> Data <span class="sep">/</span> Data module</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="../file/matformer/data/matformer_data_module.py.html"><code>matformer/data/matformer_data_module.py</code></a> <a href="../file/matformer/dataclasses/data_dataclasses.py.html"><code>matformer/dataclasses/data_dataclasses.py</code></a></div>
+<h1 id="data-module">Data module<a class="headerlink" href="#data-module" title="Permanent link"></a></h1>
+<p><code>MatformerDataModule</code> is the base class of every data module. It defines <code>setup</code>, <code>train_dataloader</code>, <code>__len__</code>, <code>state_dict</code> and <code>load_state_dict</code>, and it provides the shared <code>collate_fn</code>.</p>
+<h2 id="contract">Contract<a class="headerlink" href="#contract" title="Permanent link"></a></h2>
+<p>A subclass:</p>
+<ol>
+<li>calls <code>super().__init__(config, num_devices)</code> and defines <code>required_keys</code>;</li>
+<li>calls <code>self._assertions(name, required_keys)</code> in <code>__init__</code>, so a missing field in the data section is reported before the dataset is built;</li>
+<li>implements <code>setup(stage=None)</code> and calls <code>super().setup(stage)</code> first;</li>
+<li>implements <code>train_dataloader()</code>, returning a <code>DataLoader</code> with <code>batch_size=self.config.batch_size</code> and <code>collate_fn=self.collate_fn</code>;</li>
+<li>implements <code>__len__</code>, <code>state_dict()</code> and <code>load_state_dict()</code>.</li>
+</ol>
+<p><code>__len__</code> returns the number of examples on this rank, already divided by the world size. The trainer uses it to compute the total steps. If the length is not known, <code>__len__</code> returns <code>0</code> and the trainer disables LR scheduling.</p>
+<p><code>state_dict</code> and <code>load_state_dict</code> use <code>_gather_state</code> and <code>_restore_state</code>. Every rank sends its dataset position to rank 0, and a resume returns each rank its position. A resume with a different world size is accepted; the positions may overlap or skip a few examples, and the epoch still terminates.</p>
+<h2 id="configuration">Configuration<a class="headerlink" href="#configuration" title="Permanent link"></a></h2>
+<p><code>DataConfig</code> contains <code>data_root</code>, <code>batch_size</code>, <code>num_workers</code>, <code>keep_metadata</code>, <code>head_samples</code>, <code>partition_start</code>, <code>partition_end</code>, and the linked <code>tokenizer</code>, <code>model</code> and <code>training</code> sections. The subclasses add their own fields:</p>
+<ul>
+<li><code>LazyDataModuleConfig</code>: <code>file_format</code>, <code>text_column</code>, <code>input_ids_column</code>, <code>tokenize</code>, <code>add_bos</code>, <code>add_eos</code>, <code>split</code>, <code>max_seq_len</code>, <code>hf_config</code>, <code>varlen_strategy</code>, <code>task</code>, <code>label_column</code>, <code>label2id</code>, <code>id2label</code>, <code>scan_labels</code>, <code>missing_label_values</code>.</li>
+<li><code>MDATDataModuleConfig</code>: <code>mdat_strategy</code>, <code>mdat_view</code>, <code>iteration_modality</code>, and the partition fields.</li>
+</ul>
+<p>When a model is loaded, the trainer copies <code>model.max_position_embeddings</code> into <code>config.max_seq_len</code> if the data config does not set it. It also copies <code>training.batch_size</code> and <code>training.varlen_strategy</code> into the data config for the run.</p>
+<h2 id="collate_fn">collate_fn<a class="headerlink" href="#collate_fn" title="Permanent link"></a></h2>
+<p><code>collate_fn</code> receives a list of items and returns a <code>TensorDC</code>.</p>
+<p>With <code>varlen_strategy == "unpadding"</code> it returns an <code>UnpaddedTensor</code>: the sequences are concatenated into one tensor, and <code>indices</code>, <code>cu_seqlens</code>, <code>max_seq_len</code> and <code>original_seq_len</code> describe the boundaries. With any other value it returns a <code>PaddedTensor</code>: sequences are padded to <code>max_seq_len</code> with <code>pad_token_id</code>, and <code>padding_mask</code> is <code>True</code> on the pads.</p>
+<p>A sequence label becomes <code>attributes["labels"]</code>, a tensor of shape <code>[B]</code> or <code>[B, ...]</code>. A token label becomes <code>following_attributes["labels"]</code>, so it is padded, unpadded and reversed with the tokens. A token-level batch must be either fully labelled or fully unlabelled; a mix raises <code>ValueError</code>.</p>
+<p><code>is_same_document</code> becomes <code>same_document_mask</code>, a boolean tensor of shape <code>[B]</code>. If no item supplies the field, the tensor is absent.</p>
+<p><code>metadata</code> is collected when <code>config.keep_metadata</code> is true and stored in <code>attributes["metadata"]</code>.</p>
+<p>If an item sets <code>worker_has_finished</code>, the batch carries <code>attributes["worker_has_finished"] = True</code>. The wrapper returns a zero loss for that batch.</p>
+<h2 id="subclassing">Subclassing<a class="headerlink" href="#subclassing" title="Permanent link"></a></h2>
+<div class="highlight"><pre><span></span><code><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;data&quot;</span><span class="p">,</span> <span class="s2">&quot;my_data&quot;</span><span class="p">,</span> <span class="s2">&quot;default&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">MyDataModule</span><span class="p">(</span><span class="n">MatformerDataModule</span><span class="p">):</span>
+    <span class="n">required_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;data_root&quot;</span><span class="p">,</span> <span class="s2">&quot;batch_size&quot;</span><span class="p">]</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">num_devices</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">num_devices</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_assertions</span><span class="p">(</span><span class="s2">&quot;my_data&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">required_keys</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="kc">None</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">setup</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">setup</span><span class="p">(</span><span class="n">stage</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">MyDataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">data_root</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">train_dataloader</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">DataLoader</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span>
+                          <span class="n">collate_fn</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">collate_fn</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gather_state</span><span class="p">({</span><span class="s2">&quot;position&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="o">.</span><span class="n">position</span><span class="p">})</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_restore_state</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="k">lambda</span> <span class="n">one</span><span class="p">:</span> <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dataset</span><span class="p">,</span> <span class="s2">&quot;position&quot;</span><span class="p">,</span> <span class="n">one</span><span class="p">[</span><span class="s2">&quot;position&quot;</span><span class="p">]))</span>
+</code></pre></div>
+
+<p>The registry makes the module available as <code>data: {type: my_data, ...}</code>. The trainer and the tasks use it through the <code>data</code> category.</p>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

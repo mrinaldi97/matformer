@@ -1,0 +1,256 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/loading/adapters/huggingface/lfm2.yaml · Matformer</title>
+<link rel="stylesheet" href="../../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../../index.html">Documentation</a><a class="" href="../../../../../registry/index.html">Registry</a><a class="" href="../../../../../configuration/index.html">Configuration</a><a class="" href="../../../../../tools/commands.html">Commands</a><a class="current" href="../../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../../index.html">Matformer</a></li><li><a href="../../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../../components/cache.html">The cache</a></li><li><a href="../../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../../training/logger.html">Logging</a></li><li><a href="../../../../../training/control.html">Control</a></li><li><a href="../../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../../data/index.html">Data</a></li><li><a href="../../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../../data/data-module.html">Data module</a></li><li><a href="../../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../../tools/server.html">Server</a></li><li><a href="../../../../../tools/gui.html">GUI</a></li><li><a href="../../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../../tools/commands.html">Commands</a></li><li><a href="../../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../../about/repository.html">Repository</a></li><li><a href="../../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../../index.html">Repository</a> <span class="sep">/</span> matformer/loading/adapters/huggingface/lfm2.yaml</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="lfm2.yaml.html"><code>matformer/loading/adapters/huggingface/lfm2.yaml</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/loading/adapters/huggingface/</code></a></p><h1><code>lfm2.yaml</code></h1><p class="muted">matformer/loading/adapters/huggingface/lfm2.yaml · 113 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/loading/adapters/huggingface/lfm2.yaml">view on GitHub</a></p></div><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="c1"># LFM2 / LFM2.5 (LiquidAI) dense hybrid conv+attention =&gt; Matformer config mapping</span>
+<a id="L2" name="L2"></a><span class="c1"># Dense decoders only (lfm2 model_type); the MoE variants (lfm2_moe: 8B-A1B, 24B-A2B, ...)</span>
+<a id="L3" name="L3"></a><span class="c1"># are out of scope.</span>
+<a id="L4" name="L4"></a><span class="c1"># Hybrid layout: most layers are &quot;conv&quot; (GatedShortConv, implemented from scratch in</span>
+<a id="L5" name="L5"></a><span class="c1"># matformer/transformer_blocks/sequence_mixer/gated_short_conv.py), a few are</span>
+<a id="L6" name="L6"></a><span class="c1"># &quot;full_attention&quot;. Attention positions differ across checkpoint sizes (layer_types /</span>
+<a id="L7" name="L7"></a><span class="c1"># full_attn_idxs) with no regular pattern, so custom_layers is derived from the HF config</span>
+<a id="L8" name="L8"></a><span class="c1"># itself — one attention patch per full_attention layer — keeping this adapter correct</span>
+<a id="L9" name="L9"></a><span class="c1"># for every dense size of the family.</span>
+<a id="L10" name="L10"></a><span class="c1"># Weight naming: HF conv layers are model.layers.N.conv.{in_proj,conv,out_proj};</span>
+<a id="L11" name="L11"></a><span class="c1"># attention layers are model.layers.N.self_attn.{q,k,v}_proj / out_proj with per-head</span>
+<a id="L12" name="L12"></a><span class="c1"># RMSNorms (q_layernorm/k_layernorm) applied before RoPE; the MLP is swiglu w1/w3/w2;</span>
+<a id="L13" name="L13"></a><span class="c1"># the final norm is model.embedding_norm (HF calls it that despite being the last norm).</span>
+<a id="L14" name="L14"></a>
+<a id="L15" name="L15"></a><span class="nt">defaults</span><span class="p">:</span>
+<a id="L16" name="L16"></a><span class="w">  </span><span class="nt">model</span><span class="p">:</span>
+<a id="L17" name="L17"></a><span class="w">    </span><span class="nt">model_class</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">Autoregressive_Model</span>
+<a id="L18" name="L18"></a><span class="w">    </span><span class="nt">is_causal</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">true</span>
+<a id="L19" name="L19"></a><span class="w">    </span><span class="nt">bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L20" name="L20"></a><span class="w">    </span><span class="nt">training_objective</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">clm</span>
+<a id="L21" name="L21"></a><span class="w">    </span><span class="nt">lm_head_bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L22" name="L22"></a><span class="w">    </span><span class="nt">default_layer</span><span class="p">:</span>
+<a id="L23" name="L23"></a><span class="w">      </span><span class="nt">normalization</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">rmsnorm</span>
+<a id="L24" name="L24"></a><span class="w">      </span><span class="nt">normalization_position</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pre</span>
+<a id="L25" name="L25"></a><span class="w">      </span><span class="nt">ffn_activation</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">swiglu</span>
+<a id="L26" name="L26"></a><span class="w">      </span><span class="nt">mlp_bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L27" name="L27"></a><span class="w">      </span><span class="nt">sequence_mixer</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">gated_short_conv</span>
+<a id="L28" name="L28"></a><span class="w">      </span><span class="nt">sequence_mixer_config</span><span class="p">:</span>
+<a id="L29" name="L29"></a><span class="w">        </span><span class="nt">conv_bias</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">false</span>
+<a id="L30" name="L30"></a>
+<a id="L31" name="L31"></a><span class="nt">model_mapping</span><span class="p">:</span>
+<a id="L32" name="L32"></a><span class="w">  </span><span class="nt">hidden_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">hidden_size</span>
+<a id="L33" name="L33"></a><span class="w">  </span><span class="nt">num_hidden_layers</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">num_hidden_layers</span>
+<a id="L34" name="L34"></a><span class="w">  </span><span class="nt">vocab_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vocab_size</span>
+<a id="L35" name="L35"></a><span class="w">  </span><span class="nt">rms_norm_eps</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">norm_eps</span>
+<a id="L36" name="L36"></a><span class="w">  </span><span class="nt">max_position_embeddings</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">max_position_embeddings</span>
+<a id="L37" name="L37"></a><span class="w">  </span><span class="nt">default_layer.sequence_mixer_config.conv_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">conv_L_cache</span>
+<a id="L38" name="L38"></a>
+<a id="L39" name="L39"></a><span class="nt">tokenizer_mapping</span><span class="p">:</span>
+<a id="L40" name="L40"></a><span class="w">  </span><span class="nt">vocab_size</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">vocab_size</span>
+<a id="L41" name="L41"></a><span class="w">  </span><span class="nt">bos_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">bos_token_id</span>
+<a id="L42" name="L42"></a><span class="w">  </span><span class="nt">eos_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">eos_token_id</span>
+<a id="L43" name="L43"></a><span class="w">  </span><span class="nt">pad_token_id</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">pad_token_id</span>
+<a id="L44" name="L44"></a>
+<a id="L45" name="L45"></a><span class="nt">derived</span><span class="p">:</span>
+<a id="L46" name="L46"></a><span class="w">  </span><span class="c1"># HF&#39;s Lfm2MLP doesn&#39;t take intermediate_size verbatim: when block_auto_adjust_ff_dim is set</span>
+<a id="L47" name="L47"></a><span class="w">  </span><span class="c1"># (every LFM2-era checkpoint plus LFM2.5-350M, but not 230M/2.6B) it keeps 2/3 of it and</span>
+<a id="L48" name="L48"></a><span class="w">  </span><span class="c1"># rounds that up to block_multiple_of, e.g. 350M: 6656 -&gt; 4608. Skipping that step builds the</span>
+<a id="L49" name="L49"></a><span class="w">  </span><span class="c1"># MLP too wide, and w1/w3/w2 then fail to load without raising, leaving random MLPs.</span>
+<a id="L50" name="L50"></a><span class="w">  </span><span class="c1"># Older configs (LFM2-350M) have no intermediate_size at all: Lfm2Config fills it from</span>
+<a id="L51" name="L51"></a><span class="w">  </span><span class="c1"># block_ff_dim, hence the fallback chain.</span>
+<a id="L52" name="L52"></a><span class="w">  </span><span class="nt">model.ffn_factor</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<a id="L53" name="L53"></a><span class="w">    </span><span class="no">(</span>
+<a id="L54" name="L54"></a><span class="w">      </span><span class="no">(lambda ii, auto, mult, q: (lambda s: q * ((int(mult * s) + q - 1) // q) if mult is not None else s)</span>
+<a id="L55" name="L55"></a><span class="w">        </span><span class="no">(int(2 * ii / 3)) if auto else ii)</span>
+<a id="L56" name="L56"></a><span class="w">      </span><span class="no">(vars().get(&#39;intermediate_size&#39;, vars().get(&#39;block_ff_dim&#39;, 12288)),</span>
+<a id="L57" name="L57"></a><span class="w">       </span><span class="no">vars().get(&#39;block_auto_adjust_ff_dim&#39;, True),</span>
+<a id="L58" name="L58"></a><span class="w">       </span><span class="no">vars().get(&#39;block_ffn_dim_multiplier&#39;, 1.0), vars().get(&#39;block_multiple_of&#39;, 256))</span>
+<a id="L59" name="L59"></a><span class="w">      </span><span class="no">/ hidden_size)</span>
+<a id="L60" name="L60"></a><span class="w">  </span><span class="c1"># HF&#39;s effective tie flag: raw tie_word_embeddings, else legacy tie_embedding, else the</span>
+<a id="L61" name="L61"></a><span class="w">  </span><span class="c1"># Lfm2Config default (True).</span>
+<a id="L62" name="L62"></a><span class="w">  </span><span class="nt">model.tie_word_embeddings</span><span class="p">:</span><span class="w"> </span><span class="s">&quot;vars().get(&#39;tie_word_embeddings&#39;,</span><span class="nv"> </span><span class="s">vars().get(&#39;tie_embedding&#39;,</span><span class="nv"> </span><span class="s">True))&quot;</span>
+<a id="L63" name="L63"></a><span class="w">  </span><span class="c1"># Attention head counts / RoPE are stamped per full_attention layer (they differ across</span>
+<a id="L64" name="L64"></a><span class="w">  </span><span class="c1"># checkpoint sizes). Accepts both layer_types (new) and full_attn_idxs (older) configs;</span>
+<a id="L65" name="L65"></a><span class="w">  </span><span class="c1"># when neither is present every layer is attention, as in Lfm2Config.__post_init__.</span>
+<a id="L66" name="L66"></a><span class="w">  </span><span class="nt">model.custom_layers</span><span class="p">:</span><span class="w"> </span><span class="p p-Indicator">&gt;</span>
+<a id="L67" name="L67"></a><span class="w">    </span><span class="no">{str(i): {&quot;sequence_mixer&quot;: &quot;attention&quot;,</span>
+<a id="L68" name="L68"></a><span class="w">              </span><span class="no">&quot;sequence_mixer_config&quot;: {</span>
+<a id="L69" name="L69"></a><span class="w">                  </span><span class="no">&quot;positional_encoding&quot;: &quot;rope&quot;,</span>
+<a id="L70" name="L70"></a><span class="w">                  </span><span class="no">&quot;qkv_bias&quot;: False, &quot;attn_output_bias&quot;: False,</span>
+<a id="L71" name="L71"></a><span class="w">                  </span><span class="no">&quot;q_norm&quot;: True, &quot;k_norm&quot;: True,</span>
+<a id="L72" name="L72"></a><span class="w">                  </span><span class="no">&quot;qk_norm_eps&quot;: vars().get(&quot;norm_eps&quot;, 1e-5),</span>
+<a id="L73" name="L73"></a><span class="w">                  </span><span class="no">&quot;num_attention_heads&quot;: num_attention_heads,</span>
+<a id="L74" name="L74"></a><span class="w">                  </span><span class="no">&quot;num_key_value_heads&quot;: num_key_value_heads,</span>
+<a id="L75" name="L75"></a><span class="w">                  </span><span class="no">&quot;rope_theta&quot;: (vars().get(&quot;rope_parameters&quot;) or {}).get(&quot;rope_theta&quot;)</span>
+<a id="L76" name="L76"></a><span class="w">                                 </span><span class="no">or vars().get(&quot;rope_theta&quot;, 1000000.0)}}</span>
+<a id="L77" name="L77"></a><span class="w">     </span><span class="no">for i in ([j for j, t in enumerate(layer_types) if t == &quot;full_attention&quot;]</span>
+<a id="L78" name="L78"></a><span class="w">               </span><span class="no">if vars().get(&quot;layer_types&quot;) is not None</span>
+<a id="L79" name="L79"></a><span class="w">               </span><span class="no">else (vars().get(&quot;full_attn_idxs&quot;)</span>
+<a id="L80" name="L80"></a><span class="w">                     </span><span class="no">if vars().get(&quot;full_attn_idxs&quot;) is not None</span>
+<a id="L81" name="L81"></a><span class="w">                     </span><span class="no">else list(range(num_hidden_layers))))}</span>
+<a id="L82" name="L82"></a>
+<a id="L83" name="L83"></a><span class="nt">weight_mapping</span><span class="p">:</span>
+<a id="L84" name="L84"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">lm_head.weight</span><span class="p">:</span><span class="w">                                     </span><span class="l l-Scalar l-Scalar-Plain">lm_head.weight</span>
+<a id="L85" name="L85"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.embed_tokens.weight</span><span class="p">:</span><span class="w">                        </span><span class="l l-Scalar l-Scalar-Plain">model.embed_tokens.weight</span>
+<a id="L86" name="L86"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.norm.weight</span><span class="p">:</span><span class="w">                         </span><span class="l l-Scalar l-Scalar-Plain">model.embedding_norm.weight</span>
+<a id="L87" name="L87"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn_norm.weight</span><span class="p">:</span><span class="w">           </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.operator_norm.weight</span>
+<a id="L88" name="L88"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.mlp_norm.weight</span><span class="p">:</span><span class="w">            </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.ffn_norm.weight</span>
+<a id="L89" name="L89"></a>
+<a id="L90" name="L90"></a><span class="w">  </span><span class="c1"># --- conv (gated_short_conv) layers. The N-mappings below span every layer: entries</span>
+<a id="L91" name="L91"></a><span class="w">  </span><span class="c1"># whose HF source doesn&#39;t exist on a given layer (conv keys on attention layers and</span>
+<a id="L92" name="L92"></a><span class="w">  </span><span class="c1"># vice versa) simply fail to resolve and are skipped, so both layer kinds coexist. ---</span>
+<a id="L93" name="L93"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.in_proj.weight</span><span class="p">:</span><span class="w">        </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.conv.in_proj.weight</span>
+<a id="L94" name="L94"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.conv.weight</span><span class="p">:</span><span class="w">           </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.conv.conv.weight</span>
+<a id="L95" name="L95"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.out_proj.weight</span><span class="p">:</span><span class="w">       </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.conv.out_proj.weight</span>
+<a id="L96" name="L96"></a>
+<a id="L97" name="L97"></a><span class="w">  </span><span class="c1"># --- full_attention layers ---</span>
+<a id="L98" name="L98"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.q_proj.weight</span><span class="p">:</span><span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.q_proj.weight</span>
+<a id="L99" name="L99"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.k_proj.weight</span><span class="p">:</span><span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.k_proj.weight</span>
+<a id="L100" name="L100"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.v_proj.weight</span><span class="p">:</span><span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.v_proj.weight</span>
+<a id="L101" name="L101"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.o_proj.weight</span><span class="p">:</span><span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.out_proj.weight</span>
+<a id="L102" name="L102"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.q_norm.weight</span><span class="p">:</span><span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.q_layernorm.weight</span>
+<a id="L103" name="L103"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.attn.k_norm.weight</span><span class="p">:</span><span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.self_attn.k_layernorm.weight</span>
+<a id="L104" name="L104"></a>
+<a id="L105" name="L105"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.mlp.gate_proj.weight</span><span class="p">:</span><span class="w">       </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.feed_forward.w1.weight</span>
+<a id="L106" name="L106"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.mlp.up_proj.weight</span><span class="p">:</span><span class="w">         </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.feed_forward.w3.weight</span>
+<a id="L107" name="L107"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">encoder.blocks.layers.N.mlp.down_proj.weight</span><span class="p">:</span><span class="w">       </span><span class="l l-Scalar l-Scalar-Plain">model.layers.N.feed_forward.w2.weight</span>
+<a id="L108" name="L108"></a>
+<a id="L109" name="L109"></a><span class="c1"># Automated suite (tests/test_hf_adapters.py): smallest dense LFM2 checkpoint plus 350M, the</span>
+<a id="L110" name="L110"></a><span class="c1"># size that exercises the block_auto_adjust_ff_dim path (FFN 4608, not the 6656 of the config).</span>
+<a id="L111" name="L111"></a><span class="nt">tests</span><span class="p">:</span>
+<a id="L112" name="L112"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LiquidAI/LFM2.5-230M-Base</span>
+<a id="L113" name="L113"></a><span class="w">  </span><span class="p p-Indicator">-</span><span class="w"> </span><span class="nt">model</span><span class="p">:</span><span class="w"> </span><span class="l l-Scalar l-Scalar-Plain">LiquidAI/LFM2.5-350M</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

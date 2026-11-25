@@ -1,0 +1,119 @@
+# The shell is declared here: pages, menus, toolbar, themes, servers. No code changes needed.
+# The Tasks group is generated from the local registry.
+default_theme = "classic"
+toolbar = ["wizards", "connect", "refresh", "theme", "settings"]
+
+# Either a plain url (ssh -L tunnel or LAN), or a full [server.ssh] block: the console then
+# probes, tunnels, and starts `python -m matformer.server` remotely if nothing answers.
+server = [
+  { name = "local", url = "127.0.0.1:8765" },
+]
+# [[server]]
+# name = "gpu-box"
+# url = "127.0.0.1:8765"
+# key = "shared api key (server.toml api_key)"
+# [server.ssh]
+# host = "user@10.0.0.4"
+# port = 22
+# key = "~/.ssh/id_ed25519"
+# remote_port = 8765
+# python = "/path/to/venv/bin/python"
+# root = "~/Matformer/matformer"
+# assets = "/path/to/matformer_assets"
+# start = true
+
+# kind: files | config | training | cluster | runs | mdat | favs | sys | reg | server | commands | local
+pages = [
+  { id = "wizards",  group = "Work",    title = "Wizards",       kind = "wizards" },
+  { id = "files",    group = "Work",    title = "File Manager",  kind = "files", root = "" },
+  { id = "config",   group = "Work",    title = "Config Editor", kind = "config" },
+  { id = "training", group = "Work",    title = "Training",      kind = "training" },
+  { id = "jobs",     group = "Work",    title = "Jobs",          kind = "jobs" },
+  { id = "cluster",  group = "Work",    title = "Cluster",       kind = "cluster" },
+  { id = "runs",     group = "Measure", title = "Runs & Plots",  kind = "runs" },
+  { id = "mdat",     group = "Data",    title = "MDAT",          kind = "mdat" },
+  { id = "favs",     group = "Data",    title = "Favourites",    kind = "favs" },
+  { id = "server",   group = "Server",  title = "Server",        kind = "server" },
+  { id = "commands", group = "Server",  title = "Commands",      kind = "commands" },
+  { id = "system",   group = "Server",  title = "Machine",       kind = "sys" },
+  { id = "internals", group = "Server", title = "Internals",     kind = "internals" },
+  { id = "activations", group = "Server", title = "Stores · activations", kind = "activations" },
+  { id = "steering", group = "Server", title = "Stores · vectors", kind = "steering" },
+  { id = "registry", group = "Server",  title = "Registry",      kind = "reg" },
+  { id = "local",    group = "Local",   title = "Connections & Catalog", kind = "local" },
+]
+
+# items: [label, action, shortcut]  ->  App.do_<action>.   "-" = separator.
+[[menu]]
+title = "&File"
+items = [["&Open file…", "open_file", "Ctrl+o"], ["Open &config…", "open_config", "Ctrl+Shift+o"],
+         ["Open &MDAT…", "open_dataset", ""], "-",
+         ["Export &log…", "export_log", ""], ["E&xport console…", "export_console", ""], "-",
+         ["&Preferences…", "settings", "Ctrl+comma"], "-", ["E&xit", "quit", "Ctrl+q"]]
+[[menu]]
+title = "&Wizards"
+items = [["&Train a model…", "wizard_train", "Ctrl+Shift+t"],
+         ["&Annotate a dataset…", "wizard_annotate", "Ctrl+Shift+n"], "-",
+         ["Create an &MDAT…", "wizard_create", ""],
+         ["Create a linked &dataset…", "wizard_dataset", ""],
+         ["&Import documents…", "wizard_import", ""],
+         ["&Pretokenize an MDAT…", "wizard_pretokenize", ""],
+         ["Create a view…", "wizard_view", ""],
+         ["Prepare an MDAT for training…", "wizard_prepare", ""], "-",
+         ["All wizards", "wizards", ""]]
+[[menu]]
+title = "&View"
+items = [["&Refresh page", "refresh", "F5"], ["Toggle &dock", "toggle_dock", "Ctrl+j"],
+         ["&Console", "console", "Ctrl+Shift+c"], ["Server &failures…", "server_errors", ""], "-",
+         ["&Toggle theme", "theme", "Ctrl+t"]]
+[[menu]]
+title = "&Tools"
+items = [["Start local server", "start_local_server", ""], ["Free &GPU memory", "free_memory", ""],
+         ["&Internals", "internals", ""], ["&Activations", "activations", ""],
+         ["&Vectors & steering", "steering", ""], "-",
+         ["&Sync run catalog", "sync_catalog", "F8"], "-",
+         ["&Command palette…", "command_palette", "Ctrl+p"], ["Command &reference", "rpc_reference", "Ctrl+/"]]
+[[menu]]
+title = "&Help"
+items = [["&About", "about", "F1"]]
+
+# Tokens read by theme.py. Add a table and Ctrl+T cycles through it.
+[themes.classic]
+bg = "#f4f4f2"
+sidebar = "#ecebe8"
+surface = "#ffffff"
+hover = "#eae9e5"
+zebra = "#fafaf9"
+border = "#d9d7d2"
+border_strong = "#bdbab3"
+text = "#1d1c1a"
+muted = "#6a6760"
+faint = "#9b988f"
+accent = "#2f5fd0"
+accent_hover = "#3a6fe0"
+accent_soft = "#e4ebfb"
+accent_fg = "#ffffff"
+ok = "#1f8a4c"
+warn = "#b7791f"
+err = "#c0392b"
+err_soft = "#fbeceb"
+[themes.dark]
+bg = "#1e1f22"
+sidebar = "#191a1d"
+surface = "#26272b"
+sunken = "#212226"
+hover = "#2f3136"
+zebra = "#232428"
+border = "#3a3c42"
+border_strong = "#4a4d55"
+text = "#e4e4e6"
+muted = "#9b9da5"
+faint = "#6a6c74"
+accent = "#6b9bf5"
+accent_hover = "#84adff"
+accent_soft = "#2b3a57"
+accent_fg = "#0d0e10"
+ok = "#4cc38a"
+warn = "#e0a93b"
+err = "#f0716a"
+err_soft = "#3a2527"

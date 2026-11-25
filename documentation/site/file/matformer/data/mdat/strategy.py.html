@@ -1,0 +1,1062 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/data/mdat/strategy.py · Matformer</title>
+<link rel="stylesheet" href="../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../index.html">Documentation</a><a class="" href="../../../../registry/index.html">Registry</a><a class="" href="../../../../configuration/index.html">Configuration</a><a class="" href="../../../../tools/commands.html">Commands</a><a class="current" href="../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../index.html">Matformer</a></li><li><a href="../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../components/cache.html">The cache</a></li><li><a href="../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../training/logger.html">Logging</a></li><li><a href="../../../../training/control.html">Control</a></li><li><a href="../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../data/index.html">Data</a></li><li><a href="../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../data/data-module.html">Data module</a></li><li><a href="../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../tools/server.html">Server</a></li><li><a href="../../../../tools/gui.html">GUI</a></li><li><a href="../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../tools/commands.html">Commands</a></li><li><a href="../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../about/repository.html">Repository</a></li><li><a href="../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../index.html">Repository</a> <span class="sep">/</span> matformer/data/mdat/strategy.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="strategy.py.html"><code>matformer/data/mdat/strategy.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/data/mdat/</code></a></p><h1><code>strategy.py</code></h1><p class="muted">matformer/data/mdat/strategy.py · 516 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/data/mdat/strategy.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L42"><code>PretokenizationStrategy</code></a><span class="line">L42</span></li><li class="depth-1"><a href="#L43"><code>PretokenizationStrategy.__init__</code></a><span class="line">L43</span></li><li class="depth-1"><a href="#L63"><code>PretokenizationStrategy.from_dict</code></a><span class="line">L63</span></li><li class="depth-1"><a href="#L81"><code>PretokenizationStrategy._create_from_dict</code></a><span class="line">L81</span></li><li class="depth-1"><a href="#L154"><code>PretokenizationStrategy._tokenizer_parameter</code></a><span class="line">L154</span></li><li class="depth-1"><a href="#L169"><code>PretokenizationStrategy._load_configuration</code></a><span class="line">L169</span></li><li class="depth-1"><a href="#L198"><code>PretokenizationStrategy._initialize_components</code></a><span class="line">L198</span></li><li class="depth-1"><a href="#L241"><code>PretokenizationStrategy._find_splitter_class</code></a><span class="line">L241</span></li><li class="depth-1"><a href="#L267"><code>PretokenizationStrategy.save</code></a><span class="line">L267</span></li><li class="depth-1"><a href="#L288"><code>PretokenizationStrategy.pretokenize_batch</code></a><span class="line">L288</span></li><li class="depth-1"><a href="#L302"><code>PretokenizationStrategy.pretokenize_document</code></a><span class="line">L302</span></li><li class="depth-1"><a href="#L327"><code>PretokenizationStrategy.prepare_chunks_for_storage</code></a><span class="line">L327</span></li><li class="depth-1"><a href="#L351"><code>PretokenizationStrategy.prepare_tokens_for_storage</code></a><span class="line">L351</span></li><li class="depth-1"><a href="#L357"><code>PretokenizationStrategy.prepare_extra_data_for_storage</code></a><span class="line">L357</span></li><li class="depth-1"><a href="#L371"><code>PretokenizationStrategy.__call__</code></a><span class="line">L371</span></li><li class="depth-1"><a href="#L418"><code>PretokenizationStrategy._retrieve_from_storage</code></a><span class="line">L418</span></li><li class="depth-1"><a href="#L443"><code>PretokenizationStrategy._chunk_tokens</code></a><span class="line">L443</span></li><li class="depth-0"><a href="#L454"><code>process_documents_batch</code></a><span class="line">L454</span></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../../dataclasses/model_dataclasses.py.html"><code>matformer.dataclasses.model_dataclasses</code></a> <span class="muted">TokenizerConfig</span></li><li><a href="../../matformer_tokenizers.py.html"><code>matformer.matformer_tokenizers</code></a> <span class="muted">MatformerTokenizer</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="sd">&quot;&quot;&quot;PretokenizationStrategy: tokenizer + splitter configuration, storage</span>
+<a id="L2" name="L2"></a><span class="sd">serialization helpers and the parallel pretokenization worker.</span>
+<a id="L3" name="L3"></a>
+<a id="L4" name="L4"></a><span class="sd">Extracted from mdat.py. Note: the built-in splitters are imported here so that</span>
+<a id="L5" name="L5"></a><span class="sd">the globals() lookup in _find_splitter_class keeps resolving them by name, as</span>
+<a id="L6" name="L6"></a><span class="sd">they lived in the same module before the split.</span>
+<a id="L7" name="L7"></a><span class="sd">&quot;&quot;&quot;</span>
+<a id="L8" name="L8"></a><span class="kn">from</span><span class="w"> </span><span class="nn">__future__</span><span class="w"> </span><span class="kn">import</span> <span class="n">annotations</span>
+<a id="L9" name="L9"></a>
+<a id="L10" name="L10"></a><span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
+<a id="L11" name="L11"></a><span class="kn">import</span><span class="w"> </span><span class="nn">json</span>
+<a id="L12" name="L12"></a><span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<a id="L13" name="L13"></a><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<a id="L14" name="L14"></a><span class="kn">import</span><span class="w"> </span><span class="nn">traceback</span>
+<a id="L15" name="L15"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">TYPE_CHECKING</span>
+<a id="L16" name="L16"></a>
+<a id="L17" name="L17"></a><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<a id="L18" name="L18"></a>
+<a id="L19" name="L19"></a><span class="k">try</span><span class="p">:</span>
+<a id="L20" name="L20"></a>    <span class="kn">import</span><span class="w"> </span><span class="nn">orjson</span>
+<a id="L21" name="L21"></a><span class="k">except</span><span class="p">:</span>
+<a id="L22" name="L22"></a>    <span class="n">orjson</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L23" name="L23"></a>
+<a id="L24" name="L24"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.mdat_common</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
+<a id="L25" name="L25"></a>    <span class="n">InvalidChunksFormat</span><span class="p">,</span>
+<a id="L26" name="L26"></a>    <span class="n">MissingDataKey</span><span class="p">,</span>
+<a id="L27" name="L27"></a>    <span class="n">MissingSplitterOutput</span><span class="p">,</span>
+<a id="L28" name="L28"></a>    <span class="n">MissingStrategyKey</span><span class="p">,</span>
+<a id="L29" name="L29"></a>    <span class="n">SplitterClassNotFound</span><span class="p">,</span>
+<a id="L30" name="L30"></a>    <span class="n">StrategyNotFound</span><span class="p">,</span>
+<a id="L31" name="L31"></a>    <span class="n">get_datatype_for_numpy</span><span class="p">,</span>
+<a id="L32" name="L32"></a><span class="p">)</span>
+<a id="L33" name="L33"></a><span class="kn">from</span><span class="w"> </span><span class="nn">.splitters</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>  <span class="c1"># noqa: F401  (resolved through globals() in _find_splitter_class)</span>
+<a id="L34" name="L34"></a>    <span class="n">SmallSplitter</span><span class="p">,</span>
+<a id="L35" name="L35"></a>    <span class="n">split_and_tokenize_by_nltk_sentences</span><span class="p">,</span>
+<a id="L36" name="L36"></a>    <span class="n">split_and_tokenize_by_nltk_sentences_aligned</span><span class="p">,</span>
+<a id="L37" name="L37"></a><span class="p">)</span>
+<a id="L38" name="L38"></a>
+<a id="L39" name="L39"></a><span class="k">if</span> <span class="n">TYPE_CHECKING</span><span class="p">:</span>
+<a id="L40" name="L40"></a>    <span class="kn">from</span><span class="w"> </span><span class="nn">.sql_database</span><span class="w"> </span><span class="kn">import</span> <span class="n">DatabaseManager</span>
+<a id="L41" name="L41"></a>
+<a id="L42" name="L42"></a><span class="k">class</span><span class="w"> </span><span class="nc">PretokenizationStrategy</span><span class="p">:</span>
+<a id="L43" name="L43"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="s1">&#39;DatabaseManager&#39;</span><span class="p">,</span> <span class="n">pretok_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">functions_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strategy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span> 
+<a id="L44" name="L44"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L45" name="L45"></a><span class="sd">        Initialize a PretokenizationStrategy by loading from existing configuration.</span>
+<a id="L46" name="L46"></a><span class="sd">        A strategy can be used:</span>
+<a id="L47" name="L47"></a><span class="sd">            1) To pretokenize a submdat</span>
+<a id="L48" name="L48"></a><span class="sd">            2) To retrieve the chunked/pretokenized data from the pretokenization databases</span>
+<a id="L49" name="L49"></a><span class="sd">            3) To perform an on_the_fly tokenization/chunking</span>
+<a id="L50" name="L50"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L51" name="L51"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">db</span> 
+<a id="L52" name="L52"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span> <span class="o">=</span> <span class="n">strategy_name</span>
+<a id="L53" name="L53"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">mdat_pretok_path</span> <span class="o">=</span> <span class="n">pretok_path</span>
+<a id="L54" name="L54"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">functions_path</span> <span class="o">=</span> <span class="n">functions_path</span>
+<a id="L55" name="L55"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">on_the_fly_warning</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L56" name="L56"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">on_the_fly_mode</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L57" name="L57"></a>        
+<a id="L58" name="L58"></a>        <span class="c1"># Load strategy configuration</span>
+<a id="L59" name="L59"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_load_configuration</span><span class="p">()</span>
+<a id="L60" name="L60"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L61" name="L61"></a>
+<a id="L62" name="L62"></a>    <span class="nd">@classmethod</span>
+<a id="L63" name="L63"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">from_dict</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">db</span><span class="p">:</span> <span class="s1">&#39;DatabaseManager&#39;</span><span class="p">,</span> <span class="n">pretok_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">functions_path</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strategy_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">strategy_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s1">&#39;PretokenizationStrategy&#39;</span><span class="p">:</span> 
+<a id="L64" name="L64"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L65" name="L65"></a><span class="sd">        Create a new PretokenizationStrategy from a dictionary configuration.</span>
+<a id="L66" name="L66"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L67" name="L67"></a>        <span class="n">instance</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
+<a id="L68" name="L68"></a>        <span class="n">instance</span><span class="o">.</span><span class="n">db</span> <span class="o">=</span> <span class="n">db</span> 
+<a id="L69" name="L69"></a>        <span class="n">instance</span><span class="o">.</span><span class="n">strategy_name</span> <span class="o">=</span> <span class="n">strategy_name</span>
+<a id="L70" name="L70"></a>        <span class="n">instance</span><span class="o">.</span><span class="n">mdat_pretok_path</span> <span class="o">=</span> <span class="n">pretok_path</span>
+<a id="L71" name="L71"></a>        <span class="n">instance</span><span class="o">.</span><span class="n">functions_path</span> <span class="o">=</span> <span class="n">functions_path</span>
+<a id="L72" name="L72"></a>        <span class="n">instance</span><span class="o">.</span><span class="n">on_the_fly_warning</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L73" name="L73"></a>        <span class="n">instance</span><span class="o">.</span><span class="n">on_the_fly_mode</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L74" name="L74"></a>        <span class="c1"># This part should be more elegant</span>
+<a id="L75" name="L75"></a>        <span class="k">if</span> <span class="n">strategy_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L76" name="L76"></a>            <span class="n">instance</span><span class="o">.</span><span class="n">_create_from_dict</span><span class="p">(</span><span class="n">strategy_dict</span><span class="p">)</span> <span class="c1">#Used for creation of a strategy and for parallel processing</span>
+<a id="L77" name="L77"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L78" name="L78"></a>            <span class="n">instance</span><span class="o">.</span><span class="n">_load_configuration</span><span class="p">()</span> <span class="c1"># Normal use. Config taken from the database</span>
+<a id="L79" name="L79"></a>        <span class="n">instance</span><span class="o">.</span><span class="n">initialized</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L80" name="L80"></a>        <span class="k">return</span> <span class="n">instance</span>
+<a id="L81" name="L81"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_create_from_dict</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strategy_dict</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
+<a id="L82" name="L82"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">manifest</span> <span class="o">=</span> <span class="n">strategy_dict</span>
+<a id="L83" name="L83"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Create configuration from dictionary.&quot;&quot;&quot;</span>
+<a id="L84" name="L84"></a>        <span class="n">required_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;strategy_name&#39;</span><span class="p">,</span> <span class="s1">&#39;tokenizer_type&#39;</span><span class="p">,</span> <span class="s1">&#39;tokenizer_name&#39;</span><span class="p">,</span>
+<a id="L85" name="L85"></a>                         <span class="s1">&#39;splitter_class&#39;</span><span class="p">,</span> <span class="s1">&#39;splitter_init&#39;</span><span class="p">,</span> <span class="s1">&#39;modality&#39;</span><span class="p">,</span>
+<a id="L86" name="L86"></a>                         <span class="s1">&#39;chunk_size&#39;</span><span class="p">,</span> <span class="s1">&#39;wants_from_db&#39;</span><span class="p">,</span> <span class="s1">&#39;returns&#39;</span><span class="p">,</span> <span class="s1">&#39;required_databases&#39;</span><span class="p">]</span>
+<a id="L87" name="L87"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span><span class="o">=</span><span class="kc">False</span>
+<a id="L88" name="L88"></a>        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">required_keys</span><span class="p">:</span>
+<a id="L89" name="L89"></a>            <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">strategy_dict</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+<a id="L90" name="L90"></a>                <span class="k">raise</span> <span class="n">MissingStrategyKey</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing required key: </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L91" name="L91"></a>
+<a id="L92" name="L92"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;strategy_name&#39;</span><span class="p">]</span>
+<a id="L93" name="L93"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_type</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;tokenizer_type&#39;</span><span class="p">]</span>
+<a id="L94" name="L94"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_name</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;tokenizer_name&#39;</span><span class="p">]</span>
+<a id="L95" name="L95"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">bos_token_id</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;bos_token_id&#39;</span><span class="p">)</span>
+<a id="L96" name="L96"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">eos_token_id</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;eos_token_id&#39;</span><span class="p">)</span>
+<a id="L97" name="L97"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">mask_token_id</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;mask_token_id&#39;</span><span class="p">)</span>
+<a id="L98" name="L98"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_args</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokenizer_args&#39;</span><span class="p">,</span> <span class="p">{})</span>
+<a id="L99" name="L99"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">splitter_class</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;splitter_class&#39;</span><span class="p">]</span>
+<a id="L100" name="L100"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">splitter_init</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;splitter_init&#39;</span><span class="p">]</span>
+<a id="L101" name="L101"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">splitter_arguments</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;splitter_arguments&#39;</span><span class="p">)</span>
+<a id="L102" name="L102"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;chunk_size&#39;</span><span class="p">]</span>
+<a id="L103" name="L103"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">modality</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;modality&#39;</span><span class="p">]</span>
+<a id="L104" name="L104"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">wants_from_db</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;wants_from_db&#39;</span><span class="p">]</span>
+<a id="L105" name="L105"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">wants_raw</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;wants_raw&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<a id="L106" name="L106"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">returns</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;returns&#39;</span><span class="p">]</span>
+<a id="L107" name="L107"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">supports_batch</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;supports_batch&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<a id="L108" name="L108"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">required_databases</span> <span class="o">=</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;required_databases&#39;</span><span class="p">]</span>
+<a id="L109" name="L109"></a>
+<a id="L110" name="L110"></a>        <span class="k">def</span><span class="w"> </span><span class="nf">dict_or_tokenizer</span><span class="p">(</span><span class="n">param</span><span class="p">):</span>
+<a id="L111" name="L111"></a><span class="w">            </span><span class="sd">&quot;&quot;&quot;Load parameter from dict if present, otherwise from tokenizer after initialization.&quot;&quot;&quot;</span>
+<a id="L112" name="L112"></a>            <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">strategy_dict</span><span class="p">:</span>  <span class="c1"># Respect explicit None in config</span>
+<a id="L113" name="L113"></a>                <span class="k">if</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L114" name="L114"></a>                    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Parameter </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> is set as None in the config. Check if this is intended.&quot;</span><span class="p">)</span>
+<a id="L115" name="L115"></a>                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">strategy_dict</span><span class="p">[</span><span class="n">param</span><span class="p">])</span>
+<a id="L116" name="L116"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L117" name="L117"></a>                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;You haven&#39;t specified </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2"> in the config. Trying to load from tokenizer...&quot;</span><span class="p">)</span>
+<a id="L118" name="L118"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_components</span><span class="p">()</span>
+<a id="L119" name="L119"></a>                <span class="n">val</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tokenizer_parameter</span><span class="p">(</span><span class="n">param</span><span class="p">)</span>
+<a id="L120" name="L120"></a>                <span class="k">if</span> <span class="n">val</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L121" name="L121"></a>                    <span class="k">raise</span> <span class="n">MissingStrategyKey</span><span class="p">(</span>
+<a id="L122" name="L122"></a>                        <span class="sa">f</span><span class="s2">&quot;Strategy &#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span><span class="si">}</span><span class="s2">&#39; needs </span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s2">: set it in the strategy &quot;</span>
+<a id="L123" name="L123"></a>                        <span class="sa">f</span><span class="s2">&quot;or use a tokenizer that declares it.&quot;</span><span class="p">)</span>
+<a id="L124" name="L124"></a>                <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">param</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span>
+<a id="L125" name="L125"></a>                <span class="n">strategy_dict</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span>
+<a id="L126" name="L126"></a>
+<a id="L127" name="L127"></a>
+<a id="L128" name="L128"></a>        <span class="c1"># Load special tokens IDs Special tokens are not saved into the chunks (to easily allow chunks merging, but added on the fly)</span>
+<a id="L129" name="L129"></a>        <span class="n">dict_or_tokenizer</span><span class="p">(</span><span class="s1">&#39;bos_token_id&#39;</span><span class="p">)</span>
+<a id="L130" name="L130"></a>        <span class="n">dict_or_tokenizer</span><span class="p">(</span><span class="s1">&#39;eos_token_id&#39;</span><span class="p">)</span>
+<a id="L131" name="L131"></a>        <span class="n">dict_or_tokenizer</span><span class="p">(</span><span class="s1">&#39;mask_token_id&#39;</span><span class="p">)</span>
+<a id="L132" name="L132"></a>
+<a id="L133" name="L133"></a>        <span class="c1"># Determine tokens datatype based on vocabulary size</span>
+<a id="L134" name="L134"></a>        <span class="n">dict_or_tokenizer</span><span class="p">(</span><span class="s1">&#39;vocab_size&#39;</span><span class="p">)</span>
+<a id="L135" name="L135"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab_size</span> <span class="o">&lt;=</span> <span class="mi">255</span><span class="p">:</span>
+<a id="L136" name="L136"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">tokens_datatype</span> <span class="o">=</span> <span class="s1">&#39;uint8&#39;</span>
+<a id="L137" name="L137"></a>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">vocab_size</span> <span class="o">&lt;=</span> <span class="mi">65535</span><span class="p">:</span>
+<a id="L138" name="L138"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">tokens_datatype</span> <span class="o">=</span> <span class="s1">&#39;uint16&#39;</span>
+<a id="L139" name="L139"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L140" name="L140"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">tokens_datatype</span> <span class="o">=</span> <span class="s1">&#39;uint32&#39;</span>
+<a id="L141" name="L141"></a>        <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;tokens_datatype&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokens_datatype</span>
+<a id="L142" name="L142"></a>
+<a id="L143" name="L143"></a>        <span class="c1"># Determine chunks datatype based on chunk size</span>
+<a id="L144" name="L144"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="o">&lt;=</span> <span class="mi">255</span><span class="p">:</span>
+<a id="L145" name="L145"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">chunks_datatype</span> <span class="o">=</span> <span class="s1">&#39;uint8&#39;</span>
+<a id="L146" name="L146"></a>        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="o">&lt;=</span> <span class="mi">65535</span><span class="p">:</span>
+<a id="L147" name="L147"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">chunks_datatype</span> <span class="o">=</span> <span class="s1">&#39;uint16&#39;</span>
+<a id="L148" name="L148"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L149" name="L149"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">chunks_datatype</span> <span class="o">=</span> <span class="s1">&#39;uint32&#39;</span>
+<a id="L150" name="L150"></a>        <span class="n">strategy_dict</span><span class="p">[</span><span class="s1">&#39;chunks_datatype&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunks_datatype</span>
+<a id="L151" name="L151"></a>
+<a id="L152" name="L152"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">manifest</span> <span class="o">=</span> <span class="n">strategy_dict</span>
+<a id="L153" name="L153"></a>
+<a id="L154" name="L154"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_tokenizer_parameter</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
+<a id="L155" name="L155"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Read a tokenizer fact from either the Matformer wrapper config or the backend.&quot;&quot;&quot;</span>
+<a id="L156" name="L156"></a>        <span class="n">tokenizer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span>
+<a id="L157" name="L157"></a>        <span class="n">config</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s2">&quot;config&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L158" name="L158"></a>        <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">config</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L159" name="L159"></a>        <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L160" name="L160"></a>            <span class="k">return</span> <span class="n">value</span>
+<a id="L161" name="L161"></a>        <span class="n">backend</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">tokenizer</span><span class="p">,</span> <span class="s2">&quot;tokenizer&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L162" name="L162"></a>        <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s2">&quot;vocab_size&quot;</span> <span class="ow">and</span> <span class="n">backend</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L163" name="L163"></a>            <span class="k">try</span><span class="p">:</span>
+<a id="L164" name="L164"></a>                <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">backend</span><span class="p">)</span>
+<a id="L165" name="L165"></a>            <span class="k">except</span> <span class="ne">TypeError</span><span class="p">:</span>
+<a id="L166" name="L166"></a>                <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="s2">&quot;vocab_size&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L167" name="L167"></a>        <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">backend</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="k">if</span> <span class="n">backend</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L168" name="L168"></a>
+<a id="L169" name="L169"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_load_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L170" name="L170"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Load strategy configuration from JSON fields in DB.&quot;&quot;&quot;</span>
+<a id="L171" name="L171"></a>        <span class="n">manifest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">get_strategy_row</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span><span class="p">)</span>
+<a id="L172" name="L172"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="n">manifest</span><span class="p">:</span>
+<a id="L173" name="L173"></a>            <span class="k">raise</span> <span class="n">StrategyNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Strategy configuration not found: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L174" name="L174"></a>
+<a id="L175" name="L175"></a>        <span class="n">json_defaults</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L176" name="L176"></a>            <span class="s1">&#39;tokenizer_args&#39;</span><span class="p">:</span> <span class="p">{},</span>
+<a id="L177" name="L177"></a>            <span class="s1">&#39;splitter_init&#39;</span><span class="p">:</span> <span class="p">{},</span>
+<a id="L178" name="L178"></a>            <span class="s1">&#39;splitter_arguments&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+<a id="L179" name="L179"></a>            <span class="s1">&#39;modality&#39;</span><span class="p">:</span> <span class="s2">&quot;text&quot;</span><span class="p">,</span>
+<a id="L180" name="L180"></a>            <span class="s1">&#39;wants_from_db&#39;</span><span class="p">:</span> <span class="p">[],</span>
+<a id="L181" name="L181"></a>            <span class="s1">&#39;returns&#39;</span><span class="p">:</span> <span class="p">[],</span>
+<a id="L182" name="L182"></a>            <span class="s1">&#39;required_databases&#39;</span><span class="p">:</span> <span class="p">[]</span>
+<a id="L183" name="L183"></a>        <span class="p">}</span>
+<a id="L184" name="L184"></a>
+<a id="L185" name="L185"></a>        <span class="k">for</span> <span class="n">field</span><span class="p">,</span> <span class="n">default</span> <span class="ow">in</span> <span class="n">json_defaults</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L186" name="L186"></a>            <span class="n">value</span> <span class="o">=</span> <span class="n">manifest</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">field</span><span class="p">)</span>
+<a id="L187" name="L187"></a>            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L188" name="L188"></a>                <span class="n">manifest</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+<a id="L189" name="L189"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L190" name="L190"></a>                <span class="k">try</span><span class="p">:</span>
+<a id="L191" name="L191"></a>                    <span class="n">manifest</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
+<a id="L192" name="L192"></a>                <span class="k">except</span> <span class="n">json</span><span class="o">.</span><span class="n">JSONDecodeError</span><span class="p">:</span>
+<a id="L193" name="L193"></a>                    <span class="n">manifest</span><span class="p">[</span><span class="n">field</span><span class="p">]</span> <span class="o">=</span> <span class="n">default</span>
+<a id="L194" name="L194"></a>
+<a id="L195" name="L195"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_create_from_dict</span><span class="p">(</span><span class="n">manifest</span><span class="p">)</span>
+<a id="L196" name="L196"></a>
+<a id="L197" name="L197"></a>
+<a id="L198" name="L198"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_initialize_components</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L199" name="L199"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize tokenizer and splitter components.&quot;&quot;&quot;</span>
+<a id="L200" name="L200"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span><span class="o">==</span><span class="kc">False</span><span class="p">:</span>
+<a id="L201" name="L201"></a>            <span class="kn">from</span><span class="w"> </span><a href="../../dataclasses/model_dataclasses.py.html"><span class="nn">matformer.dataclasses.model_dataclasses</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">TokenizerConfig</span>
+<a id="L202" name="L202"></a>            <span class="kn">from</span><span class="w"> </span><a href="../../matformer_tokenizers.py.html"><span class="nn">matformer.matformer_tokenizers</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerTokenizer</span>
+<a id="L203" name="L203"></a>            <span class="n">config</span> <span class="o">=</span> <span class="n">TokenizerConfig</span><span class="p">(</span>
+<a id="L204" name="L204"></a>                <span class="n">pretrained_name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_name</span><span class="p">,</span>
+<a id="L205" name="L205"></a>                <span class="n">bos_token_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">bos_token_id</span><span class="p">,</span>
+<a id="L206" name="L206"></a>                <span class="n">eos_token_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">eos_token_id</span><span class="p">,</span>
+<a id="L207" name="L207"></a>                <span class="n">mask_token_id</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">mask_token_id</span><span class="p">,</span>
+<a id="L208" name="L208"></a>            <span class="p">)</span>
+<a id="L209" name="L209"></a>            <span class="n">extra</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokenizer_args</span> <span class="ow">or</span> <span class="p">{})</span>
+<a id="L210" name="L210"></a>            <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;tokenizer_type&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L211" name="L211"></a>            <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;tokenizer_name&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L212" name="L212"></a>            <span class="n">extra</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;tokenizer_args&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L213" name="L213"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span> <span class="o">=</span> <span class="n">MatformerTokenizer</span><span class="p">(</span><span class="n">config</span><span class="o">=</span><span class="n">config</span><span class="p">,</span> <span class="o">**</span><span class="n">extra</span><span class="p">)</span>
+<a id="L214" name="L214"></a>
+<a id="L215" name="L215"></a>            <span class="k">def</span><span class="w"> </span><span class="nf">tokenizer_if_minus_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="n">tokenizer</span><span class="p">):</span>
+<a id="L216" name="L216"></a><span class="w">                </span><span class="sd">&quot;&quot;&quot;If parameter is -1, try to fetch it from tokenizer; otherwise leave unchanged.&quot;&quot;&quot;</span>
+<a id="L217" name="L217"></a>                <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span> <span class="o">==</span> <span class="o">-</span><span class="mi">1</span><span class="p">:</span>
+<a id="L218" name="L218"></a>                    <span class="k">try</span><span class="p">:</span>
+<a id="L219" name="L219"></a>                        <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameter</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_tokenizer_parameter</span><span class="p">(</span><span class="n">parameter</span><span class="p">))</span>
+<a id="L220" name="L220"></a>                    <span class="k">except</span> <span class="ne">Exception</span><span class="p">:</span>
+<a id="L221" name="L221"></a>                        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot find parameter </span><span class="si">{</span><span class="n">parameter</span><span class="si">}</span><span class="s2"> in the tokenizer. It stays to None&quot;</span><span class="p">)</span>
+<a id="L222" name="L222"></a>
+<a id="L223" name="L223"></a>            <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;bos_token_id&#39;</span><span class="p">,</span> <span class="s1">&#39;eos_token_id&#39;</span><span class="p">,</span> <span class="s1">&#39;mask_token_id&#39;</span><span class="p">,</span> <span class="s1">&#39;vocab_size&#39;</span><span class="p">):</span>
+<a id="L224" name="L224"></a>                <span class="n">tokenizer_if_minus_one</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">p</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span><span class="p">)</span>
+<a id="L225" name="L225"></a>
+<a id="L226" name="L226"></a><span class="w">            </span><span class="sd">&quot;&quot;&quot;Initialize the splitter class with dynamic import capability.&quot;&quot;&quot;</span>
+<a id="L227" name="L227"></a>            <span class="n">splitter_cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_find_splitter_class</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">splitter_class</span><span class="p">)</span>
+<a id="L228" name="L228"></a>
+<a id="L229" name="L229"></a>            <span class="c1"># Prepare initialization arguments</span>
+<a id="L230" name="L230"></a>            <span class="n">init_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter_init</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter_init</span> <span class="k">else</span> <span class="p">{}</span>
+<a id="L231" name="L231"></a>            <span class="n">init_args</span><span class="p">[</span><span class="s1">&#39;chunk_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">chunk_size</span> <span class="o">-</span> <span class="mi">2</span> <span class="c1">#Reduce the max sequence length by two to allow special tokens</span>
+<a id="L232" name="L232"></a>            <span class="n">init_args</span><span class="p">[</span><span class="s1">&#39;tokenizer&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">tokenizer</span>
+<a id="L233" name="L233"></a>
+<a id="L234" name="L234"></a>            <span class="c1"># Initialize splitter</span>
+<a id="L235" name="L235"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span> <span class="o">=</span> <span class="n">splitter_cls</span><span class="p">(</span><span class="o">**</span><span class="n">init_args</span><span class="p">)</span>
+<a id="L236" name="L236"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L237" name="L237"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">save</span><span class="p">()</span> <span class="c1">#Saving in order to update token dtype and chunks dtype</span>
+<a id="L238" name="L238"></a>
+<a id="L239" name="L239"></a>        
+<a id="L240" name="L240"></a>
+<a id="L241" name="L241"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_find_splitter_class</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">class_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L242" name="L242"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Find splitter class in globals or import from functions directory.&quot;&quot;&quot;</span>
+<a id="L243" name="L243"></a>        <span class="k">if</span> <span class="n">class_name</span> <span class="ow">in</span> <span class="nb">globals</span><span class="p">():</span>  <span class="c1"># First check if it exists in current globals</span>
+<a id="L244" name="L244"></a>            <span class="k">return</span> <span class="nb">globals</span><span class="p">()[</span><span class="n">class_name</span><span class="p">]</span>
+<a id="L245" name="L245"></a>        
+<a id="L246" name="L246"></a>        <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">functions_path</span><span class="p">):</span>  <span class="c1"># Try to find the class in any Python file in the functions directory</span>
+<a id="L247" name="L247"></a>            <span class="k">if</span> <span class="ow">not</span> <span class="n">filename</span><span class="o">.</span><span class="n">endswith</span><span class="p">(</span><span class="s2">&quot;.py&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="n">filename</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;__&quot;</span><span class="p">):</span>
+<a id="L248" name="L248"></a>                <span class="k">continue</span>
+<a id="L249" name="L249"></a>            <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">functions_path</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+<a id="L250" name="L250"></a>            <span class="k">try</span><span class="p">:</span>
+<a id="L251" name="L251"></a>                <span class="n">spec</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">spec_from_file_location</span><span class="p">(</span><span class="n">class_name</span><span class="p">,</span> <span class="n">file_path</span><span class="p">)</span>
+<a id="L252" name="L252"></a>                <span class="n">module</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">util</span><span class="o">.</span><span class="n">module_from_spec</span><span class="p">(</span><span class="n">spec</span><span class="p">)</span>
+<a id="L253" name="L253"></a>                <span class="n">spec</span><span class="o">.</span><span class="n">loader</span><span class="o">.</span><span class="n">exec_module</span><span class="p">(</span><span class="n">module</span><span class="p">)</span>
+<a id="L254" name="L254"></a>                
+<a id="L255" name="L255"></a>                <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">class_name</span><span class="p">):</span>
+<a id="L256" name="L256"></a>                    <span class="bp">cls</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">class_name</span><span class="p">)</span>
+<a id="L257" name="L257"></a>                    <span class="k">if</span> <span class="bp">cls</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L258" name="L258"></a>                        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Module </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2"> defines </span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2"> = None&quot;</span><span class="p">)</span>
+<a id="L259" name="L259"></a>                    <span class="k">return</span> <span class="bp">cls</span>
+<a id="L260" name="L260"></a>            <span class="k">except</span> <span class="ne">Exception</span> <span class="k">as</span> <span class="n">e</span><span class="p">:</span>
+<a id="L261" name="L261"></a>                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Failed to import </span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L262" name="L262"></a>                <span class="n">traceback</span><span class="o">.</span><span class="n">print_exc</span><span class="p">()</span>
+<a id="L263" name="L263"></a>                <span class="k">continue</span>
+<a id="L264" name="L264"></a>
+<a id="L265" name="L265"></a>        <span class="k">raise</span> <span class="n">SplitterClassNotFound</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Splitter class &#39;</span><span class="si">{</span><span class="n">class_name</span><span class="si">}</span><span class="s2">&#39; not found in the splitters package nor in </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">functions_path</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L266" name="L266"></a>
+<a id="L267" name="L267"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">save</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L268" name="L268"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Insert or update strategy configuration in the database.&quot;&quot;&quot;</span>
+<a id="L269" name="L269"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L270" name="L270"></a>            <span class="n">manifest</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">manifest</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+<a id="L271" name="L271"></a>            <span class="n">manifest</span><span class="p">[</span><span class="s1">&#39;strategy_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span>
+<a id="L272" name="L272"></a>
+<a id="L273" name="L273"></a>            <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">manifest</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+<a id="L274" name="L274"></a>                <span class="c1"># serialize dicts, lists, and tuples</span>
+<a id="L275" name="L275"></a>                <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="p">(</span><span class="nb">dict</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+<a id="L276" name="L276"></a>                    <span class="n">manifest</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<a id="L277" name="L277"></a>                <span class="c1"># bool to int</span>
+<a id="L278" name="L278"></a>                <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="nb">bool</span><span class="p">):</span>
+<a id="L279" name="L279"></a>                    <span class="n">manifest</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
+<a id="L280" name="L280"></a>
+<a id="L281" name="L281"></a>            <span class="n">existing</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">get_strategy_row</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span><span class="p">)</span>
+<a id="L282" name="L282"></a>            <span class="k">if</span> <span class="n">existing</span><span class="p">:</span>
+<a id="L283" name="L283"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">update_strategy_row</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">strategy_name</span><span class="p">,</span> <span class="n">manifest</span><span class="p">)</span>
+<a id="L284" name="L284"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L285" name="L285"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">db</span><span class="o">.</span><span class="n">_insert</span><span class="p">(</span><span class="s2">&quot;pretok_strategy&quot;</span><span class="p">,</span> <span class="n">manifest</span><span class="p">)</span>
+<a id="L286" name="L286"></a>        <span class="c1"># self.db is None only in multiprocessing workers: nothing to save</span>
+<a id="L287" name="L287"></a>
+<a id="L288" name="L288"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">pretokenize_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch</span><span class="p">):</span>
+<a id="L289" name="L289"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span><span class="p">:</span>
+<a id="L290" name="L290"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_components</span><span class="p">()</span>
+<a id="L291" name="L291"></a>
+<a id="L292" name="L292"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">supports_batch</span><span class="p">:</span>
+<a id="L293" name="L293"></a>            <span class="c1"># Use the splitter&#39;s batched implementation</span>
+<a id="L294" name="L294"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">batched</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span>
+<a id="L295" name="L295"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L296" name="L296"></a>            <span class="c1"># single-document pretokenization</span>
+<a id="L297" name="L297"></a>            <span class="n">results</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L298" name="L298"></a>            <span class="k">for</span> <span class="n">document</span> <span class="ow">in</span> <span class="n">batch</span><span class="p">:</span>
+<a id="L299" name="L299"></a>                <span class="n">results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pretokenize_document</span><span class="p">(</span><span class="n">document</span><span class="p">))</span>
+<a id="L300" name="L300"></a>            <span class="k">return</span> <span class="n">results</span>
+<a id="L301" name="L301"></a>
+<a id="L302" name="L302"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">pretokenize_document</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">document</span><span class="p">):</span>
+<a id="L303" name="L303"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L304" name="L304"></a><span class="sd">        Pretokenize a single document using the configured splitter.</span>
+<a id="L305" name="L305"></a><span class="sd">        This function can be called either from the extern, in order to perform a pretokenization</span>
+<a id="L306" name="L306"></a><span class="sd">        and cache the values, or from the intern, in order to perform an on-the-fly tokenization</span>
+<a id="L307" name="L307"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L308" name="L308"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">initialized</span><span class="p">:</span>
+<a id="L309" name="L309"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_components</span><span class="p">()</span>
+<a id="L310" name="L310"></a>        <span class="c1"># Check if the data dict is compatible with what the splitter wants</span>
+<a id="L311" name="L311"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">wants_raw</span><span class="p">:</span>      
+<a id="L312" name="L312"></a>            <span class="k">for</span> <span class="n">required_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">wants_from_db</span><span class="p">:</span>
+<a id="L313" name="L313"></a>                <span class="k">if</span> <span class="n">required_key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">document</span><span class="p">:</span>
+<a id="L314" name="L314"></a>                    <span class="k">raise</span> <span class="n">MissingDataKey</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Required key &#39;</span><span class="si">{</span><span class="n">required_key</span><span class="si">}</span><span class="s2">&#39; not found&quot;</span><span class="p">)</span>
+<a id="L315" name="L315"></a>        
+<a id="L316" name="L316"></a>        <span class="c1"># Call the splitter and return the data to be inserted into the db</span>
+<a id="L317" name="L317"></a>        <span class="c1">#Is it batched?</span>
+<a id="L318" name="L318"></a>        <span class="n">split_result</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="p">(</span><span class="n">document</span><span class="p">)</span>
+<a id="L319" name="L319"></a>        
+<a id="L320" name="L320"></a>        <span class="c1"># Validate that splitter returned expected outputs</span>
+<a id="L321" name="L321"></a>        <span class="k">for</span> <span class="n">expected_output</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returns</span><span class="p">:</span>
+<a id="L322" name="L322"></a>            <span class="k">if</span> <span class="n">expected_output</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">split_result</span><span class="p">:</span>
+<a id="L323" name="L323"></a>                <span class="k">raise</span> <span class="n">MissingSplitterOutput</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Splitter did not return expected output: </span><span class="si">{</span><span class="n">expected_output</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L324" name="L324"></a>        
+<a id="L325" name="L325"></a>        <span class="k">return</span> <span class="n">split_result</span>
+<a id="L326" name="L326"></a>
+<a id="L327" name="L327"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_chunks_for_storage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chunks_tuples</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">],</span> <span class="n">max_tokens_per_chunk</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+<a id="L328" name="L328"></a>                                 <span class="n">tokens_length</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">strict_checks</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<a id="L329" name="L329"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L330" name="L330"></a><span class="sd">        Convert chunk tuples to numpy array for storage.</span>
+<a id="L331" name="L331"></a><span class="sd">        It converts the token to a numpy ndarray with the correct datatype and return raw bytes</span>
+<a id="L332" name="L332"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L333" name="L333"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">chunks_tuples</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+<a id="L334" name="L334"></a>            <span class="c1"># Pointers is a list of tuples ex: [(0,15), (15,36), (36,92)]</span>
+<a id="L335" name="L335"></a>            <span class="c1"># Transformed to a size array, ready to be stored in the pointers db:</span>
+<a id="L336" name="L336"></a>            
+<a id="L337" name="L337"></a>            <span class="n">starts</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">c</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks_tuples</span><span class="p">])</span>
+<a id="L338" name="L338"></a>            <span class="n">ends</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">c</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">c</span> <span class="ow">in</span> <span class="n">chunks_tuples</span><span class="p">])</span>
+<a id="L339" name="L339"></a>            <span class="n">sizes</span> <span class="o">=</span> <span class="p">(</span><span class="n">ends</span> <span class="o">-</span> <span class="n">starts</span><span class="p">)</span>
+<a id="L340" name="L340"></a>            <span class="k">if</span> <span class="n">strict_checks</span><span class="p">:</span>
+<a id="L341" name="L341"></a>                <span class="k">assert</span> <span class="n">sizes</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span> <span class="o">==</span> <span class="p">(</span><span class="n">tokens_length</span> <span class="k">if</span> <span class="n">tokens_length</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">sizes</span><span class="o">.</span><span class="n">sum</span><span class="p">())</span>
+<a id="L342" name="L342"></a>                <span class="n">max_size</span> <span class="o">=</span> <span class="n">sizes</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="k">if</span> <span class="n">sizes</span><span class="o">.</span><span class="n">size</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mi">0</span>
+<a id="L343" name="L343"></a>                <span class="k">if</span> <span class="n">max_tokens_per_chunk</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L344" name="L344"></a>                    <span class="k">assert</span> <span class="n">max_size</span> <span class="o">&lt;=</span> <span class="n">max_tokens_per_chunk</span>
+<a id="L345" name="L345"></a>            
+<a id="L346" name="L346"></a>            <span class="n">chunks_dtype</span> <span class="o">=</span> <span class="n">get_datatype_for_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunks_datatype</span><span class="p">)</span>
+<a id="L347" name="L347"></a>            <span class="k">return</span> <span class="n">sizes</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">chunks_dtype</span><span class="p">)</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
+<a id="L348" name="L348"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L349" name="L349"></a>            <span class="k">raise</span> <span class="n">InvalidChunksFormat</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;The Splitter returned </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">chunks_tuples</span><span class="p">)</span><span class="si">}</span><span class="s2"> as chunks instead of a list&quot;</span><span class="p">)</span>
+<a id="L350" name="L350"></a>
+<a id="L351" name="L351"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_tokens_for_storage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<a id="L352" name="L352"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert tokens list to numpy array bytes for storage.&quot;&quot;&quot;</span>
+<a id="L353" name="L353"></a>        <span class="n">tokens_dtype</span> <span class="o">=</span> <span class="n">get_datatype_for_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokens_datatype</span><span class="p">)</span>
+<a id="L354" name="L354"></a>        <span class="n">token_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">tokens</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tokens_dtype</span><span class="p">)</span>
+<a id="L355" name="L355"></a>        <span class="k">return</span> <span class="n">token_array</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
+<a id="L356" name="L356"></a>
+<a id="L357" name="L357"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">prepare_extra_data_for_storage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bytes</span><span class="p">:</span>
+<a id="L358" name="L358"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Prepare extra data for storage, converting to bytes if needed.&quot;&quot;&quot;</span>
+<a id="L359" name="L359"></a>        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">bytes</span><span class="p">):</span>
+<a id="L360" name="L360"></a>            <span class="k">return</span> <span class="n">obj</span>
+<a id="L361" name="L361"></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+<a id="L362" name="L362"></a>            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">tobytes</span><span class="p">(</span><span class="n">order</span><span class="o">=</span><span class="s1">&#39;C&#39;</span><span class="p">)</span>
+<a id="L363" name="L363"></a>        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L364" name="L364"></a>            <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<a id="L365" name="L365"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L366" name="L366"></a>            <span class="k">if</span> <span class="n">orjson</span><span class="p">:</span>
+<a id="L367" name="L367"></a>                <span class="k">return</span> <span class="n">orjson</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+<a id="L368" name="L368"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L369" name="L369"></a>                <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">dumps</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span><span class="o">.</span><span class="n">encode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<a id="L370" name="L370"></a>
+<a id="L371" name="L371"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">data_dict</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">cache_dict</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> 
+<a id="L372" name="L372"></a>                 <span class="n">max_seq_len</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">wanted_from_strategy</span><span class="p">:</span> <span class="n">List</span> <span class="o">=</span> <span class="p">[],</span> <span class="n">add_special_tokens</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<a id="L373" name="L373"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L374" name="L374"></a><span class="sd">        Process a document, either from cache or by pretokenizing.</span>
+<a id="L375" name="L375"></a><span class="sd">        &quot;&quot;&quot;</span>
+<a id="L376" name="L376"></a>
+<a id="L377" name="L377"></a>        <span class="c1"># Should we perform the pretokenization or use the cached values?</span>
+<a id="L378" name="L378"></a>        <span class="k">if</span> <span class="n">cache_dict</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L379" name="L379"></a>            <span class="c1"># Use cached pretokenized data</span>
+<a id="L380" name="L380"></a>            <span class="n">return_dict</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L381" name="L381"></a>            <span class="k">for</span> <span class="n">db_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">returns</span><span class="p">:</span>
+<a id="L382" name="L382"></a>                <span class="k">if</span> <span class="n">db_name</span> <span class="ow">in</span> <span class="n">wanted_from_strategy</span><span class="p">:</span>
+<a id="L383" name="L383"></a>                    <span class="n">return_dict</span><span class="p">[</span><span class="n">db_name</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_from_storage</span><span class="p">(</span><span class="n">cache_dict</span><span class="p">[</span><span class="n">db_name</span><span class="p">][</span><span class="n">key</span><span class="p">],</span> <span class="n">db_name</span><span class="p">)</span>
+<a id="L384" name="L384"></a>            
+<a id="L385" name="L385"></a>            <span class="c1"># Chunking tokens</span>
+<a id="L386" name="L386"></a>            <span class="k">if</span> <span class="s1">&#39;chunked_tokens&#39;</span> <span class="ow">in</span> <span class="n">wanted_from_strategy</span> <span class="ow">and</span> <span class="s1">&#39;tokens&#39;</span> <span class="ow">in</span> <span class="n">cache_dict</span> <span class="ow">and</span> <span class="s1">&#39;chunks&#39;</span> <span class="ow">in</span> <span class="n">cache_dict</span><span class="p">:</span>
+<a id="L387" name="L387"></a>                <span class="n">splitter_args</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter_arguments</span> <span class="ow">or</span> <span class="p">{}</span>
+<a id="L388" name="L388"></a>                <span class="k">if</span> <span class="n">splitter_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;splitter_decides_chunking&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+<a id="L389" name="L389"></a>                        <span class="c1">#Leave the chunking logic to the custom splitter (for special cases)</span>
+<a id="L390" name="L390"></a>                        <span class="bp">self</span><span class="o">.</span><span class="n">_initialize_components</span><span class="p">()</span>
+<a id="L391" name="L391"></a>                        <span class="n">wanted_dbs_for_chunking</span> <span class="o">=</span> <span class="n">splitter_args</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;wanted_dbs_for_chunking&#39;</span><span class="p">,</span> <span class="p">[</span><span class="s1">&#39;tokens&#39;</span><span class="p">,</span> <span class="s1">&#39;chunks&#39;</span><span class="p">])</span>
+<a id="L392" name="L392"></a>                        <span class="n">data_from_dbs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+<a id="L393" name="L393"></a>                        <span class="k">for</span> <span class="n">db</span> <span class="ow">in</span> <span class="n">wanted_dbs_for_chunking</span><span class="p">:</span>
+<a id="L394" name="L394"></a>                            <span class="n">data_from_dbs</span><span class="p">[</span><span class="n">db</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_from_storage</span><span class="p">(</span><span class="n">cache_dict</span><span class="p">[</span><span class="n">db</span><span class="p">][</span><span class="n">key</span><span class="p">],</span> <span class="n">db</span><span class="p">)</span>
+<a id="L395" name="L395"></a>                        <span class="n">return_dict</span><span class="p">[</span><span class="s1">&#39;chunked_tokens&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">splitter</span><span class="o">.</span><span class="n">chunk_tokens</span><span class="p">(</span><span class="n">data_from_dbs</span><span class="p">)</span>
+<a id="L396" name="L396"></a>
+<a id="L397" name="L397"></a>                <span class="k">else</span><span class="p">:</span> <span class="c1">#Default chunking logic (splitter is not even intialized, faster)</span>
+<a id="L398" name="L398"></a>                    <span class="n">tokens_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_from_storage</span><span class="p">(</span><span class="n">cache_dict</span><span class="p">[</span><span class="s1">&#39;tokens&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">],</span> <span class="s1">&#39;tokens&#39;</span><span class="p">)</span>
+<a id="L399" name="L399"></a>                    <span class="n">chunks_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_retrieve_from_storage</span><span class="p">(</span><span class="n">cache_dict</span><span class="p">[</span><span class="s1">&#39;chunks&#39;</span><span class="p">][</span><span class="n">key</span><span class="p">],</span> <span class="s1">&#39;chunks&#39;</span><span class="p">)</span>
+<a id="L400" name="L400"></a>                    <span class="n">return_dict</span><span class="p">[</span><span class="s1">&#39;chunked_tokens&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chunk_tokens</span><span class="p">(</span><span class="n">tokens_data</span><span class="p">,</span> <span class="n">chunks_data</span><span class="p">,</span> <span class="n">add_special_tokens</span><span class="p">)</span>
+<a id="L401" name="L401"></a>            <span class="k">return</span> <span class="n">return_dict</span>
+<a id="L402" name="L402"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L403" name="L403"></a>            <span class="c1"># No cached pretokenization: run the splitter on the given document</span>
+<a id="L404" name="L404"></a>            <span class="n">cached</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pretokenize_document</span><span class="p">(</span><span class="n">data_dict</span><span class="p">)</span>
+<a id="L405" name="L405"></a>            
+<a id="L406" name="L406"></a>            
+<a id="L407" name="L407"></a>            <span class="k">if</span> <span class="n">wanted_from_strategy</span><span class="p">:</span>
+<a id="L408" name="L408"></a>                <span class="n">return_dict</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L409" name="L409"></a>                <span class="k">for</span> <span class="n">db_name</span> <span class="ow">in</span> <span class="n">wanted_from_strategy</span><span class="p">:</span>
+<a id="L410" name="L410"></a>                    <span class="k">if</span> <span class="n">db_name</span> <span class="ow">in</span> <span class="n">cached</span><span class="p">:</span>
+<a id="L411" name="L411"></a>                        <span class="n">return_dict</span><span class="p">[</span><span class="n">db_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">cached</span><span class="p">[</span><span class="n">db_name</span><span class="p">]</span>
+<a id="L412" name="L412"></a>                    <span class="k">elif</span> <span class="n">db_name</span> <span class="o">==</span> <span class="s1">&#39;chunked_tokens&#39;</span> <span class="ow">and</span> <span class="s1">&#39;tokens&#39;</span> <span class="ow">in</span> <span class="n">cached</span> <span class="ow">and</span> <span class="s1">&#39;chunks&#39;</span> <span class="ow">in</span> <span class="n">cached</span><span class="p">:</span>
+<a id="L413" name="L413"></a>                        <span class="n">return_dict</span><span class="p">[</span><span class="s1">&#39;chunked_tokens&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_chunk_tokens</span><span class="p">(</span><span class="n">cached</span><span class="p">[</span><span class="s1">&#39;tokens&#39;</span><span class="p">],</span> <span class="n">cached</span><span class="p">[</span><span class="s1">&#39;chunks&#39;</span><span class="p">],</span> <span class="n">add_special_tokens</span><span class="p">)</span>
+<a id="L414" name="L414"></a>                <span class="k">return</span> <span class="n">return_dict</span>
+<a id="L415" name="L415"></a>            
+<a id="L416" name="L416"></a>            <span class="k">return</span> <span class="n">cached</span>
+<a id="L417" name="L417"></a>
+<a id="L418" name="L418"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_retrieve_from_storage</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stored_bytes</span><span class="p">:</span> <span class="nb">bytes</span><span class="p">,</span> <span class="n">db_name</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
+<a id="L419" name="L419"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Retrieve and decode data from storage based on database type.&quot;&quot;&quot;</span>
+<a id="L420" name="L420"></a>        <span class="k">if</span> <span class="n">db_name</span> <span class="o">==</span> <span class="s1">&#39;tokens&#39;</span><span class="p">:</span>
+<a id="L421" name="L421"></a>            <span class="n">tokens_dtype</span> <span class="o">=</span> <span class="n">get_datatype_for_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">tokens_datatype</span><span class="p">)</span>
+<a id="L422" name="L422"></a>            <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">stored_bytes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">tokens_dtype</span><span class="p">)</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span>
+<a id="L423" name="L423"></a>        <span class="k">elif</span> <span class="n">db_name</span> <span class="o">==</span> <span class="s1">&#39;chunks&#39;</span><span class="p">:</span>
+<a id="L424" name="L424"></a>            <span class="n">chunks_dtype</span> <span class="o">=</span> <span class="n">get_datatype_for_numpy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">chunks_datatype</span><span class="p">)</span>
+<a id="L425" name="L425"></a>            <span class="n">chunk_sizes</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">frombuffer</span><span class="p">(</span><span class="n">stored_bytes</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">chunks_dtype</span><span class="p">)</span>
+<a id="L426" name="L426"></a>            <span class="n">chunks</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L427" name="L427"></a>            <span class="n">start</span> <span class="o">=</span> <span class="mi">0</span>  <span class="c1"># Python int to avoid overflow</span>
+<a id="L428" name="L428"></a>            <span class="k">for</span> <span class="n">size</span> <span class="ow">in</span> <span class="n">chunk_sizes</span><span class="p">:</span>
+<a id="L429" name="L429"></a>                <span class="n">size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">size</span><span class="p">)</span> 
+<a id="L430" name="L430"></a>                <span class="n">chunks</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">start</span><span class="p">,</span> <span class="n">start</span> <span class="o">+</span> <span class="n">size</span><span class="p">))</span>
+<a id="L431" name="L431"></a>                <span class="n">start</span> <span class="o">+=</span> <span class="n">size</span>
+<a id="L432" name="L432"></a>            <span class="k">return</span> <span class="n">chunks</span>            
+<a id="L433" name="L433"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L434" name="L434"></a>            <span class="c1"># For extra data, try to decode as string first, then JSON</span>
+<a id="L435" name="L435"></a>            <span class="k">try</span><span class="p">:</span>
+<a id="L436" name="L436"></a>                <span class="k">return</span> <span class="n">stored_bytes</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">)</span>
+<a id="L437" name="L437"></a>            <span class="k">except</span> <span class="ne">UnicodeDecodeError</span><span class="p">:</span>
+<a id="L438" name="L438"></a>                <span class="k">if</span> <span class="n">orjson</span><span class="p">:</span>
+<a id="L439" name="L439"></a>                    <span class="k">return</span> <span class="n">orjson</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">stored_bytes</span><span class="p">)</span>
+<a id="L440" name="L440"></a>                <span class="k">else</span><span class="p">:</span>
+<a id="L441" name="L441"></a>                    <span class="k">return</span> <span class="n">json</span><span class="o">.</span><span class="n">loads</span><span class="p">(</span><span class="n">stored_bytes</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf-8&#39;</span><span class="p">))</span>
+<a id="L442" name="L442"></a>
+<a id="L443" name="L443"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_chunk_tokens</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tokens</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">chunks</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">tuple</span><span class="p">],</span> <span class="n">add_special_tokens</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]:</span>
+<a id="L444" name="L444"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Split tokens into chunks based on chunk boundaries.&quot;&quot;&quot;</span>
+<a id="L445" name="L445"></a>
+<a id="L446" name="L446"></a>        <span class="n">chunked_tokens</span> <span class="o">=</span> <span class="p">[]</span>
+<a id="L447" name="L447"></a>        <span class="k">for</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span> <span class="ow">in</span> <span class="n">chunks</span><span class="p">:</span>
+<a id="L448" name="L448"></a>            <span class="n">chunk</span> <span class="o">=</span> <span class="n">tokens</span><span class="p">[</span><span class="n">start</span><span class="p">:</span><span class="n">end</span><span class="p">]</span>
+<a id="L449" name="L449"></a>            <span class="k">if</span> <span class="n">add_special_tokens</span><span class="p">:</span>  
+<a id="L450" name="L450"></a>                    <span class="n">chunk</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">bos_token_id</span><span class="p">]</span> <span class="o">+</span> <span class="n">chunk</span> <span class="o">+</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">eos_token_id</span><span class="p">]</span>
+<a id="L451" name="L451"></a>            <span class="n">chunked_tokens</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">chunk</span><span class="p">)</span>
+<a id="L452" name="L452"></a>        <span class="k">return</span> <span class="n">chunked_tokens</span>
+<a id="L453" name="L453"></a>
+<a id="L454" name="L454"></a><span class="k">def</span><span class="w"> </span><span class="nf">process_documents_batch</span><span class="p">(</span><span class="n">sub_batch</span><span class="p">,</span><span class="n">strategy_manifest</span><span class="p">,</span> <span class="n">pretoken_path</span><span class="p">,</span> <span class="n">functions_path</span><span class="p">,</span> <span class="n">strategy_name</span><span class="p">,</span>
+<a id="L455" name="L455"></a>                           <span class="n">chunking_strict_checks</span><span class="p">,</span> <span class="n">chunk_size</span><span class="p">,</span> <span class="n">strategy_returns</span><span class="p">,</span> <span class="n">max_multiplier</span><span class="p">):</span>
+<a id="L456" name="L456"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<a id="L457" name="L457"></a><span class="sd">    Worker function that processes documents and returns organized data by database type.</span>
+<a id="L458" name="L458"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L459" name="L459"></a>    <span class="n">strategy</span> <span class="o">=</span> <span class="n">PretokenizationStrategy</span><span class="o">.</span><span class="n">from_dict</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span><span class="n">strategy_name</span><span class="o">=</span><span class="n">strategy_name</span><span class="p">,</span> <span class="n">pretok_path</span><span class="o">=</span><span class="n">pretoken_path</span><span class="p">,</span> <span class="n">functions_path</span><span class="o">=</span><span class="n">functions_path</span><span class="p">,</span><span class="n">strategy_dict</span><span class="o">=</span><span class="n">strategy_manifest</span><span class="p">)</span>
+<a id="L460" name="L460"></a>    
+<a id="L461" name="L461"></a>    <span class="c1"># Organize results by database type</span>
+<a id="L462" name="L462"></a>    <span class="n">db_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">db_name</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">db_name</span> <span class="ow">in</span> <span class="n">strategy_returns</span><span class="p">}</span>
+<a id="L463" name="L463"></a>    
+<a id="L464" name="L464"></a>    <span class="c1"># Local stats for this worker</span>
+<a id="L465" name="L465"></a>    <span class="n">local_stats</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L466" name="L466"></a>        <span class="s1">&#39;total_tokens&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<a id="L467" name="L467"></a>        <span class="s1">&#39;max_tokens_per_doc&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<a id="L468" name="L468"></a>        <span class="s1">&#39;total_chunks&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<a id="L469" name="L469"></a>        <span class="s1">&#39;max_chunks_per_doc&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<a id="L470" name="L470"></a>        <span class="s1">&#39;processed_docs&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span>
+<a id="L471" name="L471"></a>        <span class="s1">&#39;precomputed_lengths&#39;</span><span class="p">:[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">max_multiplier</span><span class="p">)</span><span class="o">+</span><span class="mi">1</span><span class="p">),</span>
+<a id="L472" name="L472"></a>        <span class="s1">&#39;base_chunk_size&#39;</span><span class="p">:</span><span class="n">strategy</span><span class="o">.</span><span class="n">chunk_size</span>
+<a id="L473" name="L473"></a>    <span class="p">}</span>
+<a id="L474" name="L474"></a>    
+<a id="L475" name="L475"></a>    <span class="c1"># Split sub_batch into keys and documents</span>
+<a id="L476" name="L476"></a>    <span class="n">keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">key</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">sub_batch</span><span class="p">]</span>
+<a id="L477" name="L477"></a>    <span class="n">docs</span> <span class="o">=</span> <span class="p">[</span><span class="n">doc</span> <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">doc</span> <span class="ow">in</span> <span class="n">sub_batch</span><span class="p">]</span>
+<a id="L478" name="L478"></a>
+<a id="L479" name="L479"></a>    <span class="c1"># Run batched pretokenization</span>
+<a id="L480" name="L480"></a>    <span class="n">split_results</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">pretokenize_batch</span><span class="p">(</span><span class="n">docs</span><span class="p">)</span>
+<a id="L481" name="L481"></a>
+<a id="L482" name="L482"></a>    <span class="c1"># Process results in sync with keys</span>
+<a id="L483" name="L483"></a>    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">split_result</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">split_results</span><span class="p">):</span>
+<a id="L484" name="L484"></a>        <span class="n">local_stats</span><span class="p">[</span><span class="s1">&#39;processed_docs&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="mi">1</span>
+<a id="L485" name="L485"></a>
+<a id="L486" name="L486"></a>        <span class="k">for</span> <span class="n">db_name</span> <span class="ow">in</span> <span class="n">strategy_returns</span><span class="p">:</span>
+<a id="L487" name="L487"></a>            <span class="k">if</span> <span class="n">db_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">split_result</span><span class="p">:</span>
+<a id="L488" name="L488"></a>                <span class="k">continue</span>
+<a id="L489" name="L489"></a>
+<a id="L490" name="L490"></a>            <span class="k">if</span> <span class="n">db_name</span> <span class="o">==</span> <span class="s1">&#39;tokens&#39;</span><span class="p">:</span>
+<a id="L491" name="L491"></a>                <span class="n">token_bytes</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">prepare_tokens_for_storage</span><span class="p">(</span><span class="n">split_result</span><span class="p">[</span><span class="s1">&#39;tokens&#39;</span><span class="p">])</span>
+<a id="L492" name="L492"></a>                <span class="n">token_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_result</span><span class="p">[</span><span class="s1">&#39;tokens&#39;</span><span class="p">])</span>
+<a id="L493" name="L493"></a>                <span class="n">local_stats</span><span class="p">[</span><span class="s1">&#39;total_tokens&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">token_count</span>
+<a id="L494" name="L494"></a>                <span class="n">local_stats</span><span class="p">[</span><span class="s1">&#39;max_tokens_per_doc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">local_stats</span><span class="p">[</span><span class="s1">&#39;max_tokens_per_doc&#39;</span><span class="p">],</span> <span class="n">token_count</span><span class="p">)</span>
+<a id="L495" name="L495"></a>                <span class="n">db_data</span><span class="p">[</span><span class="n">db_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">token_bytes</span><span class="p">))</span>
+<a id="L496" name="L496"></a>
+<a id="L497" name="L497"></a>            <span class="k">elif</span> <span class="n">db_name</span> <span class="o">==</span> <span class="s1">&#39;chunks&#39;</span><span class="p">:</span>
+<a id="L498" name="L498"></a>                <span class="n">tokens_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_result</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s1">&#39;tokens&#39;</span><span class="p">,</span> <span class="p">[]))</span> <span class="k">if</span> <span class="n">chunking_strict_checks</span> <span class="k">else</span> <span class="kc">None</span>
+<a id="L499" name="L499"></a>                <span class="n">chunk_bytes</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">prepare_chunks_for_storage</span><span class="p">(</span>
+<a id="L500" name="L500"></a>                    <span class="n">split_result</span><span class="p">[</span><span class="s1">&#39;chunks&#39;</span><span class="p">],</span>
+<a id="L501" name="L501"></a>                    <span class="n">max_tokens_per_chunk</span><span class="o">=</span><span class="n">chunk_size</span><span class="p">,</span>
+<a id="L502" name="L502"></a>                    <span class="n">tokens_length</span><span class="o">=</span><span class="n">tokens_length</span><span class="p">,</span>
+<a id="L503" name="L503"></a>                    <span class="n">strict_checks</span><span class="o">=</span><span class="n">chunking_strict_checks</span><span class="p">,</span>
+<a id="L504" name="L504"></a>                <span class="p">)</span>
+<a id="L505" name="L505"></a>                <span class="n">chunk_count</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">split_result</span><span class="p">[</span><span class="s1">&#39;chunks&#39;</span><span class="p">])</span>
+<a id="L506" name="L506"></a>                <span class="n">local_stats</span><span class="p">[</span><span class="s1">&#39;total_chunks&#39;</span><span class="p">]</span> <span class="o">+=</span> <span class="n">chunk_count</span>
+<a id="L507" name="L507"></a>                <span class="n">local_stats</span><span class="p">[</span><span class="s1">&#39;max_chunks_per_doc&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">local_stats</span><span class="p">[</span><span class="s1">&#39;max_chunks_per_doc&#39;</span><span class="p">],</span> <span class="n">chunk_count</span><span class="p">)</span>
+<a id="L508" name="L508"></a>                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">max_multiplier</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+<a id="L509" name="L509"></a>                    <span class="n">local_stats</span><span class="p">[</span><span class="s1">&#39;precomputed_lengths&#39;</span><span class="p">][</span><span class="n">j</span><span class="p">]</span> <span class="o">+=</span> <span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">chunk_count</span> <span class="o">/</span> <span class="n">j</span><span class="p">)</span>
+<a id="L510" name="L510"></a>                <span class="n">db_data</span><span class="p">[</span><span class="n">db_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">chunk_bytes</span><span class="p">))</span>
+<a id="L511" name="L511"></a>
+<a id="L512" name="L512"></a>            <span class="k">else</span><span class="p">:</span>
+<a id="L513" name="L513"></a>                <span class="n">obj_bytes</span> <span class="o">=</span> <span class="n">strategy</span><span class="o">.</span><span class="n">prepare_extra_data_for_storage</span><span class="p">(</span><span class="n">split_result</span><span class="p">[</span><span class="n">db_name</span><span class="p">])</span>
+<a id="L514" name="L514"></a>                <span class="n">db_data</span><span class="p">[</span><span class="n">db_name</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key</span><span class="p">,</span> <span class="n">obj_bytes</span><span class="p">))</span>
+<a id="L515" name="L515"></a>
+<a id="L516" name="L516"></a>    <span class="k">return</span> <span class="n">db_data</span><span class="p">,</span> <span class="n">local_stats</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>

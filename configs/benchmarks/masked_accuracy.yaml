@@ -2,7 +2,6 @@ task:
   type: evaluation
   save_batch: true
   save_summary: true
-  save_model_config: true
   save_input_ids: true
   name: "test"
   compute_perplexity_by_token: false
@@ -16,7 +15,3 @@ masking:
     cloze_probability: 1.0
     random_probability: 0.0
     same_probability: 0.0
-
-saver:
-  type: jsonl
-  filename: prova.jsonl

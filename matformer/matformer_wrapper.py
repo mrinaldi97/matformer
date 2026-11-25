@@ -1,6 +1,8 @@
 # matformer/matformer_wrapper.py
+import fnmatch
 import torch
 import torch.nn.functional as F
+from contextlib import contextmanager
 from tqdm import tqdm
 from matformer.matformer_tokenizers import MatformerTokenizer
 from matformer.utils.initialization import init_transformer_weights_
@@ -22,6 +24,7 @@ from dataclasses import asdict, replace
 import gc
 from contextlib import nullcontext
 import types
+#TODO2: Virtual model should be in a different file
 #Separare Virtualmodel da qui
 from matformer.dataclasses.matformer_config import MatformerConfig
 from typing import Optional
@@ -34,6 +37,68 @@ class VirtualModelConfig(MatformerConfig):
     input_address: str ="encoder.model_input"
     default_return: Optional[str] = None
     return_multiprobe: bool = True
+
+
+def resolve_wrapper(model):
+    """The :class:`MatformerModelWrapper` under Fabric/DDP wrapping, or ``model`` itself.
+
+    ``fabric.setup`` may wrap the model once or twice (strategy plus forward module); every
+    caller that needs the framework's own methods has to unwrap the same way, so the walk lives
+    here instead of being repeated in the trainer and in every task.
+    """
+    seen = set()
+    target = model
+    for _ in range(4):
+        if isinstance(target, MatformerModelWrapper):
+            return target
+        if id(target) in seen:
+            break
+        seen.add(id(target))
+        inner = getattr(target, "module", None) or getattr(target, "_forward_module", None)
+        if inner is None or inner is target:
+            break
+        target = inner
+    return target
+
+
+def model_variant(config):
+    """Which model implementation a config builds. `model_class` may name a registry variant or
+    a model class (the HuggingFace adapters use class names); both resolve to a registered variant.
+    A specialised config (classification, multiprobe) is already its own implementation variant; a
+    plain one with no model_class is the language model. Never written back into the config: the
+    variant recorded there belongs to the dataclass, and a checkpoint that stores an implementation
+    name in it cannot be loaded back."""
+    from matformer.matformer_registry import registry
+
+    declared = getattr(config, "model_class", None)
+    if declared:
+        variants = registry.registry["model"].variants
+        if declared in variants:
+            return declared
+        wanted = str(declared).replace("_", "").lower()
+        # HuggingFace adapters name the model's base class, not the registry's implementation
+        # class (LanguageModel is the registered wrapper around Autoregressive_Model).
+        aliases = {"autoregressivemodel": "language_model",
+                   "bertmodel": "language_model",
+                   "languagemodel": "language_model",
+                   "transformerwithlmhead": "language_model",
+                   "generationmixin": "language_model"}
+        if wanted in aliases and aliases[wanted] in variants:
+            return aliases[wanted]
+        for variant, entry in variants.items():
+            for implementation in (entry.implementations or {}).values():
+                try:
+                    cls = implementation.get_implementation()
+                except Exception:
+                    continue
+                if cls is not None and cls.__name__.replace("_", "").lower() == wanted:
+                    return variant
+        raise ValueError(f"model_class '{declared}' is not a registered model variant or class "
+                         f"(available variants: {', '.join(variants)})")
+    variant = getattr(config, "_matformer_variant", None)
+    return "language_model" if variant in (None, "", "default") else variant
+
+
 class VirtualModel(MatformerModule):
     """A virtual model that has sockets for plugins but doesn't execute a real model:
     it replays activations from an activation store instead."""
@@ -49,7 +114,7 @@ class VirtualModel(MatformerModule):
         
     def default_plugins(self):
         """Same plugins the live model of this config would mount (probes etc.)."""
-        variant = self.model_config._matformer_variant
+        variant = model_variant(self.model_config)
         cls = registry.registry['model'].variants[variant].implementations['default'].get_implementation()
         if not hasattr(cls, 'default_plugins'):
             return []
@@ -95,7 +160,8 @@ class MatformerModelWrapper(MatformerModule, PluginManager):
 
     model: "transparent"
 
-    def __init__(self, configs, device, runtime_mode="live", activation_store=None):
+    def __init__(self, configs, device, runtime_mode="live", activation_store=None,
+                 inference=False):
         super().__init__()
         self.configs = configs
         self._init_device = device
@@ -122,7 +188,9 @@ class MatformerModelWrapper(MatformerModule, PluginManager):
         if tokenizer is not None:
             self.attach_tokenizer(tokenizer)
 
-        if hasattr(self.configs, 'training'):
+        # A virtual model used for inference replays a store: there is no loss to build, and a
+        # training section may only carry `virtual_only`. Training virtual models keep it.
+        if hasattr(self.configs, 'training') and not (inference and runtime_mode == 'virtual'):
             print("Sto iniziando i pesi...")
             self.model.apply(init_transformer_weights_) #Weights are initialized here, before loading weights from a checkpoint 
             self.learning_signal_selector = registry.create(
@@ -132,6 +200,7 @@ class MatformerModelWrapper(MatformerModule, PluginManager):
 
             self.apply_freeze_config() # Freeze/unfreeze components
             print(self.trainable_param_report())
+        self.refresh_diagnostics()
 
     def on_epoch_start(self):
         try:
@@ -142,9 +211,7 @@ class MatformerModelWrapper(MatformerModule, PluginManager):
     def _get_model(self, mode):
         if mode not in self._models:           
             if mode == 'live':
-                variant = self.config._matformer_variant
-                if not variant or variant == "default":
-                    variant = self.config._matformer_variant = "language_model"
+                variant = model_variant(self.config)
                 self._models[mode] = registry.create("model", variant, config=self.config,
                     device=self._init_device, cache=self.cache, wrapper=self)
             else:
@@ -326,6 +393,8 @@ class MatformerModelWrapper(MatformerModule, PluginManager):
         except Exception as e:
             return self._handle_exception(e)
     def _handle_exception(self,e):
+            if getattr(self, "strict_steps", False):
+                raise e       # the trainer's memory probe needs the failure, not a skipped step
             print("------------------  ALARM ------------------")
             if not any(s in str(e).lower() for s in ("out of memory", "cuda out of memory", "cublas")):
                 print("CAUGHT EXCEPTION:")
@@ -369,7 +438,93 @@ class MatformerModelWrapper(MatformerModule, PluginManager):
     def global_step(self):
         return self._step_ref[0] if getattr(self, '_step_ref', None) else 0        
 
-    
+    def refresh_diagnostics(self) -> dict:
+        """Remember, once, which modules expose an architecture-specific ``_log`` method.
+
+        The activation task asks the wrapper, never the module tree: a new mixer implements
+        ``_log()`` and its numbers appear in every run without the task knowing it exists.
+        """
+        self._loggable_modules = {
+            name: module
+            for name, module in self.model.named_modules()
+            if name and callable(getattr(module, "_log", None))
+        }
+        return self._loggable_modules
+
+    def diagnostic_modules(self) -> dict:
+        """Module path -> module for every component that knows how to describe itself."""
+        if not hasattr(self, "_loggable_modules"):
+            self.refresh_diagnostics()
+        return dict(self._loggable_modules)
+
+    def enable_module_diagnostics(self, enabled: bool = True) -> None:
+        """Turn on/off the per-forward instrumentation of diagnostic modules.
+
+        Modules that collect dynamic numbers only do it when this flag is set, so a normal
+        training pass pays nothing for machinery nobody asked to log.
+        """
+        for module in self.diagnostic_modules().values():
+            module._diagnostics = bool(enabled)
+
+    def collect_module_diagnostics(self) -> dict:
+        """``{module path: module._log()}`` for every module that has something to say."""
+        out = {}
+        for name, module in self.diagnostic_modules().items():
+            try:
+                values = module._log()
+            except Exception as problem:       # a broken diagnostic must not kill the training
+                values = {"error": f"{type(problem).__name__}: {problem}"}
+            if values:
+                out[name] = values
+        return out
+
+    def activation_modules(self, include=None, exclude=None) -> dict:
+        """Modules whose output is worth recording: everything that holds sockets.
+
+        That is the embedding head, every transformer block (its residual stream) and any
+        specialised module that opted into the socket system. ``include``/``exclude`` are
+        fnmatch patterns on the dotted module path.
+        """
+        picked = {}
+        for name, module in self.model.named_modules():
+            if not name or not hasattr(module, "sockets"):
+                continue
+            if include and not any(fnmatch.fnmatch(name, pattern) for pattern in include):
+                continue
+            if exclude and any(fnmatch.fnmatch(name, pattern) for pattern in exclude):
+                continue
+            picked[name] = module
+        return picked
+
+    @contextmanager
+    def trace_activations(self, sink, include=None, exclude=None):
+        """Call ``sink(name, output)`` for each selected module's forward output.
+
+        Hooks are attached once and removed when the context exits, whatever happens inside; the
+        sink receives the live output (a ``TensorDC`` for framework modules), so it can compute
+        whatever statistics it wants without holding the graph.
+        """
+        handles = []
+        modules = self.activation_modules(include=include, exclude=exclude)
+
+        def make_hook(name):
+            def hook(_module, _inputs, output):
+                sink(name, output)
+            return hook
+
+        try:
+            for name, module in modules.items():
+                handles.append(module.register_forward_hook(make_hook(name)))
+            yield modules
+        finally:
+            for handle in handles:
+                handle.remove()
+
+    def component_profiler(self, **kwargs):
+        """Build a :class:`ComponentProfiler` over this model's modules (see utils/profiling)."""
+        from matformer.utils.profiling import ComponentProfiler
+        return ComponentProfiler(self.model, **kwargs)
+
     def _get_weight_pointer(self, stable_name):
         """
         From stable name, returns the associated weight
@@ -452,6 +607,11 @@ def load_model(path=None, checkpoint_holder=None, weights_definition=None, confi
         assert hasattr(configs, 'activation_store'), "virtual_only needs an 'activation_store' section."
         store = configs.instantiate('activation_store', model_config=None, cache=None)
 
+    if path is None and checkpoint_holder is None and configs is not None:
+        # A 'checkpoint' section says which model to load: the config answer to `--model`, and what
+        # lets a task run be driven entirely by YAML (see matformer/dataclasses/checkpoint_dataclasses)
+        path = configs.checkpoint_path()
+
     if path is not None:
         assert checkpoint_holder is None,"Either you load from path or from a checkpoint holder"
         checkpoint_holder=make_holder(path, map_location=map_location)
@@ -465,14 +625,14 @@ def load_model(path=None, checkpoint_holder=None, weights_definition=None, confi
                         ckpt_configs.remove_section(s)
         
     if not checkpoint_holder and store is not None:   # the store's model config is injected through the config class
-        ckpt_configs=MatformerConfigs.create_configs({"model": store.load_model_config()})
+        ckpt_configs=MatformerConfigs.create_configs(stdin={"model": store.load_model_config()})
     elif not checkpoint_holder:
         ckpt_configs=MatformerConfigs()   # bare root, populated from `configs` (if given) below
 
     if configs:
-        # Provided configs override what's included in the checkpoing
-        ckpt_configs.import_config(configs.asdict(include_defaults=False))
+        ckpt_configs.import_config(configs.asdict(include_defaults=False), sweeps_on=False)
         ckpt_configs.resolve_references()
+        ckpt_configs.sweeps, ckpt_configs.active_sweep = dict(configs.sweeps), configs.active_sweep
     configs=ckpt_configs
     
     assert configs is not None,"Either pass a valid configs or a path to a checkpoint containing a valid configuration."
@@ -485,7 +645,7 @@ def load_model(path=None, checkpoint_holder=None, weights_definition=None, confi
         with torch.device(map_location) if map_location is not None else nullcontext():
             model = MatformerModelWrapper(configs=configs, device=map_location,
                                           runtime_mode='virtual' if virtual_only else 'live',
-                                          activation_store=store)
+                                          activation_store=store, inference=inference)
     finally:
         torch.set_default_dtype(prev)
     

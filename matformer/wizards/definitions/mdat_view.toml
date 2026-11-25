@@ -1,0 +1,121 @@
+id = "mdat_view"
+title = "Create and shuffle a view"
+description = "Define a selection of the container, write its pointer file and shuffle it."
+category = "Data"
+order = 60
+
+[[steps]]
+id = "container"
+title = "Container"
+[[steps.fields]]
+name = "container"
+kind = "path"
+label = "Container"
+default = ""
+required = true
+
+[[steps]]
+id = "view"
+title = "View"
+description = "A view selects documents from every dataset. Accepted values: preserved, skipped, a document count, a fraction or a byte size."
+[[steps.fields]]
+name = "mode"
+kind = "radio"
+label = "Definition"
+default = "head"
+options = [
+  { value = "head", label = "First N documents", doc = "A quick subset from one view." },
+  { value = "range", label = "Document range", doc = "A contiguous range from one view." },
+  { value = "selection", label = "Selection", doc = "A size or proportion for each dataset." },
+]
+[[steps.fields]]
+name = "view_name"
+kind = "text"
+label = "View name"
+default = "small"
+required = true
+[[steps.fields]]
+name = "source_view"
+kind = "choice"
+label = "Source view"
+default = "default"
+source = "mdat.views"
+depends_on = ["container"]
+when = { field = "mode", in = ["head", "range"] }
+[[steps.fields]]
+name = "n"
+kind = "int"
+label = "Documents"
+default = 1000
+when = { field = "mode", is = "head" }
+[[steps.fields]]
+name = "start"
+kind = "int"
+label = "Start"
+default = 0
+when = { field = "mode", is = "range" }
+[[steps.fields]]
+name = "end"
+kind = "int"
+label = "End"
+default = 10000
+when = { field = "mode", is = "range" }
+[[steps.fields]]
+name = "selection"
+kind = "mapping"
+label = "Selection"
+default = "preserved"
+keys_source = "mdat.datasets"
+depends_on = ["container"]
+when = { field = "mode", is = "selection" }
+[[steps.fields]]
+name = "shuffle_source"
+kind = "bool"
+label = "Shuffle the source view first"
+default = true
+doc = "A head or range view is a slice of a shuffled pointer file."
+when = { field = "mode", in = ["head", "range"] }
+[[steps.fields]]
+name = "shuffle"
+kind = "bool"
+label = "Shuffle the view"
+default = true
+[[steps.fields]]
+name = "use"
+kind = "bool"
+label = "Make it the active view"
+default = true
+
+[action]
+kind = "mdat"
+name = "view"
+container = "${container}"
+[[action.commands]]
+cmd = "open"
+args = { path = "${container}" }
+[[action.commands]]
+cmd = "view_add"
+when = { field = "mode", is = "selection" }
+args = { name = "${view_name}", selection = "${selection}", shuffle = "${shuffle}" }
+[[action.commands]]
+cmd = "shuffle"
+when = { all = [{ field = "mode", in = ["head", "range"] }, { field = "shuffle_source", truthy = true }] }
+args = { view = "${source_view}" }
+[[action.commands]]
+cmd = "head_view"
+when = { field = "mode", is = "head" }
+args = { name = "${view_name}", n = "${n}", source = "${source_view}" }
+[[action.commands]]
+cmd = "range_view"
+when = { field = "mode", is = "range" }
+args = { name = "${view_name}", start = "${start}", end = "${end}", source = "${source_view}" }
+[[action.commands]]
+cmd = "shuffle"
+when = { field = "shuffle", truthy = true }
+args = { view = "${view_name}" }
+[[action.commands]]
+cmd = "use"
+when = { field = "use", truthy = true }
+args = { view = "${view_name}" }
+[[action.commands]]
+cmd = "close"

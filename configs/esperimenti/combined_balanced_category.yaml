@@ -95,7 +95,7 @@ task:
     num_classes: 8
     compute_confusion_matrix: true
     topk: false
-    ref_saver: save
+    save_batch: true
 
 tokenizer:
   pretrained_name: "mrinaldi/Gettone"
@@ -105,12 +105,4 @@ tokenizer:
   pad_token_id: 0
   mask_token_id: 4
 
-
-saver:
-  name: save
-  type: jsonl
-  filename: "esperimenti_poliita_category.jsonl"
-  summary_file: "esperimenti_poliita__category_summary.jsonl"
-  mode: "a"
-  summary_mode: "a"
 

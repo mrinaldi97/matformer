@@ -116,7 +116,11 @@ class PretokenizationStrategy:
             else:
                 print(f"You haven't specified {param} in the config. Trying to load from tokenizer...")
                 self._initialize_components()
-                val = getattr(self.tokenizer, param, None)
+                val = self._tokenizer_parameter(param)
+                if val is None:
+                    raise MissingStrategyKey(
+                        f"Strategy '{self.strategy_name}' needs {param}: set it in the strategy "
+                        f"or use a tokenizer that declares it.")
                 setattr(self, param, val)
                 strategy_dict[param] = val
 
@@ -146,6 +150,21 @@ class PretokenizationStrategy:
         strategy_dict['chunks_datatype'] = self.chunks_datatype
 
         self.manifest = strategy_dict
+
+    def _tokenizer_parameter(self, name):
+        """Read a tokenizer fact from either the Matformer wrapper config or the backend."""
+        tokenizer = self.tokenizer
+        config = getattr(tokenizer, "config", None)
+        value = getattr(config, name, None) if config is not None else None
+        if value is not None:
+            return value
+        backend = getattr(tokenizer, "tokenizer", None)
+        if name == "vocab_size" and backend is not None:
+            try:
+                return len(backend)
+            except TypeError:
+                return getattr(backend, "vocab_size", None)
+        return getattr(backend, name, None) if backend is not None else None
 
     def _load_configuration(self):
         """Load strategy configuration from JSON fields in DB."""
@@ -179,21 +198,25 @@ class PretokenizationStrategy:
     def _initialize_components(self):
         """Initialize tokenizer and splitter components."""
         if self.initialized==False:
+            from matformer.dataclasses.model_dataclasses import TokenizerConfig
             from matformer.matformer_tokenizers import MatformerTokenizer
-            self.tokenizer = MatformerTokenizer(
-                tokenizer_type=self.tokenizer_type, 
-                tokenizer_name=self.tokenizer_name, 
-                tokenizer_args=self.tokenizer_args
+            config = TokenizerConfig(
+                pretrained_name=self.tokenizer_name,
+                bos_token_id=self.bos_token_id,
+                eos_token_id=self.eos_token_id,
+                mask_token_id=self.mask_token_id,
             )
+            extra = dict(self.tokenizer_args or {})
+            extra.pop("tokenizer_type", None)
+            extra.pop("tokenizer_name", None)
+            extra.pop("tokenizer_args", None)
+            self.tokenizer = MatformerTokenizer(config=config, **extra)
 
             def tokenizer_if_minus_one(self, parameter, tokenizer):
                 """If parameter is -1, try to fetch it from tokenizer; otherwise leave unchanged."""
                 if getattr(self, parameter, None) == -1:
                     try:
-                        if parameter=='vocab_size':
-                            setattr(self,parameter,len(tokenizer)) #More reliable, includes special tokens
-                        else:
-                            setattr(self, parameter, getattr(tokenizer, parameter, None))
+                        setattr(self, parameter, self._tokenizer_parameter(parameter))
                     except Exception:
                         print(f"Cannot find parameter {parameter} in the tokenizer. It stays to None")
 

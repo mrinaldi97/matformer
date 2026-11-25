@@ -1,0 +1,1078 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>matformer/transformer_blocks/sequence_mixer/fla_layers.py · Matformer</title>
+<link rel="stylesheet" href="../../../../assets/style.css">
+<link rel="stylesheet" href="../../../../assets/pygments.css">
+</head>
+<body class="file-page">
+<a class="skip-link" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="brand-row">
+    <a class="brand" href="../../../../index.html">matformer<span>.docs</span></a>
+    <nav class="top-nav"><a class="" href="../../../../index.html">Documentation</a><a class="" href="../../../../registry/index.html">Registry</a><a class="" href="../../../../configuration/index.html">Configuration</a><a class="" href="../../../../tools/commands.html">Commands</a><a class="current" href="../../../index.html">Repository</a><a class="external" href="https://github.com/mrinaldi97/matformer">GitHub</a></nav>
+  </div>
+</header>
+<div class="layout">
+  <aside class="sidebar" id="sidebar"><details class="nav-section"><summary>Introduction</summary><ul><li><a href="../../../../index.html">Matformer</a></li><li><a href="../../../../intro/limitations.html">Limitations</a></li><li><a href="../../../../intro/env-vars.html">Environment variables</a></li></ul></details><details class="nav-section"><summary>Core</summary><ul><li><a href="../../../../components/registry.html">The Matformer Registry</a></li><li><a href="../../../../components/configuration.html">Configuration</a></li><li><a href="../../../../components/transformer.html">Transformer architecture</a></li><li><a href="../../../../components/sockets-and-stream.html">Sockets, plugins and the stream</a></li><li><a href="../../../../components/plugins.html">Plugins</a></li><li><a href="../../../../components/virtual-models.html">Virtual models and activation stores</a></li><li><a href="../../../../components/matformer-module.html">MatformerModule</a></li><li><a href="../../../../components/tensors.html">TensorsDC</a></li><li><a href="../../../../components/cache.html">The cache</a></li><li><a href="../../../../components/maskerator.html">The Maskerator</a></li><li><a href="../../../../components/tokenizers.html">Tokenizers</a></li><li><a href="../../../../components/source-layout.html">Source layout</a></li></ul></details><details class="nav-section"><summary>Training</summary><ul><li><a href="../../../../training/wrapper.html">MatformerWrapper</a></li><li><a href="../../../../training/trainer.html">MatformerTrainer</a></li><li><a href="../../../../training/learning-signals.html">Learning signals</a></li><li><a href="../../../../training/logger.html">Logging</a></li><li><a href="../../../../training/control.html">Control</a></li><li><a href="../../../../training/analysis.html">Model and activation analysis</a></li><li><a href="../../../../training/checkpointing.html">Checkpointing</a></li></ul></details><details class="nav-section"><summary>Data</summary><ul><li><a href="../../../../data/index.html">Data</a></li><li><a href="../../../../data/mdat.html">MDAT</a></li><li><a href="../../../../data/data-module.html">Data module</a></li><li><a href="../../../../data/lazy-dataset.html">Lazy dataset</a></li></ul></details><details class="nav-section"><summary>Tasks</summary><ul><li><a href="../../../../tasks/index.html">MatformerTask</a></li><li><a href="../../../../tasks/built-in-tasks.html">Built-in tasks</a></li><li><a href="../../../../tasks/interactive-session.html">Interactive console</a></li></ul></details><details class="nav-section"><summary>Models</summary><ul><li><a href="../../../../loading/checkpoint-holder.html">CheckpointHolder</a></li><li><a href="../../../../loading/huggingface.html">HuggingFace</a></li></ul></details><details class="nav-section"><summary>Tools</summary><ul><li><a href="../../../../tools/server.html">Server</a></li><li><a href="../../../../tools/gui.html">GUI</a></li><li><a href="../../../../tools/remote.html">Remote client</a></li><li><a href="../../../../tools/cluster.html">Cluster</a></li><li><a href="../../../../tools/commands.html">Commands</a></li><li><a href="../../../../tools/wizards.html">Wizards</a></li><li><a href="../../../../tools/analysis.html">Analysis, vectors and steering</a></li></ul></details><details class="nav-section"><summary>Tutorials</summary><ul><li><a href="../../../../tutorials/index.html">Tutorials</a></li><li><a href="../../../../tutorials/registry.html">Use the registry</a></li><li><a href="../../../../tutorials/add-a-task.html">Add a task</a></li><li><a href="../../../../tutorials/use-matformer-model.html">Use a Matformer model from HuggingFace</a></li><li><a href="../../../../tutorials/write-a-plugin.html">Write a plugin</a></li><li><a href="../../../../tutorials/custom-tokenizer.html">Add a tokenizer</a></li><li><a href="../../../../tutorials/train-and-run.html">Train a model from a YAML file</a></li></ul></details><details class="nav-section"><summary>About</summary><ul><li><a href="../../../../about/repository.html">Repository</a></li><li><a href="../../../../about/documentation-system.html">Documentation system</a></li></ul></details></aside>
+  <main class="content" id="content">
+    <nav class="breadcrumbs"><a href="../../../../index.html">Docs</a> <span class="sep">/</span> <a href="../../../index.html">Repository</a> <span class="sep">/</span> matformer/transformer_blocks/sequence_mixer/fla_layers.py</nav>
+    <div class="page-sources"><span class="label">Source</span><a href="fla_layers.py.html"><code>matformer/transformer_blocks/sequence_mixer/fla_layers.py</code></a></div>
+<a id="top"></a><a class="back-to-top" href="#top">Top</a><div class="file-header"><p><a href="index.html"><code>matformer/transformer_blocks/sequence_mixer/</code></a></p><h1><code>fla_layers.py</code></h1><p class="muted">matformer/transformer_blocks/sequence_mixer/fla_layers.py · 524 lines · <a href="https://github.com/mrinaldi97/matformer/blob/main/matformer/transformer_blocks/sequence_mixer/fla_layers.py">view on GitHub</a></p></div><details class="symbol-index" open><summary>Classes and functions</summary><ul><li class="depth-0"><a href="#L24"><code>BidirectionalConfig</code></a><span class="line">L24</span></li><li class="depth-0"><a href="#L59"><code>FLAConfig</code></a><span class="line">L59</span> <span class="bases">(<a href="../../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a>, <a href="fla_layers.py.html#L24"><code>BidirectionalConfig</code></a>)</span><div class="mro">MRO: <code>FLAConfig</code> -> <a href="../../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a> -> <code>BidirectionalConfig</code></div></li><li class="depth-0"><a href="#L71"><code>GatedDeltaNetConfig</code></a><span class="line">L71</span> <span class="bases">(<a href="fla_layers.py.html#L59"><code>FLAConfig</code></a>)</span><div class="mro">MRO: <code>GatedDeltaNetConfig</code> -> <code>FLAConfig</code> -> <a href="../../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a> -> <code>BidirectionalConfig</code></div></li><li class="depth-0"><a href="#L87"><code>KDAConfig</code></a><span class="line">L87</span> <span class="bases">(<a href="fla_layers.py.html#L59"><code>FLAConfig</code></a>)</span><div class="mro">MRO: <code>KDAConfig</code> -> <code>FLAConfig</code> -> <a href="../../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a> -> <code>BidirectionalConfig</code></div></li><li class="depth-0"><a href="#L101"><code>DilatedConvStack</code></a><span class="line">L101</span> <span class="bases">(<code>Module</code>)</span></li><li class="depth-1"><a href="#L114"><code>DilatedConvStack.__init__</code></a><span class="line">L114</span></li><li class="depth-1"><a href="#L135"><code>DilatedConvStack.receptive_field</code></a><span class="line">L135</span></li><li class="depth-1"><a href="#L138"><code>DilatedConvStack.forward</code></a><span class="line">L138</span></li><li class="depth-0"><a href="#L154"><code>BackwardBranch</code></a><span class="line">L154</span> <span class="bases">(<code>Module</code>)</span></li><li class="depth-1"><a href="#L155"><code>BackwardBranch.run</code></a><span class="line">L155</span></li><li class="depth-0"><a href="#L158"><code>ReverseBranch</code></a><span class="line">L158</span> <span class="bases">(<a href="fla_layers.py.html#L154"><code>BackwardBranch</code></a>)</span><div class="mro">MRO: <code>ReverseBranch</code> -> <code>BackwardBranch</code></div></li><li class="depth-1"><a href="#L159"><code>ReverseBranch.__init__</code></a><span class="line">L159</span></li><li class="depth-1"><a href="#L163"><code>ReverseBranch.run</code></a><span class="line">L163</span></li><li class="depth-0"><a href="#L172"><code>RegistryReverseBranch</code></a><span class="line">L172</span> <span class="bases">(<a href="fla_layers.py.html#L154"><code>BackwardBranch</code></a>)</span><div class="mro">MRO: <code>RegistryReverseBranch</code> -> <code>BackwardBranch</code></div></li><li class="depth-1"><a href="#L177"><code>RegistryReverseBranch.__init__</code></a><span class="line">L177</span></li><li class="depth-1"><a href="#L181"><code>RegistryReverseBranch.run</code></a><span class="line">L181</span></li><li class="depth-0"><a href="#L187"><code>CNNAnticausalBranch</code></a><span class="line">L187</span> <span class="bases">(<a href="fla_layers.py.html#L154"><code>BackwardBranch</code></a>)</span><div class="mro">MRO: <code>CNNAnticausalBranch</code> -> <code>BackwardBranch</code></div></li><li class="depth-1"><a href="#L188"><code>CNNAnticausalBranch.__init__</code></a><span class="line">L188</span></li><li class="depth-1"><a href="#L193"><code>CNNAnticausalBranch.run</code></a><span class="line">L193</span></li><li class="depth-0"><a href="#L198"><code>FLASequenceMixer</code></a><span class="line">L198</span> <span class="bases">(<a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a>)</span><div class="mro">MRO: <code>FLASequenceMixer</code> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li><li class="depth-1"><a href="#L204"><code>FLASequenceMixer._accepted_params</code></a><span class="line">L204</span></li><li class="depth-1"><a href="#L213"><code>FLASequenceMixer._layer_kwargs</code></a><span class="line">L213</span></li><li class="depth-1"><a href="#L219"><code>FLASequenceMixer._override</code></a><span class="line">L219</span></li><li class="depth-1"><a href="#L226"><code>FLASequenceMixer._branch_config</code></a><span class="line">L226</span></li><li class="depth-1"><a href="#L243"><code>FLASequenceMixer._build_backward_branch</code></a><span class="line">L243</span></li><li class="depth-1"><a href="#L265"><code>FLASequenceMixer.__init__</code></a><span class="line">L265</span></li><li class="depth-1"><a href="#L297"><code>FLASequenceMixer._run</code></a><span class="line">L297</span></li><li class="depth-1"><a href="#L328"><code>FLASequenceMixer._log</code></a><span class="line">L328</span></li><li class="depth-1"><a href="#L339"><code>FLASequenceMixer._run_paired</code></a><span class="line">L339</span></li><li class="depth-1"><a href="#L351"><code>FLASequenceMixer._merge</code></a><span class="line">L351</span></li><li class="depth-1"><a href="#L365"><code>FLASequenceMixer.forward</code></a><span class="line">L365</span></li><li class="depth-0"><a href="#L380"><code>GatedDeltaNetMixer</code></a><span class="line">L380</span> <span class="bases">(<a href="fla_layers.py.html#L198"><code>FLASequenceMixer</code></a>)</span><div class="mro">MRO: <code>GatedDeltaNetMixer</code> -> <code>FLASequenceMixer</code> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li><li class="depth-0"><a href="#L385"><code>KDAMixer</code></a><span class="line">L385</span> <span class="bases">(<a href="fla_layers.py.html#L198"><code>FLASequenceMixer</code></a>)</span><div class="mro">MRO: <code>KDAMixer</code> -> <code>FLASequenceMixer</code> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li><li class="depth-0"><a href="#L391"><code>GatedDeltaNet2Config</code></a><span class="line">L391</span> <span class="bases">(<a href="fla_layers.py.html#L59"><code>FLAConfig</code></a>)</span><div class="mro">MRO: <code>GatedDeltaNet2Config</code> -> <code>FLAConfig</code> -> <a href="../../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a> -> <code>BidirectionalConfig</code></div></li><li class="depth-0"><a href="#L404"><code>GatedDeltaNet2Mixer</code></a><span class="line">L404</span> <span class="bases">(<a href="fla_layers.py.html#L198"><code>FLASequenceMixer</code></a>)</span><div class="mro">MRO: <code>GatedDeltaNet2Mixer</code> -> <code>FLASequenceMixer</code> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li><li class="depth-0"><a href="#L410"><code>Mamba3Config</code></a><span class="line">L410</span> <span class="bases">(<a href="fla_layers.py.html#L59"><code>FLAConfig</code></a>)</span><div class="mro">MRO: <code>Mamba3Config</code> -> <code>FLAConfig</code> -> <a href="../../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a> -> <code>BidirectionalConfig</code></div></li><li class="depth-0"><a href="#L430"><code>Mamba3Mixer</code></a><span class="line">L430</span> <span class="bases">(<a href="fla_layers.py.html#L198"><code>FLASequenceMixer</code></a>)</span><div class="mro">MRO: <code>Mamba3Mixer</code> -> <code>FLASequenceMixer</code> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li><li class="depth-0"><a href="#L436"><code>GLAConfig</code></a><span class="line">L436</span> <span class="bases">(<a href="fla_layers.py.html#L59"><code>FLAConfig</code></a>)</span><div class="mro">MRO: <code>GLAConfig</code> -> <code>FLAConfig</code> -> <a href="../../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a> -> <code>BidirectionalConfig</code></div></li><li class="depth-0"><a href="#L458"><code>GLAMixer</code></a><span class="line">L458</span> <span class="bases">(<a href="fla_layers.py.html#L198"><code>FLASequenceMixer</code></a>)</span><div class="mro">MRO: <code>GLAMixer</code> -> <code>FLASequenceMixer</code> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li><li class="depth-0"><a href="#L464"><code>RWKV7Config</code></a><span class="line">L464</span> <span class="bases">(<a href="fla_layers.py.html#L59"><code>FLAConfig</code></a>)</span><div class="mro">MRO: <code>RWKV7Config</code> -> <code>FLAConfig</code> -> <a href="../../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a> -> <code>BidirectionalConfig</code></div></li><li class="depth-0"><a href="#L482"><code>RWKV7Mixer</code></a><span class="line">L482</span> <span class="bases">(<a href="fla_layers.py.html#L198"><code>FLASequenceMixer</code></a>)</span><div class="mro">MRO: <code>RWKV7Mixer</code> -> <code>FLASequenceMixer</code> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li><li class="depth-0"><a href="#L488"><code>DeltaNetConfig</code></a><span class="line">L488</span> <span class="bases">(<a href="fla_layers.py.html#L59"><code>FLAConfig</code></a>)</span><div class="mro">MRO: <code>DeltaNetConfig</code> -> <code>FLAConfig</code> -> <a href="../../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a> -> <code>BidirectionalConfig</code></div></li><li class="depth-0"><a href="#L505"><code>DeltaNetMixer</code></a><span class="line">L505</span> <span class="bases">(<a href="fla_layers.py.html#L198"><code>FLASequenceMixer</code></a>)</span><div class="mro">MRO: <code>DeltaNetMixer</code> -> <code>FLASequenceMixer</code> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li><li class="depth-0"><a href="#L511"><code>HGRN2Config</code></a><span class="line">L511</span> <span class="bases">(<a href="fla_layers.py.html#L59"><code>FLAConfig</code></a>)</span><div class="mro">MRO: <code>HGRN2Config</code> -> <code>FLAConfig</code> -> <a href="../../dataclasses/matformer_config.py.html#L8"><code>MatformerConfig</code></a> -> <code>BidirectionalConfig</code></div></li><li class="depth-0"><a href="#L523"><code>HGRN2Mixer</code></a><span class="line">L523</span> <span class="bases">(<a href="fla_layers.py.html#L198"><code>FLASequenceMixer</code></a>)</span><div class="mro">MRO: <code>HGRN2Mixer</code> -> <code>FLASequenceMixer</code> -> <a href="../../matformer_module.py.html#L292"><code>MatformerModule</code></a> -> <a href="../../matformer_module.py.html#L19"><code>ParametersRenamer</code></a> -> <a href="../../plugins/socket_mixin.py.html#L50"><code>SocketMixin</code></a> -> <a href="../../matformer_module.py.html#L145"><code>ParameterEditor</code></a></div></li></ul></details><details class="symbol-index"><summary>Internal imports</summary><ul class="imports"><li><a href="../../matformer_registry.py.html"><code>matformer.matformer_registry</code></a> <span class="muted">registry</span></li><li><a href="../../dataclasses/matformer_config.py.html"><code>matformer.dataclasses.matformer_config</code></a> <span class="muted">MatformerConfig</span></li><li><a href="../../dataclasses/tensors_dataclasses.py.html"><code>matformer.dataclasses.tensors_dataclasses</code></a> <span class="muted">TensorDC, NormalTensor, PaddedTensor, UnpaddedTensor</span></li><li><a href="../../matformer_module.py.html"><code>matformer.matformer_module</code></a> <span class="muted">MatformerModule</span></li></ul></details><div class="source-view"><div class="highlight"><table class="highlighttable"><tr><td class="linenos"><div class="linenodiv"><pre><span class="normal">  1</span>
+<span class="normal">  2</span>
+<span class="normal">  3</span>
+<span class="normal">  4</span>
+<span class="normal">  5</span>
+<span class="normal">  6</span>
+<span class="normal">  7</span>
+<span class="normal">  8</span>
+<span class="normal">  9</span>
+<span class="normal"> 10</span>
+<span class="normal"> 11</span>
+<span class="normal"> 12</span>
+<span class="normal"> 13</span>
+<span class="normal"> 14</span>
+<span class="normal"> 15</span>
+<span class="normal"> 16</span>
+<span class="normal"> 17</span>
+<span class="normal"> 18</span>
+<span class="normal"> 19</span>
+<span class="normal"> 20</span>
+<span class="normal"> 21</span>
+<span class="normal"> 22</span>
+<span class="normal"> 23</span>
+<span class="normal"> 24</span>
+<span class="normal"> 25</span>
+<span class="normal"> 26</span>
+<span class="normal"> 27</span>
+<span class="normal"> 28</span>
+<span class="normal"> 29</span>
+<span class="normal"> 30</span>
+<span class="normal"> 31</span>
+<span class="normal"> 32</span>
+<span class="normal"> 33</span>
+<span class="normal"> 34</span>
+<span class="normal"> 35</span>
+<span class="normal"> 36</span>
+<span class="normal"> 37</span>
+<span class="normal"> 38</span>
+<span class="normal"> 39</span>
+<span class="normal"> 40</span>
+<span class="normal"> 41</span>
+<span class="normal"> 42</span>
+<span class="normal"> 43</span>
+<span class="normal"> 44</span>
+<span class="normal"> 45</span>
+<span class="normal"> 46</span>
+<span class="normal"> 47</span>
+<span class="normal"> 48</span>
+<span class="normal"> 49</span>
+<span class="normal"> 50</span>
+<span class="normal"> 51</span>
+<span class="normal"> 52</span>
+<span class="normal"> 53</span>
+<span class="normal"> 54</span>
+<span class="normal"> 55</span>
+<span class="normal"> 56</span>
+<span class="normal"> 57</span>
+<span class="normal"> 58</span>
+<span class="normal"> 59</span>
+<span class="normal"> 60</span>
+<span class="normal"> 61</span>
+<span class="normal"> 62</span>
+<span class="normal"> 63</span>
+<span class="normal"> 64</span>
+<span class="normal"> 65</span>
+<span class="normal"> 66</span>
+<span class="normal"> 67</span>
+<span class="normal"> 68</span>
+<span class="normal"> 69</span>
+<span class="normal"> 70</span>
+<span class="normal"> 71</span>
+<span class="normal"> 72</span>
+<span class="normal"> 73</span>
+<span class="normal"> 74</span>
+<span class="normal"> 75</span>
+<span class="normal"> 76</span>
+<span class="normal"> 77</span>
+<span class="normal"> 78</span>
+<span class="normal"> 79</span>
+<span class="normal"> 80</span>
+<span class="normal"> 81</span>
+<span class="normal"> 82</span>
+<span class="normal"> 83</span>
+<span class="normal"> 84</span>
+<span class="normal"> 85</span>
+<span class="normal"> 86</span>
+<span class="normal"> 87</span>
+<span class="normal"> 88</span>
+<span class="normal"> 89</span>
+<span class="normal"> 90</span>
+<span class="normal"> 91</span>
+<span class="normal"> 92</span>
+<span class="normal"> 93</span>
+<span class="normal"> 94</span>
+<span class="normal"> 95</span>
+<span class="normal"> 96</span>
+<span class="normal"> 97</span>
+<span class="normal"> 98</span>
+<span class="normal"> 99</span>
+<span class="normal">100</span>
+<span class="normal">101</span>
+<span class="normal">102</span>
+<span class="normal">103</span>
+<span class="normal">104</span>
+<span class="normal">105</span>
+<span class="normal">106</span>
+<span class="normal">107</span>
+<span class="normal">108</span>
+<span class="normal">109</span>
+<span class="normal">110</span>
+<span class="normal">111</span>
+<span class="normal">112</span>
+<span class="normal">113</span>
+<span class="normal">114</span>
+<span class="normal">115</span>
+<span class="normal">116</span>
+<span class="normal">117</span>
+<span class="normal">118</span>
+<span class="normal">119</span>
+<span class="normal">120</span>
+<span class="normal">121</span>
+<span class="normal">122</span>
+<span class="normal">123</span>
+<span class="normal">124</span>
+<span class="normal">125</span>
+<span class="normal">126</span>
+<span class="normal">127</span>
+<span class="normal">128</span>
+<span class="normal">129</span>
+<span class="normal">130</span>
+<span class="normal">131</span>
+<span class="normal">132</span>
+<span class="normal">133</span>
+<span class="normal">134</span>
+<span class="normal">135</span>
+<span class="normal">136</span>
+<span class="normal">137</span>
+<span class="normal">138</span>
+<span class="normal">139</span>
+<span class="normal">140</span>
+<span class="normal">141</span>
+<span class="normal">142</span>
+<span class="normal">143</span>
+<span class="normal">144</span>
+<span class="normal">145</span>
+<span class="normal">146</span>
+<span class="normal">147</span>
+<span class="normal">148</span>
+<span class="normal">149</span>
+<span class="normal">150</span>
+<span class="normal">151</span>
+<span class="normal">152</span>
+<span class="normal">153</span>
+<span class="normal">154</span>
+<span class="normal">155</span>
+<span class="normal">156</span>
+<span class="normal">157</span>
+<span class="normal">158</span>
+<span class="normal">159</span>
+<span class="normal">160</span>
+<span class="normal">161</span>
+<span class="normal">162</span>
+<span class="normal">163</span>
+<span class="normal">164</span>
+<span class="normal">165</span>
+<span class="normal">166</span>
+<span class="normal">167</span>
+<span class="normal">168</span>
+<span class="normal">169</span>
+<span class="normal">170</span>
+<span class="normal">171</span>
+<span class="normal">172</span>
+<span class="normal">173</span>
+<span class="normal">174</span>
+<span class="normal">175</span>
+<span class="normal">176</span>
+<span class="normal">177</span>
+<span class="normal">178</span>
+<span class="normal">179</span>
+<span class="normal">180</span>
+<span class="normal">181</span>
+<span class="normal">182</span>
+<span class="normal">183</span>
+<span class="normal">184</span>
+<span class="normal">185</span>
+<span class="normal">186</span>
+<span class="normal">187</span>
+<span class="normal">188</span>
+<span class="normal">189</span>
+<span class="normal">190</span>
+<span class="normal">191</span>
+<span class="normal">192</span>
+<span class="normal">193</span>
+<span class="normal">194</span>
+<span class="normal">195</span>
+<span class="normal">196</span>
+<span class="normal">197</span>
+<span class="normal">198</span>
+<span class="normal">199</span>
+<span class="normal">200</span>
+<span class="normal">201</span>
+<span class="normal">202</span>
+<span class="normal">203</span>
+<span class="normal">204</span>
+<span class="normal">205</span>
+<span class="normal">206</span>
+<span class="normal">207</span>
+<span class="normal">208</span>
+<span class="normal">209</span>
+<span class="normal">210</span>
+<span class="normal">211</span>
+<span class="normal">212</span>
+<span class="normal">213</span>
+<span class="normal">214</span>
+<span class="normal">215</span>
+<span class="normal">216</span>
+<span class="normal">217</span>
+<span class="normal">218</span>
+<span class="normal">219</span>
+<span class="normal">220</span>
+<span class="normal">221</span>
+<span class="normal">222</span>
+<span class="normal">223</span>
+<span class="normal">224</span>
+<span class="normal">225</span>
+<span class="normal">226</span>
+<span class="normal">227</span>
+<span class="normal">228</span>
+<span class="normal">229</span>
+<span class="normal">230</span>
+<span class="normal">231</span>
+<span class="normal">232</span>
+<span class="normal">233</span>
+<span class="normal">234</span>
+<span class="normal">235</span>
+<span class="normal">236</span>
+<span class="normal">237</span>
+<span class="normal">238</span>
+<span class="normal">239</span>
+<span class="normal">240</span>
+<span class="normal">241</span>
+<span class="normal">242</span>
+<span class="normal">243</span>
+<span class="normal">244</span>
+<span class="normal">245</span>
+<span class="normal">246</span>
+<span class="normal">247</span>
+<span class="normal">248</span>
+<span class="normal">249</span>
+<span class="normal">250</span>
+<span class="normal">251</span>
+<span class="normal">252</span>
+<span class="normal">253</span>
+<span class="normal">254</span>
+<span class="normal">255</span>
+<span class="normal">256</span>
+<span class="normal">257</span>
+<span class="normal">258</span>
+<span class="normal">259</span>
+<span class="normal">260</span>
+<span class="normal">261</span>
+<span class="normal">262</span>
+<span class="normal">263</span>
+<span class="normal">264</span>
+<span class="normal">265</span>
+<span class="normal">266</span>
+<span class="normal">267</span>
+<span class="normal">268</span>
+<span class="normal">269</span>
+<span class="normal">270</span>
+<span class="normal">271</span>
+<span class="normal">272</span>
+<span class="normal">273</span>
+<span class="normal">274</span>
+<span class="normal">275</span>
+<span class="normal">276</span>
+<span class="normal">277</span>
+<span class="normal">278</span>
+<span class="normal">279</span>
+<span class="normal">280</span>
+<span class="normal">281</span>
+<span class="normal">282</span>
+<span class="normal">283</span>
+<span class="normal">284</span>
+<span class="normal">285</span>
+<span class="normal">286</span>
+<span class="normal">287</span>
+<span class="normal">288</span>
+<span class="normal">289</span>
+<span class="normal">290</span>
+<span class="normal">291</span>
+<span class="normal">292</span>
+<span class="normal">293</span>
+<span class="normal">294</span>
+<span class="normal">295</span>
+<span class="normal">296</span>
+<span class="normal">297</span>
+<span class="normal">298</span>
+<span class="normal">299</span>
+<span class="normal">300</span>
+<span class="normal">301</span>
+<span class="normal">302</span>
+<span class="normal">303</span>
+<span class="normal">304</span>
+<span class="normal">305</span>
+<span class="normal">306</span>
+<span class="normal">307</span>
+<span class="normal">308</span>
+<span class="normal">309</span>
+<span class="normal">310</span>
+<span class="normal">311</span>
+<span class="normal">312</span>
+<span class="normal">313</span>
+<span class="normal">314</span>
+<span class="normal">315</span>
+<span class="normal">316</span>
+<span class="normal">317</span>
+<span class="normal">318</span>
+<span class="normal">319</span>
+<span class="normal">320</span>
+<span class="normal">321</span>
+<span class="normal">322</span>
+<span class="normal">323</span>
+<span class="normal">324</span>
+<span class="normal">325</span>
+<span class="normal">326</span>
+<span class="normal">327</span>
+<span class="normal">328</span>
+<span class="normal">329</span>
+<span class="normal">330</span>
+<span class="normal">331</span>
+<span class="normal">332</span>
+<span class="normal">333</span>
+<span class="normal">334</span>
+<span class="normal">335</span>
+<span class="normal">336</span>
+<span class="normal">337</span>
+<span class="normal">338</span>
+<span class="normal">339</span>
+<span class="normal">340</span>
+<span class="normal">341</span>
+<span class="normal">342</span>
+<span class="normal">343</span>
+<span class="normal">344</span>
+<span class="normal">345</span>
+<span class="normal">346</span>
+<span class="normal">347</span>
+<span class="normal">348</span>
+<span class="normal">349</span>
+<span class="normal">350</span>
+<span class="normal">351</span>
+<span class="normal">352</span>
+<span class="normal">353</span>
+<span class="normal">354</span>
+<span class="normal">355</span>
+<span class="normal">356</span>
+<span class="normal">357</span>
+<span class="normal">358</span>
+<span class="normal">359</span>
+<span class="normal">360</span>
+<span class="normal">361</span>
+<span class="normal">362</span>
+<span class="normal">363</span>
+<span class="normal">364</span>
+<span class="normal">365</span>
+<span class="normal">366</span>
+<span class="normal">367</span>
+<span class="normal">368</span>
+<span class="normal">369</span>
+<span class="normal">370</span>
+<span class="normal">371</span>
+<span class="normal">372</span>
+<span class="normal">373</span>
+<span class="normal">374</span>
+<span class="normal">375</span>
+<span class="normal">376</span>
+<span class="normal">377</span>
+<span class="normal">378</span>
+<span class="normal">379</span>
+<span class="normal">380</span>
+<span class="normal">381</span>
+<span class="normal">382</span>
+<span class="normal">383</span>
+<span class="normal">384</span>
+<span class="normal">385</span>
+<span class="normal">386</span>
+<span class="normal">387</span>
+<span class="normal">388</span>
+<span class="normal">389</span>
+<span class="normal">390</span>
+<span class="normal">391</span>
+<span class="normal">392</span>
+<span class="normal">393</span>
+<span class="normal">394</span>
+<span class="normal">395</span>
+<span class="normal">396</span>
+<span class="normal">397</span>
+<span class="normal">398</span>
+<span class="normal">399</span>
+<span class="normal">400</span>
+<span class="normal">401</span>
+<span class="normal">402</span>
+<span class="normal">403</span>
+<span class="normal">404</span>
+<span class="normal">405</span>
+<span class="normal">406</span>
+<span class="normal">407</span>
+<span class="normal">408</span>
+<span class="normal">409</span>
+<span class="normal">410</span>
+<span class="normal">411</span>
+<span class="normal">412</span>
+<span class="normal">413</span>
+<span class="normal">414</span>
+<span class="normal">415</span>
+<span class="normal">416</span>
+<span class="normal">417</span>
+<span class="normal">418</span>
+<span class="normal">419</span>
+<span class="normal">420</span>
+<span class="normal">421</span>
+<span class="normal">422</span>
+<span class="normal">423</span>
+<span class="normal">424</span>
+<span class="normal">425</span>
+<span class="normal">426</span>
+<span class="normal">427</span>
+<span class="normal">428</span>
+<span class="normal">429</span>
+<span class="normal">430</span>
+<span class="normal">431</span>
+<span class="normal">432</span>
+<span class="normal">433</span>
+<span class="normal">434</span>
+<span class="normal">435</span>
+<span class="normal">436</span>
+<span class="normal">437</span>
+<span class="normal">438</span>
+<span class="normal">439</span>
+<span class="normal">440</span>
+<span class="normal">441</span>
+<span class="normal">442</span>
+<span class="normal">443</span>
+<span class="normal">444</span>
+<span class="normal">445</span>
+<span class="normal">446</span>
+<span class="normal">447</span>
+<span class="normal">448</span>
+<span class="normal">449</span>
+<span class="normal">450</span>
+<span class="normal">451</span>
+<span class="normal">452</span>
+<span class="normal">453</span>
+<span class="normal">454</span>
+<span class="normal">455</span>
+<span class="normal">456</span>
+<span class="normal">457</span>
+<span class="normal">458</span>
+<span class="normal">459</span>
+<span class="normal">460</span>
+<span class="normal">461</span>
+<span class="normal">462</span>
+<span class="normal">463</span>
+<span class="normal">464</span>
+<span class="normal">465</span>
+<span class="normal">466</span>
+<span class="normal">467</span>
+<span class="normal">468</span>
+<span class="normal">469</span>
+<span class="normal">470</span>
+<span class="normal">471</span>
+<span class="normal">472</span>
+<span class="normal">473</span>
+<span class="normal">474</span>
+<span class="normal">475</span>
+<span class="normal">476</span>
+<span class="normal">477</span>
+<span class="normal">478</span>
+<span class="normal">479</span>
+<span class="normal">480</span>
+<span class="normal">481</span>
+<span class="normal">482</span>
+<span class="normal">483</span>
+<span class="normal">484</span>
+<span class="normal">485</span>
+<span class="normal">486</span>
+<span class="normal">487</span>
+<span class="normal">488</span>
+<span class="normal">489</span>
+<span class="normal">490</span>
+<span class="normal">491</span>
+<span class="normal">492</span>
+<span class="normal">493</span>
+<span class="normal">494</span>
+<span class="normal">495</span>
+<span class="normal">496</span>
+<span class="normal">497</span>
+<span class="normal">498</span>
+<span class="normal">499</span>
+<span class="normal">500</span>
+<span class="normal">501</span>
+<span class="normal">502</span>
+<span class="normal">503</span>
+<span class="normal">504</span>
+<span class="normal">505</span>
+<span class="normal">506</span>
+<span class="normal">507</span>
+<span class="normal">508</span>
+<span class="normal">509</span>
+<span class="normal">510</span>
+<span class="normal">511</span>
+<span class="normal">512</span>
+<span class="normal">513</span>
+<span class="normal">514</span>
+<span class="normal">515</span>
+<span class="normal">516</span>
+<span class="normal">517</span>
+<span class="normal">518</span>
+<span class="normal">519</span>
+<span class="normal">520</span>
+<span class="normal">521</span>
+<span class="normal">522</span>
+<span class="normal">523</span>
+<span class="normal">524</span></pre></div></td><td class="code"><div><pre><span></span><code><a id="L1" name="L1"></a><span class="kn">from</span><span class="w"> </span><a href="../../matformer_registry.py.html"><span class="nn">matformer.matformer_registry</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">registry</span>
+<a id="L2" name="L2"></a><span class="kn">from</span><span class="w"> </span><span class="nn">dataclasses</span><span class="w"> </span><span class="kn">import</span> <span class="n">dataclass</span><span class="p">,</span> <span class="n">fields</span><span class="p">,</span> <span class="n">asdict</span><span class="p">,</span> <span class="n">field</span><span class="p">,</span> <span class="n">replace</span>
+<a id="L3" name="L3"></a><span class="kn">from</span><span class="w"> </span><span class="nn">typing</span><span class="w"> </span><span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Literal</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">List</span>
+<a id="L4" name="L4"></a><span class="kn">from</span><span class="w"> </span><a href="../../dataclasses/matformer_config.py.html"><span class="nn">matformer.dataclasses.matformer_config</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerConfig</span>
+<a id="L5" name="L5"></a><span class="kn">from</span><span class="w"> </span><a href="../../dataclasses/tensors_dataclasses.py.html"><span class="nn">matformer.dataclasses.tensors_dataclasses</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">TensorDC</span><span class="p">,</span> <span class="n">NormalTensor</span><span class="p">,</span> <span class="n">PaddedTensor</span><span class="p">,</span> <span class="n">UnpaddedTensor</span>
+<a id="L6" name="L6"></a><span class="kn">from</span><span class="w"> </span><span class="nn">torch</span><span class="w"> </span><span class="kn">import</span> <span class="n">nn</span>
+<a id="L7" name="L7"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<a id="L8" name="L8"></a><span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<a id="L9" name="L9"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fla.layers.gated_deltanet</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatedDeltaNet</span>
+<a id="L10" name="L10"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fla.layers.kda</span><span class="w"> </span><span class="kn">import</span> <span class="n">KimiDeltaAttention</span>
+<a id="L11" name="L11"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fla.layers.gdn2</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatedDeltaNet2</span>
+<a id="L12" name="L12"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fla.layers.mamba3</span><span class="w"> </span><span class="kn">import</span> <span class="n">Mamba3</span>
+<a id="L13" name="L13"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fla.layers.gla</span><span class="w"> </span><span class="kn">import</span> <span class="n">GatedLinearAttention</span>
+<a id="L14" name="L14"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fla.layers.rwkv7</span><span class="w"> </span><span class="kn">import</span> <span class="n">RWKV7Attention</span>
+<a id="L15" name="L15"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fla.layers.delta_net</span><span class="w"> </span><span class="kn">import</span> <span class="n">DeltaNet</span>
+<a id="L16" name="L16"></a><span class="kn">from</span><span class="w"> </span><span class="nn">fla.layers.hgrn2</span><span class="w"> </span><span class="kn">import</span> <span class="n">HGRN2Attention</span>
+<a id="L17" name="L17"></a><span class="kn">from</span><span class="w"> </span><a href="../../matformer_module.py.html"><span class="nn">matformer.matformer_module</span></a><span class="w"> </span><span class="kn">import</span> <span class="n">MatformerModule</span>
+<a id="L18" name="L18"></a><span class="kn">from</span><span class="w"> </span><span class="nn">copy</span><span class="w"> </span><span class="kn">import</span> <span class="n">deepcopy</span>
+<a id="L19" name="L19"></a><span class="kn">from</span><span class="w"> </span><span class="nn">warnings</span><span class="w"> </span><span class="kn">import</span> <span class="n">warn</span>
+<a id="L20" name="L20"></a><span class="kn">import</span><span class="w"> </span><span class="nn">functools</span>
+<a id="L21" name="L21"></a><span class="kn">import</span><span class="w"> </span><span class="nn">inspect</span>
+<a id="L22" name="L22"></a>
+<a id="L23" name="L23"></a><span class="nd">@dataclass</span>
+<a id="L24" name="L24"></a><span class="k">class</span><span class="w"> </span><span class="nc">BidirectionalConfig</span><span class="p">:</span>
+<a id="L25" name="L25"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Anticausal (future-context) branch knobs.</span>
+<a id="L26" name="L26"></a>
+<a id="L27" name="L27"></a><span class="sd">    Second-class by design: bidirectionality is an experiment, so every knob lives here and the</span>
+<a id="L28" name="L28"></a><span class="sd">    feature can be removed by deleting this class plus the bwd branch of FLASequenceMixer,</span>
+<a id="L29" name="L29"></a><span class="sd">    without touching the causal path or the fla wrappers.</span>
+<a id="L30" name="L30"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L31" name="L31"></a>    <span class="n">allow_bidirectionalize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L32" name="L32"></a>    <span class="n">bidirectional_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;cnn&quot;</span><span class="p">,</span> <span class="s2">&quot;fla&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;fla&quot;</span>
+<a id="L33" name="L33"></a>    <span class="n">bidirectional_merge_type</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;sum&quot;</span><span class="p">,</span> <span class="s2">&quot;gated_sum&quot;</span><span class="p">,</span> <span class="s2">&quot;concat_proj&quot;</span><span class="p">,</span> <span class="s2">&quot;gated_concat_proj&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;concat_proj&quot;</span>
+<a id="L34" name="L34"></a>    <span class="c1"># The reverse branch is a second full scan, so on the mixers whose per-token cost is set by</span>
+<a id="L35" name="L35"></a>    <span class="c1"># the projection width rather than by the head split (Mamba-3: intermediate = expand *</span>
+<a id="L36" name="L36"></a>    <span class="c1"># hidden_size, num_heads derived) head_dim/num_heads alone shrink nothing. The next three</span>
+<a id="L37" name="L37"></a>    <span class="c1"># knobs are inherited (None) unless set, and are skipped on mixers that lack the field.</span>
+<a id="L38" name="L38"></a>    <span class="n">bidirectional_head_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span>
+<a id="L39" name="L39"></a>    <span class="n">bidirectional_num_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>
+<a id="L40" name="L40"></a>    <span class="n">bidirectional_expand</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L41" name="L41"></a>    <span class="n">bidirectional_state_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L42" name="L42"></a>    <span class="n">bidirectional_is_mimo</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L43" name="L43"></a>    <span class="c1"># Scan both directions in a single varlen call instead of two sequential ones. Only applies</span>
+<a id="L44" name="L44"></a>    <span class="c1"># to the mirrored branch (reverse_mixer/cnn keep their own path).</span>
+<a id="L45" name="L45"></a>    <span class="n">bidirectional_batched</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L46" name="L46"></a>    <span class="c1"># Borrow the anticausal branch from the registry: any sequence_mixer variant (a cheap</span>
+<a id="L47" name="L47"></a>    <span class="c1"># gla/hgrn2/delta_net/rwkv7, or even &quot;attention&quot;) run causal on the reversed sequence, which</span>
+<a id="L48" name="L48"></a>    <span class="c1"># is exactly &quot;reads the future&quot;. Wins over bidirectional_type=cnn when the future context</span>
+<a id="L49" name="L49"></a>    <span class="c1"># needed is longer than a conv receptive field, and over the mirrored branch when the main</span>
+<a id="L50" name="L50"></a>    <span class="c1"># mixer is too expensive to scan twice.</span>
+<a id="L51" name="L51"></a>    <span class="n">reverse_mixer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L52" name="L52"></a>    <span class="n">reverse_mixer_config</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="n">field</span><span class="p">(</span><span class="n">default_factory</span><span class="o">=</span><span class="nb">dict</span><span class="p">)</span>
+<a id="L53" name="L53"></a>    <span class="n">cnn_n_layers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span>
+<a id="L54" name="L54"></a>    <span class="n">cnn_kernel_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">3</span>
+<a id="L55" name="L55"></a>    <span class="n">cnn_dilation_growth</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;exponential&quot;</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;exponential&quot;</span>
+<a id="L56" name="L56"></a>
+<a id="L57" name="L57"></a>
+<a id="L58" name="L58"></a><span class="nd">@dataclass</span>
+<a id="L59" name="L59"></a><span class="k">class</span><span class="w"> </span><span class="nc">FLAConfig</span><span class="p">(</span><a href="../../dataclasses/matformer_config.py.html#L8"><span class="n">MatformerConfig</span></a><span class="p">,</span> <a href="#L24"><span class="n">BidirectionalConfig</span></a><span class="p">):</span>
+<a id="L60" name="L60"></a>    <span class="n">positional_encoding</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span>
+<a id="L61" name="L61"></a>        <span class="n">Union</span><span class="p">[</span>
+<a id="L62" name="L62"></a>            <span class="n">List</span><span class="p">[</span><span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;alibi&quot;</span><span class="p">,</span> <span class="s2">&quot;rope&quot;</span><span class="p">,</span> <span class="s2">&quot;sinusoidal&quot;</span><span class="p">,</span> <span class="s2">&quot;nope&quot;</span><span class="p">,</span> <span class="s2">&quot;learnable&quot;</span><span class="p">]],</span>
+<a id="L63" name="L63"></a>            <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;alibi&quot;</span><span class="p">,</span> <span class="s2">&quot;rope&quot;</span><span class="p">,</span> <span class="s2">&quot;sinusoidal&quot;</span><span class="p">,</span> <span class="s2">&quot;nope&quot;</span><span class="p">,</span> <span class="s2">&quot;learnable&quot;</span><span class="p">],</span>
+<a id="L64" name="L64"></a>        <span class="p">]</span>
+<a id="L65" name="L65"></a>    <span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;alibi&quot;</span>
+<a id="L66" name="L66"></a>    <span class="n">is_causal</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L67" name="L67"></a>
+<a id="L68" name="L68"></a>
+<a id="L69" name="L69"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;gated_deltanet&quot;</span><span class="p">,</span> <span class="n">default</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L70" name="L70"></a><span class="nd">@dataclass</span>
+<a id="L71" name="L71"></a><span class="k">class</span><span class="w"> </span><span class="nc">GatedDeltaNetConfig</span><span class="p">(</span><a href="#L59"><span class="n">FLAConfig</span></a><span class="p">):</span>
+<a id="L72" name="L72"></a>    <span class="n">expand_v</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">2.0</span>
+<a id="L73" name="L73"></a>    <span class="n">head_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">256</span>
+<a id="L74" name="L74"></a>    <span class="n">num_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span>
+<a id="L75" name="L75"></a>    <span class="n">num_v_heads</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L76" name="L76"></a>    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;chunk&quot;</span><span class="p">,</span> <span class="s2">&quot;fused_recurrent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;chunk&quot;</span>
+<a id="L77" name="L77"></a>    <span class="n">use_gate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L78" name="L78"></a>    <span class="n">use_short_conv</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L79" name="L79"></a>    <span class="n">allow_neg_eigval</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L80" name="L80"></a>    <span class="n">conv_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+<a id="L81" name="L81"></a>    <span class="n">conv_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L82" name="L82"></a>    <span class="n">norm_eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<a id="L83" name="L83"></a>
+<a id="L84" name="L84"></a>
+<a id="L85" name="L85"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;kda&quot;</span><span class="p">)</span>
+<a id="L86" name="L86"></a><span class="nd">@dataclass</span>
+<a id="L87" name="L87"></a><span class="k">class</span><span class="w"> </span><span class="nc">KDAConfig</span><span class="p">(</span><a href="#L59"><span class="n">FLAConfig</span></a><span class="p">):</span>
+<a id="L88" name="L88"></a>    <span class="n">expand_v</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<a id="L89" name="L89"></a>    <span class="n">head_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span>
+<a id="L90" name="L90"></a>    <span class="n">num_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span>
+<a id="L91" name="L91"></a>    <span class="n">num_v_heads</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L92" name="L92"></a>    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;chunk&quot;</span><span class="p">,</span> <span class="s2">&quot;fused_recurrent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;chunk&quot;</span>
+<a id="L93" name="L93"></a>    <span class="n">use_short_conv</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L94" name="L94"></a>    <span class="n">allow_neg_eigval</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L95" name="L95"></a>    <span class="n">safe_gate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L96" name="L96"></a>    <span class="n">lower_bound</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L97" name="L97"></a>    <span class="n">conv_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+<a id="L98" name="L98"></a>    <span class="n">conv_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L99" name="L99"></a>
+<a id="L100" name="L100"></a>
+<a id="L101" name="L101"></a><span class="k">class</span><span class="w"> </span><span class="nc">DilatedConvStack</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="L102" name="L102"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Anticausal depthwise dilated conv stack over a packed (N, D) sequence.</span>
+<a id="L103" name="L103"></a>
+<a id="L104" name="L104"></a><span class="sd">    A Conv1d(k, dilation=d) fed with right-only padding computes out[i] = sum_j w_j * h[i + j*d]:</span>
+<a id="L105" name="L105"></a><span class="sd">    the current position plus (k-1)*d purely future taps. The nn.Conv1d modules are kept, so</span>
+<a id="L106" name="L106"></a><span class="sd">    checkpoints still load, but the sum is evaluated as masked gathers, which fixes two things</span>
+<a id="L107" name="L107"></a><span class="sd">    and one trap: taps no longer reach into the neighbouring packed document (the padded conv</span>
+<a id="L108" name="L108"></a><span class="sd">    did that silently), no F.pad is allocated per layer, and the whole thing is gather/add on a</span>
+<a id="L109" name="L109"></a><span class="sd">    dynamic length, so torch.compile stops recompiling every time the pack length changes.</span>
+<a id="L110" name="L110"></a><span class="sd">    RF = 1 + (k-1) * sum(dilations).</span>
+<a id="L111" name="L111"></a><span class="sd">    &quot;&quot;&quot;</span>
+<a id="L112" name="L112"></a>    <span class="n">COMPILE</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L113" name="L113"></a>
+<a id="L114" name="L114"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">n_layers</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">dilation_growth</span><span class="o">=</span><span class="s2">&quot;exponential&quot;</span><span class="p">,</span> <span class="n">residual</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<a id="L115" name="L115"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L116" name="L116"></a>        <span class="n">dilations</span> <span class="o">=</span> <span class="p">{</span>
+<a id="L117" name="L117"></a>            <span class="s2">&quot;exponential&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">2</span> <span class="o">**</span> <span class="n">i</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_layers</span><span class="p">)],</span>
+<a id="L118" name="L118"></a>            <span class="s2">&quot;linear&quot;</span><span class="p">:</span> <span class="nb">list</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_layers</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)),</span>
+<a id="L119" name="L119"></a>            <span class="s2">&quot;none&quot;</span><span class="p">:</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">n_layers</span><span class="p">,</span>
+<a id="L120" name="L120"></a>        <span class="p">}[</span><span class="n">dilation_growth</span><span class="p">]</span>
+<a id="L121" name="L121"></a>
+<a id="L122" name="L122"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">dilations</span> <span class="o">=</span> <span class="n">dilations</span>
+<a id="L123" name="L123"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span> <span class="o">=</span> <span class="n">kernel_size</span>
+<a id="L124" name="L124"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">residual</span> <span class="o">=</span> <span class="n">residual</span>
+<a id="L125" name="L125"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">convs</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">([</span>
+<a id="L126" name="L126"></a>            <span class="n">nn</span><span class="o">.</span><span class="n">Conv1d</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="n">d</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L127" name="L127"></a>            <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">dilations</span>
+<a id="L128" name="L128"></a>        <span class="p">])</span>
+<a id="L129" name="L129"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">COMPILE</span><span class="p">:</span>
+<a id="L130" name="L130"></a>            <span class="c1"># dynamic: pack lengths change every batch, and a shape guard per length is what made</span>
+<a id="L131" name="L131"></a>            <span class="c1"># this branch recompile once per layer per step.</span>
+<a id="L132" name="L132"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">forward</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">forward</span><span class="p">,</span> <span class="n">dynamic</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L133" name="L133"></a>
+<a id="L134" name="L134"></a>    <span class="nd">@property</span>
+<a id="L135" name="L135"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">receptive_field</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L136" name="L136"></a>        <span class="k">return</span> <span class="mi">1</span> <span class="o">+</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="nb">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dilations</span><span class="p">)</span>
+<a id="L137" name="L137"></a>
+<a id="L138" name="L138"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">segment_ids</span><span class="p">):</span>
+<a id="L139" name="L139"></a>        <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L140" name="L140"></a>        <span class="n">pos</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+<a id="L141" name="L141"></a>        <span class="n">h</span> <span class="o">=</span> <span class="n">x</span>
+<a id="L142" name="L142"></a>        <span class="k">for</span> <span class="n">conv</span><span class="p">,</span> <span class="n">d</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">convs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dilations</span><span class="p">):</span>
+<a id="L143" name="L143"></a>            <span class="n">w</span> <span class="o">=</span> <span class="n">conv</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">)</span>
+<a id="L144" name="L144"></a>            <span class="n">y</span> <span class="o">=</span> <span class="n">w</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">h</span>
+<a id="L145" name="L145"></a>            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">):</span>
+<a id="L146" name="L146"></a>                <span class="n">reach</span> <span class="o">=</span> <span class="n">pos</span> <span class="o">+</span> <span class="n">j</span> <span class="o">*</span> <span class="n">d</span>
+<a id="L147" name="L147"></a>                <span class="n">tapped</span> <span class="o">=</span> <span class="n">reach</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">max</span><span class="o">=</span><span class="n">n</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+<a id="L148" name="L148"></a>                <span class="n">same_doc</span> <span class="o">=</span> <span class="p">(</span><span class="n">reach</span> <span class="o">&lt;</span> <span class="n">n</span><span class="p">)</span> <span class="o">&amp;</span> <span class="n">segment_ids</span><span class="p">[</span><span class="n">tapped</span><span class="p">]</span><span class="o">.</span><span class="n">eq</span><span class="p">(</span><span class="n">segment_ids</span><span class="p">)</span>
+<a id="L149" name="L149"></a>                <span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="n">w</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">*</span> <span class="n">h</span><span class="p">[</span><span class="n">tapped</span><span class="p">]</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">same_doc</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="mf">0.</span><span class="p">)</span>
+<a id="L150" name="L150"></a>            <span class="n">h</span> <span class="o">=</span> <span class="n">h</span> <span class="o">+</span> <span class="n">y</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual</span> <span class="k">else</span> <span class="n">y</span>
+<a id="L151" name="L151"></a>        <span class="k">return</span> <span class="n">h</span>
+<a id="L152" name="L152"></a>
+<a id="L153" name="L153"></a>
+<a id="L154" name="L154"></a><span class="k">class</span><span class="w"> </span><span class="nc">BackwardBranch</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<a id="L155" name="L155"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">run_fn</span><span class="p">):</span> <span class="k">raise</span> <span class="ne">NotImplementedError</span>
+<a id="L156" name="L156"></a>
+<a id="L157" name="L157"></a>
+<a id="L158" name="L158"></a><span class="k">class</span><span class="w"> </span><span class="nc">ReverseBranch</span><span class="p">(</span><a href="#L154"><span class="n">BackwardBranch</span></a><span class="p">):</span>
+<a id="L159" name="L159"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fla_cls</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L160" name="L160"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L161" name="L161"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span> <span class="o">=</span> <span class="n">fla_cls</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<a id="L162" name="L162"></a>
+<a id="L163" name="L163"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">run_fn</span><span class="p">):</span>
+<a id="L164" name="L164"></a>        <span class="c1"># Reverse inside each real sequence, run the mixer, reverse the result back. The</span>
+<a id="L165" name="L165"></a>        <span class="c1"># merge in FLASequenceMixer.forward happens in the caller&#39;s layout, so a padded</span>
+<a id="L166" name="L166"></a>        <span class="c1"># input must come back padded (the kernel only ever sees the packed form).</span>
+<a id="L167" name="L167"></a>        <span class="n">packed</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;isUnpadded&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span><span class="o">.</span><span class="n">unpad</span><span class="p">()</span>
+<a id="L168" name="L168"></a>        <span class="n">out</span> <span class="o">=</span> <span class="n">run_fn</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="p">,</span> <span class="n">packed</span><span class="o">.</span><span class="n">reverse</span><span class="p">(),</span> <span class="kc">False</span><span class="p">)</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span>
+<a id="L169" name="L169"></a>        <span class="k">return</span> <span class="n">out</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;isUnpadded&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">else</span> <span class="n">out</span><span class="o">.</span><span class="n">pad</span><span class="p">()</span>
+<a id="L170" name="L170"></a>
+<a id="L171" name="L171"></a>
+<a id="L172" name="L172"></a><span class="k">class</span><span class="w"> </span><span class="nc">RegistryReverseBranch</span><span class="p">(</span><a href="#L154"><span class="n">BackwardBranch</span></a><span class="p">):</span>
+<a id="L173" name="L173"></a><span class="w">    </span><span class="sd">&quot;&quot;&quot;Anticausal branch built from any registry sequence_mixer, run causal on the reversed</span>
+<a id="L174" name="L174"></a><span class="sd">    sequence. The sub-mixer is created with allow_bidirectionalize off, which is what keeps the</span>
+<a id="L175" name="L175"></a><span class="sd">    recursion finite; it also handles its own packing, so it only ever sees the packed form.&quot;&quot;&quot;</span>
+<a id="L176" name="L176"></a>
+<a id="L177" name="L177"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mixer</span><span class="p">):</span>
+<a id="L178" name="L178"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L179" name="L179"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span> <span class="o">=</span> <span class="n">mixer</span>
+<a id="L180" name="L180"></a>
+<a id="L181" name="L181"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">run_fn</span><span class="p">):</span>
+<a id="L182" name="L182"></a>        <span class="n">packed</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;isUnpadded&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span><span class="o">.</span><span class="n">unpad</span><span class="p">()</span>
+<a id="L183" name="L183"></a>        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">mixer</span><span class="p">(</span><span class="n">packed</span><span class="o">.</span><span class="n">reverse</span><span class="p">())</span>
+<a id="L184" name="L184"></a>        <span class="k">return</span> <span class="n">out</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;isUnpadded&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">else</span> <span class="n">out</span><span class="o">.</span><span class="n">pad</span><span class="p">()</span>
+<a id="L185" name="L185"></a>
+<a id="L186" name="L186"></a>
+<a id="L187" name="L187"></a><span class="k">class</span><span class="w"> </span><span class="nc">CNNAnticausalBranch</span><span class="p">(</span><a href="#L154"><span class="n">BackwardBranch</span></a><span class="p">):</span>
+<a id="L188" name="L188"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">n_layers</span><span class="p">,</span> <span class="n">kernel_size</span><span class="p">,</span> <span class="n">dilation_growth</span><span class="p">):</span>
+<a id="L189" name="L189"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L190" name="L190"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">stack</span> <span class="o">=</span> <span class="n">DilatedConvStack</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">n_layers</span><span class="o">=</span><span class="n">n_layers</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">kernel_size</span><span class="p">,</span>
+<a id="L191" name="L191"></a>                                       <span class="n">dilation_growth</span><span class="o">=</span><span class="n">dilation_growth</span><span class="p">)</span>
+<a id="L192" name="L192"></a>
+<a id="L193" name="L193"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">run_fn</span><span class="p">):</span>
+<a id="L194" name="L194"></a>        <span class="n">u</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;isUnpadded&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span><span class="o">.</span><span class="n">unpad</span><span class="p">()</span>
+<a id="L195" name="L195"></a>        <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">u</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="n">u</span><span class="o">.</span><span class="n">segment_ids</span><span class="p">()))</span>
+<a id="L196" name="L196"></a>
+<a id="L197" name="L197"></a>
+<a id="L198" name="L198"></a><span class="k">class</span><span class="w"> </span><span class="nc">FLASequenceMixer</span><span class="p">(</span><a href="../../matformer_module.py.html#L292"><span class="n">MatformerModule</span></a><span class="p">):</span>
+<a id="L199" name="L199"></a>    <span class="n">inner</span><span class="p">:</span> <span class="s2">&quot;transparent&quot;</span>
+<a id="L200" name="L200"></a>    <span class="n">fla_cls</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L201" name="L201"></a>
+<a id="L202" name="L202"></a>    <span class="nd">@staticmethod</span>
+<a id="L203" name="L203"></a>    <span class="nd">@functools</span><span class="o">.</span><span class="n">lru_cache</span><span class="p">(</span><span class="n">maxsize</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<a id="L204" name="L204"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_accepted_params</span><span class="p">(</span><span class="n">fla_cls</span><span class="p">):</span>
+<a id="L205" name="L205"></a>        <span class="c1"># fla layers are inconsistent: most swallow unknown kwargs, but some (Mamba-3) have a</span>
+<a id="L206" name="L206"></a>        <span class="c1"># closed signature. Returning None means &quot;pass everything through&quot;.</span>
+<a id="L207" name="L207"></a>        <span class="n">params</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">fla_cls</span><span class="o">.</span><span class="fm">__init__</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span>
+<a id="L208" name="L208"></a>        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">p</span><span class="o">.</span><span class="n">kind</span> <span class="ow">is</span> <span class="n">inspect</span><span class="o">.</span><span class="n">Parameter</span><span class="o">.</span><span class="n">VAR_KEYWORD</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">params</span><span class="o">.</span><span class="n">values</span><span class="p">()):</span>
+<a id="L209" name="L209"></a>            <span class="k">return</span> <span class="kc">None</span>
+<a id="L210" name="L210"></a>        <span class="k">return</span> <span class="nb">frozenset</span><span class="p">(</span><span class="n">params</span><span class="p">)</span>
+<a id="L211" name="L211"></a>
+<a id="L212" name="L212"></a>    <span class="nd">@classmethod</span>
+<a id="L213" name="L213"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_layer_kwargs</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="o">**</span><span class="n">runtime</span><span class="p">):</span>
+<a id="L214" name="L214"></a>        <span class="n">kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="s2">&quot;name&quot;</span><span class="p">},</span> <span class="o">**</span><span class="n">runtime</span><span class="p">}</span>
+<a id="L215" name="L215"></a>        <span class="n">accepted</span> <span class="o">=</span> <span class="bp">cls</span><span class="o">.</span><span class="n">_accepted_params</span><span class="p">(</span><span class="bp">cls</span><span class="o">.</span><span class="n">fla_cls</span><span class="p">)</span>
+<a id="L216" name="L216"></a>        <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">accepted</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">accepted</span><span class="p">}</span>
+<a id="L217" name="L217"></a>
+<a id="L218" name="L218"></a>    <span class="nd">@staticmethod</span>
+<a id="L219" name="L219"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_override</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">):</span>
+<a id="L220" name="L220"></a>        <span class="c1"># Not every mixer exposes every knob (Mamba-3 derives num_heads from expand *</span>
+<a id="L221" name="L221"></a>        <span class="c1"># hidden_size, so it has no num_heads field); a missing field is simply skipped.</span>
+<a id="L222" name="L222"></a>        <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">config</span><span class="p">)):</span>
+<a id="L223" name="L223"></a>            <span class="nb">setattr</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<a id="L224" name="L224"></a>
+<a id="L225" name="L225"></a>    <span class="nd">@classmethod</span>
+<a id="L226" name="L226"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_branch_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">):</span>
+<a id="L227" name="L227"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Config for a mixer borrowed from the registry: keep every field the target class also</span>
+<a id="L228" name="L228"></a><span class="sd">        declares, patch reverse_mixer_config on top, and disable nesting.&quot;&quot;&quot;</span>
+<a id="L229" name="L229"></a>        <span class="n">target</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">get_definition</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">reverse_mixer</span><span class="p">)</span>
+<a id="L230" name="L230"></a>        <span class="k">if</span> <span class="n">target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L231" name="L231"></a>            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;sequence_mixer &#39;</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">reverse_mixer</span><span class="si">}</span><span class="s2">&#39; has no config dataclass, &quot;</span>
+<a id="L232" name="L232"></a>                             <span class="sa">f</span><span class="s2">&quot;so it cannot be used as reverse_mixer&quot;</span><span class="p">)</span>
+<a id="L233" name="L233"></a>        <span class="n">valid</span> <span class="o">=</span> <span class="p">{</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">target</span><span class="p">)}</span>
+<a id="L234" name="L234"></a>        <span class="n">sub</span> <span class="o">=</span> <span class="n">target</span><span class="o">.</span><span class="n">from_dict</span><span class="p">({</span><span class="o">**</span><span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">config</span><span class="o">.</span><span class="n">asdict</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">valid</span><span class="p">},</span>
+<a id="L235" name="L235"></a>                                <span class="o">**</span><span class="n">config</span><span class="o">.</span><span class="n">reverse_mixer_config</span><span class="p">})</span>
+<a id="L236" name="L236"></a>        <span class="bp">cls</span><span class="o">.</span><span class="n">_override</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="s2">&quot;allow_bidirectionalize&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<a id="L237" name="L237"></a>        <span class="c1"># The attention family reads its width from q/k/v_dim, normally stamped by the model.</span>
+<a id="L238" name="L238"></a>        <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;q_dim&quot;</span><span class="p">,</span> <span class="s2">&quot;k_dim&quot;</span><span class="p">,</span> <span class="s2">&quot;v_dim&quot;</span><span class="p">):</span>
+<a id="L239" name="L239"></a>            <span class="k">if</span> <span class="nb">any</span><span class="p">(</span><span class="n">f</span><span class="o">.</span><span class="n">name</span> <span class="o">==</span> <span class="n">dim</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fields</span><span class="p">(</span><span class="n">sub</span><span class="p">))</span> <span class="ow">and</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">dim</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L240" name="L240"></a>                <span class="nb">setattr</span><span class="p">(</span><span class="n">sub</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">)</span>
+<a id="L241" name="L241"></a>        <span class="k">return</span> <span class="n">sub</span>
+<a id="L242" name="L242"></a>
+<a id="L243" name="L243"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_build_backward_branch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">layer_idx</span><span class="p">):</span>
+<a id="L244" name="L244"></a>        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">bidirectional_type</span> <span class="o">==</span> <span class="s2">&quot;cnn&quot;</span><span class="p">:</span>
+<a id="L245" name="L245"></a>            <span class="k">return</span> <span class="n">CNNAnticausalBranch</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">cnn_n_layers</span><span class="p">,</span>
+<a id="L246" name="L246"></a>                                       <span class="n">config</span><span class="o">.</span><span class="n">cnn_kernel_size</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">cnn_dilation_growth</span><span class="p">)</span>
+<a id="L247" name="L247"></a>        <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">reverse_mixer</span><span class="p">:</span>
+<a id="L248" name="L248"></a>            <span class="k">return</span> <span class="n">RegistryReverseBranch</span><span class="p">(</span><span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<a id="L249" name="L249"></a>                <span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">reverse_mixer</span><span class="p">,</span>
+<a id="L250" name="L250"></a>                <span class="n">config</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_branch_config</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">),</span> <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span>
+<a id="L251" name="L251"></a>                <span class="n">layer_idx</span><span class="o">=</span><span class="n">layer_idx</span><span class="p">,</span> <span class="n">is_causal</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+<a id="L252" name="L252"></a>        <span class="n">bwd_config</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+<a id="L253" name="L253"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_override</span><span class="p">(</span><span class="n">bwd_config</span><span class="p">,</span> <span class="s2">&quot;head_dim&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">bidirectional_head_dim</span><span class="p">)</span>
+<a id="L254" name="L254"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_override</span><span class="p">(</span><span class="n">bwd_config</span><span class="p">,</span> <span class="s2">&quot;num_heads&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">bidirectional_num_heads</span><span class="p">)</span>
+<a id="L255" name="L255"></a>        <span class="k">for</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="p">(</span>
+<a id="L256" name="L256"></a>            <span class="p">(</span><span class="s2">&quot;expand&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">bidirectional_expand</span><span class="p">),</span>
+<a id="L257" name="L257"></a>            <span class="p">(</span><span class="s2">&quot;state_size&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">bidirectional_state_size</span><span class="p">),</span>
+<a id="L258" name="L258"></a>            <span class="p">(</span><span class="s2">&quot;is_mimo&quot;</span><span class="p">,</span> <span class="n">config</span><span class="o">.</span><span class="n">bidirectional_is_mimo</span><span class="p">),</span>
+<a id="L259" name="L259"></a>        <span class="p">):</span>
+<a id="L260" name="L260"></a>            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L261" name="L261"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_override</span><span class="p">(</span><span class="n">bwd_config</span><span class="p">,</span> <span class="n">field_name</span><span class="p">,</span> <span class="n">value</span><span class="p">)</span>
+<a id="L262" name="L262"></a>        <span class="k">return</span> <span class="n">ReverseBranch</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">fla_cls</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_layer_kwargs</span><span class="p">(</span>
+<a id="L263" name="L263"></a>            <span class="n">bwd_config</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">layer_idx</span><span class="o">=</span><span class="n">layer_idx</span><span class="p">))</span>
+<a id="L264" name="L264"></a>
+<a id="L265" name="L265"></a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">layer_idx</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cache</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<a id="L266" name="L266"></a>                 <span class="n">is_causal</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_hybrid</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<a id="L267" name="L267"></a>        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+<a id="L268" name="L268"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_diagnostics</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L269" name="L269"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">_last_logs</span> <span class="o">=</span> <span class="p">{}</span>
+<a id="L270" name="L270"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">inner</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fla_cls</span><span class="p">(</span><span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_layer_kwargs</span><span class="p">(</span>
+<a id="L271" name="L271"></a>            <span class="n">config</span><span class="p">,</span> <span class="n">hidden_size</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">layer_idx</span><span class="o">=</span><span class="n">layer_idx</span><span class="p">))</span>
+<a id="L272" name="L272"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="n">config</span>
+<a id="L273" name="L273"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">merge</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">bidirectional_merge_type</span>
+<a id="L274" name="L274"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">allow_bidirectionalize</span> <span class="ow">and</span> <span class="p">((</span><span class="ow">not</span> <span class="n">is_causal</span><span class="p">)</span> <span class="ow">or</span> <span class="n">is_hybrid</span><span class="p">)</span>
+<a id="L275" name="L275"></a>        <span class="bp">self</span><span class="o">.</span><span class="n">batched</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L276" name="L276"></a>
+<a id="L277" name="L277"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional</span><span class="p">:</span>
+<a id="L278" name="L278"></a>            <span class="c1"># Batching the two directions means one kernel call, hence one set of weights serving</span>
+<a id="L279" name="L279"></a>            <span class="c1"># both: it ties the branch to the main mixer, so no shrunken/cnn/borrowed branch can</span>
+<a id="L280" name="L280"></a>            <span class="c1"># take part, and self.bwd is not built at all (the mirrored half costs nothing extra).</span>
+<a id="L281" name="L281"></a>            <span class="n">batchable</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">bidirectional_type</span> <span class="o">==</span> <span class="s2">&quot;fla&quot;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">config</span><span class="o">.</span><span class="n">reverse_mixer</span>
+<a id="L282" name="L282"></a>            <span class="k">if</span> <span class="n">config</span><span class="o">.</span><span class="n">bidirectional_batched</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">batchable</span><span class="p">:</span>
+<a id="L283" name="L283"></a>                <span class="n">warn</span><span class="p">(</span><span class="s2">&quot;bidirectional_batched runs both directions through one shared kernel call, &quot;</span>
+<a id="L284" name="L284"></a>                     <span class="sa">f</span><span class="s2">&quot;so it needs the mirrored branch: falling back to the unbatched path for &quot;</span>
+<a id="L285" name="L285"></a>                     <span class="sa">f</span><span class="s2">&quot;bidirectional_type=</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">bidirectional_type</span><span class="si">}</span><span class="s2"> reverse_mixer=</span><span class="si">{</span><span class="n">config</span><span class="o">.</span><span class="n">reverse_mixer</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L286" name="L286"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">batched</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">bidirectional_batched</span> <span class="ow">and</span> <span class="n">batchable</span>
+<a id="L287" name="L287"></a>            <span class="bp">self</span><span class="o">.</span><span class="n">bwd</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">batched</span> <span class="k">else</span> <span class="bp">self</span><span class="o">.</span><span class="n">_build_backward_branch</span><span class="p">(</span>
+<a id="L288" name="L288"></a>                <span class="n">config</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">layer_idx</span><span class="p">)</span>
+<a id="L289" name="L289"></a>
+<a id="L290" name="L290"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;concat_proj&quot;</span><span class="p">,</span> <span class="s2">&quot;gated_concat_proj&quot;</span><span class="p">):</span>
+<a id="L291" name="L291"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">merge_proj</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<a id="L292" name="L292"></a>                    <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">in_features</span><span class="o">=</span><span class="mi">2</span> <span class="o">*</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<a id="L293" name="L293"></a>            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;gated_sum&quot;</span><span class="p">,</span> <span class="s2">&quot;gated_concat_proj&quot;</span><span class="p">):</span>
+<a id="L294" name="L294"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">gate_proj</span> <span class="o">=</span> <span class="n">registry</span><span class="o">.</span><span class="n">create</span><span class="p">(</span>
+<a id="L295" name="L295"></a>                    <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="s2">&quot;linear&quot;</span><span class="p">,</span> <span class="n">in_features</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">out_features</span><span class="o">=</span><span class="n">hidden_size</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<a id="L296" name="L296"></a>
+<a id="L297" name="L297"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_run</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mixer</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">use_cache</span><span class="p">):</span>
+<a id="L298" name="L298"></a>        <span class="c1"># fla kernels take either a packed (1, T, H) sequence with cu_seqlens, or a plain</span>
+<a id="L299" name="L299"></a>        <span class="c1"># (B, T, H) batch with a 0-1 padding mask. NormalTensor is already a plain batch</span>
+<a id="L300" name="L300"></a>        <span class="c1"># (it carries no padding), so it must not be asked to unpad.</span>
+<a id="L301" name="L301"></a>        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;isUnpadded&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+<a id="L302" name="L302"></a>            <span class="n">hidden</span><span class="p">,</span> <span class="n">cu_seqlens</span><span class="p">,</span> <span class="n">attn_mask</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">),</span> <span class="n">x</span><span class="o">.</span><span class="n">cu_seqlens_device</span><span class="p">(),</span> <span class="kc">None</span>
+<a id="L303" name="L303"></a>        <span class="k">elif</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;isPadded&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="ow">and</span> <span class="n">x</span><span class="o">.</span><span class="n">padding_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L304" name="L304"></a>            <span class="n">hidden</span><span class="p">,</span> <span class="n">cu_seqlens</span><span class="p">,</span> <span class="n">attn_mask</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">~</span><span class="n">x</span><span class="o">.</span><span class="n">padding_mask</span>
+<a id="L305" name="L305"></a>        <span class="k">else</span><span class="p">:</span>
+<a id="L306" name="L306"></a>            <span class="n">hidden</span><span class="p">,</span> <span class="n">cu_seqlens</span><span class="p">,</span> <span class="n">attn_mask</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">tensor</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;tensor&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span>
+<a id="L307" name="L307"></a>
+<a id="L308" name="L308"></a>        <span class="c1"># fla layers disagree about what they hand back (three-tuples mostly, but RWKV-7 appends</span>
+<a id="L309" name="L309"></a>        <span class="c1"># v_first), so only the first slot is contractual.</span>
+<a id="L310" name="L310"></a>        <span class="n">out</span> <span class="o">=</span> <span class="n">mixer</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="n">attn_mask</span><span class="p">,</span> <span class="n">cu_seqlens</span><span class="o">=</span><span class="n">cu_seqlens</span><span class="p">,</span>
+<a id="L311" name="L311"></a>                    <span class="n">past_key_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L312" name="L312"></a>
+<a id="L313" name="L313"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_diagnostics</span><span class="p">:</span>
+<a id="L314" name="L314"></a>            <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+<a id="L315" name="L315"></a>                <span class="n">source</span> <span class="o">=</span> <span class="n">hidden</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+<a id="L316" name="L316"></a>                <span class="n">produced</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
+<a id="L317" name="L317"></a>                <span class="bp">self</span><span class="o">.</span><span class="n">_last_logs</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+<a id="L318" name="L318"></a>                    <span class="s2">&quot;input_norm_mean&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+<a id="L319" name="L319"></a>                    <span class="s2">&quot;input_abs_max&quot;</span><span class="p">:</span> <span class="n">source</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+<a id="L320" name="L320"></a>                    <span class="s2">&quot;output_norm_mean&quot;</span><span class="p">:</span> <span class="n">produced</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+<a id="L321" name="L321"></a>                    <span class="s2">&quot;output_abs_max&quot;</span><span class="p">:</span> <span class="n">produced</span><span class="o">.</span><span class="n">abs</span><span class="p">()</span><span class="o">.</span><span class="n">max</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">(),</span>
+<a id="L322" name="L322"></a>                    <span class="s2">&quot;output_nonfinite&quot;</span><span class="p">:</span> <span class="nb">int</span><span class="p">((</span><span class="o">~</span><span class="n">torch</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">produced</span><span class="p">))</span><span class="o">.</span><span class="n">sum</span><span class="p">()),</span>
+<a id="L323" name="L323"></a>                <span class="p">})</span>
+<a id="L324" name="L324"></a>        <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;isUnpadded&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">):</span>
+<a id="L325" name="L325"></a>            <span class="n">out</span> <span class="o">=</span> <span class="n">out</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a id="L326" name="L326"></a>        <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">out</span><span class="p">)</span> <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;tensor&#39;</span><span class="p">)</span> <span class="k">else</span> <span class="n">out</span>
+<a id="L327" name="L327"></a>
+<a id="L328" name="L328"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_log</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<a id="L329" name="L329"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Architecture-specific numbers of a linear/recurrent mixer and its last forward.&quot;&quot;&quot;</span>
+<a id="L330" name="L330"></a>        <span class="n">described</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;mixer&quot;</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inner</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="s2">&quot;bidirectional&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional</span><span class="p">}</span>
+<a id="L331" name="L331"></a>        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;mode&quot;</span><span class="p">,</span> <span class="s2">&quot;num_heads&quot;</span><span class="p">,</span> <span class="s2">&quot;head_dim&quot;</span><span class="p">,</span> <span class="s2">&quot;state_size&quot;</span><span class="p">,</span> <span class="s2">&quot;use_gate&quot;</span><span class="p">,</span>
+<a id="L332" name="L332"></a>                     <span class="s2">&quot;use_short_conv&quot;</span><span class="p">,</span> <span class="s2">&quot;expand&quot;</span><span class="p">,</span> <span class="s2">&quot;expand_v&quot;</span><span class="p">,</span> <span class="s2">&quot;is_mimo&quot;</span><span class="p">):</span>
+<a id="L333" name="L333"></a>            <span class="n">value</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+<a id="L334" name="L334"></a>            <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+<a id="L335" name="L335"></a>                <span class="n">described</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+<a id="L336" name="L336"></a>        <span class="n">described</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_last_logs</span><span class="p">)</span>
+<a id="L337" name="L337"></a>        <span class="k">return</span> <span class="n">described</span>
+<a id="L338" name="L338"></a>
+<a id="L339" name="L339"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_run_paired</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
+<a id="L340" name="L340"></a><span class="w">        </span><span class="sd">&quot;&quot;&quot;Both directions in a single varlen call: [packed ; reversed packed] is one sequence,</span>
+<a id="L341" name="L341"></a><span class="sd">        described by PackedLayout.cu_pair, because reversing each segment in place leaves lengths</span>
+<a id="L342" name="L342"></a><span class="sd">        and segment order alone. One set of prep kernels, one launch chain, twice the tiles per</span>
+<a id="L343" name="L343"></a><span class="sd">        wave; the reversal index comes from the shared layout, so nothing is rebuilt here.&quot;&quot;&quot;</span>
+<a id="L344" name="L344"></a>        <span class="n">n</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+<a id="L345" name="L345"></a>        <span class="n">hidden</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="n">x</span><span class="o">.</span><span class="n">reverse</span><span class="p">()</span><span class="o">.</span><span class="n">tensor</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a id="L346" name="L346"></a>        <span class="n">out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inner</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">cu_seqlens</span><span class="o">=</span><span class="n">x</span><span class="o">.</span><span class="n">layout</span><span class="p">()</span><span class="o">.</span><span class="n">cu_pair</span><span class="p">,</span>
+<a id="L347" name="L347"></a>                         <span class="n">past_key_values</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">False</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<a id="L348" name="L348"></a>        <span class="k">return</span> <span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">out</span><span class="p">[:</span><span class="n">n</span><span class="p">]),</span>
+<a id="L349" name="L349"></a>                <span class="n">replace</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">out</span><span class="p">[</span><span class="n">n</span><span class="p">:][</span><span class="n">x</span><span class="o">.</span><span class="n">reverse_index</span><span class="p">()]))</span>
+<a id="L350" name="L350"></a>
+<a id="L351" name="L351"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">_merge</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">fwd_out</span><span class="p">,</span> <span class="n">bwd_out</span><span class="p">):</span>
+<a id="L352" name="L352"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge</span> <span class="o">==</span> <span class="s2">&quot;sum&quot;</span><span class="p">:</span>
+<a id="L353" name="L353"></a>            <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">fwd_out</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">fwd_out</span><span class="o">.</span><span class="n">tensor</span> <span class="o">+</span> <span class="n">bwd_out</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span>
+<a id="L354" name="L354"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge</span> <span class="o">==</span> <span class="s2">&quot;concat_proj&quot;</span><span class="p">:</span>
+<a id="L355" name="L355"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge_proj</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">fwd_out</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">fwd_out</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="n">bwd_out</span><span class="o">.</span><span class="n">tensor</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)))</span>
+<a id="L356" name="L356"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge</span> <span class="o">==</span> <span class="s2">&quot;gated_sum&quot;</span><span class="p">:</span>
+<a id="L357" name="L357"></a>            <span class="n">gate</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gate_proj</span><span class="p">(</span><span class="n">fwd_out</span><span class="p">)</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span>
+<a id="L358" name="L358"></a>            <span class="k">return</span> <span class="n">replace</span><span class="p">(</span><span class="n">fwd_out</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">gate</span> <span class="o">*</span> <span class="n">fwd_out</span><span class="o">.</span><span class="n">tensor</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">gate</span><span class="p">)</span> <span class="o">*</span> <span class="n">bwd_out</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span>
+<a id="L359" name="L359"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge</span> <span class="o">==</span> <span class="s2">&quot;gated_concat_proj&quot;</span><span class="p">:</span>
+<a id="L360" name="L360"></a>            <span class="n">gate</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gate_proj</span><span class="p">(</span><span class="n">fwd_out</span><span class="p">)</span><span class="o">.</span><span class="n">tensor</span><span class="p">)</span>
+<a id="L361" name="L361"></a>            <span class="n">cat</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">gate</span> <span class="o">*</span> <span class="n">fwd_out</span><span class="o">.</span><span class="n">tensor</span><span class="p">,</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">gate</span><span class="p">)</span> <span class="o">*</span> <span class="n">bwd_out</span><span class="o">.</span><span class="n">tensor</span><span class="p">],</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+<a id="L362" name="L362"></a>            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">merge_proj</span><span class="p">(</span><span class="n">replace</span><span class="p">(</span><span class="n">fwd_out</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">cat</span><span class="p">))</span>
+<a id="L363" name="L363"></a>        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown bidirectional_merge_type </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">merge</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<a id="L364" name="L364"></a>
+<a id="L365" name="L365"></a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">original_x</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_causal</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">interpretability</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+<a id="L366" name="L366"></a>                <span class="n">document_mask</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">use_cache</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<a id="L367" name="L367"></a>        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">batched</span><span class="p">:</span>
+<a id="L368" name="L368"></a>            <span class="n">packed</span> <span class="o">=</span> <span class="n">x</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;isUnpadded&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">else</span> <span class="n">x</span><span class="o">.</span><span class="n">unpad</span><span class="p">()</span>
+<a id="L369" name="L369"></a>            <span class="n">fwd_out</span><span class="p">,</span> <span class="n">bwd_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run_paired</span><span class="p">(</span><span class="n">packed</span><span class="p">)</span>
+<a id="L370" name="L370"></a>            <span class="n">merged</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge</span><span class="p">(</span><span class="n">fwd_out</span><span class="p">,</span> <span class="n">bwd_out</span><span class="p">)</span>
+<a id="L371" name="L371"></a>            <span class="k">return</span> <span class="n">merged</span> <span class="k">if</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="s1">&#39;isUnpadded&#39;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span> <span class="k">else</span> <span class="n">merged</span><span class="o">.</span><span class="n">pad</span><span class="p">()</span>
+<a id="L372" name="L372"></a>
+<a id="L373" name="L373"></a>        <span class="n">fwd_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">inner</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+<a id="L374" name="L374"></a>        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">bidirectional</span><span class="p">:</span>
+<a id="L375" name="L375"></a>            <span class="k">return</span> <span class="n">fwd_out</span>
+<a id="L376" name="L376"></a>        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_merge</span><span class="p">(</span><span class="n">fwd_out</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bwd</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_run</span><span class="p">))</span>
+<a id="L377" name="L377"></a>
+<a id="L378" name="L378"></a>
+<a id="L379" name="L379"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;gated_deltanet&quot;</span><span class="p">,</span> <span class="s2">&quot;fla&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fla&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="L380" name="L380"></a><span class="k">class</span><span class="w"> </span><span class="nc">GatedDeltaNetMixer</span><span class="p">(</span><a href="#L198"><span class="n">FLASequenceMixer</span></a><span class="p">):</span>
+<a id="L381" name="L381"></a>    <span class="n">fla_cls</span> <span class="o">=</span> <span class="n">GatedDeltaNet</span>
+<a id="L382" name="L382"></a>
+<a id="L383" name="L383"></a>
+<a id="L384" name="L384"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;kda&quot;</span><span class="p">,</span> <span class="s2">&quot;fla&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fla&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="L385" name="L385"></a><span class="k">class</span><span class="w"> </span><span class="nc">KDAMixer</span><span class="p">(</span><a href="#L198"><span class="n">FLASequenceMixer</span></a><span class="p">):</span>
+<a id="L386" name="L386"></a>    <span class="n">fla_cls</span> <span class="o">=</span> <span class="n">KimiDeltaAttention</span>
+<a id="L387" name="L387"></a>
+<a id="L388" name="L388"></a>
+<a id="L389" name="L389"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;gated_deltanet2&quot;</span><span class="p">)</span>
+<a id="L390" name="L390"></a><span class="nd">@dataclass</span>
+<a id="L391" name="L391"></a><span class="k">class</span><span class="w"> </span><span class="nc">GatedDeltaNet2Config</span><span class="p">(</span><a href="#L59"><span class="n">FLAConfig</span></a><span class="p">):</span>
+<a id="L392" name="L392"></a>    <span class="n">expand_v</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<a id="L393" name="L393"></a>    <span class="n">head_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span>
+<a id="L394" name="L394"></a>    <span class="n">num_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span>
+<a id="L395" name="L395"></a>    <span class="n">num_v_heads</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L396" name="L396"></a>    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;chunk&quot;</span><span class="p">,</span> <span class="s2">&quot;fused_recurrent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;chunk&quot;</span>
+<a id="L397" name="L397"></a>    <span class="n">use_short_conv</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L398" name="L398"></a>    <span class="n">allow_neg_eigval</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L399" name="L399"></a>    <span class="n">conv_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+<a id="L400" name="L400"></a>    <span class="n">conv_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L401" name="L401"></a>
+<a id="L402" name="L402"></a>
+<a id="L403" name="L403"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;gated_deltanet2&quot;</span><span class="p">,</span> <span class="s2">&quot;fla&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fla&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="L404" name="L404"></a><span class="k">class</span><span class="w"> </span><span class="nc">GatedDeltaNet2Mixer</span><span class="p">(</span><a href="#L198"><span class="n">FLASequenceMixer</span></a><span class="p">):</span>
+<a id="L405" name="L405"></a>    <span class="n">fla_cls</span> <span class="o">=</span> <span class="n">GatedDeltaNet2</span>
+<a id="L406" name="L406"></a>
+<a id="L407" name="L407"></a>
+<a id="L408" name="L408"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;mamba3&quot;</span><span class="p">)</span>
+<a id="L409" name="L409"></a><span class="nd">@dataclass</span>
+<a id="L410" name="L410"></a><span class="k">class</span><span class="w"> </span><span class="nc">Mamba3Config</span><span class="p">(</span><a href="#L59"><span class="n">FLAConfig</span></a><span class="p">):</span>
+<a id="L411" name="L411"></a>    <span class="c1"># num_heads is not a knob here: Mamba-3 derives it as expand * hidden_size // head_dim.</span>
+<a id="L412" name="L412"></a>    <span class="n">state_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span>
+<a id="L413" name="L413"></a>    <span class="n">expand</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span>
+<a id="L414" name="L414"></a>    <span class="n">head_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span>
+<a id="L415" name="L415"></a>    <span class="n">n_groups</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span>
+<a id="L416" name="L416"></a>    <span class="n">rope_fraction</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.5</span>
+<a id="L417" name="L417"></a>    <span class="n">dt_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span>
+<a id="L418" name="L418"></a>    <span class="n">dt_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span>
+<a id="L419" name="L419"></a>    <span class="n">dt_init_floor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span>
+<a id="L420" name="L420"></a>    <span class="n">A_floor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-4</span>
+<a id="L421" name="L421"></a>    <span class="n">is_outproj_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L422" name="L422"></a>    <span class="n">is_mimo</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L423" name="L423"></a>    <span class="n">mimo_rank</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+<a id="L424" name="L424"></a>    <span class="n">chunk_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span>
+<a id="L425" name="L425"></a>    <span class="n">use_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L426" name="L426"></a>    <span class="n">norm_eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<a id="L427" name="L427"></a>
+<a id="L428" name="L428"></a>
+<a id="L429" name="L429"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;mamba3&quot;</span><span class="p">,</span> <span class="s2">&quot;fla&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fla&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="L430" name="L430"></a><span class="k">class</span><span class="w"> </span><span class="nc">Mamba3Mixer</span><span class="p">(</span><a href="#L198"><span class="n">FLASequenceMixer</span></a><span class="p">):</span>
+<a id="L431" name="L431"></a>    <span class="n">fla_cls</span> <span class="o">=</span> <span class="n">Mamba3</span>
+<a id="L432" name="L432"></a>
+<a id="L433" name="L433"></a>
+<a id="L434" name="L434"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;gla&quot;</span><span class="p">)</span>
+<a id="L435" name="L435"></a><span class="nd">@dataclass</span>
+<a id="L436" name="L436"></a><span class="k">class</span><span class="w"> </span><span class="nc">GLAConfig</span><span class="p">(</span><a href="#L59"><span class="n">FLAConfig</span></a><span class="p">):</span>
+<a id="L437" name="L437"></a>    <span class="c1"># No head_dim: GLA splits the projected width by num_heads/num_kv_heads.</span>
+<a id="L438" name="L438"></a>    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;chunk&quot;</span><span class="p">,</span> <span class="s2">&quot;fused_recurrent&quot;</span><span class="p">,</span> <span class="s2">&quot;recurrent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;chunk&quot;</span>
+<a id="L439" name="L439"></a>    <span class="n">expand_k</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span>
+<a id="L440" name="L440"></a>    <span class="n">expand_v</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<a id="L441" name="L441"></a>    <span class="n">num_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+<a id="L442" name="L442"></a>    <span class="n">num_kv_heads</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L443" name="L443"></a>    <span class="n">feature_map</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L444" name="L444"></a>    <span class="n">use_short_conv</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L445" name="L445"></a>    <span class="n">conv_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+<a id="L446" name="L446"></a>    <span class="n">conv_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L447" name="L447"></a>    <span class="n">use_output_gate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L448" name="L448"></a>    <span class="n">gate_fn</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;swish&quot;</span><span class="p">,</span> <span class="s2">&quot;relu&quot;</span><span class="p">,</span> <span class="s2">&quot;sigmoid&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;swish&quot;</span>
+<a id="L449" name="L449"></a>    <span class="n">elementwise_affine</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L450" name="L450"></a>    <span class="n">norm_eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<a id="L451" name="L451"></a>    <span class="n">gate_logit_normalizer</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span>
+<a id="L452" name="L452"></a>    <span class="n">gate_low_rank_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span>
+<a id="L453" name="L453"></a>    <span class="n">clamp_min</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L454" name="L454"></a>    <span class="n">fuse_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L455" name="L455"></a>
+<a id="L456" name="L456"></a>
+<a id="L457" name="L457"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;gla&quot;</span><span class="p">,</span> <span class="s2">&quot;fla&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fla&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="L458" name="L458"></a><span class="k">class</span><span class="w"> </span><span class="nc">GLAMixer</span><span class="p">(</span><a href="#L198"><span class="n">FLASequenceMixer</span></a><span class="p">):</span>
+<a id="L459" name="L459"></a>    <span class="n">fla_cls</span> <span class="o">=</span> <span class="n">GatedLinearAttention</span>
+<a id="L460" name="L460"></a>
+<a id="L461" name="L461"></a>
+<a id="L462" name="L462"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;rwkv7&quot;</span><span class="p">)</span>
+<a id="L463" name="L463"></a><span class="nd">@dataclass</span>
+<a id="L464" name="L464"></a><span class="k">class</span><span class="w"> </span><span class="nc">RWKV7Config</span><span class="p">(</span><a href="#L59"><span class="n">FLAConfig</span></a><span class="p">):</span>
+<a id="L465" name="L465"></a>    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;chunk&quot;</span><span class="p">,</span> <span class="s2">&quot;fused_recurrent&quot;</span><span class="p">,</span> <span class="s2">&quot;recurrent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;chunk&quot;</span>
+<a id="L466" name="L466"></a>    <span class="n">head_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">64</span>
+<a id="L467" name="L467"></a>    <span class="n">num_heads</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L468" name="L468"></a>    <span class="n">decay_low_rank_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L469" name="L469"></a>    <span class="n">gate_low_rank_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L470" name="L470"></a>    <span class="n">a_low_rank_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L471" name="L471"></a>    <span class="n">v_low_rank_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L472" name="L472"></a>    <span class="n">value_dim</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L473" name="L473"></a>    <span class="c1"># Only steers RWKV-7&#39;s weight init (time_decay goes 0 -&gt; 1 across depth); keep it equal to</span>
+<a id="L474" name="L474"></a>    <span class="c1"># the number of layers of the model, otherwise layers get the schedule of a deeper/shallower net.</span>
+<a id="L475" name="L475"></a>    <span class="n">num_hidden_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">12</span>
+<a id="L476" name="L476"></a>    <span class="n">elementwise_affine</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L477" name="L477"></a>    <span class="n">norm_eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<a id="L478" name="L478"></a>    <span class="n">fuse_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L479" name="L479"></a>
+<a id="L480" name="L480"></a>
+<a id="L481" name="L481"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;rwkv7&quot;</span><span class="p">,</span> <span class="s2">&quot;fla&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fla&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="L482" name="L482"></a><span class="k">class</span><span class="w"> </span><span class="nc">RWKV7Mixer</span><span class="p">(</span><a href="#L198"><span class="n">FLASequenceMixer</span></a><span class="p">):</span>
+<a id="L483" name="L483"></a>    <span class="n">fla_cls</span> <span class="o">=</span> <span class="n">RWKV7Attention</span>
+<a id="L484" name="L484"></a>
+<a id="L485" name="L485"></a>
+<a id="L486" name="L486"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;delta_net&quot;</span><span class="p">)</span>
+<a id="L487" name="L487"></a><span class="nd">@dataclass</span>
+<a id="L488" name="L488"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeltaNetConfig</span><span class="p">(</span><a href="#L59"><span class="n">FLAConfig</span></a><span class="p">):</span>
+<a id="L489" name="L489"></a>    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;chunk&quot;</span><span class="p">,</span> <span class="s2">&quot;fused_recurrent&quot;</span><span class="p">,</span> <span class="s2">&quot;recurrent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;chunk&quot;</span>
+<a id="L490" name="L490"></a>    <span class="n">expand_k</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<a id="L491" name="L491"></a>    <span class="n">expand_v</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span>
+<a id="L492" name="L492"></a>    <span class="n">num_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+<a id="L493" name="L493"></a>    <span class="n">use_beta</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L494" name="L494"></a>    <span class="n">use_gate</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L495" name="L495"></a>    <span class="n">use_short_conv</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L496" name="L496"></a>    <span class="n">conv_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+<a id="L497" name="L497"></a>    <span class="n">conv_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L498" name="L498"></a>    <span class="n">allow_neg_eigval</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L499" name="L499"></a>    <span class="n">qk_activation</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;silu&quot;</span><span class="p">,</span> <span class="s2">&quot;relu&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;silu&quot;</span>
+<a id="L500" name="L500"></a>    <span class="n">qk_norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;l2&quot;</span><span class="p">,</span> <span class="s2">&quot;softmax&quot;</span><span class="p">,</span> <span class="s2">&quot;none&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;l2&quot;</span>
+<a id="L501" name="L501"></a>    <span class="n">norm_eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<a id="L502" name="L502"></a>
+<a id="L503" name="L503"></a>
+<a id="L504" name="L504"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;delta_net&quot;</span><span class="p">,</span> <span class="s2">&quot;fla&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fla&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="L505" name="L505"></a><span class="k">class</span><span class="w"> </span><span class="nc">DeltaNetMixer</span><span class="p">(</span><a href="#L198"><span class="n">FLASequenceMixer</span></a><span class="p">):</span>
+<a id="L506" name="L506"></a>    <span class="n">fla_cls</span> <span class="o">=</span> <span class="n">DeltaNet</span>
+<a id="L507" name="L507"></a>
+<a id="L508" name="L508"></a>
+<a id="L509" name="L509"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register_dataclass</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;hgrn2&quot;</span><span class="p">)</span>
+<a id="L510" name="L510"></a><span class="nd">@dataclass</span>
+<a id="L511" name="L511"></a><span class="k">class</span><span class="w"> </span><span class="nc">HGRN2Config</span><span class="p">(</span><a href="#L59"><span class="n">FLAConfig</span></a><span class="p">):</span>
+<a id="L512" name="L512"></a>    <span class="n">mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;chunk&quot;</span><span class="p">,</span> <span class="s2">&quot;fused_recurrent&quot;</span><span class="p">,</span> <span class="s2">&quot;recurrent&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;chunk&quot;</span>
+<a id="L513" name="L513"></a>    <span class="n">num_heads</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+<a id="L514" name="L514"></a>    <span class="n">expand_ratio</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">128</span>
+<a id="L515" name="L515"></a>    <span class="n">use_short_conv</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L516" name="L516"></a>    <span class="n">conv_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span>
+<a id="L517" name="L517"></a>    <span class="n">conv_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+<a id="L518" name="L518"></a>    <span class="n">elementwise_affine</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+<a id="L519" name="L519"></a>    <span class="n">norm_eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-5</span>
+<a id="L520" name="L520"></a>
+<a id="L521" name="L521"></a>
+<a id="L522" name="L522"></a><span class="nd">@registry</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="s2">&quot;sequence_mixer&quot;</span><span class="p">,</span> <span class="s2">&quot;hgrn2&quot;</span><span class="p">,</span> <span class="s2">&quot;fla&quot;</span><span class="p">,</span> <span class="n">requires</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;fla&quot;</span><span class="p">],</span> <span class="n">priority</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<a id="L523" name="L523"></a><span class="k">class</span><span class="w"> </span><span class="nc">HGRN2Mixer</span><span class="p">(</span><a href="#L198"><span class="n">FLASequenceMixer</span></a><span class="p">):</span>
+<a id="L524" name="L524"></a>    <span class="n">fla_cls</span> <span class="o">=</span> <span class="n">HGRN2Attention</span>
+</code></pre></div></td></tr></table></div>
+</div>  </main>
+</div>
+<footer class="site-footer">
+  <span>Matformer documentation</span>
+  <span>Built 2026-11-24 23:40 from <code>documentation/src</code></span>
+</footer>
+</body>
+</html>
