@@ -26,6 +26,21 @@ def _configs(spec):
     return configs
 
 
+def _chat_spec(spec):
+    """The chat-template block a batch run reads from the job spec, or None when it is off."""
+    if not spec.get("use_chat_template"):
+        return None
+    return {"use_chat_template": True,
+            "chat_column": spec.get("chat_column"),
+            "role_column": spec.get("role_column"),
+            "system_prompt": spec.get("system_prompt"),
+            "prompt_prefix": spec.get("prompt_prefix"),
+            "add_generation_prompt": bool(spec.get("add_generation_prompt", False)),
+            "continue_final_message": bool(spec.get("continue_final_message", False)),
+            "chat_options": spec.get("chat_options"),
+            "store_template_in_input_ids": bool(spec.get("store_template_in_input_ids", False))}
+
+
 def _overrides(spec, task):
     overrides = list(spec.get("overrides") or [])
     if task == "generation":
@@ -35,6 +50,12 @@ def _overrides(spec, task):
             overrides.append(f"task.generation.temperature={float(spec['temperature'])}")
         if spec.get("mode") != "text":
             overrides.append("task.generation.stream=false")
+    if spec.get("use_chat_template"):
+        # The dataset renders the chat prompt; telling the task strips that prompt from the reply
+        # so the recorded annotation is the answer only. The template itself is the model's own.
+        overrides.append(f"task.{task}.use_chat_template=true")
+        if spec.get("add_generation_prompt"):
+            overrides.append(f"task.{task}.add_generation_prompt=true")
     return overrides
 
 
@@ -111,7 +132,7 @@ def execute(spec: dict) -> None:
         column=spec.get("column") or "text", label=spec.get("label") or None,
         limit=spec.get("limit") or None, batch_size=spec.get("batch_size") or None,
         output_format=spec.get("format") or None, keys_only=bool(spec.get("keys_only")),
-        mdat_dataset=spec.get("dataset") or None)
+        mdat_dataset=spec.get("dataset") or None, chat=_chat_spec(spec))
     print(f"annotation complete: {summary.get('rows')} rows -> {summary.get('output')}", flush=True)
     for key, value in summary.items():
         if key not in ("rows", "output"):

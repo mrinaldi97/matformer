@@ -20,6 +20,14 @@ class GenerationTaskConfig(TaskConfig):
     no_repeat_ngram_size: int           = 0
     do_sample:            bool          = True
     prompt:               Optional[str] = None
+    # Chat template: off by default so plain continuation keeps working unchanged. When on and the
+    # model has a template, an interactive request is one turn of a conversation and a batch row is
+    # its chat-formatted prompt. The template owns bos/eos, so no boundary token is added twice.
+    use_chat_template:    bool          = False
+    system_prompt:        Optional[str] = None   # prepended as a system message (interactive + batch)
+    add_generation_prompt: bool         = True   # end the prompt with the assistant header
+    continue_final_message: bool        = False  # keep the last turn open so the model continues it
+    chat_options:         Optional[dict] = None  # template toggles, ex. {"enable_thinking": false}
     stream:               bool          = True   # print tokens as they are produced (interactive)
     keep_context:         bool          = True   # interactive: every request continues the previous ones
     max_context_tokens:   Optional[int] = None   # left-trim of the kept context, default: the model window
@@ -60,6 +68,9 @@ class GenerationTask(MatformerTask):
     def reset(self):
         self.context = None
         self.kv_state = None
+        self.messages = []          # committed chat turns (chat template mode only)
+        self._pending_user = None   # the user turn whose reply is being generated
+        self.rendered_prompt = None  # the exact templated prompt last sent (shown/hidden by the GUI)
 
     @property
     def context_tokens(self) -> int:
@@ -91,14 +102,64 @@ class GenerationTask(MatformerTask):
         return int(window) + self.config.max_new_tokens
 
     def set_system_prompt(self, text) -> str:
+        """Set/clear the system message prepended to a conversation (interactive and batch)."""
         self.system_prompt = text or None
-        return ("system prompt stored, but no chat template is applied yet: generation is "
-                "unchanged" if text else "system prompt cleared")
+        return f"system prompt {'cleared' if not text else 'set'}"
 
     def set_chat_template(self, text) -> str:
-        self.chat_template = (text or '').strip() or None
-        return (f"chat template '{self.chat_template}' stored, but applying it to the context "
-                "is not implemented yet" if self.chat_template else "chat template cleared")
+        """off/none clears use of the template; on/default uses the model's own; anything else is an
+        inline Jinja source or a .jinja path, installed onto the model as an override."""
+        value = (text or '').strip()
+        if value.lower() in ('', 'off', 'none', 'false'):
+            self.config.use_chat_template = False
+            return "chat template off: generation stays plain"
+        if value.lower() in ('on', 'default', 'true'):
+            self.config.use_chat_template = True
+            has = bool(getattr(self.model, 'chat_template', None))
+            return f"chat template on (model template: {'available' if has else 'missing'})"
+        from pathlib import Path
+        source = Path(value).read_text(encoding='utf-8') if Path(value).is_file() else value
+        self.model.set_chat_template(source)
+        self.config.use_chat_template = True
+        return "chat template override applied"
+
+    # --- chat template turns ----------------------------------------------------------------
+    @property
+    def chat_mode(self) -> bool:
+        """True when a conversation is rendered through the model's template this run."""
+        return bool(self.config.use_chat_template and getattr(self.model, 'chat_template', None))
+
+    def _system_prompt(self):
+        return getattr(self, 'system_prompt', None) or self.config.system_prompt
+
+    def _chat_messages(self, user_text=None):
+        """The conversation so far as {role, content} dicts: optional system prompt, committed
+        turns, and (when given) the new user turn not yet committed."""
+        messages = []
+        if self._system_prompt():
+            messages.append({"role": "system", "content": self._system_prompt()})
+        messages.extend(self.messages)
+        if user_text is not None:
+            messages.append({"role": "user", "content": str(user_text)})
+        return messages
+
+    def build_chat_batch(self, texts):
+        """One interactive turn: history + this user text rendered by the template. The text is
+        remembered so process_batch can commit the exchange once the reply is generated."""
+        self.ensure_began()   # reset() initialises the chat buffers on first use
+        template = self.model.chat_template
+        messages = self._chat_messages(texts[0])
+        options = self.config.chat_options or None
+        self.rendered_prompt = template.render(
+            messages, add_generation_prompt=self.config.add_generation_prompt,
+            continue_final_message=self.config.continue_final_message, options=options)
+        ids = template.encode(
+            messages, self.model.tokenizer.encode_tokens,
+            add_generation_prompt=self.config.add_generation_prompt,
+            continue_final_message=self.config.continue_final_message, options=options)
+        self._pending_user = str(texts[0])
+        pad = getattr(self.model.tokenizer.config, 'pad_token_id', None) or 0
+        return PaddedTensor.from_rows([torch.tensor(ids, dtype=torch.long)], pad_value=pad)
 
     def _with_context(self, batch):
         """Rebuild the batch with the kept context in front of every row."""
@@ -126,7 +187,9 @@ class GenerationTask(MatformerTask):
         return batch, state
 
     def process_batch(self, batch):
-        keeping = self.config.keep_context and self.interactive
+        # In chat mode the conversation lives in self.messages, so the token-context accumulator is
+        # off: each turn is re-rendered by the template. Plain mode keeps the old behaviour.
+        keeping = self.config.keep_context and self.interactive and not self.chat_mode
         caching = keeping and self.config.use_cache
         if caching:
             batch, self.kv_state = self._continue(batch)
@@ -164,8 +227,25 @@ class GenerationTask(MatformerTask):
             window = self.window()
             self.context = whole[-window:] if window > 0 and whole.numel() > window else whole
             self.status = f"ctx {self.context_tokens} tok"
-        rows = ids[:, prompt_len:] if keeping else ids
-        texts = [self.model.tokenizer.decode(row.tolist()) for row in rows]
+        rows = ids[:, prompt_len:] if (keeping or self.chat_mode) else ids
+        # Never show the stop token itself: trim trailing eos/pad ids from the answer before decoding.
+        eos = getattr(self.model.tokenizer.config, 'eos_token_id', None)
+        pad = getattr(self.model.tokenizer.config, 'pad_token_id', None)
+        stops = {token for token in (eos, pad) if token is not None}
+
+        def _visible(row):
+            seq = row.tolist()
+            while seq and seq[-1] in stops:
+                seq.pop()
+            return seq
+        texts = [self.model.tokenizer.decode(_visible(row)) for row in rows]
+        if self.chat_mode and self.interactive and self._pending_user is not None:
+            # Commit the exchange so the next turn sees it. Only the assistant scoring is kept out;
+            # the user text and the reply are what a conversation is made of.
+            self.messages.append({"role": "user", "content": self._pending_user})
+            self.messages.append({"role": "assistant", "content": texts[0] if texts else ""})
+            self.status = f"chat: {len(self.messages)} messages"
+            self._pending_user = None
         if detailed:
             return batch, [self._candidates(row, scores[i], texts[i])
                            for i, row in enumerate(ids[:, prompt_len:])]

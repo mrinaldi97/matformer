@@ -169,6 +169,7 @@ class MatformerModelWrapper(MatformerModule, PluginManager):
         assert has_model or has_store, "Configs need a 'model' or an 'activation_store' section."
         self.cache = CachedStuff()
         self._models = {}   #Links to virtual/live
+        self.chat_template = None   # the model's Jinja chat template, set from the holder at load
 
         self.activation_store = activation_store    
         if has_store and self.activation_store is None:
@@ -593,6 +594,31 @@ class MatformerModelWrapper(MatformerModule, PluginManager):
         self.model.tokenizer = self.tokenizer = tokenizer
         if hasattr(self.configs, 'model'):
             self.configs.model.tokenizer = tokenizer.config
+
+    # --- chat template: the framework's own Jinja, never the tokenizer's apply_chat_template ----
+    def attach_chat_template(self, source):
+        """Build (or drop) the chat template from a raw Jinja source, injecting this tokenizer's
+        special tokens. Called at load time with what the checkpoint holder found; a None or broken
+        template leaves the model with plain, untemplated generation exactly as before."""
+        self.chat_template = None
+        if not source or not str(source).strip():
+            return None
+        try:
+            from matformer.utils.chat_template import ChatTemplate
+            special = self.tokenizer.chat_specials() if getattr(self, 'tokenizer', None) else {}
+            self.chat_template = ChatTemplate(source, special=special)
+        except Exception as error:
+            warnings.warn(f"Could not build a chat template ({error}): generation stays untemplated.")
+        # Mirror it onto the tokenizer: datasets and tasks reach the template through the tokenizer
+        # they already hold, so no one needs the wrapper to apply a chat format.
+        if getattr(self, 'tokenizer', None) is not None:
+            self.tokenizer.chat_template = self.chat_template
+        return self.chat_template
+
+    def set_chat_template(self, source) -> str:
+        """Runtime override: load a template from an inline Jinja string, or clear it with ''."""
+        self.attach_chat_template(source or None)
+        return f"chat template {'cleared' if self.chat_template is None else 'set'}"
         
 
 def load_model(path=None, checkpoint_holder=None, weights_definition=None, configs=None,
@@ -682,6 +708,17 @@ def load_model(path=None, checkpoint_holder=None, weights_definition=None, confi
         weights = checkpoint_holder.get_weights(
             weights_definition, wanted=model._mappings if virtual_only else None)
         missing, unexpected = model.load_stable_state_dict(weights)
+        # The chat template comes from the holder's own files, never the HF tokenizer, and is read
+        # before release() drops the .ckpt that may embed it. A config-declared one wins if present.
+        declared = getattr(getattr(configs, 'tokenizer', None), 'chat_template', None)
+        if declared and not declared.strip().endswith('.jinja'):
+            source = declared                       # an inline Jinja template in the config
+        elif declared:                              # a path to a .jinja file
+            from pathlib import Path
+            source = Path(declared).read_text(encoding="utf-8") if Path(declared).is_file() else None
+        else:
+            source = checkpoint_holder.get_chat_template()
+        model.attach_chat_template(source)
         memory_report(model)
         checkpoint_holder.release()
        

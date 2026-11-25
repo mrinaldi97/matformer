@@ -256,10 +256,22 @@ class TaskSession:
     def wants_stream(self) -> bool:
         return bool(self.task_config.get('stream', False))
 
-    def feed(self, text, stream=False, save=False, streamer=None, **kwargs) -> list:
+    def batch_for(self, text):
+        """The batch one interactive text becomes: a chat turn when the active task renders one
+        through the model's template, otherwise the plain tokenized prompt."""
+        task = self.task
+        build = getattr(task, 'build_chat_batch', None)
+        if getattr(task, 'chat_mode', False) and build is not None:
+            return build([text])
+        return self.batch([text])
+
+    def feed(self, text, stream=False, save=False, streamer=None, batch=None, **kwargs) -> list:
         """Run one text through the task. Pass a custom `streamer(next_tokens, step)` to receive
-        the tokens somewhere other than stdout (GUI, server): the same code path the TUI uses."""
-        batch = self.batch([text])
+        the tokens somewhere other than stdout (GUI, server): the same code path the TUI uses.
+        `batch` lets a caller that already built it (for the stream decoder) reuse it, so a chat
+        turn is rendered exactly once."""
+        if batch is None:
+            batch = self.batch_for(text)
         streamer = streamer or (self.streamer(batch) if stream else None)
         started = time.perf_counter()
         rows = split_result(self.task(batch, save=save, stream_callback=streamer, **kwargs), len(batch))
@@ -339,7 +351,7 @@ class TaskSession:
 
     def annotate(self, input_path, output_path=None, column='text', label=None,
                  limit=None, batch_size=None, output_format=None, keys_only=False,
-                 mdat_dataset=None) -> dict:
+                 mdat_dataset=None, chat=None) -> dict:
         suffix = os.path.splitext(input_path)[1].lstrip('.').lower()
         is_mdat = os.path.isdir(input_path) or suffix == 'mdat'
         if '::' in input_path:
@@ -373,6 +385,20 @@ class TaskSession:
                        'batch_size': batch_size or rules.batch_size, 'head_samples': limit}
         if file_format == 'mdat':
             data_config['mdat_dataset'] = mdat_dataset
+        if chat and chat.get('use_chat_template'):
+            # Batch annotation with a chat template: the lazy dataset renders each row (chat
+            # column, or text + optional role) through the model's own template before feeding it.
+            data_config.update({
+                'use_chat_template': True,
+                'chat_column': chat.get('chat_column'),
+                'role_column': chat.get('role_column'),
+                'system_prompt': chat.get('system_prompt'),
+                'prompt_prefix': chat.get('prompt_prefix'),
+                'add_generation_prompt': bool(chat.get('add_generation_prompt', False)),
+                'continue_final_message': bool(chat.get('continue_final_message', False)),
+                'chat_options': chat.get('chat_options'),
+                'store_template_in_input_ids': bool(chat.get('store_template_in_input_ids', False)),
+            })
         self.configs.import_config({'data': [data_config]})
         for path, value in {'ref_data': 'annotate', 'save_batch': True,
                             'save_attributes': True, 'save_probs': True, 'flatten_dict': True}.items():

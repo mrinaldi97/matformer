@@ -38,6 +38,7 @@ sections:
       - tasks/index
       - tasks/built-in-tasks
       - tasks/interactive-session
+      - tasks/chat-templates
   - title: Models
     pages:
       - loading/checkpoint-holder

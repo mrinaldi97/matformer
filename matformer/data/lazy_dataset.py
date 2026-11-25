@@ -6,6 +6,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple
 from torch.utils.data import DataLoader, IterableDataset  
 from matformer.matformer_tokenizers import MatformerTokenizer
 from matformer.dataclasses.data_dataclasses import DataConfig, IGNORE_INDEX
+from matformer.utils import env_variables as env
 
 
 DEFAULT_MISSING_LABEL_VALUES = frozenset({"", "null", "none", "nan", "n/a", "na", "nil"})
@@ -568,6 +569,67 @@ class LazyIterableDataset(IterableDataset):
             previous_word = word_idx
         return input_ids, aligned
 
+    def _chat_template(self):
+        """The model's ChatTemplate when this dataset was asked to use one, else None."""
+        if not getattr(self.data_config, "use_chat_template", False):
+            return None
+        template = getattr(self.tokenizer, "chat_template", None)
+        if template is None:
+            raise ValueError(
+                f"use_chat_template is on, but the model of '{self.data_config.data_root}' has no "
+                f"chat template: load a chat checkpoint, or point tokenizer.chat_template at one.")
+        return template
+
+    def _row_role(self, raw_role: Any) -> str:
+        """A row's speaker: the value in the role column, or 'user' when it is missing. The silent
+        default is what makes a plain text + optional role dataset just work; opt in to a warning
+        per missing value with MISSING_TEMPLATE_ROLE_WARNING=TRUE."""
+        if raw_role is None or (isinstance(raw_role, str) and not raw_role.strip()):
+            if env.template_role_warning:
+                print(f"WARNING: missing role in '{self.data_config.data_root}', defaulting to 'user'.")
+            return "user"
+        return str(raw_role)
+
+    def _row_messages(self, item: Dict[str, Any]) -> List[dict]:
+        """Turn one raw row into the list of {role, content} dicts the chat template consumes.
+        Three shapes, in priority order: a multi-turn 'chat' column, a single text with an optional
+        role column, and a bare text column (always 'user'). A system prompt and/or a fixed prompt
+        prefix are cheap additions on top, useful for quick question-answering."""
+        cfg = self.data_config
+        messages: List[dict] = []
+        if cfg.chat_column:
+            turns = item.get(cfg.chat_column)
+            if not isinstance(turns, (list, tuple)):
+                raise ValueError(
+                    f"'{cfg.chat_column}' must hold a list of {{role, content}} dicts, got "
+                    f"{type(turns).__name__} in '{cfg.data_root}'.")
+            for turn in turns:
+                messages.append({"role": self._row_role(turn.get("role")),
+                                 "content": turn.get("content", "")})
+        else:
+            text = item.get(cfg.text_column, "")
+            if cfg.prompt_prefix:
+                text = f"{cfg.prompt_prefix}{text}"
+            role = self._row_role(item.get(cfg.role_column)) if cfg.role_column else "user"
+            messages.append({"role": role, "content": text})
+        if cfg.system_prompt:
+            messages.insert(0, {"role": "system", "content": cfg.system_prompt})
+        return messages
+
+    def _encode_chat(self, item: Dict[str, Any], template) -> List[int]:
+        """Token ids for one templated row. The split path (default) tokenizes the content on its
+        own and glues the template's cached segments around it; store_template_in_input_ids fuses
+        them by tokenizing the whole rendered string, which is the exact HF-compatible tokenization
+        (control tokens can merge with the content across boundaries)."""
+        cfg = self.data_config
+        messages = self._row_messages(item)
+        tokenize = self.tokenizer.encode_tokens
+        kwargs = dict(add_generation_prompt=cfg.add_generation_prompt,
+                      continue_final_message=cfg.continue_final_message,
+                      options=cfg.chat_options or None)
+        render = template.encode_whole if cfg.store_template_in_input_ids else template.encode
+        return list(render(messages, tokenize, **kwargs))
+
     def _process_item(self, raw_item: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         """
             Tokenizes (if requested) and packages a raw dataset row into the dict
@@ -609,10 +671,16 @@ class LazyIterableDataset(IterableDataset):
                     return None
             if cfg.tokenize:
                 assert self.tokenizer is not None, "A tokenizer must be provided when tokenize=True."
-                tok_out = self.tokenizer.encode(
-                    item[cfg.text_column], add_eos=cfg.add_eos, add_bos=cfg.add_bos, max_length=getattr(cfg,"max_seq_len",None)
-                )
-                item[cfg.input_ids_column] = tok_out["input_ids"][0]
+                template = self._chat_template()
+                if template is not None:
+                    # The chat template owns bos/eos: add_bos/add_eos are deliberately ignored here,
+                    # so a wrapped model is never fed a doubled boundary token.
+                    item[cfg.input_ids_column] = self._encode_chat(item, template)
+                else:
+                    tok_out = self.tokenizer.encode(
+                        item[cfg.text_column], add_eos=cfg.add_eos, add_bos=cfg.add_bos,
+                        max_length=getattr(cfg, "max_seq_len", None))
+                    item[cfg.input_ids_column] = tok_out["input_ids"][0]
             input_ids = item.get(cfg.input_ids_column)
 
         if input_ids is None:

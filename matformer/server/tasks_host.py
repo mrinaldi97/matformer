@@ -115,12 +115,16 @@ def task_state(conn, p):
 
 def _state_dict():
     s = STATE["session"]
+    template = getattr(s.model, "chat_template", None) if s else None
     return {"loaded": s is not None, "source": STATE["source"],
             "task": s.task_name if s else None,
             "tasks": list(s.configs.task.list_configs()) if s else [],
             "sweep": s.configs.active_sweep.name if s and s.configs.active_sweep else None,
             "sweeps": len(STATE["configs"].sweep_points()) if STATE["configs"] is not None else 0,
-            "device": str(s.model.device) if s else None}
+            "device": str(s.model.device) if s else None,
+            # Chat template at a glance: whether the model has one, and the toggles it exposes.
+            "chat_template": bool(template),
+            "chat_features": template.features if template else []}
 
 
 @rpc("task.sweeps")
@@ -235,13 +239,13 @@ def task_feed(conn, p):
             conn.push("token", {"t": delta, "task": s.task_name})
 
     from matformer.tasks.session import StreamDecoder
-    batch = s.batch([p["text"]])
+    batch = s.batch_for(p["text"])
     emit.decoder = StreamDecoder(s.tokenizer, batch.pad().pad_right().tensor[0].tolist(),
                                  getattr(s.tokenizer.config, "eos_token_id", None))
     try:
         with LOCK:
             rows = s.feed(p["text"], stream=stream, save=p.get("save", False),
-                          streamer=emit if stream else None)
+                          streamer=emit if stream else None, batch=batch)
     except TaskStopped:
         return {"reason": "stopped", "status": s.status()}
     LAST["rows"], LAST["task"] = rows, s.task_name
@@ -252,6 +256,10 @@ def task_feed(conn, p):
     first = rows[0] if rows and isinstance(rows[0], dict) else {}
     return {"rendered": rendered, "status": s.status(), "reason": "done",
             "presentation": getattr(s.task_config, "presentation", "probs"),
+            # Chat template visibility: always tell whether it was applied and, when it was, hand
+            # back the exact prompt that reached the model so a UI can show/hide it.
+            "used_chat_template": bool(getattr(s.task, "chat_mode", False)),
+            "chat_prompt": getattr(s.task, "rendered_prompt", None),
             "token_level": getattr(s.task, "token_level", None),
             "cells": _cells(s, rows), "tokens": first.get("tokens"),
             "positions": first.get("positions"), "sentence": first.get("sentence"),
@@ -426,7 +434,7 @@ def task_annotate(conn, p):
                                      limit=p.get("limit"), batch_size=p.get("batch_size"),
                                      output_format=p.get("format"),
                                      keys_only=p.get("keys_only", False),
-                                     mdat_dataset=p.get("dataset"))
+                                     mdat_dataset=p.get("dataset"), chat=p.get("chat"))
     return {"output": summary.pop("output", None), "rows": summary.pop("rows", None),
             "summary": summary}
 
@@ -452,6 +460,31 @@ def model_internals(conn, p):
     if attn:
         rows.append({"what": "attention", "name": attn, "detail": "via MATFORMER_ATTENTION_NORMAL"})
     return Table(["what", "name", "detail"], rows)
+
+
+@rpc("task.chat")
+def task_chat(conn, p):
+    """Chat template state of the active task: whether one is available, which toggles the template
+    reads, and the current use/system settings. Read with no params; set any of use/system/options
+    by passing them. This is the one place a GUI, console or agent learns how to drive the template."""
+    from matformer.utils.table import Table
+    s = session()
+    template = getattr(s.model, "chat_template", None)
+    # All three go through the config so they survive the task being re-instantiated by a later
+    # configure(); the generation task reads system_prompt from its config every turn.
+    if "use" in p:
+        s.configure("use_chat_template", bool(p["use"]))
+    if "options" in p:
+        s.configure("chat_options", p["options"] or None)
+    if "system" in p:
+        s.configure("system_prompt", p["system"] or None)
+    cfg = s.task.config
+    return {"available": bool(template),
+            "features": template.features if template else [],
+            "use": bool(getattr(cfg, "use_chat_template", False)),
+            "system_prompt": getattr(cfg, "system_prompt", None) or getattr(s.task, "system_prompt", None),
+            "options": getattr(cfg, "chat_options", None),
+            "add_generation_prompt": getattr(cfg, "add_generation_prompt", None)}
 
 
 @rpc("task.info")

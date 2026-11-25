@@ -263,17 +263,26 @@ class UnpaddedTensor(TensorDC):
         return self
 
     def pad(self, seq_len: Optional[int] = None, pad_token=0) -> "PaddedTensor":
-        """Scatter packed tokens back into a (batch, seq_len) padded layout. `pad_token` fills the main tensor's pad slots; attributes are always zero-filled."""
+        """Scatter packed tokens back into a (batch, seq_len) padded layout. `pad_token` fills the main tensor's pad slots; attributes are always zero-filled. A target narrower than original_seq_len recomputes the scatter positions from the packed lengths, so a short batch is not padded to the model window."""
         target_seq_len = seq_len if seq_len is not None else self.original_seq_len
+        if target_seq_len == self.original_seq_len:
+            indices = self.indices
+        else:
+            lengths = (self.cu_seqlens[1:] - self.cu_seqlens[:-1]).tolist()
+            step = target_seq_len
+            indices = torch.cat([
+                torch.arange(row * step, row * step + length, dtype=torch.long,
+                             device=self.indices.device)
+                for row, length in enumerate(lengths)]) if lengths else self.indices
         n = self.batch_size * target_seq_len
 
         def _scatter(v, fill=0):
             out = v.new_full((n, *v.shape[1:]), fill)
-            out[self.indices] = v
+            out[indices] = v
             return rearrange(out, '(b s) ... -> b s ...', b=self.batch_size, s=target_seq_len)
 
         padding_mask_flat = torch.ones(n, dtype=torch.bool, device=self.indices.device)
-        padding_mask_flat[self.indices] = False
+        padding_mask_flat[indices] = False
 
         return PaddedTensor(
             tensor=_scatter(self.tensor, pad_token),

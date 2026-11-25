@@ -142,7 +142,13 @@ class GenerationMixin:
         """
         self.eval()
 
-        tok_cfg = getattr(self.config, "tokenizer_config", None)
+        # Special-token ids come from the tokenizer config linked to the model. Older code looked
+        # only at 'tokenizer_config', which is never set, so generate() never learned the eos token
+        # and ran to max_new_tokens even past the end of the answer. Fall back through the linked
+        # 'tokenizer' section and then the attached tokenizer instance.
+        tok_cfg = getattr(self.config, "tokenizer_config", None) or getattr(self.config, "tokenizer", None)
+        if tok_cfg is None and getattr(self, "tokenizer", None) is not None:
+            tok_cfg = getattr(self.tokenizer, "config", None)
 
         def _resolve(name, override):
             if override is not None:
@@ -161,7 +167,14 @@ class GenerationMixin:
             )
         else:
             if hasattr(input_ids, "pad"):           # TensorDC → PaddedTensor
-                input_ids = input_ids.pad().pad_right().tensor
+                # Pad to the batch's longest real row, not to original_seq_len: a dataset inherits
+                # the model window (e.g. 128k) as padding length, and padding a short QA batch to
+                # it makes the lm_head allocate gigabytes for tokens that are masked out anyway.
+                target = getattr(input_ids, "max_seq_len", None)
+                if getattr(input_ids, "isUnpadded", False) and target:
+                    input_ids = input_ids.pad(seq_len=target).pad_right().tensor
+                else:
+                    input_ids = input_ids.pad().pad_right().tensor
             if not isinstance(input_ids, torch.Tensor):
                 input_ids = torch.tensor(input_ids, dtype=torch.long)
             if input_ids.dim() == 1:

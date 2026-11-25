@@ -34,6 +34,7 @@ class TaskPage(Page):
         self.task_type = spec.get("task_type", "generation")
         self.busy, self.live, self._switched = False, None, False
         self._cells, self._stream_mark = [], None
+        self.show_prompt = tk.BooleanVar(value=False)   # show the exact chat-templated prompt
         self._watchdog, self._release_job = None, None
         self._info_done = False
         self._has_model = False
@@ -83,6 +84,11 @@ class TaskPage(Page):
         ttk.Button(self.actions, text="Annotate…", style="Ghost.TButton",
                    command=lambda: WizardDialog(self.app, "annotate")
                    ).pack(side="left", padx=2)
+        self._chat_button = ttk.Menubutton(self.actions, text="Chat", style="Ghost.TButton")
+        self._chat_menu = tk.Menu(self._chat_button, tearoff=0)
+        self._chat_button["menu"] = self._chat_menu
+        self._chat_button.pack(side="left", padx=2)
+        self._chat_button.bind("<Button-1>", lambda e: self._refresh_chat_menu())
         export = ttk.Menubutton(self.actions, text="Export", style="Ghost.TButton")
         menu = tk.Menu(export, tearoff=0)
         menu.add_command(label="Transcript…", command=self.export_transcript)
@@ -132,9 +138,49 @@ class TaskPage(Page):
 
     def chat_template(self):
         from tkinter.simpledialog import askstring
-        value = askstring("Chat template", "Template:", parent=self)
+        value = askstring("Chat template", "Template (on/off, or inline Jinja/.jinja path):",
+                          parent=self)
         if value is not None:
             self._do("task.template", value)
+
+    def _refresh_chat_menu(self):
+        """Populate the Chat menu from the server: whether the model has a template, the toggles it
+        reads (enable_thinking, ...), and the current use/system settings. Kept out of the way when
+        unused: a model without a template simply disables the button."""
+        def got(state):
+            if not state or isinstance(state, tuple):
+                return
+            menu = self._chat_menu
+            menu.delete(0, "end")
+            available = state.get("available")
+            self._chat_button.configure(state="normal" if available else "disabled")
+            if not available:
+                menu.add_command(label="no chat template for this model", state="disabled")
+                return
+            use = state.get("use")
+            menu.add_command(label=f"{'✓ ' if use else '   '}Use chat template",
+                             command=lambda: self._chat_set({"use": not use}))
+            menu.add_command(label="System prompt…", command=self.system_prompt)
+            menu.add_separator()
+            self.show_prompt.set(bool(self.show_prompt.get()))
+            menu.add_checkbutton(label="Show templated prompt", variable=self.show_prompt)
+            features = state.get("features") or []
+            if features:
+                menu.add_separator()
+                options = state.get("options") or {}
+                for feature in features:
+                    var = tk.BooleanVar(value=bool(options.get(feature, True)))
+                    menu.add_checkbutton(
+                        label=f"Template: {feature}", variable=var,
+                        command=lambda f=feature, v=var, o=dict(options): self._chat_set(
+                            {"options": {**o, f: v.get()}}))
+        self.server().call("task.chat", None, got)
+
+    def _chat_set(self, payload):
+        def done(result):
+            if result and not isinstance(result, tuple):
+                self.app.toast("chat settings updated")
+        self.server().call("task.chat", payload, done)
 
     def _pick(self, entry, exts):
         p = pick(self.app, self, "", exts, None, "Choose a file on the server")
@@ -398,6 +444,9 @@ class TaskPage(Page):
             self.view.put(r["rendered"] + "\n")
         if r.get("reason") == "stopped":
             self._stream_mark = None    # keep the partial text the user watched arrive
+        if r.get("used_chat_template") and self.show_prompt.get() and r.get("chat_prompt"):
+            # The exact prompt the model saw, on demand: the same toggle the Chat menu exposes.
+            self.view.put("  ⟪chat template⟫ " + r["chat_prompt"].replace("\n", "⏎") + "\n", "meta")
         if r.get("status"):
             self.view.put(f"  {r['status']}\n\n", "status")
         if r.get("reason") == "stopped":

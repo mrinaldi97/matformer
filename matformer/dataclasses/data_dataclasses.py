@@ -55,3 +55,14 @@ class LazyDataModuleConfig(DataConfig):
     scan_labels: Optional[bool] = None         # None=automatic, True=always full pass, False=never (unless mandatory)
     missing_label_values: Optional[List[str]] = None  # extra strings treated as "no label" (null, none, NaN, ... are always included)
     cache_in_memory: bool = False              # still to be implemented, low priority
+    # Chat template (off by default: rows stay plain text unless the model is a chat model and the
+    # run asks for it). The template itself comes from the tokenizer's checkpoint, never from HF.
+    use_chat_template: bool = False
+    chat_column: Optional[str] = None          # multi-turn: a list of {role, content} dicts (wins over text/role columns)
+    role_column: Optional[str] = None          # single-turn: column naming the speaker; absent value defaults to "user"
+    system_prompt: Optional[str] = None        # prepended as a system message when the template is applied
+    prompt_prefix: Optional[str] = None        # prepended verbatim to every row's content (cheap fixed instruction)
+    add_generation_prompt: bool = False        # end the templated row with the assistant header (for annotation/generation)
+    continue_final_message: bool = False       # keep the last message open so the model continues it (prefill)
+    chat_options: Optional[Dict[str, bool]] = None  # template toggles, ex. {"enable_thinking": false}
+    store_template_in_input_ids: bool = False  # by convention the template is NOT baked into input_ids; set true to embed it

@@ -102,6 +102,53 @@ kind = "float"
 label = "Temperature"
 default = 0.7
 when = { field = "task", is = "generation" }
+[[steps.fields]]
+name = "use_chat_template"
+kind = "bool"
+label = "Use chat template"
+default = false
+doc = "Render each row through the model's own chat template before feeding it. Off keeps the row as plain text."
+[[steps.fields]]
+name = "chat_column"
+kind = "text"
+label = "Chat column"
+default = ""
+doc = "Multi-turn rows: a column holding a list of {role, content} dicts. Empty uses the text column."
+when = { field = "use_chat_template", is = true }
+[[steps.fields]]
+name = "role_column"
+kind = "text"
+label = "Role column"
+default = ""
+doc = "Single-turn rows: the column naming the speaker. A missing value defaults to 'user'."
+when = { field = "use_chat_template", is = true }
+[[steps.fields]]
+name = "system_prompt"
+kind = "text"
+label = "System prompt"
+default = ""
+doc = "Prepended as a system message when the template is applied."
+when = { field = "use_chat_template", is = true }
+[[steps.fields]]
+name = "prompt_prefix"
+kind = "text"
+label = "Prompt prefix"
+default = ""
+doc = "Prepending to every row's content, for quick question answering."
+when = { field = "use_chat_template", is = true }
+[[steps.fields]]
+name = "add_generation_prompt"
+kind = "bool"
+label = "Add generation prompt"
+default = true
+doc = "End each prompt with the assistant header so the model answers instead of continuing the input."
+when = { field = "use_chat_template", is = true }
+[[steps.fields]]
+name = "store_template_in_input_ids"
+kind = "bool"
+label = "Fuse template into input ids"
+default = false
+doc = "On: tokenize the whole rendered string (exact at token boundaries). Off: keep content tokens separate and cached (faster)."
 
 [action]
 kind = "annotate"
@@ -120,3 +167,10 @@ limit = "${limit}"
 batch_size = "${batch_size}"
 max_new_tokens = "${max_new_tokens}"
 temperature = "${temperature}"
+use_chat_template = "${use_chat_template}"
+chat_column = "${chat_column}"
+role_column = "${role_column}"
+system_prompt = "${system_prompt}"
+prompt_prefix = "${prompt_prefix}"
+add_generation_prompt = "${add_generation_prompt}"
+store_template_in_input_ids = "${store_template_in_input_ids}"

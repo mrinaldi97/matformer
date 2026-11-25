@@ -50,6 +50,26 @@ class CheckpointHolder:
     def get_configs(self):
         raise NotImplementedError
 
+    def get_chat_template(self):
+        """Raw Jinja chat template for this checkpoint, or None. Subclasses override with the
+        location that is native to their source (HF tokenizer_config.json, a matformer folder or
+        the .ckpt itself); a source with nothing to offer simply returns None, and templates that
+        cannot be read are skipped rather than raised, so an exotic model still loads."""
+        return None
+
+    def _read_jinja_sidecar(self):
+        """chat_template.jinja sitting next to the checkpoint (in its folder, or beside a single
+        weight file). None when there is none."""
+        folder = self.path if self.path.is_dir() else self.path.parent
+        for name in ("chat_template.jinja", "chat_template.txt"):
+            candidate = folder / name
+            if candidate.is_file():
+                try:
+                    return candidate.read_text(encoding="utf-8")
+                except OSError:
+                    return None
+        return None
+
     def get_states(self):
         """Optimizer/scheduler/datamodule/step/epoch, if the source has them."""
         return None

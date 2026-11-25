@@ -31,6 +31,7 @@ class MatformerTokenizer:
 
     TENSOR_TYPE = "pt"
     SPECIAL_TOKENS = ("bos_token", "eos_token", "pad_token", "mask_token")
+    chat_template = None   # the model's Jinja ChatTemplate, attached by the wrapper at load time
 
     def __init__(
         self,
@@ -139,13 +140,23 @@ class MatformerTokenizer:
             seq = seq + [self.config.eos_token_id]
         return seq
 
-    def chat(self, messages: List[dict], add_generation_prompt: bool = True) -> List[int]:
-        """Encode a chat-shaped conversation with the backend's own template, if it has one."""
-        if not getattr(self.tokenizer, "chat_template", None):
-            raise ValueError(f"{type(self.tokenizer).__name__} has no chat template.")
-        return self.tokenizer.encode(
-            self.tokenizer.apply_chat_template(
-                messages, tokenize=False, add_generation_prompt=add_generation_prompt))
+    def chat_specials(self) -> dict:
+        """{name: token-string} for the special tokens a chat template may reference (bos, eos,
+        pad, mask). Resolved through the backend so a template that writes the eos token by name,
+        or splices bos/eos itself, sees the real strings. Names left unset in the config are dropped."""
+        specials = {}
+        for name in self.SPECIAL_TOKENS:
+            token_id = getattr(self.config, f"{name}_id", None)
+            if token_id is None:
+                continue
+            surface = getattr(self.tokenizer, "convert_ids_to_tokens", None)
+            specials[name] = surface(token_id) if surface is not None else self.decode([token_id])
+        return specials
+
+    def encode_tokens(self, text: str) -> List[int]:
+        """Bare token ids of one string, no special tokens added: the callable a ChatTemplate uses
+        to tokenize content and template segments. The template owns bos/eos, never this."""
+        return self.encode(text, add_bos=False, add_eos=False)["input_ids"][0]
 
     def encode(
         self,

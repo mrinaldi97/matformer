@@ -287,6 +287,11 @@ def build_hub_payload(checkpoint, output_dir, configs=None, model_type="auto",
                           getattr(configs, "tokenizer", None), "pretrained_name", None)))
     if include_tokenizer:
         copy_tokenizer_files(configs, output_dir)
+    # The chat template rides as its own file (the convention transformers now prefers over an
+    # inline tokenizer_config entry), so AutoTokenizer picks it up and Matformer re-reads it too.
+    template = holder.get_chat_template()
+    if template:
+        (output_dir / "chat_template.jinja").write_text(template, encoding="utf-8")
     return output_dir
 
 

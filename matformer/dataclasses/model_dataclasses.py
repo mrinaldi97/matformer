@@ -79,6 +79,9 @@ class TokenizerConfig(MatformerConfig):
     eos_token_id: Optional[int] = None
     pad_token_id: Optional[int] = None
     mask_token_id: Optional[int] = None
+    # Jinja chat template: either the template source inline, or a path to a .jinja file. Empty
+    # lets the checkpoint holder supply the model's own template; set it to override.
+    chat_template: Optional[str] = None
 
 
 @registry.register_dataclass("masking", "default", default=True)

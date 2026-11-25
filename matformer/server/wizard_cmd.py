@@ -248,7 +248,11 @@ def _submit_annotate(action):
     spec = {key: value for key, value in action.items()
             if key in ("model", "cfg", "device", "task", "input", "output", "format",
                        "keys_only", "limit", "batch_size", "dataset", "column", "label",
-                       "max_new_tokens", "temperature") and value not in (None, "", 0)}
+                       "max_new_tokens", "temperature",
+                       "use_chat_template", "chat_column", "role_column", "system_prompt",
+                       "prompt_prefix", "add_generation_prompt", "continue_final_message",
+                       "chat_options", "store_template_in_input_ids")
+            and value not in (None, "", 0, False)}
     spec.setdefault("format", "jsonl")
     spec.setdefault("mode", "annotate")
     name = Path(str(action.get("input") or "annotation")).stem or "annotation"

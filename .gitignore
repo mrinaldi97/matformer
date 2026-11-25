@@ -2,11 +2,13 @@
 .aid
 .crush
 .crush_backup
-.ipynb_checkpoints
 .matformer_server
+.ipynb_checkpoints
 .pytest_cache
+.*/
 checkpoints*
 wandb*
+interfacciaclaude/
 wandb/
 datasets/
 tokenizers/
@@ -17,6 +19,8 @@ char_autoencoder/checkpoints/
 char_autoencoder/data/
 __pycache__*
 .venv/
+matformer.egg-info/
+.~lock.*#
 test_data/fake/
 temp_grid_configs
 dataset

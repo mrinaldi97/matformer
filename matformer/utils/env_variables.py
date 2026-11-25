@@ -25,6 +25,11 @@ ddp_gradient_as_bucket = _bool("DDP_GRADIENT_AS_BUCKET", False)
 # DDP_FIND_UNUSED_PARAMETERS: pass find_unused_parameters to the DDP strategy (default: true)
 ddp_find_unused_parameters = _bool("DDP_FIND_UNUSED_PARAMETERS", True)
 
+# --- Chat templates ---
+# MISSING_TEMPLATE_ROLE_WARNING: warn when a lazy dataset row has no value in its role column and
+# the role silently defaults to "user" (default: false, so quiet per-row on big datasets)
+template_role_warning = _bool("MISSING_TEMPLATE_ROLE_WARNING", False)
+
 # --- Registry ---
 # MATFORMER_REGISTRY_VERBOSE: print the registry's selection notices (default: true)
 registry_verbose =  _bool("MATFORMER_REGISTRY_VERBOSE", True)

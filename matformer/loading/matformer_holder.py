@@ -50,6 +50,16 @@ class MatformerCheckpointHolder(CheckpointHolder):
     def get_configs(self):
         return self.configs
 
+    def get_chat_template(self):
+        """Where a Matformer checkpoint keeps its chat template: an embedded 'chat_template' key
+        inside the .ckpt (the self-contained case, saved by the trainer/publisher), otherwise a
+        chat_template.jinja in the checkpoint folder or beside the weight file. None if neither."""
+        if isinstance(self.checkpoint, dict):
+            template = self.checkpoint.get("chat_template")
+            if isinstance(template, str) and template.strip():
+                return template
+        return self._read_jinja_sidecar()
+
     def get_weights(self, definition=None, wanted=None, discard=None):
         """Native weights are already stable-keyed: returned as-is unless a user definition
         is given. `wanted`/`discard` (mutually exclusive) select the stable keys to return."""
